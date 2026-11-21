@@ -24,6 +24,11 @@ Output may live under the workspace, such as `packages/build`, but must be
 separate from every package/application source root, including unused packages.
 The installed example is copied to an editable workspace above.
 
+An eager C++ import lists the admitted interface and sidecar paths in the
+compiler's make depfile. Compiler-generated in-memory includes do not appear
+as disk dependencies. The installed graph checks the complete transitive
+artifact set before testing reuse and invalidation.
+
 ## Workspace and package contracts
 
 A workspace uses `schema: "objc3c.source-workspace.v4"`, a `packages` array of

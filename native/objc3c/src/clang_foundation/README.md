@@ -1,7 +1,7 @@
 # Native Clang compiler
 
 `objc3c` is the public Linux compiler. The default CMake build uses only the
-qualified LLVM/Clang 23.1.3 frontend, with native C, C++, Objective-C and
+pinned LLVM/Clang 23.1.5 frontend, with native C, C++, Objective-C and
 Objective-C++ types, ownership and ABI. The former optional migration build
 switch, custom parser/lowering and custom runtime integration have been removed.
 
@@ -11,7 +11,7 @@ The [root README](../../../../README.md) describes public commands and support.
 For focused frontend development against an existing qualified SDK:
 
 ```sh
-sdk="$PWD/out/toolchains/objc3-development/stage-linux-x86_64"
+sdk="$PWD/out/toolchains/linux-sdk/current"
 cmake -S native/objc3c -B out/toolchains/objc3-facade/build-linux-x86_64 -G Ninja \
   -DOBJC3C_CLANG_FOUNDATION_ROOT="$sdk" \
   -DCMAKE_CXX_COMPILER="$OBJC3C_BOOTSTRAP_LLVM_ROOT/bin/clang++"
@@ -50,6 +50,20 @@ C API's `compiler_sdk_root` selects the same verified relocation. Installed
 `objc3c::Frontend` and `objc3c::RuntimeServices` CMake targets provide explicit
 embedding and independent native service libraries. Clang C++ implementation
 types do not cross the C embedding API.
+
+Native diagnostics, including source-bound fix-it sets, are available as
+`objc3c.native-diagnostics.v1` JSON:
+
+```sh
+objc3c source.m --objc3 --diagnostics-json --emit-object source.o \
+  -- -std=c17 > diagnostics.json
+```
+
+JSON goes to stdout and human diagnostics to stderr; use named artifact outputs.
+C embedders obtain the same result-owned record with
+`objc3c_frontend_v3_result_diagnostics_json`. Match each edit's source hash and
+apply its complete diagnostic set using exclusive byte offsets and exact hex
+replacement bytes. See [edit delivery and limits](../../../../docs/roadmap/linux_native_diagnostic_edits.md).
 
 Public capability claims follow
 [`schemas/objc3-language-capabilities.json`](../../../../schemas/objc3-language-capabilities.json).

@@ -1,5 +1,6 @@
 #include "clang_foundation/compile_session.h"
 #include "clang_foundation/driver_native.h"
+#include "clang_foundation/meta_package.h"
 #include "llvm/Support/FileSystem.h"
 #include "clang/Driver/Driver.h"
 #include "llvm/ADT/SmallVector.h"
@@ -21,13 +22,16 @@ int RunCompiler(int argc, char **argv) {
            "[--emit-interface path.objc3i --module name --package identity] "
            "[--project-ownership arc|mrc] "
            "[--export-declaration name] [--module-owned-names] "
+           "[--export-c-async name|Namespace::name|Actor::selector --emit-c-async-header file.h] "
+           "[--export-c-throws name|Namespace::name --emit-c-header file.h] "
+           "[--emit-swift-overlay file.swift --swift-c-module module] "
            "[--module-source-root dir] "
            "[--target triple] [--runtime abi] [--module-search-path dir] "
-           "[--sdk-root dir] "
+           "[--sdk-root dir] [--meta-package dir-or-manifest] [--meta-lock file] "
            "[--import-module name fingerprint package "
            "[--private-import] [--reexport-import] [--import-spi group]] "
            "[--source-imports] "
-           "[--emit-dependency-record path] "
+           "[--emit-dependency-record path] [--diagnostics-json] "
            "[-- <clang arguments>]\n";
     return 2;
   }
@@ -39,6 +43,7 @@ int RunCompiler(int argc, char **argv) {
       std::filesystem::is_directory(installed_root / "bin"))
     request.compiler_sdk_root = installed_root.string();
   std::string dependency_record_path;
+  bool diagnostics_json=false;
   request.input_path = argv[1];
   if (request.input_path.empty() || request.input_path.starts_with("--")) {
     std::cerr << "a source path must precede compiler options\n";
@@ -70,7 +75,23 @@ int RunCompiler(int argc, char **argv) {
         request.arguments.emplace_back(argv[i]);
       break;
     }
-    if (argument == "--module-source-root" && has_values(1))
+    if(argument=="--diagnostics-json" && !diagnostics_json)diagnostics_json=true;
+    else if(argument=="--meta-package" && has_values(1))
+      request.meta_packages.emplace_back(argv[++i]);
+    else if(argument=="--meta-lock" && has_values(1) && request.meta_lock.empty())
+      request.meta_lock=argv[++i];
+    else if (argument == "--export-c-async" && has_values(1))
+      request.async_c_exports.emplace_back(argv[++i]);
+    else if (argument == "--export-c-throws" && has_values(1))
+      request.throws_c_exports.emplace_back(argv[++i]);
+    else if ((argument == "--emit-c-header" || argument == "--emit-c-async-header") && has_values(1) &&
+             request.c_export_header_output_path.empty())
+      request.c_export_header_output_path = argv[++i];
+    else if (argument == "--emit-swift-overlay" && has_values(1) && request.swift_overlay_output_path.empty())
+      request.swift_overlay_output_path = argv[++i];
+    else if (argument == "--swift-c-module" && has_values(1) && request.swift_c_module.empty())
+      request.swift_c_module = argv[++i];
+    else if (argument == "--module-source-root" && has_values(1))
       request.module_source_root = argv[++i];
     else if (argument == "--module-owned-names")
       request.module_owned_names = true;
@@ -158,6 +179,10 @@ int RunCompiler(int argc, char **argv) {
   }
   const bool objc = request.language == BaseLanguage::ObjectiveC ||
                     request.language == BaseLanguage::ObjectiveCxx;
+  if (request.swift_overlay_output_path.empty() != request.swift_c_module.empty()) {
+    std::cerr << "Swift overlay requires both --emit-swift-overlay and --swift-c-module\n";
+    return 2;
+  }
   if ((!request.interface_exports.empty() &&
        !request.emit_semantic_interface) ||
       (request.projected_arc.has_value() &&
@@ -171,6 +196,11 @@ int RunCompiler(int argc, char **argv) {
     std::cerr << "language mode or semantic interface options are inconsistent\n";
     return 2;
   }
+  const bool exports_c = !request.async_c_exports.empty() || !request.throws_c_exports.empty();
+  if (exports_c == request.c_export_header_output_path.empty()) {
+    std::cerr << "C exports require --export-c-async or --export-c-throws and an output header\n";
+    return 2;
+  }
   if ((!request.module_imports.empty() &&
        request.interface_search_paths.empty()) ||
       (request.source_directed_imports &&
@@ -178,11 +208,11 @@ int RunCompiler(int argc, char **argv) {
         (request.language != BaseLanguage::ObjectiveC &&
          request.language != BaseLanguage::ObjectiveCxx) ||
         request.module_imports.empty())) ||
-      (!dependency_record_path.empty() && request.module_imports.empty())) {
+      (!dependency_record_path.empty() && request.module_imports.empty() && request.meta_packages.empty())) {
     std::cerr << "module imports require search paths; source imports require "
                  "an ObjC3 Objective-C or Objective-C++ source and a locked "
                  "module registry; "
-                 "dependency records require imports\n";
+                 "dependency records require imports or locked metaprogramming packages\n";
     return 2;
   }
   if (!dependency_record_path.empty()) {
@@ -206,8 +236,12 @@ int RunCompiler(int argc, char **argv) {
       return 2;
     }
   }
+  if(diagnostics_json && (request.output_path=="-" || request.interface_output_path=="-")) {
+    std::cerr<<"diagnostic JSON requires compiler artifacts to use named output files\n";return 2;
+  }
   request.dependency_record_output_path = dependency_record_path;
   auto result = Compile(request);
+  if(diagnostics_json)std::cout<<EncodeCompileDiagnostics(result)<<'\n';
   for (const auto &diagnostic : result.diagnostics) {
     const char *kind = diagnostic.severity == 5   ? "fatal error"
                        : diagnostic.severity == 4 ? "error"
@@ -221,8 +255,12 @@ int RunCompiler(int argc, char **argv) {
   if (!result.success)
     std::cerr << result.failure << '\n';
   if (result.interface_artifact) {
-    for (const auto &diagnostic : result.interface_artifact->diagnostics)
-      std::cerr << diagnostic.code << ": " << diagnostic.message << '\n';
+    for (const auto &diagnostic : result.interface_artifact->diagnostics) {
+      std::cerr << diagnostic.code << ": " << diagnostic.message;
+      if (!diagnostic.subject.empty())
+        std::cerr << " [" << diagnostic.subject << ']';
+      std::cerr << '\n';
+    }
   }
   return result.success ? 0 : 1;
 }
@@ -238,6 +276,12 @@ int main(int argc, char **argv) {
     }
     std::vector<char *> expanded;
     for (auto argument : arguments) expanded.push_back(const_cast<char *>(argument));
+    if(expanded.size()==3 && std::string_view(expanded[1])=="--meta-package-fingerprint") {
+      std::string error;
+      auto fingerprint=objc3::clang_foundation::ComputeMetaPackageFingerprintFromFile(expanded[2],error);
+      if(!fingerprint){std::cerr<<error<<'\n';return 1;}
+      std::cout<<*fingerprint<<'\n';return 0;
+    }
     return UsesInterfaceCompiler(expanded.size(), expanded.data())
         ? RunCompiler(expanded.size(), expanded.data())
         : RunNativeDriver(expanded.size(), expanded.data());

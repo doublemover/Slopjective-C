@@ -13,6 +13,8 @@ import tempfile
 import time
 from typing import Any
 
+from scripts.objc3c_toolchain.linux_host import host_identity
+
 MODULE = "fixture.NativePackage"
 PACKAGE = "native-package-v1"
 PROVIDER_NODE = "native-package:provider"
@@ -32,6 +34,20 @@ class PackageNodeError(RuntimeError):
         super().__init__(message)
         self.data = data
         self.artifacts = artifacts
+
+
+def require_consumer_elf(report: Path, platform: str, target: str, runtime: str) -> None:
+    host = host_identity(platform)
+    objects = json.loads(report.read_text())
+    if not isinstance(objects, list) or len(objects) != 1 or not isinstance(objects[0], dict):
+        raise ValueError('expected one ELF consumer in the linked object report')
+    elf = objects[0]
+    header = elf['ElfHeader']
+    libraries = elf.get('NeededLibraries')
+    if (target != host['target_triple'] or header['Machine']['Value'] != host['elf_machine'] or
+            header['Ident']['Class']['Value'] != 2 or header['Ident']['DataEncoding']['Value'] != 1 or
+            not isinstance(libraries, list) or runtime not in libraries):
+        raise ValueError('installed Linux consumer has the wrong ELF ABI or runtime dependency')
 
 
 def _sha256(path: Path) -> str:
@@ -162,7 +178,7 @@ def _clang_arguments(toolchain: dict[str, Any]) -> list[str]:
     if not directory.is_dir():
         raise ValueError("sealed Clang resource directory is missing")
     flags = ["--", "-std=c17", "-fblocks", "-O2", "-resource-dir", str(directory)]
-    if toolchain.get("platform") != "linux-x86_64":
+    if toolchain.get("platform") not in ("linux-x86_64", "linux-aarch64"):
         flags.append("-fms-runtime-lib=dll")
     return flags
 
@@ -361,7 +377,7 @@ def _consumer(repo: Path, node: dict[str, Any], output: Path, toolchain: dict[st
         _file(object_path, "emitted consumer object")
         data["dependency_record"] = _dependency_record(dependency_path, identity, toolchain)
         linker = _tool(toolchain, "linker")
-        linux = toolchain.get("platform") == "linux-x86_64"
+        linux = toolchain.get("platform") in ("linux-x86_64", "linux-aarch64")
         if not linux and linker.name.lower() != "lld-link.exe":
             raise ValueError("the native MSVC package profile requires the sealed lld-link.exe")
         link_command = [str(_tool(toolchain, "clangxx")), "--target=" + toolchain["target_triple"],
@@ -391,12 +407,12 @@ def _consumer(repo: Path, node: dict[str, Any], output: Path, toolchain: dict[st
             if data["commands"][-1]["phase"] == "consumer-run":
                 data["actual_exit_code"] = data["commands"][-1]["exit_code"]
         if linux:
-            _execute([str(_tool(toolchain, "readobj")), "--file-headers", "--needed-libs", str(executable)],
+            _execute([str(_tool(toolchain, "readobj")), "--elf-output-style=JSON",
+                      "--file-headers", "--needed-libs", str(executable)],
                      phase="consumer-elf", cwd=scratch, output=output,
                      environment=run_environment, timeout=timeout, data=data, artifacts=artifacts)
-            elf = (output / "consumer-elf.stdout.log").read_text()
-            if "elf64-x86-64" not in elf or installed_runtime.name not in elf:
-                raise ValueError("installed Linux consumer has the wrong ELF ABI or runtime dependency")
+            require_consumer_elf(output / "consumer-elf.stdout.log", toolchain["platform"],
+                                 toolchain["target_triple"], installed_runtime.name)
             _execute([str(_tool(toolchain, "debugger")), "--batch", "-o", "settings set target.disable-aslr false",
                       "-o", "breakpoint set --name main", "-o", "run", "-o", "thread backtrace", "-o", "continue",
                       str(executable)], phase="consumer-debug", cwd=scratch, output=output,

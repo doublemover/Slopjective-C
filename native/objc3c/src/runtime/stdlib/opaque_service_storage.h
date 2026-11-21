@@ -48,7 +48,14 @@ class OpaqueServiceStorage {
     token->kind = kind;
     void *key = token.get();
     tokens_.push_back(std::move(token));
-    entries_.emplace(key, Entry{candidate, 1, kind});
+    try {
+      entries_.emplace(key, Entry{candidate, 1, kind});
+    } catch (...) {
+      // This identity has never escaped. Only published tokens are permanent
+      // tombstones; a failed entry allocation must preserve admission budget.
+      tokens_.pop_back();
+      throw;
+    }
     ++live_count_;
     return key;
   }

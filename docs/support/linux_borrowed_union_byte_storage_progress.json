@@ -1,0 +1,46 @@
+{
+  "development_only": true,
+  "source_version": "2.151",
+  "system_version": "2.77",
+  "prepared_source_tree": "10b5552de7cb9e0d3c1ef14db1f7055c59a2166a",
+  "extension_abi": 24,
+  "compiler_identity_resealed": false,
+  "matched_sdk_produced": false,
+  "compiler": {
+    "borrowed_cases_passed": 57,
+    "focused_cases": 2,
+    "new_source_pch_commands": 18,
+    "updated_source_pch_commands": 18,
+    "all_passed": true
+  },
+  "ast_controls": 64,
+  "publication_profiles": 6,
+  "adjacent_frontend_groups": 9,
+  "production_decoder_exact_replays": 720,
+  "production_decoder_families": 36,
+  "native": {
+    "configurations": 4,
+    "commands_or_operations": 24,
+    "consumers_per_provider": 2,
+    "provider_source_removed": true,
+    "all_passed": true,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ]
+  },
+  "reader_contract": "objc3.borrowed-union-byte-storage.v1",
+  "negative_controls": [
+    "retained loan escape diagnostics",
+    "partial union writes",
+    "unknown targets and indices",
+    "conditional destinations",
+    "volatile and atomic storage",
+    "nontrivial and owner-bearing storage",
+    "mutable captured union writes",
+    "copied and partially overwritten loans",
+    "older/missing/invented capability"
+  ],
+  "all_focused_checks_passed": true,
+  "full_current_consolidation": "full matched analysis and SDK follow remaining implementation"
+}

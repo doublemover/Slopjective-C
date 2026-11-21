@@ -857,6 +857,21 @@ The standard library shall provide:
 - `Value KeyPathGet(KeyPath<Root, Value> kp, Root root);`
 - `void KeyPathSet(WritableKeyPath<Root, Value> kp, Root root, Value v);`
 
+#### 3.6.4.1 Nullable intermediate traversal {#part-3-6-4-1}
+
+A nullable intermediate does not change a key path's final `Value` type. If a
+read encounters a null intermediate, it shall return null when `Value` is an
+explicitly nullable pointer type. Otherwise it shall terminate through a checked
+runtime failure before invoking the remaining accessors. It shall not fabricate
+a scalar zero, a nonnull null pointer, or a default-constructed aggregate value.
+An unspecified pointer nullability is not an explicitly nullable result.
+
+A write encountering a null intermediate shall skip the remaining traversal and
+the update. Application operands, including a skipped write's value, shall still
+be evaluated exactly once in the application's specified order. Intermediate
+objects shall remain alive through the traversal; native record snapshots and
+temporaries retain their ordinary copy and cleanup behavior.
+
 The spec permits (but does not require) syntactic sugar such as:
 
 - `root[kp]` for get and set.

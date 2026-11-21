@@ -1,0 +1,9 @@
+{
+  "schema": "objc3c.llvm-expensive-check-pilot.v1",
+  "base_profile": "compiler-asan-ubsan",
+  "cmake": {"LLVM_ENABLE_EXPENSIVE_CHECKS": "ON"},
+  "targets": ["clang", "opt", "llc", "llvm-dis"],
+  "disk_headroom_factor": 1.25,
+  "reserve_bytes": 2147483648,
+  "boundary": "Isolated compiler/IR diagnostic pilot; no ordinary foundation, embedding consumer or SDK substitution"
+}

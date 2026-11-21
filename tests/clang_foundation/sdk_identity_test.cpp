@@ -46,5 +46,19 @@ int main() {
   assert(!VerifyRelocatedSDK(root.string(), driver_hash, resource_hash,
                              driver_path, resource_path, error));
   assert(error.find("resources differ") != std::string::npos);
+  // Default driver configuration is part of the header bundle contract too.
+  const auto bundle=resources/"objc3-native-headers";fs::create_directory(bundle);
+  const std::string config="-nostdinc++\n";
+  for(const char *name:{"clang.cfg","clang++.cfg"}) {
+    std::ofstream(bundle/name)<<config;
+    std::ofstream(driver.parent_path()/name)<<config;
+  }
+  assert(VerifyNativeHeaderConfiguration(driver.string(),resources.string(),error));
+  const auto native_config=driver.parent_path()/"clang.cfg";
+  const auto config_time=fs::last_write_time(native_config);
+  std::ofstream(native_config)<<"-nostdincXX\n";
+  fs::last_write_time(native_config,config_time);
+  assert(!VerifyNativeHeaderConfiguration(driver.string(),resources.string(),error));
+  assert(error.find("driver configuration differs")!=std::string::npos);
   fs::remove_all(root);
 }

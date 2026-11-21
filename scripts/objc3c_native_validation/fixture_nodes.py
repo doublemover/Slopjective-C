@@ -338,7 +338,7 @@ def run_fixture_node(repo: Path, node: dict, output_dir: Path, toolchain: dict) 
     directory, so unrelated executions of fixed-output runners cannot corrupt
     the artifacts returned to the DAG executor for later reuse.
     """
-    if toolchain.get("platform") == "linux-x86_64":
+    if toolchain.get("platform") in ("linux-x86_64", "linux-aarch64"):
         from .fixture_linux import run_linux_fixture_node
         return run_linux_fixture_node(repo, node, output_dir, toolchain)
     suite, driver = node.get("suite"), node.get("driver")

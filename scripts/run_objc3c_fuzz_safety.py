@@ -32,6 +32,9 @@ from objc3c_fuzz_safety.corpus import (
 )
 from objc3c_fuzz_safety.execution import (
     DIAGNOSTIC_SIGNAL_PATTERN,
+    INFRASTRUCTURE_DIAGNOSTIC_PATTERN,
+    classify_diagnostic,
+    classify_termination,
     hash_output,
     run_case,
 )
@@ -43,6 +46,7 @@ __all__ = [
     "DEFAULT_MANIFEST",
     "DEFAULT_OUT_ROOT",
     "DIAGNOSTIC_SIGNAL_PATTERN",
+    "INFRASTRUCTURE_DIAGNOSTIC_PATTERN",
     "EXIT_GUARD_FAIL",
     "EXIT_INPUT_ERROR",
     "EXIT_OK",
@@ -55,6 +59,8 @@ __all__ = [
     "MutationRule",
     "build_corpus",
     "build_parser",
+    "classify_diagnostic",
+    "classify_termination",
     "canonical_json_text",
     "evaluate",
     "hash_output",

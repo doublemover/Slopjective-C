@@ -1,9 +1,11 @@
+#include "native_target_test_support.h"
 #include "clang_foundation/compile_session.h"
 #include "clang_foundation/interface_artifact_io.h"
 #include "clang_foundation/runtime_interface_types.h"
 #include "llvm/ADT/StringRef.h"
 
 #include <cassert>
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -22,7 +24,7 @@ CompileRequest Module(std::string input, std::string name, std::string package,
   request.source_text = std::move(source);
   request.language = BaseLanguage::ObjectiveC;
   request.objc3 = true;
-  request.arguments = {"--target=x86_64-unknown-linux-gnu"};
+  request.arguments = {"--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
   request.emit_semantic_interface = true;
   request.module_name = std::move(name);
   request.package_identity = std::move(package);
@@ -109,12 +111,34 @@ void CheckRuntimeFrameProvenance(const std::filesystem::path &root) {
              "unsigned frame_version(void) { __auto_type frame = "
              "@fixture.RuntimeFrame.frame_factory(); return frame.version; }\n")
              .success);
+  // Eager imports need the same pinned runtime types before any explicit
+  // consumer SDK include, including when only module/package/fingerprint locks
+  // are supplied and the source subsequently names that registered module.
+  auto eager = Module("eager-runtime.m", "", "",
+      "@import fixture.RuntimeFrame;\n"
+      "unsigned frame_version(void) { __auto_type frame = "
+      "@fixture.RuntimeFrame.frame_factory(); return frame.version; }\n");
+  eager.emit_semantic_interface = false;
+  eager.interface_search_paths = {root.string()};
+  auto partial = Locked(identity);
+  partial.locked_identity = {};
+  partial.locked_identity.canonical_name = identity.canonical_name;
+  partial.locked_identity.semantic_fingerprint = identity.semantic_fingerprint;
+  partial.locked_identity.package_identity = identity.package_identity;
+  eager.module_imports = {partial};
+  auto eager_result = Compile(eager);
+  if (!eager_result.success) std::fprintf(stderr, "%s\n", eager_result.failure.c_str());
+  assert(eager_result.success);
   for (const auto &[name, bytes] : files) {
     const auto restored = sdk / std::filesystem::path(name).lexically_relative(
                                     "/__objc3_canonical_runtime");
     std::filesystem::create_directories(restored.parent_path());
     Write(restored, bytes);
   }
+
+  eager.arguments.insert(eager.arguments.end(), {"-I", sdk.string()});
+  eager.source_text = "#include <objc3c/runtime/objc3_runtime_services.h>\n" + *eager.source_text;
+  assert(Compile(eager).success);
 
   for (const auto &prefix : {std::string("#pragma pack(1)\n"), std::string()}) {
     request.source_text = prefix + source;
@@ -161,7 +185,7 @@ CompileResult SourceConsumer(const std::filesystem::path &root,
   request.language = BaseLanguage::ObjectiveC;
   request.objc3 = true;
   request.source_directed_imports = true;
-  request.arguments = {"--target=x86_64-unknown-linux-gnu"};
+  request.arguments = {"--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
   request.interface_search_paths = {root.string()};
   request.module_imports = {Locked(direct_module)};
   return Compile(request);

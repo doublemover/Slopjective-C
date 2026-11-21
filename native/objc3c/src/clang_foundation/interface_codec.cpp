@@ -1,4 +1,5 @@
 #include "clang_foundation/interface_codec.h"
+#include "clang_foundation/runtime_interface_types.h"
 #include "clang_foundation/module_names.h"
 
 #include <algorithm>
@@ -18,6 +19,163 @@
 #include "llvm/Support/raw_ostream.h"
 
 namespace objc3::clang_foundation {
+llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
+  static const llvm::StringRef supported[] = {
+    "objc3.canonical-function-effects.v1",
+    "objc3.native-carrier-types.v1",
+    "objc3.native-return-ownership.v1",
+    "objc3.native-ownership-contracts.v1",
+    "objc3.isolation-contracts.v1",
+    "objc3.typed-keypaths.v2",
+    "objc3.keypath-subscripts.v1",
+    kNativeEmissionPolicySemantic,
+    kNativeThreadSafetySemantic,
+    kCxxVirtualCallSemantic,
+    kCxxInlineClosureObjectSemantic, kCxxBaseAdjustmentSemantic, kCxxSpecialMemberSelectionSemantic, kNativeCxxAsyncImportSemantic,
+    kBorrowedUnionStorageSemantic,
+    kBorrowedResultProofSemantic,
+    kManualFamilyCallProofSemantic,
+    kCxxConstantEvaluationControlSemantic,
+    kNativeControlFlowSemantic,
+    kCOverloadableSemantic,
+    kActorReceiverBindingSemantic,
+    kNativeFunctionPolicySemantic,
+    kNativeLifetimeAnnotationSemantic,
+    kNativeExternalBindingSemantic,
+    kCxxOutOfLineDefinitionSemantic,
+    kCxxExplicitSpecifierSemantic,
+    kCxxDeductionGuideSemantic,
+    kMetaprogrammingSemantic,
+    kNativeObjectPolicySemantic,
+    kNativeObjectExpressionSemantic,
+    kObjCGenericSignaturesSemantic,
+    kNativeFunctionEffectSemantic,
+    kNativeUnnamedEnumSemantic,
+    kNativeStorageLifetimeSemantic,
+    kAtomicManagedPropertySemantic,
+    kNativeLambdaArgumentABISemantic,
+    kNativeMRCRecordPayloadSemantic,
+    kNativeARCRecordPayloadSemantic,
+    kNativeCarrierLambdaSemantic,
+    kNativeByrefStorageSemantic,
+    kNativeBlockAlignmentSemantic,
+    kMixedCarrierCallSemantic,
+    kCppCarrierRuntimeSemantic,
+    kCheckedCppRecordResultSemantic,
+    kCppCarrierStorageSemantic,
+    kCheckedCppMessageSemantic,
+    kCppCarrierCompositionSemantic,
+    kCppCarrierCallSemantic,
+    kResourceKeyPathValueSemantic,
+    kNullableKeyPathWriteSemantic,
+    kCheckedKeyPathReadSemantic,
+    kDependentKeyPathLiteralSemantic,
+    kAsyncConsumedOwnershipSemantic,
+    kNativeDependentAwaitSemantic,
+    kNSObjectStorageSemantic,
+    kManagedRuntimeScopeSemantic,
+    kNativeFinallySemantic,
+    kInitializedOwnerSemantic,
+    kNativeDisposalSemantic,
+    kAutomaticOwnerUnwindSemantic,
+    kNativeArrayLifetimeSemantic,
+    kNativeSubobjectSemantic,
+    kCxxIncompleteTemplateSemantic,
+    kNativeAllocationSemantic,
+    kBorrowedReceiverResultSemantic,
+    kBorrowedInteriorStorageSemantic,
+    kBorrowedCallableOwnerSemantic,
+    kDependentKeyPathTypeSemantic,
+    "objc3.async-entry-abi.v5",
+    "objc3.direct-dispatch.v1",
+    "objc3.cxx-data-interfaces.v1",
+    "objc3.cxx-member-interfaces.v1",
+    "objc3.cxx-class-lifecycles.v1",
+    "objc3.cxx-class-structure.v1",
+    "objc3.cxx-class-dispatch.v1",
+    "objc3.cxx-namespaces.v1",
+    "objc3.cxx-nested-types.v1",
+    "objc3.cxx-using.v2",
+    "objc3.cxx-declaration-expressions.v1",
+    "objc3.c-inline-definitions.v1",
+    "objc3.cxx-definitions.v1",
+    "objc3.cxx-defaulted-comparisons.v1",
+    "objc3.cxx-out-of-line-defaulting.v1",
+    "objc3.cxx-immediate-defaulting.v1",
+    "objc3.cxx-namespace-attributes.v1",
+    "objc3.cxx-lambda-expressions.v2",
+    "objc3.cxx-thread-local.v1",
+    "objc3.cxx-friends.v3",
+    kCxxBlockExpressionSemantic,
+    "objc3.cxx-statement-expressions.v1",
+    "objc3.cxx-local-types.v2",
+    "objc3.cxx-unnamed-local-types.v1",
+    "objc3.cxx-generic-local-lambdas.v2",
+    "objc3.cxx-union-values.v1",
+    "objc3.cxx-concepts.v2",
+    kCxxFunctionTemplateSemantic,
+    kCxxAliasTemplateSemantic,
+    kCxxVariableTemplateSemantic,
+    kCxxClassTemplateSemantic,
+    kCxxTemplateStructureSemantic,
+    kCxxTemplateDeductionSemantic,
+    kCxxMemberTemplateSemantic,
+    kCxxMemberAliasTemplateSemantic,
+    kCxxNestedTemplateSemantic,
+    kCxxVariadicTemplateSemantic,
+    kCxxConcreteMemberTemplateSemantic,
+    kCxxConcreteNestedTemplateSemantic,
+    kCxxTemplateTemplateSemantic,
+    kCxxNominalAliasTemplateSemantic,
+    kCxxFunctionSpecializationSemantic,
+    kCxxVariableSpecializationSemantic,
+    kCxxClassSpecializationSemantic,
+    kCxxClassPartialSpecializationSemantic,
+    kCxxVariablePartialSpecializationSemantic,
+    kCxxVariableSpecializationStorageSemantic,
+    kCxxDetachedCallableTemplateSemantic,
+    kCxxDetachedStaticDataTemplateSemantic,
+    kCxxDetachedNestedTemplateSemantic,
+    kCxxConcreteMemberClassSpecializationSemantic,
+    kCxxConcreteMemberFunctionSpecializationSemantic,
+    kCxxConcreteMemberVariableSpecializationSemantic,
+    kCxxConcreteSpecialMemberSpecializationSemantic,
+    kCxxDependentMemberPartialSemantic,
+    kCxxClosedParentMemberSemantic,
+    kCxxClosedParentPatternSemantic,
+    kCxxEffectfulFunctionTemplateSemantic,
+    kCxxEffectfulTemplateMemberSemantic,
+    kCxxTemplateCallableProjectionSemantic,
+    kCxxAddressTemplateArgumentSemantic,
+    kNativeDeclarationAttributeSemantic,
+    kCxxCoroutineBodySemantic,
+    kCxxUnnamedTemplateProjectionSemantic,
+    kCxxStandardCoroutineSemantic,
+    kCxxStandardLibrarySemantic,
+    kCxxStandardLibrarySpecializationSemantic,
+    kForeignImportAttributeSemantic,
+    kCxxNestedFactoryTypeSemantic,
+    kCxxLambdaFactoryResultSemantic,
+    kCxxClosureResultProjectionSemantic,
+    kCxxFactoryValueArgumentSemantic,
+    kCxxGenericFactoryProjectionSemantic,
+    kCxxFactoryTemplateArgumentSemantic,
+    kCxxFactoryTypeProjectionSemantic,
+    kCxxLocalFactoryResultSemantic,
+    kCxxClosureFactorySemantic,
+    kCxxEffectfulLambdaSemantic,
+    "objc3.cxx-async-definitions.v1",
+    "objc3.sdk-runtime-declarations.v1",
+    "objc3.ownership-projection.v1",
+    "objc3.api-availability.v1",
+    "objc3.api-partitions.v1",
+    "objc3.module-owned-names.v1",
+    RuntimeInterfaceSemantic(),
+    RuntimeCompletionSemantic()
+  };
+  return supported;
+}
+
 namespace {
 using llvm::json::Array;
 using llvm::json::Object;
@@ -77,14 +235,6 @@ llvm::Expected<std::uint64_t> RequiredUnsigned(const Object &object,
   if (!number || *number < 0)
     return Invalid(llvm::formatv("{0}/{1}: expected nonnegative integer", path, key).str());
   return static_cast<std::uint64_t>(*number);
-}
-
-llvm::Expected<const Object *> RequiredObject(const Object &object,
-                                              llvm::StringRef key,
-                                              llvm::StringRef path) {
-  auto *value = object.getObject(key);
-  if (!value) return Invalid(llvm::formatv("{0}/{1}: required object missing or has wrong type", path, key).str());
-  return value;
 }
 
 llvm::Expected<const Array *> RequiredArray(const Object &object,
@@ -147,6 +297,7 @@ llvm::Expected<InterfaceModuleIdentity> DecodeModule(const Object &object,
 
 Object EncodeEffects(const InterfaceEffectIdentity &effects) {
   return Object{{"async", effects.is_async},
+                {"async_abi_identity", effects.async_abi_identity},
                 {"throws", effects.is_throwing},
                 {"throws_kind", effects.throws_kind},
                 {"error_type_identity", effects.error_type_identity},
@@ -158,7 +309,7 @@ Object EncodeEffects(const InterfaceEffectIdentity &effects) {
 llvm::Expected<InterfaceEffectIdentity> DecodeEffects(const Object &object,
                                                        llvm::StringRef path) {
   if (auto error = CheckKeys(object,
-      {"async", "throws", "throws_kind", "error_type_identity",
+      {"async", "async_abi_identity", "throws", "throws_kind", "error_type_identity",
        "actor_isolation_identity", "executor_affinity_identity", "ownership_identity"}, path))
     return std::move(error);
   InterfaceEffectIdentity result;
@@ -179,6 +330,7 @@ llvm::Expected<InterfaceEffectIdentity> DecodeEffects(const Object &object,
   READ_EFFECT_FIELD(actor_isolation_identity, "actor_isolation_identity");
   READ_EFFECT_FIELD(executor_affinity_identity, "executor_affinity_identity");
   READ_EFFECT_FIELD(ownership_identity, "ownership_identity");
+  READ_EFFECT_FIELD(async_abi_identity, "async_abi_identity");
 #undef READ_EFFECT_FIELD
   return result;
 }
@@ -188,6 +340,7 @@ Object EncodeDeclaration(const InterfaceDeclarationIdentity &declaration) {
       {"stable_id", declaration.stable_id},
       {"kind", declaration.kind},
       {"qualified_name", declaration.qualified_name},
+      {"export_root", declaration.export_root},
       {"canonical_type_identity", declaration.canonical_type_identity},
       {"effects", EncodeEffects(declaration.effects)}};
   if (!declaration.native_symbol_name.empty())
@@ -203,7 +356,7 @@ llvm::Expected<InterfaceDeclarationIdentity> DecodeDeclaration(
   const auto *object = value.getAsObject();
   if (!object) return Invalid(llvm::formatv("{0}: expected object", path).str());
   if (auto error = CheckKeys(*object,
-                             {"stable_id", "kind", "qualified_name",
+                             {"stable_id", "kind", "qualified_name", "export_root",
                               "canonical_type_identity", "effects", "spi_group",
                               "native_symbol_name"},
                              path))
@@ -232,6 +385,7 @@ llvm::Expected<InterfaceDeclarationIdentity> DecodeDeclaration(
   READ_DECL_FIELD(stable_id, "stable_id");
   READ_DECL_FIELD(kind, "kind");
   READ_DECL_FIELD(qualified_name, "qualified_name");
+  READ_DECL_FIELD(export_root, "export_root");
   READ_DECL_FIELD(canonical_type_identity, "canonical_type_identity");
 #undef READ_DECL_FIELD
   auto *effects = object->getObject("effects");
@@ -279,7 +433,7 @@ llvm::Error ValidateForEncoding(
     return value.size() <= kMaxStringBytes && llvm::json::isUTF8(value);
   };
   if (sidecar.schema_major != kInterfaceSchemaMajor ||
-      sidecar.schema_minor > kInterfaceSchemaMinor)
+      sidecar.schema_minor != kInterfaceSchemaMinor)
     return Invalid("unsupported semantic interface schema version");
   if (!IsSha256(sidecar.canonical_source_sha256))
     return Invalid("source binding must be a lowercase SHA256 digest");
@@ -319,9 +473,1024 @@ llvm::Error ValidateForEncoding(
   const bool has_names =
       std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(),
                   [](const auto &d) { return !d.native_symbol_name.empty(); });
+  const bool has_lifecycle =
+      std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(),
+                  HasCxxClassLifecycleIdentity);
+  const bool lifecycle_capability =
+      std::find(sidecar.required_semantics.begin(),
+                sidecar.required_semantics.end(),
+                kCxxClassLifecycleSemantic) != sidecar.required_semantics.end();
+  if (has_lifecycle != lifecycle_capability)
+    return Invalid(
+        "C++ class lifecycle declarations and required capability must agree");
+  const bool has_structure =
+      std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(),
+                  HasCxxClassStructureIdentity);
+  const bool structure_capability =
+      std::find(sidecar.required_semantics.begin(),
+                sidecar.required_semantics.end(),
+                kCxxClassStructureSemantic) != sidecar.required_semantics.end();
+  if (has_structure != structure_capability ||
+      (has_structure && !has_lifecycle))
+    return Invalid("C++ class structure declarations require matching "
+                   "structure and lifecycle capabilities");
+  const bool has_dispatch =
+      std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(),
+                  HasCxxClassDispatchIdentity);
+  const bool dispatch_capability =
+      std::find(sidecar.required_semantics.begin(),
+                sidecar.required_semantics.end(),
+                kCxxClassDispatchSemantic) != sidecar.required_semantics.end();
+  if (has_dispatch != dispatch_capability ||
+      (has_dispatch && !has_lifecycle))
+    return Invalid("C++ class dispatch declarations require matching dispatch "
+                   "and lifecycle capabilities");
+  const bool has_namespaces =
+      std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(),
+                  HasCxxNamespaceIdentity);
+  const bool namespace_capability =
+      std::find(sidecar.required_semantics.begin(),
+                sidecar.required_semantics.end(),
+                kCxxNamespaceSemantic) != sidecar.required_semantics.end();
+  if (has_namespaces != namespace_capability)
+    return Invalid("C++ namespace identity and required capability must agree");
+  const bool has_nested = std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(), HasCxxNestedTypeIdentity);
+  const bool nested_capability =
+      std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+                kCxxNestedTypeSemantic) != sidecar.required_semantics.end();
+  if (has_nested != nested_capability)
+    return Invalid("C++ nested type identity and required capability must agree");
+  const bool has_using=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxUsingIdentity);
+  const bool using_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),
+                                     kCxxUsingSemantic)!=sidecar.required_semantics.end();
+  if(has_using!=using_capability) return Invalid("C++ using identity and required capability must agree");
+  const bool has_expressions = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(),
+      HasCxxDeclarationExpressionIdentity);
+  const bool expression_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxDeclarationExpressionSemantic) != sidecar.required_semantics.end();
+  if (has_expressions != expression_capability)
+    return Invalid("C++ declaration expression identity and required capability must agree");
+  const bool c_inline_definitions=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCInlineDefinitionIdentity);
+  const bool c_inline_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCInlineDefinitionSemantic)!=sidecar.required_semantics.end();
+  const bool c_inline_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &declaration){return !HasCInlineDefinitionIdentity(declaration) || declaration.kind=="Function";});
+  if(c_inline_definitions!=c_inline_capability || !c_inline_owners)
+    return Invalid("C inline definition identity and capability must agree on a function owner");
+  const bool has_definitions = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxDefinitionIdentity);
+  const bool definition_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxDefinitionSemantic) != sidecar.required_semantics.end();
+  if (has_definitions != definition_capability)
+    return Invalid("C++ definition identity and required capability must agree");
+  const bool has_comparisons = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxDefaultedComparisonIdentity);
+  const bool comparison_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxDefaultedComparisonSemantic) != sidecar.required_semantics.end();
+  if (has_comparisons != comparison_capability)
+    return Invalid("C++ defaulted comparison identity and required capability must agree");
+  const bool has_out_of_line_defaulting = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxOutOfLineDefaultingIdentity);
+  const bool defaulting_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxOutOfLineDefaultingSemantic) != sidecar.required_semantics.end();
+  if (has_out_of_line_defaulting != defaulting_capability)
+    return Invalid("C++ out-of-line defaulting identity and required capability must agree");
+  const bool has_immediate_defaulting = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxImmediateDefaultingIdentity);
+  const bool immediate_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxImmediateDefaultingSemantic) != sidecar.required_semantics.end();
+  if (has_immediate_defaulting != immediate_capability)
+    return Invalid("C++ immediate defaulting identity and required capability must agree");
+  const bool has_namespace_attributes = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxNamespaceAttributeIdentity);
+  const bool namespace_attribute_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxNamespaceAttributeSemantic) != sidecar.required_semantics.end();
+  if (has_namespace_attributes != namespace_attribute_capability)
+    return Invalid("C++ namespace attribute identity and required capability must agree");
+  const bool has_lambdas = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxLambdaExpressionIdentity);
+  const bool lambda_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxLambdaExpressionSemantic) != sidecar.required_semantics.end();
+  if (has_lambdas != lambda_capability)
+    return Invalid("C++ lambda identity and required capability must agree");
+  const bool has_thread_local = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxThreadLocalIdentity);
+  const bool thread_local_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxThreadLocalSemantic) != sidecar.required_semantics.end();
+  if (has_thread_local != thread_local_capability)
+    return Invalid("C++ thread-local identity and required capability must agree");
+  const bool has_friends = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxFriendIdentity);
+  const bool friend_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxFriendSemantic) != sidecar.required_semantics.end();
+  const bool friend_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxFriendIdentity(d) || d.kind!="Namespace";});
+  if (has_friends != friend_capability || !friend_owners)
+    return Invalid("C++ friend identity and required capability must agree");
+  const bool has_blocks = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxBlockExpressionIdentity);
+  const bool blocks_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxBlockExpressionSemantic) != sidecar.required_semantics.end();
+  if (has_blocks != blocks_capability)
+    return Invalid("C++ blocks expression identity and required capability must agree");
+  const bool has_statements = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxStatementExpressionIdentity);
+  const bool statements_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxStatementExpressionSemantic) != sidecar.required_semantics.end();
+  if (has_statements != statements_capability)
+    return Invalid("C++ statements expression identity and required capability must agree");
+  const bool has_sdk_runtime = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasSdkRuntimeDeclarationIdentity);
+  const bool sdk_runtime_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kSdkRuntimeDeclarationSemantic) != sidecar.required_semantics.end();
+  if (has_sdk_runtime != sdk_runtime_capability)
+    return Invalid("SDK runtime declaration identity and required capability must agree");
+  if (has_sdk_runtime && std::none_of(
+      sidecar.required_semantics.begin(),sidecar.required_semantics.end(),
+      [](const auto &semantic) { return semantic.starts_with("objc3.sdk-runtime-frames.v4."); }))
+    return Invalid("SDK runtime declarations require their pinned runtime header contract");
+  const bool has_async_definitions = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxAsyncDefinitionIdentity);
+  const bool async_definition_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxAsyncDefinitionSemantic) != sidecar.required_semantics.end();
+  if (has_async_definitions != async_definition_capability)
+    return Invalid("C++ async definition identity and required capability must agree");
+  const bool native_dependent_await = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasNativeDependentAwaitIdentity);
+  const bool native_dependent_await_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNativeDependentAwaitSemantic) != sidecar.required_semantics.end();
+  if (native_dependent_await != native_dependent_await_capability)
+    return Invalid("native dependent await identity and required capability must agree");
+  const bool nsobject_storage = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasNSObjectStorageIdentity);
+  const bool nsobject_storage_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNSObjectStorageSemantic) != sidecar.required_semantics.end();
+  if (nsobject_storage != nsobject_storage_capability)
+    return Invalid("NSObject storage identity and required capability must agree");
+  const bool automatic_owner_unwind = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasAutomaticOwnerUnwindIdentity);
+  const bool automatic_owner_unwind_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kAutomaticOwnerUnwindSemantic) != sidecar.required_semantics.end();
+  if (automatic_owner_unwind != automatic_owner_unwind_capability)
+    return Invalid("automatic owner unwind identity and required capability must agree");
+  const bool native_array_lifetimes = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasNativeArrayLifetimeIdentity);
+  const bool native_array_lifetimes_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNativeArrayLifetimeSemantic) != sidecar.required_semantics.end();
+  if (native_array_lifetimes != native_array_lifetimes_capability)
+    return Invalid("native array lifetime identity and required capability must agree");
+  const bool incomplete_templates = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxIncompleteTemplateIdentity);
+  const bool incomplete_template_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kCxxIncompleteTemplateSemantic) != sidecar.required_semantics.end();
+  const bool incomplete_template_owners = std::all_of(sidecar.declarations.begin(), sidecar.declarations.end(),
+      [](const auto &d) {return !HasCxxIncompleteTemplateIdentity(d) || d.kind=="ClassTemplate" || d.kind=="VarTemplate" || d.kind=="CXXRecord" || d.kind=="VarTemplatePartialSpecialization" || d.kind=="VarTemplateSpecialization" || d.kind=="ClassTemplateSpecialization" || d.kind=="ClassTemplatePartialSpecialization";});
+  if (incomplete_templates != incomplete_template_capability || !incomplete_template_owners)
+    return Invalid("incomplete template declaration identity and required capability must agree");
+  const bool native_subobjects = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasNativeSubobjectIdentity);
+  const bool native_subobjects_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNativeSubobjectSemantic) != sidecar.required_semantics.end();
+  if (native_subobjects != native_subobjects_capability)
+    return Invalid("native subobject cleanup identity and required capability must agree");
+  const bool native_allocation = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasNativeAllocationIdentity);
+  const bool native_allocation_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNativeAllocationSemantic) != sidecar.required_semantics.end();
+  if (native_allocation != native_allocation_capability)
+    return Invalid("native allocation cleanup identity and required capability must agree");
+  const bool native_disposal = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasNativeDisposalIdentity);
+  const bool native_disposal_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNativeDisposalSemantic) != sidecar.required_semantics.end();
+  if (native_disposal != native_disposal_capability)
+    return Invalid("native disposal identity and required capability must agree");
+  const bool initialized_owners = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasInitializedOwnerIdentity);
+  const bool initialized_owner_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kInitializedOwnerSemantic) != sidecar.required_semantics.end();
+  if (initialized_owners != initialized_owner_capability)
+    return Invalid("initialized owner prefix identity and required capability must agree");
+  const bool native_finally = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasNativeFinallyIdentity);
+  const bool native_finally_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNativeFinallySemantic) != sidecar.required_semantics.end();
+  if (native_finally != native_finally_capability)
+    return Invalid("native finally identity and required capability must agree");
+  const bool managed_scopes = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasManagedRuntimeScopeIdentity);
+  const bool managed_scope_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kManagedRuntimeScopeSemantic) != sidecar.required_semantics.end();
+  if (managed_scopes != managed_scope_capability)
+    return Invalid("managed runtime scope identity and required capability must agree");
+  const bool receiver_results = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasBorrowedReceiverResultIdentity);
+  const bool receiver_result_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kBorrowedReceiverResultSemantic) != sidecar.required_semantics.end();
+  if (receiver_results != receiver_result_capability)
+    return Invalid("borrowed receiver result identity and required capability must agree");
+  const bool interior_storage = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasBorrowedInteriorStorageIdentity);
+  const bool interior_storage_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kBorrowedInteriorStorageSemantic) != sidecar.required_semantics.end();
+  if (interior_storage != interior_storage_capability)
+    return Invalid("borrowed interior storage identity and required capability must agree");
+  const bool borrowed_callables = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasBorrowedCallableOwnerIdentity);
+  const bool borrowed_callable_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kBorrowedCallableOwnerSemantic) != sidecar.required_semantics.end();
+  if (borrowed_callables != borrowed_callable_capability)
+    return Invalid("borrowed callable owner identity and required capability must agree");
+  const bool consuming = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasAsyncConsumedOwnershipIdentity);
+  const bool consuming_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kAsyncConsumedOwnershipSemantic) != sidecar.required_semantics.end();
+  if (consuming != consuming_capability)
+    return Invalid("async consuming ownership identity and required capability must agree");
+  const bool dependent_types = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasDependentKeyPathTypeIdentity);
+  const bool dependent_type_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kDependentKeyPathTypeSemantic) != sidecar.required_semantics.end();
+  const bool dependent_type_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v2") != sidecar.required_semantics.end();
+  if (dependent_types != dependent_type_capability || (dependent_type_capability && !dependent_type_paths))
+    return Invalid("dependent key-path type identity and required type/key-path capabilities must agree");
+  const bool dependent_literals = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasDependentKeyPathLiteralIdentity);
+  const bool dependent_literal_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kDependentKeyPathLiteralSemantic) != sidecar.required_semantics.end();
+  const bool dependent_literal_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v2") != sidecar.required_semantics.end();
+  if (dependent_literals != dependent_literal_capability || (dependent_literal_capability && !dependent_literal_paths))
+    return Invalid("dependent key-path literal identity and required literal/key-path capabilities must agree");
+  const bool checked_reads = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasCheckedKeyPathReadIdentity);
+  const bool checked_read_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kCheckedKeyPathReadSemantic) != sidecar.required_semantics.end();
+  const bool checked_read_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v2") != sidecar.required_semantics.end();
+  if (checked_reads != checked_read_capability || (checked_read_capability && !checked_read_paths))
+    return Invalid("checked key-path read identity and required read/key-path capabilities must agree");
+  const bool inline_closures=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxInlineClosureObjectIdentity);
+  const bool closure_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxInlineClosureObjectSemantic)!=sidecar.required_semantics.end();
+  const bool closure_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return d.kind!="Namespace" || d.canonical_type_identity.find(";cxx-inline-closure-objects:v6;")==std::string::npos;});
+  if(inline_closures!=closure_capability || !closure_owners)
+    return Invalid("C++ inline closure object identity and required capability must agree");
+  const bool base_adjustment=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxBaseAdjustmentIdentity);
+  const bool base_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxBaseAdjustmentSemantic)!=sidecar.required_semantics.end();
+  const bool base_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return d.kind!="Namespace" || d.canonical_type_identity.find(";cxx-base-adjustment-expressions:v1;")==std::string::npos;});
+  if(base_adjustment!=base_capability || !base_owners)
+    return Invalid("C++ base-adjustment expression identity and required capability must agree");
+  const bool special_member_selection=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxSpecialMemberSelectionIdentity);
+  const bool selection_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxSpecialMemberSelectionSemantic)!=sidecar.required_semantics.end();
+  const bool selection_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return d.kind!="Namespace" || d.canonical_type_identity.find(";cxx-special-member-selection:v1;")==std::string::npos;});
+  if(special_member_selection!=selection_capability || !selection_owners)
+    return Invalid("C++ special-member selection identity and required capability must agree");
+  const bool native_cxx_async=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeCxxAsyncImportIdentity);
+  const bool native_async_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeCxxAsyncImportSemantic)!=sidecar.required_semantics.end();
+  const bool native_async_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return d.kind!="Namespace" || d.canonical_type_identity.find(";native-cxx-async-import:v1;")==std::string::npos;});
+  if(native_cxx_async!=native_async_capability || !native_async_owners)
+    return Invalid("native C++ async import identity and required capability must agree");
+  const bool virtual_calls=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxVirtualCallIdentity);
+  const bool virtual_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxVirtualCallSemantic)!=sidecar.required_semantics.end();
+  const bool virtual_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return d.kind!="Namespace" || d.canonical_type_identity.find(";cxx-virtual-call-expressions:v1;")==std::string::npos;});
+  if(virtual_calls!=virtual_capability || !virtual_owners)
+    return Invalid("C++ virtual-call identity and required capability must agree");
+  const bool thread_safety=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeThreadSafetyIdentity);
+  const bool thread_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeThreadSafetySemantic)!=sidecar.required_semantics.end();
+  const bool thread_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasNativeThreadSafetyIdentity(d) || d.kind!="Namespace";});
+  if(thread_safety!=thread_capability || (thread_capability && !thread_owners))
+    return Invalid("native thread-safety identity and required capability must agree");
+  const bool emission_policy=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeEmissionPolicyIdentity);
+  const bool emission_policy_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeEmissionPolicySemantic)!=sidecar.required_semantics.end();
+  const bool emission_policy_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasNativeEmissionPolicyIdentity(d) || d.kind!="Namespace";});
+  const bool cpu_variant_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),[](const auto &d) {
+    const bool marked=d.canonical_type_identity.find(";native-cpu-variant:v1;")!=std::string::npos;
+    const auto target=d.stable_id.rfind("@cpu-target@");
+    const auto version=d.stable_id.rfind("@cpu-version@");
+    if(target!=std::string::npos && version!=std::string::npos)return false;
+    const auto at=target!=std::string::npos?target:version;
+    const size_t prefix=target!=std::string::npos?12:13;
+    if(!marked && at==std::string::npos)return true;
+    if(!marked || at==std::string::npos || d.stable_id.size()!=at+prefix+64 ||
+        (d.kind!="Function" && d.kind!="CXXMethod") || !HasNativeEmissionPolicyIdentity(d))return false;
+    return std::all_of(d.stable_id.begin()+at+prefix,d.stable_id.end(),[](char c) {
+      return (c>='0' && c<='9') || (c>='a' && c<='f');
+    });
+  });
+  if(emission_policy!=emission_policy_capability || !cpu_variant_owners || (emission_policy_capability && !emission_policy_owners))
+    return Invalid("native emission policy identity and required capability must agree");
+  const bool borrowed_unions=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasBorrowedUnionStorageIdentity);
+  const bool borrowed_union_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kBorrowedUnionStorageSemantic)!=sidecar.required_semantics.end();
+  if(borrowed_unions!=borrowed_union_capability)
+    return Invalid("borrowed union byte storage identity and required capability must agree");
+  const bool function_effects=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeFunctionEffectIdentity);
+  const bool function_effect_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeFunctionEffectSemantic)!=sidecar.required_semantics.end();
+  const bool function_effect_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasNativeFunctionEffectIdentity(d) || IsNativeFunctionEffectOwner(d);});
+  if(function_effects!=function_effect_capability || !function_effect_owners)
+    return Invalid("native function effect identity and required capability must agree");
+  const bool out_of_line_definitions=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxOutOfLineDefinitionIdentity);
+  const bool out_of_line_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxOutOfLineDefinitionSemantic)!=sidecar.required_semantics.end();
+  const bool out_of_line_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxOutOfLineDefinitionIdentity(d) || IsCxxOutOfLineDefinitionOwner(d);});
+  if(out_of_line_definitions!=out_of_line_capability || !out_of_line_owners)
+    return Invalid("out-of-line method definition identity and required capability must agree");
+  const bool deduction_guides=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxDeductionGuideIdentity);
+  const bool deduction_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxDeductionGuideSemantic)!=sidecar.required_semantics.end();
+  const bool deduction_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxDeductionGuideIdentity(d) || IsCxxDeductionGuideOwner(d);});
+  if(deduction_guides!=deduction_capability || !deduction_owners)
+    return Invalid("deduction guide identity and required capability must agree");
+  const bool explicit_specifiers=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxExplicitSpecifierIdentity);
+  const bool explicit_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxExplicitSpecifierSemantic)!=sidecar.required_semantics.end();
+  const bool explicit_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxExplicitSpecifierIdentity(d) || IsCxxExplicitSpecifierOwner(d);});
+  if(explicit_specifiers!=explicit_capability || !explicit_owners)
+    return Invalid("conditional explicit specifier identity and required capability must agree");
+  const bool object_policies=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeObjectPolicyIdentity);
+  const bool object_policy_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeObjectPolicySemantic)!=sidecar.required_semantics.end();
+  const bool object_policy_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasNativeObjectPolicyIdentity(d) || IsNativeObjectPolicyOwner(d);});
+  if(object_policies!=object_policy_capability || !object_policy_owners)
+    return Invalid("native object policy identity and required capability must agree");
+  const bool object_expressions=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeObjectExpressionIdentity);
+  const bool object_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeObjectExpressionSemantic)!=sidecar.required_semantics.end();
+  const bool object_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasNativeObjectExpressionIdentity(d) || IsNativeObjectExpressionOwner(d);});
+  if(object_expressions!=object_capability || !object_owners)
+    return Invalid("native object expression identity and required capability must agree");
+  const bool objc_generic_signatures = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(),
+                                                  HasObjCGenericSignatureIdentity);
+  const bool objc_generic_capability = std::ranges::find(sidecar.required_semantics, kObjCGenericSignaturesSemantic) !=
+                                      sidecar.required_semantics.end();
+  if (objc_generic_signatures != objc_generic_capability)
+    return Invalid("Objective-C generic signature identity and required capability must agree");
+  const bool external_bindings=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeExternalBindingIdentity);
+  const bool external_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeExternalBindingSemantic)!=sidecar.required_semantics.end();
+  const bool external_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasNativeExternalBindingIdentity(d) || IsNativeExternalBindingOwner(d);});
+  if(external_bindings!=external_capability || !external_owners)
+    return Invalid("native external binding identity and required capability must agree");
+  const bool lifetime_annotations=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeLifetimeAnnotationIdentity);
+  const bool lifetime_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeLifetimeAnnotationSemantic)!=sidecar.required_semantics.end();
+  const bool lifetime_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasNativeLifetimeAnnotationIdentity(d) || IsNativeLifetimeAnnotationOwner(d);});
+  if(lifetime_annotations!=lifetime_capability || !lifetime_owners)
+    return Invalid("native lifetime annotation identity and required capability must agree");
+  const bool function_policies=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeFunctionPolicyIdentity);
+  const bool function_policy_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeFunctionPolicySemantic)!=sidecar.required_semantics.end();
+  const bool function_policy_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasNativeFunctionPolicyIdentity(d) || IsNativeFunctionPolicyOwner(d);});
+  if(function_policies!=function_policy_capability || !function_policy_owners)
+    return Invalid("native function policy identity and required capability must agree");
+  const bool actor_receivers=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasActorReceiverBindingIdentity);
+  const bool receiver_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kActorReceiverBindingSemantic)!=sidecar.required_semantics.end();
+  const bool receiver_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasActorReceiverBindingIdentity(d) || IsActorReceiverBindingOwner(d);});
+  if(actor_receivers!=receiver_capability || !receiver_owners)
+    return Invalid("actor receiver binding identity and required capability must agree");
+  const bool c_overloads=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCOverloadableIdentity);
+  const bool overload_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCOverloadableSemantic)!=sidecar.required_semantics.end();
+  const bool overload_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCOverloadableIdentity(d) || d.kind=="Function";});
+  if(c_overloads!=overload_capability || !overload_owners)
+    return Invalid("C overloadable identity and required capability must agree");
+  const bool control_flow=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeControlFlowIdentity);
+  const bool control_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeControlFlowSemantic)!=sidecar.required_semantics.end();
+  const bool control_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasNativeControlFlowIdentity(d) || d.kind!="Namespace";});
+  if(control_flow!=control_capability || !control_owners)
+    return Invalid("native control-flow identity and required capability must agree");
+  const bool constant_control=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxConstantEvaluationControlIdentity);
+  const bool constant_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxConstantEvaluationControlSemantic)!=sidecar.required_semantics.end();
+  const bool constant_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxConstantEvaluationControlIdentity(d) || d.kind!="Namespace";});
+  if(constant_control!=constant_capability || !constant_owners)
+    return Invalid("C++ constant-evaluation control identity and required capability must agree");
+  const bool manual_proofs=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasManualFamilyCallProofIdentity);
+  const bool manual_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kManualFamilyCallProofSemantic)!=sidecar.required_semantics.end();
+  const bool manual_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasManualFamilyCallProofIdentity(d) || d.kind!="Namespace";});
+  if(manual_proofs!=manual_capability || !manual_owners)
+    return Invalid("manual family call proof identity and required capability must agree");
+  const bool borrowed_proofs=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasBorrowedResultProofIdentity);
+  const bool borrowed_proof_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kBorrowedResultProofSemantic)!=sidecar.required_semantics.end();
+  const bool borrowed_proof_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasBorrowedResultProofIdentity(d) || d.kind!="Namespace";});
+  if(borrowed_proofs!=borrowed_proof_capability || (borrowed_proof_capability && !borrowed_proof_owners))
+    return Invalid("borrowed result proof identity and required capability must agree");
+  const bool native_enums=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeUnnamedEnumIdentity);
+  const bool native_enum_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeUnnamedEnumSemantic)!=sidecar.required_semantics.end();
+  if(native_enums!=native_enum_capability)
+    return Invalid("native unnamed enum identity and required capability must agree");
+  const bool native_storage=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeStorageLifetimeIdentity);
+  const bool native_storage_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeStorageLifetimeSemantic)!=sidecar.required_semantics.end();
+  const bool native_storage_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasNativeStorageLifetimeIdentity(d) || d.kind!="Namespace";});
+  if(native_storage!=native_storage_capability || (native_storage_capability && !native_storage_owners))
+    return Invalid("native storage lifetime identity and required capability must agree");
+  const bool atomic_managed=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasAtomicManagedPropertyIdentity);
+  const bool atomic_managed_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kAtomicManagedPropertySemantic)!=sidecar.required_semantics.end();
+  if(atomic_managed!=atomic_managed_capability)
+    return Invalid("atomic managed property identity and required capability must agree");
+  const bool lambda_argument_abi=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeLambdaArgumentABIIdentity);
+  const bool lambda_argument_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeLambdaArgumentABISemantic)!=sidecar.required_semantics.end();
+  if(lambda_argument_abi!=lambda_argument_capability)
+    return Invalid("native owning lambda argument ABI identity and required capability must agree");
+  const bool mrc_record_payload=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeMRCRecordPayloadIdentity);
+  const bool mrc_record_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeMRCRecordPayloadSemantic)!=sidecar.required_semantics.end();
+  if(mrc_record_payload!=mrc_record_capability)
+    return Invalid("native MRC record payload identity and required capability must agree");
+  const bool arc_record_payload=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeARCRecordPayloadIdentity);
+  const bool arc_record_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeARCRecordPayloadSemantic)!=sidecar.required_semantics.end();
+  if(arc_record_payload!=arc_record_capability)
+    return Invalid("native ARC record payload identity and required capability must agree");
+  const bool carrier_lambdas=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeCarrierLambdaIdentity);
+  const bool carrier_lambda_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeCarrierLambdaSemantic)!=sidecar.required_semantics.end();
+  if(carrier_lambdas!=carrier_lambda_capability)
+    return Invalid("native carrier lambda identity and required capability must agree");
+  const bool byref_storage=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeByrefStorageIdentity);
+  const bool byref_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeByrefStorageSemantic)!=sidecar.required_semantics.end();
+  if(byref_storage!=byref_capability)
+    return Invalid("native byref storage identity and required capability must agree");
+  const bool aligned_blocks=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeBlockAlignmentIdentity);
+  const bool aligned_block_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeBlockAlignmentSemantic)!=sidecar.required_semantics.end();
+  if(aligned_blocks!=aligned_block_capability)
+    return Invalid("native Block alignment identity and required capability must agree");
+  const bool mixed_calls=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasMixedCarrierCallIdentity);
+  const bool mixed_call_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kMixedCarrierCallSemantic)!=sidecar.required_semantics.end();
+  if(mixed_calls!=mixed_call_capability)
+    return Invalid("mixed ARC/C++ carrier call identity and required capability must agree");
+  const bool cpp_runtime=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCppCarrierRuntimeIdentity);
+  const bool cpp_runtime_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCppCarrierRuntimeSemantic)!=sidecar.required_semantics.end();
+  if(cpp_runtime!=cpp_runtime_capability)
+    return Invalid("C++ carrier runtime identity and required capability must agree");
+  const bool cpp_record_result=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCheckedCppRecordResultIdentity);
+  const bool cpp_record_result_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCheckedCppRecordResultSemantic)!=sidecar.required_semantics.end();
+  if(cpp_record_result!=cpp_record_result_capability)
+    return Invalid("checked C++ record result identity and required capability must agree");
+  const bool cpp_storage=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCppCarrierStorageIdentity);
+  const bool cpp_storage_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCppCarrierStorageSemantic)!=sidecar.required_semantics.end();
+  if(cpp_storage!=cpp_storage_capability)
+    return Invalid("C++ carrier storage identity and required capability must agree");
+  const bool checked_cpp_messages=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCheckedCppMessageIdentity);
+  const bool checked_cpp_message_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCheckedCppMessageSemantic)!=sidecar.required_semantics.end();
+  if(checked_cpp_messages!=checked_cpp_message_capability)
+    return Invalid("checked C++ message identity and required capability must agree");
+  const bool cpp_composition=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCppCarrierCompositionIdentity);
+  const bool cpp_composition_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCppCarrierCompositionSemantic)!=sidecar.required_semantics.end();
+  if(cpp_composition!=cpp_composition_capability)
+    return Invalid("C++ carrier composition identity and required capability must agree");
+  const bool cpp_carrier_calls=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCppCarrierCallIdentity);
+  const bool cpp_carrier_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCppCarrierCallSemantic)!=sidecar.required_semantics.end();
+  if(cpp_carrier_calls!=cpp_carrier_capability)
+    return Invalid("C++ carrier call identity and required capability must agree");
+  const bool resource_paths = std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasResourceKeyPathValueIdentity);
+  const bool resource_path_capability = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kResourceKeyPathValueSemantic)!=sidecar.required_semantics.end();
+  const bool resource_typed_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v2")!=sidecar.required_semantics.end();
+  if (resource_paths!=resource_path_capability || (resource_path_capability && !resource_typed_paths))
+    return Invalid("resource key-path identity and required resource/key-path capabilities must agree");
+  const bool nullable_writes = std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNullableKeyPathWriteIdentity);
+  const bool nullable_write_capability = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNullableKeyPathWriteSemantic)!=sidecar.required_semantics.end();
+  const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v2")!=sidecar.required_semantics.end();
+  if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
+    return Invalid("nullable key-path write identity and required write/key-path capabilities must agree");
+  const bool has_native_attributes=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasNativeDeclarationAttributeIdentity);
+  const bool native_attribute_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kNativeDeclarationAttributeSemantic)!=sidecar.required_semantics.end();
+  const bool native_attribute_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasNativeDeclarationAttributeIdentity(d) || d.kind!="Namespace";});
+  if (has_native_attributes!=native_attribute_capability || !native_attribute_owners)
+    return Invalid("native declaration attribute identities and required capability must agree");
+  const bool unnamed_projections=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxUnnamedTemplateProjectionIdentity);
+  const bool unnamed_projection_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxUnnamedTemplateProjectionSemantic)!=sidecar.required_semantics.end();
+  const bool unnamed_projection_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxUnnamedTemplateProjectionIdentity(d) || d.kind!="Namespace";});
+  if (unnamed_projections!=unnamed_projection_capability || !unnamed_projection_owners)
+    return Invalid("unnamed template projection identities and required capability must agree");
+  const bool standard_specializations=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxStandardLibrarySpecializationIdentity);
+  const bool standard_specialization_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxStandardLibrarySpecializationSemantic)!=sidecar.required_semantics.end();
+  const bool standard_specialization_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),[](const auto &d){
+    return !HasCxxStandardLibrarySpecializationIdentity(d) ||
+        (HasCxxStandardLibraryIdentity(d) && (d.kind=="ClassTemplateSpecialization" || d.kind=="ClassTemplatePartialSpecialization" ||
+         d.kind=="VarTemplateSpecialization" || d.kind=="VarTemplatePartialSpecialization"));});
+  if(standard_specializations!=standard_specialization_capability || !standard_specialization_owners)
+    return Invalid("standard-library specialization identity, native headers, owner kind and required capability must agree");
+  const bool standard_library=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxStandardLibraryIdentity);
+  const bool standard_library_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxStandardLibrarySemantic)!=sidecar.required_semantics.end();
+  const bool standard_library_contracts=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),[](const auto &d){
+    std::vector<std::string> headers;return (!HasCxxStandardLibraryIdentity(d) || d.kind!="Namespace") && ReadCxxStandardLibraryHeaders(d,headers);});
+  if(standard_library!=standard_library_capability || !standard_library_contracts)
+    return Invalid("standard library header identities and required capability must agree");
+  const bool standard_coroutines=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxStandardCoroutineIdentity);
+  const bool standard_coroutine_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxStandardCoroutineSemantic)!=sidecar.required_semantics.end();
+  const bool standard_coroutine_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),[](const auto &d){
+    return (!HasCxxStandardCoroutineIdentity(d) || d.kind!="Namespace") &&
+        (d.canonical_type_identity.find(";cxx-coroutine-traits-specializations:v1;")==std::string::npos ||
+         (HasCxxStandardCoroutineIdentity(d) && (d.kind=="ClassTemplateSpecialization" || d.kind=="ClassTemplatePartialSpecialization")));});
+  if (standard_coroutines!=standard_coroutine_capability || !standard_coroutine_owners)
+    return Invalid("standard coroutine identities, specialization owners and required capability must agree");
+  const bool has_cxx_coroutine_bodies=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxCoroutineBodyIdentity);
+  const bool cxx_coroutine_body_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxCoroutineBodySemantic)!=sidecar.required_semantics.end();
+  const bool cxx_coroutine_body_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxCoroutineBodyIdentity(d) || d.kind!="Namespace";});
+  if (has_cxx_coroutine_bodies!=cxx_coroutine_body_capability || !cxx_coroutine_body_owners)
+    return Invalid("C++ coroutine body identities and required capability must agree");
+  const bool has_foreign_import_attributes=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasForeignImportAttributeIdentity);
+  const bool foreign_import_attribute_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kForeignImportAttributeSemantic)!=sidecar.required_semantics.end();
+  const bool foreign_import_attribute_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasForeignImportAttributeIdentity(d) || d.kind!="Namespace";});
+  if (has_foreign_import_attributes!=foreign_import_attribute_capability || !foreign_import_attribute_owners)
+    return Invalid("foreign import attribute identities and required capability must agree");
+  const bool has_nested_factory_types=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxNestedFactoryTypeIdentity);
+  const bool nested_factory_type_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxNestedFactoryTypeSemantic)!=sidecar.required_semantics.end();
+  const bool nested_factory_type_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxNestedFactoryTypeIdentity(d) || d.kind!="Namespace";});
+  if (has_nested_factory_types!=nested_factory_type_capability || !nested_factory_type_owners)
+    return Invalid("nested factory type identities and required capability must agree");
+  const bool has_lambda_factory_results=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxLambdaFactoryResultIdentity);
+  const bool lambda_factory_result_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxLambdaFactoryResultSemantic)!=sidecar.required_semantics.end();
+  const bool lambda_factory_result_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxLambdaFactoryResultIdentity(d) || d.kind!="Namespace";});
+  if (has_lambda_factory_results!=lambda_factory_result_capability || !lambda_factory_result_owners)
+    return Invalid("lambda factory result identities and required capability must agree");
+  const bool has_closure_result_projections=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxClosureResultProjectionIdentity);
+  const bool closure_result_projection_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClosureResultProjectionSemantic)!=sidecar.required_semantics.end();
+  const bool closure_result_projection_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxClosureResultProjectionIdentity(d) || d.kind!="Namespace";});
+  if (has_closure_result_projections!=closure_result_projection_capability || !closure_result_projection_owners)
+    return Invalid("closure result projection identities and required capability must agree");
+  const bool has_factory_value_arguments=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxFactoryValueArgumentIdentity);
+  const bool factory_value_argument_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxFactoryValueArgumentSemantic)!=sidecar.required_semantics.end();
+  const bool factory_value_argument_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxFactoryValueArgumentIdentity(d) || d.kind!="Namespace";});
+  if (has_factory_value_arguments!=factory_value_argument_capability || !factory_value_argument_owners)
+    return Invalid("factory value argument identities and required capability must agree");
+  const bool has_generic_factory_projections=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxGenericFactoryProjectionIdentity);
+  const bool generic_factory_projection_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxGenericFactoryProjectionSemantic)!=sidecar.required_semantics.end();
+  const bool generic_factory_projection_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxGenericFactoryProjectionIdentity(d) || d.kind!="Namespace";});
+  if (has_generic_factory_projections!=generic_factory_projection_capability || !generic_factory_projection_owners)
+    return Invalid("generic factory projection identities and required capability must agree");
+  const bool has_factory_template_arguments=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxFactoryTemplateArgumentIdentity);
+  const bool factory_template_argument_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxFactoryTemplateArgumentSemantic)!=sidecar.required_semantics.end();
+  const bool factory_template_argument_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxFactoryTemplateArgumentIdentity(d) || d.kind!="Namespace";});
+  if (has_factory_template_arguments!=factory_template_argument_capability || !factory_template_argument_owners)
+    return Invalid("factory template argument identities and required capability must agree");
+  const bool has_factory_type_projections=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxFactoryTypeProjectionIdentity);
+  const bool factory_type_projection_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxFactoryTypeProjectionSemantic)!=sidecar.required_semantics.end();
+  const bool factory_type_projection_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxFactoryTypeProjectionIdentity(d) || d.kind!="Namespace";});
+  if (has_factory_type_projections!=factory_type_projection_capability || !factory_type_projection_owners)
+    return Invalid("factory type projection identities and required capability must agree");
+  const bool has_local_factory_results=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxLocalFactoryResultIdentity);
+  const bool local_factory_result_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxLocalFactoryResultSemantic)!=sidecar.required_semantics.end();
+  const bool local_factory_result_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxLocalFactoryResultIdentity(d) || d.kind!="Namespace";});
+  if (has_local_factory_results!=local_factory_result_capability || !local_factory_result_owners)
+    return Invalid("local factory result identities and required capability must agree");
+  const bool has_closure_factories=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxClosureFactoryIdentity);
+  const bool closure_factory_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClosureFactorySemantic)!=sidecar.required_semantics.end();
+  const bool closure_factory_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxClosureFactoryIdentity(d) || d.kind!="Namespace";});
+  if (has_closure_factories!=closure_factory_capability || !closure_factory_owners)
+    return Invalid("closure factory identities and required capability must agree");
+  const bool has_effectful_lambdas=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxEffectfulLambdaIdentity);
+  const bool effectful_lambda_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxEffectfulLambdaSemantic)!=sidecar.required_semantics.end();
+  const bool effectful_lambda_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxEffectfulLambdaIdentity(d) || d.kind!="Namespace";});
+  if (has_effectful_lambdas!=effectful_lambda_capability || !effectful_lambda_owners)
+    return Invalid("effectful lambda identities and required capability must agree");
+  const bool has_address_template_arguments=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxAddressTemplateArgumentIdentity);
+  const bool address_template_argument_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxAddressTemplateArgumentSemantic)!=sidecar.required_semantics.end();
+  const bool address_template_argument_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxAddressTemplateArgumentIdentity(d) || d.kind!="Namespace";});
+  if (has_address_template_arguments!=address_template_argument_capability || !address_template_argument_owners)
+    return Invalid("address template argument identities and required capability must agree");
+  const bool has_template_callable_projections=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxTemplateCallableProjectionIdentity);
+  const bool template_callable_projection_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxTemplateCallableProjectionSemantic)!=sidecar.required_semantics.end();
+  const bool template_callable_projection_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxTemplateCallableProjectionIdentity(d) ||
+          d.kind=="ClassTemplate" || d.kind=="FunctionTemplate" || d.kind=="TypeAliasTemplate" ||
+          d.kind=="VarTemplate" || (d.kind=="CXXRecord" && HasCxxConcreteMemberTemplateIdentity(d)) ||
+          (d.kind=="Function" && HasCxxFunctionSpecializationIdentity(d)) ||
+          (d.kind=="VarTemplateSpecialization" && HasCxxVariableSpecializationIdentity(d));});
+  if (has_template_callable_projections!=template_callable_projection_capability || !template_callable_projection_owners)
+    return Invalid("template callable projection identities and required capability must agree");
+  const bool has_effectful_template_members=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxEffectfulTemplateMemberIdentity);
+  const bool effectful_template_member_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxEffectfulTemplateMemberSemantic)!=sidecar.required_semantics.end();
+  const bool effectful_template_member_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxEffectfulTemplateMemberIdentity(d) || d.kind=="ClassTemplate" ||
+          (d.kind=="CXXRecord" && HasCxxConcreteMemberTemplateIdentity(d));});
+  if (has_effectful_template_members!=effectful_template_member_capability || !effectful_template_member_owners)
+    return Invalid("effectful template-member identities and required capability must agree");
+  const bool has_effectful_function_templates=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxEffectfulFunctionTemplateIdentity);
+  const bool effectful_function_template_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxEffectfulFunctionTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool effectful_function_template_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxEffectfulFunctionTemplateIdentity(d) || d.kind=="FunctionTemplate";});
+  if (has_effectful_function_templates!=effectful_function_template_capability || !effectful_function_template_owners)
+    return Invalid("effectful function-template identities and required capability must agree");
+  const bool has_closed_parent_patterns=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxClosedParentPatternIdentity);
+  const bool closed_parent_pattern_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClosedParentPatternSemantic)!=sidecar.required_semantics.end();
+  const bool closed_parent_pattern_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxClosedParentPatternIdentity(d) ||
+          d.kind=="ClassTemplate" || (d.kind=="CXXRecord" && HasCxxConcreteMemberTemplateIdentity(d));});
+  if (has_closed_parent_patterns!=closed_parent_pattern_capability || !closed_parent_pattern_owners)
+    return Invalid("closed-parent pattern identities and required capability must agree");
+  const bool has_closed_parent_members=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxClosedParentMemberIdentity);
+  const bool closed_parent_member_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClosedParentMemberSemantic)!=sidecar.required_semantics.end();
+  const bool closed_parent_member_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxClosedParentMemberIdentity(d) ||
+          d.kind=="ClassTemplate" || (d.kind=="CXXRecord" && HasCxxConcreteMemberTemplateIdentity(d));});
+  if (has_closed_parent_members!=closed_parent_member_capability || !closed_parent_member_owners)
+    return Invalid("closed-parent member identities and required capability must agree");
+  const bool has_dependent_member_partials=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxDependentMemberPartialIdentity);
+  const bool dependent_member_partial_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxDependentMemberPartialSemantic)!=sidecar.required_semantics.end();
+  const bool dependent_member_partial_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxDependentMemberPartialIdentity(d) ||
+          d.kind=="ClassTemplate" || (d.kind=="CXXRecord" && HasCxxConcreteMemberTemplateIdentity(d));});
+  if (has_dependent_member_partials!=dependent_member_partial_capability || !dependent_member_partial_owners)
+    return Invalid("dependent member partial identities and required capability must agree");
+  const bool has_concrete_special_members=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxConcreteSpecialMemberSpecializationIdentity);
+  const bool concrete_special_member_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxConcreteSpecialMemberSpecializationSemantic)!=sidecar.required_semantics.end();
+  const bool concrete_special_member_base=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxConcreteMemberFunctionSpecializationSemantic)!=sidecar.required_semantics.end();
+  const bool concrete_special_member_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxConcreteSpecialMemberSpecializationIdentity(d) ||
+          (d.kind=="CXXRecord" && HasCxxConcreteMemberTemplateIdentity(d) && HasCxxConcreteMemberFunctionSpecializationIdentity(d));});
+  if (has_concrete_special_members!=concrete_special_member_capability || !concrete_special_member_owners ||
+      (concrete_special_member_capability && !concrete_special_member_base))
+    return Invalid("special-member specialization identity and required callable capability must agree");
+  const bool has_concrete_member_variable_specializations=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxConcreteMemberVariableSpecializationIdentity);
+  const bool concrete_member_variable_specialization_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxConcreteMemberVariableSpecializationSemantic)!=sidecar.required_semantics.end();
+  const bool concrete_member_variable_specialization_primary=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClassTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool concrete_member_variable_specialization_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxConcreteMemberVariableSpecializationIdentity(d) ||
+          (d.kind=="CXXRecord" && HasCxxConcreteMemberTemplateIdentity(d));});
+  if (has_concrete_member_variable_specializations!=concrete_member_variable_specialization_capability || !concrete_member_variable_specialization_owners ||
+      (concrete_member_variable_specialization_capability && !concrete_member_variable_specialization_primary &&
+       std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxConcreteMemberTemplateSemantic)==sidecar.required_semantics.end()))
+    return Invalid("concrete member variable specialization identity and required primary capability must agree");
+  const bool has_concrete_member_function_specializations=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxConcreteMemberFunctionSpecializationIdentity);
+  const bool concrete_member_function_specialization_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxConcreteMemberFunctionSpecializationSemantic)!=sidecar.required_semantics.end();
+  const bool concrete_member_function_specialization_primary=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClassTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool concrete_member_function_specialization_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxConcreteMemberFunctionSpecializationIdentity(d) ||
+          (d.kind=="CXXRecord" && HasCxxConcreteMemberTemplateIdentity(d));});
+  if (has_concrete_member_function_specializations!=concrete_member_function_specialization_capability || !concrete_member_function_specialization_owners ||
+      (concrete_member_function_specialization_capability && !concrete_member_function_specialization_primary &&
+       std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxConcreteMemberTemplateSemantic)==sidecar.required_semantics.end()))
+    return Invalid("concrete member function specialization identity and required primary capability must agree");
+  const bool has_concrete_member_class_specializations=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxConcreteMemberClassSpecializationIdentity);
+  const bool concrete_member_class_specialization_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxConcreteMemberClassSpecializationSemantic)!=sidecar.required_semantics.end();
+  const bool concrete_member_class_specialization_primary=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClassTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool concrete_member_class_specialization_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxConcreteMemberClassSpecializationIdentity(d) ||
+          (d.kind=="CXXRecord" && HasCxxConcreteNestedTemplateIdentity(d));});
+  if (has_concrete_member_class_specializations!=concrete_member_class_specialization_capability || !concrete_member_class_specialization_owners ||
+      (concrete_member_class_specialization_capability && !concrete_member_class_specialization_primary &&
+       std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxConcreteNestedTemplateSemantic)==sidecar.required_semantics.end()))
+    return Invalid("concrete member class specialization identity and required primary capability must agree");
+  const bool has_detached_nested_templates=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxDetachedNestedTemplateIdentity);
+  const bool detached_nested_template_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxDetachedNestedTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool detached_nested_template_primary=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClassTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool detached_nested_template_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxDetachedNestedTemplateIdentity(d) ||
+          (d.kind=="ClassTemplate" || (d.kind=="CXXRecord" && HasCxxConcreteNestedTemplateIdentity(d)));});
+  if (has_detached_nested_templates!=detached_nested_template_capability || !detached_nested_template_owners ||
+      (detached_nested_template_capability && !detached_nested_template_primary &&
+       std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxConcreteNestedTemplateSemantic)==sidecar.required_semantics.end()))
+    return Invalid("detached nested template identity and required primary capability must agree");
+  const bool has_detached_static_data_templates=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxDetachedStaticDataTemplateIdentity);
+  const bool detached_static_data_template_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxDetachedStaticDataTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool detached_static_data_template_primary=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClassTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool detached_static_data_template_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxDetachedStaticDataTemplateIdentity(d) ||
+          (d.kind=="ClassTemplate" || (d.kind=="CXXRecord" && HasCxxConcreteMemberTemplateIdentity(d)));});
+  if (has_detached_static_data_templates!=detached_static_data_template_capability || !detached_static_data_template_owners ||
+      (detached_static_data_template_capability && !detached_static_data_template_primary &&
+       std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxConcreteMemberTemplateSemantic)==sidecar.required_semantics.end()))
+    return Invalid("detached static data template identity and required primary capability must agree");
+  const bool has_detached_callable_templates=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxDetachedCallableTemplateIdentity);
+  const bool detached_callable_template_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxDetachedCallableTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool detached_callable_template_primary=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClassTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool detached_callable_template_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxDetachedCallableTemplateIdentity(d) ||
+          (d.kind=="ClassTemplate" || (d.kind=="CXXRecord" && HasCxxConcreteMemberTemplateIdentity(d)));});
+  if (has_detached_callable_templates!=detached_callable_template_capability || !detached_callable_template_owners ||
+      (detached_callable_template_capability && !detached_callable_template_primary &&
+       std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxConcreteMemberTemplateSemantic)==sidecar.required_semantics.end()))
+    return Invalid("detached callable template identity and required primary capability must agree");
+  const bool has_variable_specialization_storages=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxVariableSpecializationStorageIdentity);
+  const bool variable_specialization_storage_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxVariableSpecializationStorageSemantic)!=sidecar.required_semantics.end();
+  const bool variable_specialization_storage_primary=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxVariableSpecializationSemantic)!=sidecar.required_semantics.end();
+  const bool variable_specialization_storage_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxVariableSpecializationStorageIdentity(d) ||
+          (d.kind=="VarTemplateSpecialization" && HasCxxVariableSpecializationIdentity(d));});
+  if (has_variable_specialization_storages!=variable_specialization_storage_capability || !variable_specialization_storage_owners ||
+      (variable_specialization_storage_capability && !variable_specialization_storage_primary))
+    return Invalid("variable specialization storage identity and required primary capability must agree");
+  const bool has_variable_partial_specializations=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxVariablePartialSpecializationIdentity);
+  const bool variable_partial_specialization_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxVariablePartialSpecializationSemantic)!=sidecar.required_semantics.end();
+  const bool variable_partial_specialization_primary=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxVariableTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool variable_partial_specialization_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxVariablePartialSpecializationIdentity(d) ||
+          (d.kind=="VarTemplate" && HasCxxVariableTemplateIdentity(d));});
+  if (has_variable_partial_specializations!=variable_partial_specialization_capability || !variable_partial_specialization_owners ||
+      (variable_partial_specialization_capability && !variable_partial_specialization_primary))
+    return Invalid("partial variable specialization identity and required primary capability must agree");
+  const bool has_class_partial_specializations=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxClassPartialSpecializationIdentity);
+  const bool class_partial_specialization_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClassPartialSpecializationSemantic)!=sidecar.required_semantics.end();
+  const bool class_partial_specialization_primary=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClassTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool class_partial_specialization_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxClassPartialSpecializationIdentity(d) ||
+          (d.kind=="ClassTemplate" && HasCxxClassTemplateIdentity(d) && HasCxxClassSpecializationIdentity(d));});
+  const bool class_partial_base=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),
+      kCxxClassSpecializationSemantic)!=sidecar.required_semantics.end();
+  if (has_class_partial_specializations!=class_partial_specialization_capability || !class_partial_specialization_owners ||
+      (class_partial_specialization_capability && (!class_partial_specialization_primary || !class_partial_base)))
+    return Invalid("partial class specialization identity and required primary capability must agree");
+  const bool has_class_specializations=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxClassSpecializationIdentity);
+  const bool class_specialization_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClassSpecializationSemantic)!=sidecar.required_semantics.end();
+  const bool class_specialization_primary=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClassTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool class_specialization_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxClassSpecializationIdentity(d) ||
+          (d.kind=="ClassTemplate" && HasCxxClassTemplateIdentity(d));});
+  if (has_class_specializations!=class_specialization_capability || !class_specialization_owners ||
+      (class_specialization_capability && !class_specialization_primary))
+    return Invalid("class specialization identity and required primary capability must agree");
+  const bool has_variable_specializations=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxVariableSpecializationIdentity);
+  const bool variable_specialization_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxVariableSpecializationSemantic)!=sidecar.required_semantics.end();
+  const bool variable_specialization_primary=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxVariableTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool variable_specialization_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxVariableSpecializationIdentity(d) ||
+          (d.kind=="VarTemplateSpecialization" && HasCxxVariableTemplateIdentity(d) &&
+           d.stable_id.starts_with("c:@VariableTemplateSpecialization@"));});
+  if (has_variable_specializations!=variable_specialization_capability || !variable_specialization_owners ||
+      (variable_specialization_capability && !variable_specialization_primary))
+    return Invalid("variable specialization identity and required primary capability must agree");
+  const bool has_function_specializations=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxFunctionSpecializationIdentity);
+  const bool function_specialization_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxFunctionSpecializationSemantic)!=sidecar.required_semantics.end();
+  const bool function_specialization_primary=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxFunctionTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool function_specialization_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxFunctionSpecializationIdentity(d) ||
+          (d.kind=="Function" && HasCxxFunctionTemplateIdentity(d) &&
+           d.stable_id.starts_with("c:@FunctionTemplateSpecialization@"));});
+  if (has_function_specializations!=function_specialization_capability || !function_specialization_owners ||
+      (function_specialization_capability && !function_specialization_primary))
+    return Invalid("function specialization identity and required primary capability must agree");
+  const bool has_template_template_parameters=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxTemplateTemplateIdentity);
+  const bool template_template_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxTemplateTemplateSemantic)!=sidecar.required_semantics.end();
+  if (has_template_template_parameters!=template_template_capability)
+    return Invalid("template-template parameter identity and required capability must agree");
+  const bool has_nominal_alias_templates=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxNominalAliasTemplateIdentity);
+  const bool nominal_alias_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxNominalAliasTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool nominal_alias_dependency=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxAliasTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool nominal_alias_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxNominalAliasTemplateIdentity(d) ||
+          (d.kind=="TypeAliasTemplate" && !d.native_symbol_name.empty() &&
+           d.canonical_type_identity.find(";owner="+d.native_symbol_name+";")!=std::string::npos);});
+  if (has_nominal_alias_templates!=nominal_alias_capability || !nominal_alias_owners ||
+      (nominal_alias_capability && !nominal_alias_dependency))
+    return Invalid("nominal alias identity and required alias/owner capability must agree");
+  const bool has_concrete_member_templates = std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxConcreteMemberTemplateIdentity);
+  const bool concrete_member_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxConcreteMemberTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool concrete_member_owners = std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d) {return !HasCxxConcreteMemberTemplateIdentity(d) ||
+          (d.kind=="CXXRecord" && (HasCxxMemberTemplateIdentity(d) ||
+           HasCxxMemberAliasTemplateIdentity(d) || HasCxxVariableTemplateIdentity(d) ||
+           HasCxxClassTemplateIdentity(d)));});
+  if (has_concrete_member_templates!=concrete_member_capability || !concrete_member_owners)
+    return Invalid("concrete member template identity and required record capability must agree");
+  const bool has_concrete_nested_templates = std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxConcreteNestedTemplateIdentity);
+  const bool concrete_nested_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxConcreteNestedTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool concrete_nested_class = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClassTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool concrete_nested_patterns = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxNestedTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool concrete_nested_owners = std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d) {return !HasCxxConcreteNestedTemplateIdentity(d) ||
+          (d.kind=="CXXRecord" && HasCxxConcreteMemberTemplateIdentity(d));});
+  if (has_concrete_nested_templates!=concrete_nested_capability || !concrete_nested_owners ||
+      (concrete_nested_capability && (!concrete_member_capability || !concrete_nested_class || !concrete_nested_patterns)))
+    return Invalid("concrete nested template identity and required record/class/nested capabilities must agree");
+  const bool has_variadic_templates = std::any_of(
+      sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxVariadicTemplateIdentity);
+  const bool variadic_template_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxVariadicTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool variadic_template_owner = std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d) { return !HasCxxVariadicTemplateIdentity(d) ||
+          (d.kind=="FunctionTemplate" || d.kind=="ClassTemplate" ||
+           (d.kind=="CXXRecord" && HasCxxConcreteMemberTemplateIdentity(d))); });
+  if (has_variadic_templates!=variadic_template_capability ||
+      (variadic_template_capability && !variadic_template_owner))
+    return Invalid("variadic template identity and required capability must agree");
+  const bool has_nested_templates = std::any_of(
+      sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxNestedTemplateIdentity);
+  const bool nested_template_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxNestedTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool nested_template_class = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClassTemplateSemantic)!=sidecar.required_semantics.end();
+  if (has_nested_templates!=nested_template_capability ||
+      (nested_template_capability && !nested_template_class))
+    return Invalid("nested template identity and required nested/class capabilities must agree");
+  const bool has_member_alias_templates = std::any_of(
+      sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxMemberAliasTemplateIdentity);
+  const bool member_alias_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxMemberAliasTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool member_alias_class = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClassTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool member_alias_alias = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxAliasTemplateSemantic)!=sidecar.required_semantics.end();
+  if (has_member_alias_templates!=member_alias_capability ||
+      (member_alias_capability && ((!member_alias_class && !concrete_member_capability) || !member_alias_alias)))
+    return Invalid("member alias template identity and required member/class/alias capabilities must agree");
+  const bool has_member_templates = std::any_of(
+      sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxMemberTemplateIdentity);
+  const bool member_template_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxMemberTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool member_template_class = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClassTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool member_template_data = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),"objc3.cxx-data-interfaces.v1")!=sidecar.required_semantics.end();
+  if (has_member_templates!=member_template_capability ||
+      (member_template_capability && ((!member_template_class && !concrete_member_capability) || !member_template_data)))
+    return Invalid("member template identity and required member/class/data capabilities must agree");
+  const bool has_template_deduction = std::any_of(
+      sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxTemplateDeductionIdentity);
+  const bool template_deduction_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxTemplateDeductionSemantic)!=sidecar.required_semantics.end();
+  const bool template_deduction_data = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),"objc3.cxx-data-interfaces.v1")!=sidecar.required_semantics.end();
+  if (has_template_deduction!=template_deduction_capability || (template_deduction_capability && !template_deduction_data))
+    return Invalid("template deduction identity and required deduction/data capabilities must agree");
+  const bool has_template_structure = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxTemplateStructureIdentity);
+  const bool template_structure_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(), kCxxTemplateStructureSemantic) != sidecar.required_semantics.end();
+  const bool template_structure_data = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(), "objc3.cxx-data-interfaces.v1") != sidecar.required_semantics.end();
+  const bool has_template_data = std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &declaration) {return HasCxxClassTemplateIdentity(declaration) || HasCxxVariableTemplateIdentity(declaration);});
+  if (has_template_structure != template_structure_capability ||
+      has_template_data != template_structure_capability || (template_structure_capability && !template_structure_data))
+    return Invalid("template structure identity and required structure/data capabilities must agree");
+  const bool has_class_templates = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxClassTemplateIdentity);
+  const bool class_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(), kCxxClassTemplateSemantic) != sidecar.required_semantics.end();
+  const bool class_template_owners = std::all_of(sidecar.declarations.begin(), sidecar.declarations.end(),
+      [](const auto &d) {return !HasCxxClassTemplateIdentity(d) || d.kind=="ClassTemplate" ||
+          (d.kind=="CXXRecord" && HasCxxConcreteMemberTemplateIdentity(d));});
+  const bool class_data_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(), "objc3.cxx-data-interfaces.v1") != sidecar.required_semantics.end();
+  if (has_class_templates != class_capability || !class_template_owners || (class_capability && !class_data_capability))
+    return Invalid("class template identity and required class/data capabilities must agree");
+  const bool has_variable_templates = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxVariableTemplateIdentity);
+  const bool variable_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(), kCxxVariableTemplateSemantic) != sidecar.required_semantics.end();
+  const bool variable_data_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(), "objc3.cxx-data-interfaces.v1") != sidecar.required_semantics.end();
+  if (has_variable_templates != variable_capability || (variable_capability && !variable_data_capability))
+    return Invalid("variable template identity and required variable/data capabilities must agree");
+  const bool has_alias_templates = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxAliasTemplateIdentity);
+  const bool alias_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(), kCxxAliasTemplateSemantic) != sidecar.required_semantics.end();
+  const bool alias_data_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(), "objc3.cxx-data-interfaces.v1") != sidecar.required_semantics.end();
+  if (has_alias_templates != alias_capability || (alias_capability && !alias_data_capability))
+    return Invalid("alias template identity and required alias/data capabilities must agree");
+  const bool has_function_templates = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxFunctionTemplateIdentity);
+  const bool template_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(), kCxxFunctionTemplateSemantic) != sidecar.required_semantics.end();
+  const bool template_data_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(), "objc3.cxx-data-interfaces.v1") != sidecar.required_semantics.end();
+  if (has_function_templates != template_capability || (template_capability && !template_data_capability))
+    return Invalid("function template identity and required template/data capabilities must agree");
+  const bool has_concepts = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxConceptIdentity);
+  const bool concept_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxConceptSemantic) != sidecar.required_semantics.end();
+  const bool concept_data_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      "objc3.cxx-data-interfaces.v1") != sidecar.required_semantics.end();
+  if (has_concepts != concept_capability || (concept_capability && !concept_data_capability))
+    return Invalid("concept identity and required concept/data capabilities must agree");
+  const bool has_union_values = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxUnionValueIdentity);
+  const bool union_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxUnionValueSemantic) != sidecar.required_semantics.end();
+  const bool union_data_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      "objc3.cxx-data-interfaces.v1") != sidecar.required_semantics.end();
+  if (has_union_values != union_capability || (union_capability && !union_data_capability))
+    return Invalid("C++ union identity and required data/union capabilities must agree");
+  const bool has_generic_local_lambdas = std::any_of(
+      sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxGenericLocalLambdaIdentity);
+  const bool generic_local_capability = std::find(
+      sidecar.required_semantics.begin(),sidecar.required_semantics.end(),
+      kCxxGenericLocalLambdaSemantic) != sidecar.required_semantics.end();
+  const bool generic_lambda_base = std::find(
+      sidecar.required_semantics.begin(),sidecar.required_semantics.end(),
+      kCxxLambdaExpressionSemantic) != sidecar.required_semantics.end();
+  if (has_generic_local_lambdas != generic_local_capability ||
+      (generic_local_capability && !generic_lambda_base))
+    return Invalid("generic local lambda identity and required lambda capabilities must agree");
+  const bool has_unnamed_local_types = std::any_of(
+      sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxUnnamedLocalTypeIdentity);
+  const bool unnamed_local_capability = std::find(
+      sidecar.required_semantics.begin(),sidecar.required_semantics.end(),
+      kCxxUnnamedLocalTypeSemantic) != sidecar.required_semantics.end();
+  const bool has_local_types = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxLocalTypeIdentity);
+  const bool local_types_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxLocalTypeSemantic) != sidecar.required_semantics.end();
+  if (has_local_types != local_types_capability)
+    return Invalid("C++ local type identity and required capability must agree");
+  if (has_unnamed_local_types != unnamed_local_capability ||
+      (unnamed_local_capability && !local_types_capability))
+    return Invalid("C++ unnamed local type identity and required local-type capabilities must agree");
   const bool has_cxx_members = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(),
-      [](const auto &d) { return d.kind == "CXXMethod"; });
+      [](const auto &d) { return IsCxxMemberDeclarationKind(d.kind); });
   const bool member_capability = std::find(
       sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
       "objc3.cxx-member-interfaces.v1") != sidecar.required_semantics.end();
@@ -334,9 +1503,9 @@ llvm::Error ValidateForEncoding(
   if (has_names != name_capability)
     return Invalid("module-owned names and required capability must agree");
   for (const auto &d : sidecar.declarations)
-    if (!HasValidModuleOwnedName(sidecar.module, d))
+    if (!HasValidNativeSymbolName(sidecar.module, d))
       return Invalid(
-          "native symbol name differs from its module ownership contract");
+          "native symbol name violates its ownership or explicit external binding contract");
   const auto &module = sidecar.module;
   if (module.canonical_name.empty() || module.semantic_fingerprint.empty() ||
       module.target_triple.empty() || module.runtime_abi.empty() ||
@@ -356,18 +1525,20 @@ llvm::Error ValidateForEncoding(
   std::set<std::string> declaration_ids;
   for (const auto &declaration : sidecar.declarations) {
     if (declaration.stable_id.empty() || declaration.kind.empty() ||
-        declaration.qualified_name.empty() || declaration.canonical_type_identity.empty())
+        declaration.qualified_name.empty() || declaration.export_root.empty() ||
+        declaration.canonical_type_identity.empty())
       return Invalid("declaration identity fields must be nonempty");
     if (!declaration_ids.insert(declaration.stable_id).second)
       return Invalid(llvm::formatv("duplicate declaration stable id '{0}'", declaration.stable_id).str());
     for (const auto *value : {&declaration.stable_id, &declaration.kind,
-                              &declaration.qualified_name,
+                              &declaration.qualified_name, &declaration.export_root,
                               &declaration.canonical_type_identity,
                               &declaration.effects.throws_kind,
                               &declaration.effects.error_type_identity,
                               &declaration.effects.actor_isolation_identity,
                               &declaration.effects.executor_affinity_identity,
-                              &declaration.effects.ownership_identity})
+                              &declaration.effects.ownership_identity,
+                              &declaration.effects.async_abi_identity})
       if (!valid_text(*value))
         return Invalid("declaration field is invalid UTF-8 or exceeds string limit");
   }
@@ -379,6 +1550,33 @@ llvm::Error ValidateForEncoding(
       return Invalid(llvm::formatv("duplicate required semantic '{0}'", semantic).str());
     if (!supported.count(semantic))
       return Invalid(llvm::formatv("unknown required semantic '{0}'", semantic).str());
+  }
+  if (required.count("objc3.keypath-subscripts.v1") &&
+      !required.count("objc3.typed-keypaths.v2"))
+    return Invalid("key-path subscripts are missing their typed key-path capability");
+  if (required.count(RuntimeCompletionSemantic().str()) &&
+      !required.count(RuntimeInterfaceSemantic().str()))
+    return Invalid("C completion declarations require the pinned runtime frame header");
+  for (const auto &declaration : sidecar.declarations) {
+    const auto &effects = declaration.effects;
+    if (!IsValidAsyncABIIdentity(effects))
+      return Invalid("invalid or missing physical async entry ABI identity");
+    if ((!effects.async_abi_identity.empty() || !effects.actor_isolation_identity.empty() ||
+         !effects.executor_affinity_identity.empty()) && !required.count(kAsyncEntryABISemantic))
+      return Invalid("async entry ABI is missing its semantic capability");
+    if (effects.async_abi_identity.find("10:c-frame-v1") != std::string::npos &&
+        !required.count(RuntimeInterfaceSemantic().str()))
+      return Invalid("C frame entry ABI is missing its SDK header contract");
+    if (effects.ownership_identity.find("native-contracts:v1:") != std::string::npos &&
+        !required.count("objc3.native-ownership-contracts.v1"))
+      return Invalid("native ownership contract is missing its semantic capability");
+    if (declaration.canonical_type_identity.find("KeyPath<") != std::string::npos &&
+        !required.count("objc3.typed-keypaths.v2"))
+      return Invalid("typed key path is missing its semantic capability");
+    if ((!effects.actor_isolation_identity.empty() ||
+         !effects.executor_affinity_identity.empty()) &&
+        !required.count("objc3.isolation-contracts.v1"))
+      return Invalid("native isolation contract is missing its semantic capability");
   }
   std::set<std::pair<std::string, std::string>> dependency_ids;
   for (const auto &dependency : sidecar.dependencies) {
@@ -484,7 +1682,7 @@ llvm::Expected<SemanticInterfaceSidecar> DecodeSemanticInterfaceSidecar(
   if (!major) return major.takeError();
   auto minor = RequiredUnsigned(*root, "schema_minor", "/");
   if (!minor) return minor.takeError();
-  if (*major != kInterfaceSchemaMajor || *minor > kInterfaceSchemaMinor)
+  if (*major != kInterfaceSchemaMajor || *minor != kInterfaceSchemaMinor)
     return Invalid("unsupported semantic interface schema version");
 
   SemanticInterfaceSidecar result;
@@ -521,6 +1719,9 @@ llvm::Expected<SemanticInterfaceSidecar> DecodeSemanticInterfaceSidecar(
       return Invalid(llvm::formatv("/required_semantics/{0}: unknown required semantic '{1}'", i, *text).str());
     result.required_semantics.push_back(text->str());
   }
+  if (generated_source_bytes.contains(kRuntimeCompletionInclude) !=
+      bool(seen_semantics.count(RuntimeCompletionSemantic().str())))
+    return Invalid("C completion source and pinned header capability must agree");
 
   auto declarations = RequiredArray(*root, "declarations", "/", kMaxDeclarations);
   if (!declarations) return declarations.takeError();

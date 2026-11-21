@@ -6,6 +6,7 @@
 
 struct objc3c_frontend_v2_result {
   objc3::clang_foundation::CompileResult value;
+  std::string diagnostics_json;
 };
 
 namespace {
@@ -18,6 +19,8 @@ int CompileFrontendOptions(const objc3c_frontend_v2_options *options,
                            const objc3c_frontend_v3_spi_grant *spi_grants,
                            size_t spi_grant_count, bool module_owned_names,
                            const char *module_source_root,
+                           const char *const *meta_packages,size_t meta_package_count,
+                           const char *meta_lock,
                            objc3c_frontend_v2_result **out_result) {
   if (!out_result) return 2;
   *out_result = nullptr;
@@ -30,7 +33,10 @@ int CompileFrontendOptions(const objc3c_frontend_v2_options *options,
       (!options->source && options->source_size) ||
       (!search_paths && search_path_count) || (!imports && import_count) ||
       (compiler_sdk_root && !*compiler_sdk_root) ||
-      (!spi_grants && spi_grant_count) || spi_grant_count > 4096)
+      (!spi_grants && spi_grant_count) || spi_grant_count > 4096 ||
+      (!meta_packages && meta_package_count) || meta_package_count>64 ||
+      (meta_package_count && (!meta_lock || !*meta_lock)) ||
+      (!meta_package_count && meta_lock))
     return 2;
   const bool objc = options->language == 2 || options->language == 3;
   if (((options->objc3 || options->arc ||
@@ -53,6 +59,11 @@ int CompileFrontendOptions(const objc3c_frontend_v2_options *options,
   try {
     using namespace objc3::clang_foundation;
     CompileRequest request;
+    for(size_t i=0;i<meta_package_count;++i) {
+      if(!meta_packages[i] || !*meta_packages[i])return 2;
+      request.meta_packages.emplace_back(meta_packages[i]);
+    }
+    if(meta_lock)request.meta_lock=meta_lock;
     request.input_path = options->input_path;
     if (options->source) request.source_text = std::string(options->source, options->source_size);
     auto string = [](const char *value) { return value ? std::string(value) : std::string(); };
@@ -113,6 +124,7 @@ int CompileFrontendOptions(const objc3c_frontend_v2_options *options,
     }
     auto result = std::make_unique<objc3c_frontend_v2_result>();
     result->value = Compile(request);
+    result->diagnostics_json=EncodeCompileDiagnostics(result->value);
     int status = result->value.success ? 0 : 1;
     *out_result = result.release();
     return status;
@@ -126,7 +138,7 @@ extern "C" int objc3c_frontend_v2_compile(
     const objc3c_frontend_v2_options *options,
     objc3c_frontend_v2_result **out_result) {
   return CompileFrontendOptions(options, nullptr, 0, nullptr, 0, false, nullptr,
-                                nullptr, 0, false, nullptr, out_result);
+                                nullptr, 0, false, nullptr, nullptr,0,nullptr,out_result);
 }
 
 extern "C" int objc3c_frontend_v3_compile(
@@ -172,13 +184,19 @@ extern "C" int objc3c_frontend_v3_compile(
     return 2;
   const char *source_root =
       options->struct_size >= RootEnd ? options->module_source_root : nullptr;
+  constexpr size_t MetaOffset=offsetof(objc3c_frontend_v3_options,meta_packages);
+  constexpr size_t MetaEnd=offsetof(objc3c_frontend_v3_options,meta_lock)+sizeof(options->meta_lock);
+  if(options->struct_size>MetaOffset && options->struct_size<MetaEnd)return 2;
+  const bool has_meta=options->struct_size>=MetaEnd;
   return CompileFrontendOptions(&options->base, options->interface_search_paths,
                                 options->interface_search_path_count,
                                 options->imports, options->import_count,
                                 source_directed_imports, sdk_root,
                                 has_spi_tail ? options->spi_grants : nullptr,
                                 has_spi_tail ? options->spi_grant_count : 0,
-                                owned, source_root, out_result);
+                                owned, source_root,has_meta?options->meta_packages:nullptr,
+                                has_meta?options->meta_package_count:0,
+                                has_meta?options->meta_lock:nullptr,out_result);
 }
 
 extern "C" void objc3c_frontend_v2_result_destroy(objc3c_frontend_v2_result *result) {
@@ -243,4 +261,9 @@ extern "C" const char *objc3c_frontend_v3_result_dependency_record(
   return result && result->value.success &&
       !result->value.semantic_dependency_record.empty()
       ? result->value.semantic_dependency_record.c_str() : nullptr;
+}
+
+extern "C" const char *objc3c_frontend_v3_result_diagnostics_json(
+    const objc3c_frontend_v2_result *result) {
+  return result?result->diagnostics_json.c_str():nullptr;
 }

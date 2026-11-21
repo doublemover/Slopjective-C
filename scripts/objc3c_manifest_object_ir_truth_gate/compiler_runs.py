@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import subprocess
+import shutil
 from pathlib import Path
 
 from objc3c_tooling.llvm_discovery import find_llvm_tool_path

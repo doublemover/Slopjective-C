@@ -1,0 +1,210 @@
+{
+  "schema": "objc3c.linux-cxx-local-expressions-progress.v1",
+  "status": "SOURCE_BATCH_VALIDATED",
+  "source_checkpoint": "f2ab8fc5689e56f919f9d76178be8e76b4bed0d5",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-bfdebee5d244-00b75dc3",
+  "concurrency_module_version": "2.24.0",
+  "required_semantics": ["objc3.cxx-block-expressions.v1", "objc3.cxx-statement-expressions.v1"],
+  "source_inputs": [
+    {
+      "path": "docs/roadmap/linux_cxx_definitions.md",
+      "sha256": "17798314c009ef3b4da32f8c3f87a0c43600f567731e139fcdac104a1f8bc5bc"
+    },
+    {
+      "path": "docs/roadmap/linux_cxx_interfaces.md",
+      "sha256": "3594e9c1d0f5e584abbf1d24b69ad1ad9109300ab80a797dc4a58eeeb8ab2668"
+    },
+    {
+      "path": "docs/roadmap/linux_cxx_lambda_expressions.md",
+      "sha256": "5e6af08d3c36d74c0fe4d9a10e464be44a7180b511767e246e85cbd9b5510325"
+    },
+    {
+      "path": "docs/roadmap/linux_cxx_local_expressions.md",
+      "sha256": "388f51ea296895025b61ea7494f4ae95fd4616914c5132ae64081f0f7ee485bc"
+    },
+    {
+      "path": "docs/roadmap/linux_forward_development.md",
+      "sha256": "60bfeac83631b8f7d4eea3749405d0d210dad9bb90d49c711fc6d3689ea62a1b"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_artifact_io.cpp",
+      "sha256": "3991625ea6b93d2b2b937c6cbb1f6b0155fb86804493be6163ec8ccd3ea01efa"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_codec.cpp",
+      "sha256": "435c7d789058360739772e64a0660175982edfdeaf86fea270553a5a6114ae83"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_contract.cpp",
+      "sha256": "b436d300dcdf89fe49b98d0734ee6831b6dfe0d463cce07a69879c86f7702028"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_contract.h",
+      "sha256": "7837dacd56083d4d99029ef947023d2cccf608dc532f5c80df68da7ef6ad68bc"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_emitter.cpp",
+      "sha256": "d2576fc3cdce455e8645a30ef7d5839b8ef04ec909368349cae508d7f569e301"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_import.cpp",
+      "sha256": "e7fa445b679bfd1252e950dd154299c03aa63b0bb54172e939f8e7396c85ef7c"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_module_resolver.cpp",
+      "sha256": "415bde2c46431d108f2fb32a59e0631007a4919c9817394086b5ee8443ec3f1d"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/module_names.cpp",
+      "sha256": "9be101cc8d0214e4630806bfd545e4a7b3ee2115046b677c371829e569382426"
+    },
+    {
+      "path": "scripts/objc3c_toolchain/qualify_native_async_packages.py",
+      "sha256": "65a88bd4cff9c81c92047a045f6dd2d2e1d25d67c1feec7fbec6a3c804d6ff91"
+    },
+    {
+      "path": "stdlib/module_inventory.json",
+      "sha256": "05024cef487b55ec4ac632da420db6c18b0c0056a5d2434f33d749daf8d73665"
+    },
+    {
+      "path": "tests/clang_foundation/interface_emitter_test.cpp",
+      "sha256": "22d7155dd0b983c8e1994507537d2395679b427405ba674aab8364e263cf1556"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/app/main.mm",
+      "sha256": "cfaa9126b04eca4f51bac261a11350aee31aadffa17a439935352905eb4e1a47"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/module.mm",
+      "sha256": "97623cfd4dc608147a4c66c226dd676a8b2ee8a6158b20e46e5180ebed48c0b9"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/package.json",
+      "sha256": "f8aef65b5c0bac828531eda3fa0f9e744c999226d56ca878c963941333496aa5"
+    },
+    {
+      "path": "toolchains/llvm/manifest.json",
+      "sha256": "85ee0574e2de96de8dc0cd9aed34588e3a2a253e325b1f736a1a4ad0da809971"
+    },
+    {
+      "path": "toolchains/llvm/patches/0002-objc3-native-defer-statement.patch",
+      "sha256": "f1306fe8a863786231edb6908edfd8855f31c73ba17084c5a46574c0af06d149"
+    },
+    {
+      "path": "toolchains/llvm/patches/0004-objc3-canonical-carriers-and-function-effects.patch",
+      "sha256": "a940f5e8bfbd652a44353753f5bc1deba85d692689af1c7295ac370fc5f9b11e"
+    },
+    {
+      "path": "toolchains/llvm/patches/0005-objc3-codegen-qualification-boundaries.patch",
+      "sha256": "d6f4fa54059ba9362a468603cf06ab1a93f12aeb7465168719d71c23ca623765"
+    }
+  ],
+  "verification": {
+    "foundation_build": {
+      "path": "out/cxx-local-expressions-foundation-build.json",
+      "sha256": "a465b3b17aa55a7d81cb6823e8591808561e845ff67d50f775209c8fbb446f4e"
+    },
+    "facade_compile": {
+      "path": "out/cxx-local-expressions-final-compile.log",
+      "sha256": "b281447f94e7ae5d89af467852bcd2b404773298b93ec921eea4873bf290965e"
+    },
+    "native_batch": {
+      "lit_passed": 373,
+      "lit_unsupported": 3,
+      "unit_tests_passed": 179,
+      "report": {
+        "path": "out/cxx-local-expressions-batch-native-tests.json",
+        "sha256": "52db344a197115aa24b3bfb13dfcf3d8187bf1b7eedd3ee642bbbdec17797869"
+      }
+    },
+    "frontend_ctests": {
+      "passed": 32,
+      "report": {
+        "path": "out/source-batch-frontend-2.24/qualification.json",
+        "sha256": "7c7254b20821e32de503fac4b802583cf1dc525f1a3f36af30fc22432edc09d5"
+      }
+    },
+    "package_matrices": [
+      {
+        "lookup": "source-directed",
+        "sanitizer": "normal",
+        "cases": 8,
+        "commands": 32,
+        "standards": ["c++20", "c++23"],
+        "ownership": ["arc", "mrc"],
+        "optimization": ["O0", "O2"],
+        "provider_source_removed": true,
+        "consumer_object_linked_first": true,
+        "report": {
+          "path": "out/native-validation/cxx-local-expressions-matrix-smoke-normal/qualification.json",
+          "sha256": "aa7641176054da525529b8effeb8313f6ba0468888f1a014efbc0c154a36af92"
+        }
+      },
+      {
+        "lookup": "eager",
+        "sanitizer": "normal",
+        "cases": 8,
+        "commands": 32,
+        "standards": ["c++20", "c++23"],
+        "ownership": ["arc", "mrc"],
+        "optimization": ["O0", "O2"],
+        "provider_source_removed": true,
+        "consumer_object_linked_first": true,
+        "report": {
+          "path": "out/native-validation/cxx-local-expressions-matrix-eager-smoke-normal/qualification.json",
+          "sha256": "aa7641176054da525529b8effeb8313f6ba0468888f1a014efbc0c154a36af92"
+        }
+      },
+      {
+        "lookup": "source-directed",
+        "sanitizer": "address,undefined",
+        "cases": 8,
+        "commands": 32,
+        "standards": ["c++20", "c++23"],
+        "ownership": ["arc", "mrc"],
+        "optimization": ["O0", "O2"],
+        "provider_source_removed": true,
+        "consumer_object_linked_first": true,
+        "report": {
+          "path": "out/native-validation/cxx-local-expressions-matrix-smoke-asan/qualification.json",
+          "sha256": "77e4911004d4fc3473e124b6845c272be53e4e63045f2e6114a75584a346e669"
+        }
+      },
+      {
+        "lookup": "source-directed",
+        "sanitizer": "thread",
+        "cases": 8,
+        "commands": 32,
+        "standards": ["c++20", "c++23"],
+        "ownership": ["arc", "mrc"],
+        "optimization": ["O0", "O2"],
+        "provider_source_removed": true,
+        "consumer_object_linked_first": true,
+        "report": {
+          "path": "out/native-validation/cxx-local-expressions-matrix-smoke-tsan/qualification.json",
+          "sha256": "fac3c696e94ee3d29d242ac1798ad8713e41e2719111688f3536e2a517eec414"
+        }
+      }
+    ]
+  },
+  "active_sdk": {
+    "changed": false,
+    "concurrency_module_version": "2.9.0",
+    "acceptance": {
+      "path": "docs/support/linux_cxx_class_structure_acceptance.json",
+      "sha256": "e099d1065d1e4b789fbc2348f3912b440920cae51b2b5ff2d9a99e20532f3091"
+    }
+  },
+  "scope": "Published Block/statement expressions, complete Block printing/prototype parameter import, local initialization/NRVO flags, lexical closure naming, ordered module inline initialization and distinct deleting/complete virtual destructor thunks. Class-specific deallocation is asserted independently of destruction. Package matrices use accepted runtime/header ABI; broader language witnesses and their GNU decoder repair are recorded separately.",
+  "deferred_validation": [
+    "Broader five-family source/PCH witnesses, currently in progress",
+    "Other postponed ownership/stdlib/tooling/compiler witness matrices",
+    "Installed gates, immutable packages and exact-archive fresh-host qualification at the coordinated SDK cutover"
+  ],
+  "remaining_implementation": [
+    "Dependent/template bodies, generic/public closure types and ordinary local types",
+    "Unnamed nested types, unmodeled namespace attributes and dependent lookup",
+    "Remaining ownership/concurrency/isolation/keypath/type/library/profile contracts and native Linux AArch64"
+  ],
+  "profile_conformance_claimed": false
+}

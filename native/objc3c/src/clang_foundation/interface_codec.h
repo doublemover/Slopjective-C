@@ -9,6 +9,12 @@
 
 namespace objc3::clang_foundation {
 
+// The single current capability catalog used by production emitters/readers
+// and defensive decoder coverage. Callers may pass a smaller explicit set when
+// checking admission against a deliberately restricted consumer.
+[[nodiscard]] llvm::ArrayRef<llvm::StringRef>
+SupportedSemanticInterfaceCapabilities();
+
 // Encodes the sidecar as deterministic JSON. The canonical Clang-generated
 // source remains a separate <module>.objc3i file.
 [[nodiscard]] llvm::Expected<std::string> EncodeSemanticInterfaceSidecar(

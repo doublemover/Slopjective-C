@@ -1,13 +1,13 @@
 include_guard(GLOBAL)
+include("${CMAKE_CURRENT_LIST_DIR}/Objc3LinuxHost.cmake")
 
 function(objc3c_configure_linux_runtime runtime_source runtime_build robin_source)
-  if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux" OR NOT CMAKE_SIZEOF_VOID_P EQUAL 8 OR
-     NOT CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
-    message(FATAL_ERROR "linux-x86_64-libobjc2 requires a native Linux x86-64 target")
+  if(NOT OBJC3_LINUX_NATIVE_HOST OR NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
+    message(FATAL_ERROR "libobjc2 requires a native Linux x86-64 or AArch64 target")
   endif()
   if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR
-     NOT CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL "23.1.3")
-    message(FATAL_ERROR "Linux native runtime requires the pinned Clang 23.1.3 client")
+     NOT CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL "23.1.5")
+    message(FATAL_ERROR "Linux native runtime requires the pinned Clang 23.1.5 client")
   endif()
   foreach(_path IN ITEMS runtime_source runtime_build robin_source)
     if(NOT ${_path} OR NOT IS_DIRECTORY "${${_path}}")
@@ -18,7 +18,7 @@ function(objc3c_configure_linux_runtime runtime_source runtime_build robin_sourc
   get_filename_component(_compiler_bin "${CMAKE_CXX_COMPILER}" DIRECTORY)
   execute_process(
     COMMAND "${Python3_EXECUTABLE}" "${_OBJC3_NATIVE_RUNTIME_REPO_ROOT}/scripts/objc3c_toolchain_runtime/verify_runtime_profile.py"
-      --profile linux-x86_64 --source "${runtime_source}"
+      --profile "${OBJC3_LINUX_NATIVE_HOST}" --source "${runtime_source}"
       --robin-map-source "${robin_source}" --bin-dir "${_compiler_bin}"
     RESULT_VARIABLE _verified OUTPUT_VARIABLE _output ERROR_VARIABLE _error)
   if(NOT _verified EQUAL 0)
@@ -49,7 +49,7 @@ function(objc3c_configure_linux_runtime runtime_source runtime_build robin_sourc
   target_compile_options(objc3_native_runtime_profile INTERFACE
     "$<$<OR:$<COMPILE_LANGUAGE:OBJC>,$<COMPILE_LANGUAGE:OBJCXX>>:-fobjc-runtime=gnustep-2.2>")
   target_link_options(objc3_native_runtime_profile INTERFACE -fuse-ld=lld)
-  set(OBJC3_NATIVE_RUNTIME_PROFILE linux-x86_64-libobjc2 CACHE STRING "Native Objective-C runtime profile" FORCE)
+  set(OBJC3_NATIVE_RUNTIME_PROFILE "${OBJC3_LINUX_NATIVE_HOST}-libobjc2" CACHE STRING "Native Objective-C runtime profile" FORCE)
   set(OBJC3_NATIVE_RUNTIME_LIBOBJC2_DLL "${_runtime_library}" CACHE FILEPATH "Pinned native runtime library" FORCE)
   set(OBJC3_NATIVE_RUNTIME_LIBOBJC2_IMPORT_LIBRARY "${_runtime_library}" CACHE FILEPATH "Pinned native runtime link input" FORCE)
   set(OBJC3_LIBOBJC2_SOURCE_DIR "${runtime_source}" PARENT_SCOPE)

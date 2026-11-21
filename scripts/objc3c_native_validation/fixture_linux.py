@@ -6,15 +6,16 @@ import json
 import os
 from pathlib import Path
 import resource
-import signal
 import subprocess
 import time
+
+from scripts.objc3c_toolchain.linux_host import llvm_trap_signal
 
 
 def run_linux_fixture_node(repo: Path, node: dict, output: Path, toolchain: dict) -> dict:
     from .fixture_nodes import _CASES
     suite, driver = node["suite"], node["driver"]
-    if toolchain.get("platform") != "linux-x86_64" or driver not in {"clang", "objc3c-clang"}:
+    if toolchain.get("platform") not in ("linux-x86_64", "linux-aarch64") or driver not in {"clang", "objc3c-clang"}:
         raise ValueError("Linux fixture nodes require the sealed Linux clang or facade driver")
     if driver == "objc3c-clang" and suite not in {"match", "transfer"}:
         raise ValueError("Linux facade fixture driver is admitted for match and transfer suites")
@@ -22,7 +23,7 @@ def run_linux_fixture_node(repo: Path, node: dict, output: Path, toolchain: dict
     output.mkdir(parents=True, exist_ok=True)
     report_path = output / "results.json"
     records, artifacts = [], {}
-    report = {"status": "running", "platform": "linux-x86_64", "suite": suite,
+    report = {"status": "running", "platform": toolchain["platform"], "suite": suite,
               "client_driver": driver, "build_identity": toolchain["sdk_build_id"],
               "started_utc": datetime.now(timezone.utc).isoformat(), "commands": records}
     environment = dict(os.environ)
@@ -92,7 +93,8 @@ def run_linux_fixture_node(repo: Path, node: dict, output: Path, toolchain: dict
                 execute([str(executable)])
                 count += 1
                 for trap in _CASES[suite][1:]:
-                    execute([str(executable), trap.removeprefix("typed-error-").removesuffix("-trap")], expected=-signal.SIGILL)
+                    execute([str(executable), trap.removeprefix("typed-error-").removesuffix("-trap")],
+                            expected=-llvm_trap_signal(toolchain["target_triple"]))
                     count += 1
                 continue
             for case in _CASES[suite]:

@@ -6,7 +6,7 @@ import json
 import os
 from pathlib import Path
 import shutil
-import signal
+from runpy import run_path
 import subprocess
 import sys
 import time
@@ -26,7 +26,10 @@ def qualify(sdk: Path, output: Path) -> dict:
              'carrier-array-module.m', 'carrier-array-import.m', 'carrier-array-rejected.m')
     for name in names:
         shutil.copyfile(Path(__file__).parent / name, sources / name)
-    seal = json.loads((sdk / 'objc3-sdk.json').read_text())['seal_sha256']
+    manifest = json.loads((sdk / 'objc3-sdk.json').read_text())
+    seal = manifest['seal_sha256']
+    host = run_path(str(sdk / 'share/objc3c/source-build/linux_host.py'))
+    trap_signal = host['llvm_trap_signal'](manifest['target'])
     report = {'schema': 'objc3c.installed-array-carriers.v1', 'status': 'running',
               'sdk_seal': seal, 'commands': [], 'executions': [],
               'forced_failures': [], 'rejections': [], 'source_hashes': {name: hashlib.sha256((sources / name).read_bytes()).hexdigest()
@@ -73,9 +76,9 @@ def qualify(sdk: Path, output: Path) -> dict:
                 run(key + '-link', [compiler, *link_flags, base, errors, nested, provider, consumer, '-o', executable])
                 execute(key, executable)
                 for mode in ('force-array',):
-                    run(key + '-' + mode, [executable, mode], expected=-signal.SIGILL)
+                    run(key + '-' + mode, [executable, mode], expected=-trap_signal)
                     report['forced_failures'].append({'configuration': key, 'mode': mode,
-                                                       'signal': 'SIGILL'})
+                                                       'signal': trap_signal.name})
                 if language == 'objective-c' and optimization in ('O0', 'O2'):
                     module_directory = output / (key + '-module')
                     module_directory.mkdir(exist_ok=True)
@@ -115,11 +118,16 @@ def qualify(sdk: Path, output: Path) -> dict:
         executable = output / 'pch-application'
         run('pch-link', [compiler, '-pthread', output / 'objective-c++-O2-base.o', output / 'objective-c++-O2-errors.o', output / 'objective-c++-O2-nested.o', output / 'objective-c++-O2-provider.o', consumer, '-o', executable])
         execute('pch-application', executable)
-        assert len(report['executions']) == 9
-        assert len(report['forced_failures']) == 6
-        assert len(report['rejections']) == 6
-        assert report['interfaces'][0]['semantic_fingerprint'] == report['interfaces'][1]['semantic_fingerprint']
-        assert all(row['runtime_abi'] == 'gnustep-2.2;arc' for row in report['interfaces'])
+        if not (len(report['executions']) == 9):
+            raise ValueError('installed qualification contract failed: qualify-array-carriers.py:118')
+        if not (len(report['forced_failures']) == 6):
+            raise ValueError('installed qualification contract failed: qualify-array-carriers.py:119')
+        if not (len(report['rejections']) == 6):
+            raise ValueError('installed qualification contract failed: qualify-array-carriers.py:120')
+        if not (report['interfaces'][0]['semantic_fingerprint'] == report['interfaces'][1]['semantic_fingerprint']):
+            raise ValueError('installed qualification contract failed: qualify-array-carriers.py:121')
+        if not (all((row['runtime_abi'] == 'gnustep-2.2;arc' for row in report['interfaces']))):
+            raise ValueError('installed qualification contract failed: qualify-array-carriers.py:122')
         run('seal-after', [sys.executable, '-B', sdk / 'share/objc3c/verify-sdk.py', sdk])
         report['status'] = 'PASS'
     except BaseException as error:

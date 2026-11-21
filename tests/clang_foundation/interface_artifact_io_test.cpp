@@ -33,6 +33,7 @@ InterfaceEmissionArtifact MakeArtifact(
   declaration.stable_id = "c:@V@sample";
   declaration.kind = "Var";
   declaration.qualified_name = "sample";
+  declaration.export_root = "sample";
   declaration.canonical_type_identity = "int";
   sidecar.declarations.push_back(std::move(declaration));
   sidecar.module.semantic_fingerprint = ComputeInterfaceSourceSha256(
@@ -205,15 +206,15 @@ void TestDependencyRecordProductTransaction() {
   std::string failure;
   unsigned calls = 0;
   auto reject_products = [&] { ++calls; return false; };
-  assert(!PublishCompilationProductsWithDependencyRecord(
+  assert(!PublishCompilationProductsWithTextArtifact(
       record.string(), "new record", reject_products, failure));
   assert(calls == 1 && !fs::exists(record));
   WriteBytes(record, "prior record\n");
-  assert(!PublishCompilationProductsWithDependencyRecord(
+  assert(!PublishCompilationProductsWithTextArtifact(
       record.string(), "new record", reject_products, failure));
   assert(ReadBytes(record) == "prior record\n");
   try {
-    const bool published = PublishCompilationProductsWithDependencyRecord(
+    const bool published = PublishCompilationProductsWithTextArtifact(
         record.string(), "new record", []() -> bool {
           throw std::runtime_error("product publisher failed");
         }, failure);
@@ -222,7 +223,7 @@ void TestDependencyRecordProductTransaction() {
   } catch (const std::runtime_error &) {
     assert(ReadBytes(record) == "prior record\n");
   }
-  assert(PublishCompilationProductsWithDependencyRecord(
+  assert(PublishCompilationProductsWithTextArtifact(
       record.string(), "new record", [&] {
         assert(ReadBytes(record) == "new record\n");
         return true;
@@ -230,7 +231,7 @@ void TestDependencyRecordProductTransaction() {
   assert(ReadBytes(record) == "new record\n");
   const auto blocked = root / "directory.json";
   fs::create_directory(blocked);
-  assert(!PublishCompilationProductsWithDependencyRecord(
+  assert(!PublishCompilationProductsWithTextArtifact(
       blocked.string(), "new record", [&] {
         assert(false && "invalid record destination must not publish products");
         return true;

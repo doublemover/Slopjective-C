@@ -1,0 +1,160 @@
+name: Pinned Linux dependency caches
+description: Restore admitted tool prefixes and pristine source objects, then provision and publish misses.
+inputs:
+  output:
+    description: Fresh setup evidence directory
+    required: true
+  include_swift:
+    description: Provision the independently signed Swift consumer
+    default: "false"
+runs:
+  using: composite
+  steps:
+    - name: Plan exact dependency cache identities
+      id: keys
+      shell: bash
+      env:
+        INCLUDE_SWIFT: ${{ inputs.include_swift }}
+      run: |
+        flags=()
+        if [[ "$INCLUDE_SWIFT" == true ]]; then flags=(--include-swift); fi
+        python3 -B -m scripts.objc3c_toolchain.dependency_cache plan \
+          --root "$OBJC3C_CLOUD_SETUP_ROOT" --plan "$RUNNER_TEMP/objc3-dependencies.json" \
+          --github-output "$GITHUB_OUTPUT" "${flags[@]}"
+    - name: Restore llvm dependencies
+      id: restore_llvm
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.keys.outputs.llvm_paths }}
+        key: ${{ steps.keys.outputs.llvm_key }}
+    - name: Restore python dependencies
+      id: restore_python
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.keys.outputs.python_paths }}
+        key: ${{ steps.keys.outputs.python_key }}
+    - name: Restore node dependencies
+      id: restore_node
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.keys.outputs.node_paths }}
+        key: ${{ steps.keys.outputs.node_key }}
+    - name: Restore cmake dependencies
+      id: restore_cmake
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.keys.outputs.cmake_paths }}
+        key: ${{ steps.keys.outputs.cmake_key }}
+    - name: Restore ccache dependencies
+      id: restore_ccache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.keys.outputs.ccache_paths }}
+        key: ${{ steps.keys.outputs.ccache_key }}
+    - name: Restore npm dependencies
+      id: restore_npm
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.keys.outputs.npm_paths }}
+        key: ${{ steps.keys.outputs.npm_key }}
+    - name: Restore sources dependencies
+      id: restore_sources
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.keys.outputs.sources_paths }}
+        key: ${{ steps.keys.outputs.sources_key }}
+    - name: Restore swift dependencies
+      id: restore_swift
+      if: inputs.include_swift == 'true'
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.keys.outputs.swift_paths }}
+        key: ${{ steps.keys.outputs.swift_key }}
+    - name: Admit restored tool bytes
+      shell: bash
+      run: |
+        python3 -B -m scripts.objc3c_toolchain.dependency_cache admit \
+          --plan "$RUNNER_TEMP/objc3-dependencies.json" | tee "$RUNNER_TEMP/objc3-dependency-admission.json"
+    - name: Provision pinned host tools
+      shell: bash
+      env:
+        STARTUP_OUTPUT: ${{ inputs.output }}
+      run: |
+        python3 -B -m scripts.objc3c_assurance.bootstrap --root "$OBJC3C_CLOUD_SETUP_ROOT" --output "$STARTUP_OUTPUT"
+        source "$OBJC3C_CLOUD_SETUP_ROOT/activate.sh"
+        python3 -B -m scripts.objc3c_toolchain check-host-tools --runtime
+    - name: Prepare pristine pinned source caches
+      shell: bash
+      run: |
+        python3 -B -m scripts.objc3c_toolchain.dependency_cache sources \
+          --plan "$RUNNER_TEMP/objc3-dependencies.json" --fetch > "$RUNNER_TEMP/objc3-source-cache.json"
+    - name: Provision the independent Swift consumer
+      if: inputs.include_swift == 'true'
+      shell: bash
+      env:
+        SWIFT_ROOT: ${{ steps.keys.outputs.swift_paths }}
+      run: |
+        source "$OBJC3C_CLOUD_SETUP_ROOT/activate.sh"
+        python3 -B -m scripts.objc3c_toolchain.swift_toolchain --root "$SWIFT_ROOT"
+    - name: Seal newly provisioned dependency prefixes
+      shell: bash
+      run: |
+        python3 -B -m scripts.objc3c_toolchain.dependency_cache seal --plan "$RUNNER_TEMP/objc3-dependencies.json"
+    - name: Publish llvm cache miss
+      if: steps.restore_llvm.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.keys.outputs.llvm_paths }}
+        key: ${{ steps.keys.outputs.llvm_key }}
+    - name: Publish python cache miss
+      if: steps.restore_python.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.keys.outputs.python_paths }}
+        key: ${{ steps.keys.outputs.python_key }}
+    - name: Publish node cache miss
+      if: steps.restore_node.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.keys.outputs.node_paths }}
+        key: ${{ steps.keys.outputs.node_key }}
+    - name: Publish cmake cache miss
+      if: steps.restore_cmake.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.keys.outputs.cmake_paths }}
+        key: ${{ steps.keys.outputs.cmake_key }}
+    - name: Publish ccache cache miss
+      if: steps.restore_ccache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.keys.outputs.ccache_paths }}
+        key: ${{ steps.keys.outputs.ccache_key }}
+    - name: Publish npm cache miss
+      if: steps.restore_npm.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.keys.outputs.npm_paths }}
+        key: ${{ steps.keys.outputs.npm_key }}
+    - name: Publish sources cache miss
+      if: steps.restore_sources.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.keys.outputs.sources_paths }}
+        key: ${{ steps.keys.outputs.sources_key }}
+    - name: Publish swift cache miss
+      if: inputs.include_swift == 'true' && steps.restore_swift.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.keys.outputs.swift_paths }}
+        key: ${{ steps.keys.outputs.swift_key }}
+    - name: Preserve dependency cache admission and source pins
+      if: always()
+      shell: bash
+      env:
+        STARTUP_OUTPUT: ${{ inputs.output }}
+      run: |
+        mkdir -p "$STARTUP_OUTPUT"
+        for record in objc3-dependencies.json objc3-dependency-admission.json objc3-source-cache.json; do
+          if [[ -f "$RUNNER_TEMP/$record" ]]; then cp "$RUNNER_TEMP/$record" "$STARTUP_OUTPUT/$record"; fi
+        done

@@ -49,6 +49,11 @@ objc3_generic_collection_status objc3_generic_array_count(
  * failures leave it uninitialized. */
 objc3_generic_collection_status objc3_generic_array_get(
     objc3_generic_array_t array, uint64_t index, void *out_element);
+/* Arrays keep immutable 32-element chunks behind a persistent index. Append
+ * and set copy at most 32 payloads and one three-node metadata path; readers
+ * retain their original snapshot until completion. Ordered remove still shifts
+ * and copies the remaining elements. Publication checks the captured generation;
+ * callbacks and retired-payload destruction run outside runtime locks. */
 objc3_generic_collection_status objc3_generic_array_set(
     objc3_generic_array_t array, uint64_t index, const void *element);
 objc3_generic_collection_status objc3_generic_array_append(

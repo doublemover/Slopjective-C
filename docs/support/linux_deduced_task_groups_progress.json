@@ -1,0 +1,64 @@
+{
+  "development_only": true,
+  "source_version": "2.150",
+  "system_version": "2.76",
+  "prepared_source_tree": "942c3051d45c7da655c03c00004d02dab23ef417",
+  "extension_abi": 24,
+  "compiler_identity_resealed": false,
+  "matched_sdk_produced": false,
+  "compiler": {
+    "focused_cases_passed": 8,
+    "new_ordinary_scope_source_pch_commands": 24,
+    "all_passed": true
+  },
+  "ast_controls": 64,
+  "publication_profiles": 4,
+  "adjacent_frontend_groups": 14,
+  "production_decoder_exact_replays": 700,
+  "production_decoder_families": 35,
+  "native": {
+    "configurations": 13,
+    "commands_or_operations": 64,
+    "spawn_source_pch": {
+      "configurations": 4,
+      "commands": 22
+    },
+    "strict_profiles": {
+      "configurations": 5,
+      "commands": 18
+    },
+    "source_free_provider_consumers": {
+      "configurations": 4,
+      "operations": 24,
+      "consumers_per_provider": 2,
+      "provider_source_removed": true
+    },
+    "all_passed": true,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ]
+  },
+  "reader_contract": "exact qualified task-header semantic identity; ABI 24/frame 1/services 4 layouts unchanged",
+  "negative_controls": [
+    "erased raw frame does not infer a logical result",
+    "borrowed task reference does not infer owned group result",
+    "explicit raw-frame result mismatch remains rejected",
+    "different task header is not admitted"
+  ],
+  "regressions": [
+    "implicit group callback result was silently discarded as void",
+    "ordinary local probe queried unresolved template destructor before finding any checked operation",
+    "detached manual-factory fixture borrowed producer storage past its lifetime",
+    "obsolete native exception cancellation expectation"
+  ],
+  "all_focused_checks_passed": true,
+  "completed_prior_consolidation": {
+    "source_version": "2.149 main batch",
+    "compiler_discovered": 550,
+    "compiler_executable_passed": 547,
+    "compiler_unsupported": 3,
+    "final_idempotent_printer_fix_has_focused_controls": true
+  },
+  "full_current_consolidation": "full matched analysis and SDK follow remaining feature implementation"
+}

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from contextvars import copy_context
 from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
@@ -192,7 +193,7 @@ def qualify(sdk: Path, output: Path, jobs: int = 1) -> dict:
     modes += [('c++', standard, 'none') for standard in ('c++20', 'c++23')]
     cases, failures = [], []
     with ThreadPoolExecutor(max_workers=jobs) as executor:
-        futures = [executor.submit(qualify_case, sdk, output, *mode, opt) for mode in modes for opt in ('O0', 'O2')]
+        futures = [executor.submit(copy_context().run, qualify_case, sdk, output, *mode, opt) for mode in modes for opt in ('O0', 'O2')]
         for future in futures:
             try: cases.append(future.result())
             except Exception as error: failures.append(str(error))

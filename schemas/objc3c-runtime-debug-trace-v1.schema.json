@@ -80,7 +80,7 @@
         "inline_frame_status": {"enum": ["supported", "reserved", "rejected"]},
         "inline_frame_count": {"type": "integer", "minimum": 0},
         "inline_frame_failure_count": {"type": "integer", "minimum": 0},
-        "inline_frame_ids": {"type": "array", "items": {"type": "string"}},
+        "inline_frame_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
         "inline_frame_fail_closed_reason": {"type": "string"},
         "declaration_anchor_count": {"type": "integer", "minimum": 0},
         "span_evidence_count": {"type": "integer", "minimum": 0},

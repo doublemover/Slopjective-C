@@ -1,0 +1,1241 @@
+{
+  "schema": "objc3c.linux-toolchain-refresh.v1",
+  "date": "2026-11-09",
+  "status": "SDK_FULL_INSTALLED_GATE_REPAIRS_READY_FOR_MATCHED_QUALIFICATION",
+  "last_accepted_sdk": {
+    "version": "2.62.0",
+    "extension_abi_revision": 21,
+    "receipt": "docs/support/linux_source_batch_2_62_acceptance.json"
+  },
+  "candidate_sdk": {
+    "version": "2.153.0",
+    "source_build_id": "llvmorg-23.1.5-392dfff97d29-d002916d9e72-0fcb354b",
+    "prepared_tree": "ecae3c5ac3aed83a93c9f11c4c26a5e479ba80a1",
+    "llvm": "23.1.5",
+    "llvm_commit": "392dfff97d29b59d77e5cac6d4b6ef2585fe7117",
+    "matched_archive_accepted": false,
+    "activated_product_sdk": false,
+    "patch_digest": "d002916d9e7284f92fc2783b7ccdd89ae3ee46167222340ffe404a22bd066985",
+    "build_config_digest": "0fcb354b0eef54dd93207bf95fdf45495781fba490b357b4d836ea6f1fc33d51",
+    "implementation_revision": "SDK installed keypath definitions, early projected module ownership, const task storage, callback debug scopes and current admission contracts"
+  },
+  "language_contracts": {
+    "language": "Objective-C 3.0",
+    "extension_abi_revision": 24,
+    "runtime_services_abi": 4,
+    "async_frame_abi": 1,
+    "keypath_metadata_abi": 2,
+    "semantic_interface_schema": "2.2",
+    "modules": {
+      "objc3.core": "2.0.0",
+      "objc3.errors": "2.0.0",
+      "objc3.text": "2.0.0",
+      "objc3.collections": "2.0.0",
+      "objc3.concurrency": "2.153.0",
+      "objc3.keypath": "2.12.0",
+      "objc3.system": "2.79.0"
+    },
+    "frontend_embedding_abi": 3
+  },
+  "development_tools": {
+    "pytest": "9.2.0",
+    "jsonschema": "4.26.0",
+    "python": "3.15.0",
+    "node": "26.13.0",
+    "npm": "12.2.2",
+    "cmake": "4.4.5",
+    "ninja": "1.13.2",
+    "ccache": "4.14.2",
+    "uv": "0.13.7",
+    "pip": "26.3"
+  },
+  "independent_swift_consumer": {
+    "version": "6.4.2",
+    "signature_verified": true,
+    "manifest": "toolchains/swift/manifest.json"
+  },
+  "unchanged_current_releases": {
+    "libobjc2": "2.3",
+    "GNUstep_runtime_ABI": "2.2",
+    "robin_map": "1.4.1"
+  },
+  "focused_validation": {
+    "tool_and_archive_owner_tests_passed": 96,
+    "CI_revision_owner_tests_passed": 136,
+    "canonical_patch_stack_matches_prepared_source": true,
+    "live_tool_pins_match": true,
+    "clean_host_download_and_bootstrap_controls_passed": 19,
+    "download_bootstrap_export_and_revision_mode_controls_passed": 28,
+    "foundation_target_admission_export_and_host_pin_tests_passed": 31,
+    "foundation_target_export_cost_and_host_pin_controls_passed": 59,
+    "final_build_cost_patch_export_and_pin_tests_passed": 60,
+    "shared_frontend_owner_tests_passed": 167,
+    "shared_frontend_owner_requires_local_foundation_skips": 3,
+    "isolated_runtime_and_collected_frontend_failure_controls_passed": 215,
+    "frontend_failure_isolation_and_native_owner_controls_passed": 134,
+    "actual_debug_archive_command": "PASS: retained executable/link modes and receipts, excluded build objects, verified archive SHA",
+    "forked_native_coverage_control": "PASS: pinned LLVM tools retained all three child branches after profile merging into one raw profile",
+    "frontend_replay_generator_transport_patch_and_revision_controls_passed": 50
+  },
+  "CI_repairs": [
+    "Periodic revision mode is preserved by native execution and evidence publication",
+    "Workflow-call source SHA reaches implementation-analysis execution",
+    "Full release jobs use current prerequisites and sanitizer process layout",
+    "Development and fresh SDK consumers share the checksum-pinned CMake installer",
+    "Release reuses the native owner and its qualified archive instead of starting a duplicate SDK build",
+    "Immutable official GitHub release-asset fallback retains archive checksums and ccache signature verification",
+    "libclang traverses dependent key-path root/value TypeLocs; an installed indexing regression is enrolled in the foundation suite",
+    "Restore the explicitly selected LexTests target using upstream distinct-unit-test registration",
+    "Inventory all Ninja targets immediately after configure, before compiling any build group",
+    "Quick tooling and documentation provision exact Python through the admitted uv route rather than the failing hosted toolcache asset download; Python/uv drift controls cover both routes",
+    "Refresh all three compiler regression expectations exposed by production, sanitizer and coverage selections",
+    "Run every foundation test command after a sibling test failure and require all commands to pass before staging",
+    "Retain nullable delete and modeled cleanup acceptance in CFG controls; assert the emitted selected-arm tag comparison",
+    "Default LLVM dispatch selects compiler execution; dependency-only choices are mutually exclusive and covered against silently skipping both jobs",
+    "Record actual CTest executable owners for every frontend and generic collection test; build shared profile executables once, verify actual CTest commands, run every variant before reclaiming; use the same owners for coverage and deduplicate instrumentation targets",
+    "Preserve explicit borrowed callback owner contracts in positive frontend/installed witnesses and require contract-erasing conversions to reject",
+    "Collect independent frontend build/test failures and all shared-target variants before failing; preserve failed binaries and semantic fixture diagnostics without accepting a failed suite",
+    "Compiler-only fuzz/IR/analysis configurations omit unused CTests; coverage and full compiler-process frontend tests provision and hash the pinned GNU runtime, use its explicit CMake root and retain its library loading path"
+  ],
+  "hosted_validation": {
+    "quick_checks": {
+      "revision": "e5ab4cf09d771a16c1546dbbdddee9a85f200609",
+      "status": "PASS",
+      "runs": [
+        42544872023,
+        42544871899,
+        42544872088
+      ],
+      "tooling_tests_passed": 1600,
+      "tooling_subtests_passed": 33,
+      "tooling_explicit_skips": 112
+    },
+    "previous_attempts": {
+      "SDK_release": {
+        "run": 42465615959,
+        "status": "FAILED_BEFORE_EXECUTION",
+        "reason": "Upstream LLVM/ccache download 504s; official immutable asset fallback added"
+      },
+      "native_assurance": {
+        "run": 42465615959,
+        "status": "FAILED_BEFORE_EXECUTION"
+      },
+      "LLVM_IR_and_debugger": {
+        "run": 42465618852,
+        "status": "FAILED_BEFORE_EXECUTION",
+        "previous_build_blocker": "Missing dependent-keypath libclang visitor repaired"
+      },
+      "missing_lexer_target": {
+        "SDK_release": {
+          "run": 42466550171,
+          "revision": "380cacc2ae341044fea7aab2950981eb81be480c",
+          "status": "FAILED_CORE_BUILD_TARGET",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42466550171",
+          "failure": "Upstream merged ordinary Clang unit tests; LexTests was absent. The explicit lexer target and early all-group target admission are now repaired; current-source retry required."
+        },
+        "native_assurance": {
+          "run": 42466550171,
+          "revision": "380cacc2ae341044fea7aab2950981eb81be480c",
+          "status": "FAILED_CORE_BUILD_TARGET",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42466550171"
+        },
+        "LLVM_IR_and_debugger": {
+          "run": 42466553014,
+          "revision": "380cacc2ae341044fea7aab2950981eb81be480c",
+          "status": "SUPERSEDED",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42466553014"
+        }
+      },
+      "compiler_expectation_refresh": {
+        "SDK_release": {
+          "run": 42469535429,
+          "revision": "e2daa67770a8cfcf70ad236d9efa7f67c1dbd9ea",
+          "status": "SUPERSEDED_AFTER_THREE_STALE_COMPILER_EXPECTATIONS",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42469535429"
+        },
+        "native_assurance": {
+          "run": 42469535429,
+          "revision": "e2daa67770a8cfcf70ad236d9efa7f67c1dbd9ea",
+          "status": "SUPERSEDED_AFTER_THREE_STALE_COMPILER_EXPECTATIONS",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42469535429"
+        },
+        "LLVM_IR_and_debugger": {
+          "run": 42469539102,
+          "revision": "e2daa67770a8cfcf70ad236d9efa7f67c1dbd9ea",
+          "status": "FAILED_THREE_STALE_COMPILER_EXPECTATIONS",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42469539102"
+        }
+      },
+      "registered_cleanup_expectations": {
+        "SDK_release": {
+          "run": 42473442540,
+          "revision": "a90f65bbc34e1dd525e814d504e7dcbf9acc5756",
+          "status": "SUPERSEDED_FOUNDATION_EXPECTATIONS",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42473442540"
+        },
+        "native_assurance": {
+          "run": 42473442540,
+          "revision": "a90f65bbc34e1dd525e814d504e7dcbf9acc5756",
+          "status": "SUPERSEDED_FOUNDATION_EXPECTATIONS",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42473442540"
+        },
+        "LLVM_IR_and_debugger": {
+          "run": 42473446817,
+          "revision": "a90f65bbc34e1dd525e814d504e7dcbf9acc5756",
+          "status": "SUPERSEDED_FOUNDATION_EXPECTATIONS",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42473446817"
+        }
+      },
+      "ambiguous_LLVM_dispatch_default": {
+        "run": 42477665104,
+        "revision": "3b897e3c7fc7e730d0a4301a1201b9cf61e854ea",
+        "status": "SKIPPED_NOT_QUALIFICATION",
+        "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42477665104",
+        "reason": "Unquoted off default did not select either job; compiler default and complementary dispatch conditions repaired"
+      },
+      "frontend_profile_ownership": {
+        "SDK_release": {
+          "run": 42477662743,
+          "revision": "3b897e3c7fc7e730d0a4301a1201b9cf61e854ea",
+          "status": "SUPERSEDED_FRONTEND_CMAKE_TARGET_OWNERSHIP",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42477662743"
+        },
+        "native_assurance": {
+          "run": 42477662743,
+          "revision": "3b897e3c7fc7e730d0a4301a1201b9cf61e854ea",
+          "status": "SUPERSEDED_FRONTEND_CMAKE_TARGET_OWNERSHIP",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42477662743"
+        },
+        "LLVM_IR_and_debugger": {
+          "run": 42477840115,
+          "revision": "081bf2290a3ffdcdb92e9ec3ed186f9a224d5b10",
+          "status": "SUPERSEDED_FRONTEND_CMAKE_TARGET_OWNERSHIP",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42477840115",
+          "source_build_id": "llvmorg-23.1.5-392dfff97d29-26f54d950ec8-70309e04",
+          "source_note": "CI-only dispatch repair after the frozen 3b897e3c7 compiler source; identical canonical compiler and SDK payload"
+        }
+      },
+      "borrowed_fixture_and_runtime_dependency": {
+        "SDK_release": {
+          "run": 42481874543,
+          "revision": "35df7e8a6a104479af384d08c7755c3c1276a60d",
+          "status": "FAILED_DOWNSTREAM_AFTER_PASSING_COMPILER_TESTS",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42481874543"
+        },
+        "native_assurance": {
+          "run": 42481874543,
+          "revision": "35df7e8a6a104479af384d08c7755c3c1276a60d",
+          "status": "FAILED_DOWNSTREAM_AFTER_PASSING_COMPILER_TESTS",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42481874543"
+        },
+        "LLVM_IR_and_debugger": {
+          "run": 42481877692,
+          "revision": "35df7e8a6a104479af384d08c7755c3c1276a60d",
+          "status": "FAILED_DOWNSTREAM_AFTER_PASSING_COMPILER_TESTS",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42481877692"
+        }
+      },
+      "frontend_defects_070": {
+        "SDK_release": {
+          "run": 42488455572,
+          "revision": "07052fb1f087b406979c9049c8b2ce9896911966",
+          "status": "BLOCKED_CORE_AND_COVERAGE_IMPLEMENTATION_ANALYSIS_RUNNING",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42488455572"
+        },
+        "native_assurance": {
+          "run": 42488455572,
+          "revision": "07052fb1f087b406979c9049c8b2ce9896911966",
+          "status": "FAILED_CORE_AND_COVERAGE_FUZZ_PASSED",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42488455572"
+        },
+        "implementation_analysis": {
+          "job": 128755500273,
+          "status": "IN_PROGRESS"
+        }
+      },
+      "LLVM_070_pass": {
+        "run": 42488460689,
+        "revision": "07052fb1f087b406979c9049c8b2ce9896911966",
+        "status": "PASS",
+        "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42488460689",
+        "executions": 21,
+        "semantic_oracle_cases": 63,
+        "semantic_oracle_controls": 7,
+        "artifact_id": 13623759979,
+        "artifact_sha256": "7038fbb90522ec251e3e7aee95970fc40b16965d05ef958887e7518f1ac39a5d",
+        "artifact_digest_provenance": "GitHub artifact API and completed upload log; not locally downloaded"
+      },
+      "complete_frontend_and_upstream_repair": {
+        "SDK_release": {
+          "run": 42506995176,
+          "revision": "9c675d3ab2891ce60b369ea393baea5d6d78813a",
+          "source_build_id": "llvmorg-23.1.5-392dfff97d29-954801de6f9a-70309e04",
+          "status": "FAILED_UPSTREAM_TESTS",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42506995176",
+          "failure": "All 50 frontend programs passed; 451/4381 upstream cases failed: 439 missing test utilities, 11 stale expected results and one global-initializer message code-generation crash. No archive accepted."
+        },
+        "native_assurance": {
+          "run": 42506995176,
+          "revision": "9c675d3ab2891ce60b369ea393baea5d6d78813a",
+          "source_build_id": "llvmorg-23.1.5-392dfff97d29-954801de6f9a-70309e04",
+          "status": "FAILED_CORE_AND_COVERAGE",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42506995176",
+          "coverage_failure": "Emitter exceeded 300-second instrumented suite deadline after two cases; repaired with eight bounded complete-catalogue shards and locked cross-process profile merging.",
+          "frontend_programs_passed": 50,
+          "compiler_regressions_passed": 563,
+          "native_unit_tests_passed": 461,
+          "core_result_artifact_sha256": "975c5b57df35758bbb8ec03013f53ca78144e31e0f1b6898dc8436d55972d896"
+        },
+        "LLVM_IR_and_debugger": {
+          "run": 42506996345,
+          "revision": "9c675d3ab2891ce60b369ea393baea5d6d78813a",
+          "source_build_id": "llvmorg-23.1.5-392dfff97d29-954801de6f9a-70309e04",
+          "status": "PASS",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42506996345",
+          "executions": 21,
+          "semantic_oracle_cases": 63,
+          "controls": 7,
+          "artifact_sha256": "a1d8eec4f2d10a7bca8d93ea934ea3dfa3f6949a61d03678471bb2eaa5b2b4a0"
+        },
+        "frontend_fuzz": {
+          "status": "PASS",
+          "run": 42506995176,
+          "job": 128811758439,
+          "campaigns": 3,
+          "controls": 6,
+          "artifact_sha256": "0428fac5d542df9ced88c52f4408d2edcbb50a7a10376393a0dfd1ce1c1892d6"
+        }
+      },
+      "full_analysis_time_budget": {
+        "run": 42488455572,
+        "job": 128755500273,
+        "revision": "07052fb1f087b406979c9049c8b2ce9896911966",
+        "status": "CANCELLED_AT_SIX_HOUR_LIMIT",
+        "inventory_variants": 235,
+        "completed_variants": 206,
+        "passed_variants": 169,
+        "timeout_variants": 30,
+        "finding_variants": 7,
+        "uncompleted_variants": 29,
+        "artifact_sha256": "3a2f5df5a12e6a5c4e2535362abab6b45eb34136084aecd380f11e7ea8ebb4a9"
+      },
+      "superseded_954_analysis": {
+        "run": 42506995176,
+        "revision": "9c675d3ab2891ce60b369ea393baea5d6d78813a",
+        "source_build_id": "llvmorg-23.1.5-392dfff97d29-954801de6f9a-70309e04",
+        "status": "CANCELLED_SUPERSEDED",
+        "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42506995176",
+        "job": 128811758131,
+        "scope": "Complete fork-matched owned translation-unit inventory",
+        "reason": "Known failing older compiler identity; complete replacement-source analysis will use four bounded independent partitions.",
+        "completed_variants": 126,
+        "passed_variants": 116,
+        "timeout_variants": 7,
+        "finding_variants": 3,
+        "uncompleted_variants": 109,
+        "artifact_sha256": "7cf9cc38b4209102161d1556c74f266d0fda0a177ae7764e08c2a0df848eab39"
+      },
+      "global_initializer_dispatch_fixture": {
+        "release_run": 42524566466,
+        "LLVM_run": 42524570448,
+        "revision": "9d15bcc9e374096fb4fdaa2c02fdd6007a429404",
+        "source_build_id": "llvmorg-23.1.5-392dfff97d29-bace3bd39a7e-0fcb354b",
+        "status": "CANCELLED_SUPERSEDED_AFTER_FOUNDATION_FIXTURE_FAILURE",
+        "failing_job": 128865300830,
+        "failure": "New global-initializer regression assumed the driver direct-send default; cc1 defaults to valid GNUstep lookup dispatch. One foundation regression failed; analysis did not start.",
+        "artifact": 13635914224,
+        "artifact_sha256": "bd61c179ccede3d231c632e57ac3ff0acb10dfe935669a460eeb3766da27bb95",
+        "repair": "Explicit lookup/direct dispatch across ARC/MRC and C++20/23; require the actual message result and its owned global store. All eight focused native configurations pass."
+      },
+      "ecf_native_and_independent_owners": {
+        "SDK_release": {
+          "run": 42528854066,
+          "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
+          "source_build_id": "llvmorg-23.1.5-392dfff97d29-ecf695f956f6-0fcb354b",
+          "status": "FAILED_CORE_REPAIRED_RETRY_REQUIRED",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42528854066"
+        },
+        "native_assurance": {
+          "run": 42528854066,
+          "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
+          "source_build_id": "llvmorg-23.1.5-392dfff97d29-ecf695f956f6-0fcb354b",
+          "status": "FAILED_CORE_REPAIRED_RETRY_REQUIRED",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42528854066"
+        },
+        "LLVM_IR_and_debugger": {
+          "run": 42528858909,
+          "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
+          "source_build_id": "llvmorg-23.1.5-392dfff97d29-ecf695f956f6-0fcb354b",
+          "status": "PASS",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42528858909",
+          "job": 128878567165,
+          "IR_and_debugger_executions": 21,
+          "semantic_oracle_cases": 63,
+          "semantic_oracle_controls": 7,
+          "artifact": 13639191209,
+          "artifact_bytes": 187908710,
+          "artifact_sha256": "b20abc826c3aa86aee6068eae87bdf6f3b9863fe2434ecf167443f26142c8e1d"
+        },
+        "implementation_analysis": {
+          "run": 42528854066,
+          "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
+          "source_build_id": "llvmorg-23.1.5-392dfff97d29-ecf695f956f6-0fcb354b",
+          "status": "IN_PROGRESS",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42528854066",
+          "partition_jobs": {
+            "0": 128878455810,
+            "1": 128878455745,
+            "2": 128878455827,
+            "3": 128878455772
+          }
+        }
+      },
+      "repaired_release_waiting_on_old_coverage": {
+        "run": 42536848346,
+        "revision": "87040229e577625506a31d9caf70bb8d2765026d",
+        "source_build_id": "llvmorg-23.1.5-392dfff97d29-5916ec08b8a2-0fcb354b",
+        "status": "CANCELLED_FOR_QUEUE_REPAIR",
+        "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42536848346",
+        "reason": "Branch-wide reusable-native concurrency held repaired native work behind an older source-coverage owner; exact-source isolation now starts repaired native owners concurrently without cancelling the older jobs."
+      }
+    },
+    "SDK_release": {
+      "run": 42537224777,
+      "revision": "14a04b4ecf5102e3ce08b27b7f85d4992cdac425",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-5916ec08b8a2-0fcb354b",
+      "status": "IN_PROGRESS",
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42537224777"
+    },
+    "native_assurance": {
+      "run": 42537224777,
+      "revision": "14a04b4ecf5102e3ce08b27b7f85d4992cdac425",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-5916ec08b8a2-0fcb354b",
+      "status": "IN_PROGRESS",
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42537224777",
+      "jobs": {
+        "core": 128904209288,
+        "source-coverage": 128904209300,
+        "frontend-fuzz": 128904209267
+      }
+    },
+    "LLVM_IR_and_debugger": {
+      "run": 42536852949,
+      "revision": "87040229e577625506a31d9caf70bb8d2765026d",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-5916ec08b8a2-0fcb354b",
+      "status": "IN_PROGRESS",
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42536852949",
+      "source_equivalence": "Subsequent 14a04b4ec changes only native queue isolation, its JavaScript policy controls and documentation. Canonical source, compiler configuration, frontend/runtime and LLVM qualification owners are unchanged; retain the running 87040229e campaign for producer 5916ec08b8a2."
+    },
+    "tooling_checkpoint": {
+      "revision": "049cfae5be966a899fc31383c8a43efe61172658",
+      "run": 42469181048,
+      "status": "PASS",
+      "tests_passed": 1499,
+      "subtests_passed": 33,
+      "explicit_skips": 107
+    },
+    "compiler_regression_checkpoint": {
+      "revision": "35df7e8a6a104479af384d08c7755c3c1276a60d",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-26f54d950ec8-70309e04",
+      "status": "PASS",
+      "compiler_tests_passed": 563,
+      "native_unit_tests_passed": 460,
+      "unsupported_platform_cases": 3,
+      "all_six_test_commands_passed": true,
+      "native_runtime_tests_passed": 10,
+      "artifact_sha256": "481895d4cde6d566b617162f1b54b116eaf08a56bc3899431c3931e621ecfc8e",
+      "remaining_blocker": "Borrowed-pointer positive fixture erased its callback owner contract; isolated frontend CTest configuration required a separately pinned GNU runtime. Both corrected; complete downstream retry remains required.",
+      "isolated_workers": {
+        "LLVM_ASan_UBSan": {
+          "compiler_tests_passed": 561,
+          "native_unit_tests_passed": 443,
+          "unsupported_platform_cases": 3,
+          "foundation_build_tests_and_stage": "PASS"
+        },
+        "frontend_fuzz": {
+          "compiler_tests_passed": 561,
+          "native_unit_tests_passed": 443,
+          "unsupported_platform_cases": 3,
+          "foundation_build_tests_and_stage": "PASS"
+        },
+        "source_coverage": {
+          "compiler_tests_passed": 561,
+          "native_unit_tests_passed": 443,
+          "unsupported_platform_cases": 3,
+          "foundation_build_tests_and_stage": "PASS"
+        },
+        "implementation_analysis": {
+          "compiler_tests_passed": 561,
+          "native_unit_tests_passed": 443,
+          "unsupported_platform_cases": 3,
+          "foundation_build_tests_and_stage": "PASS"
+        }
+      },
+      "LLVM_MD5_regressions_passed": 4
+    },
+    "core_frontend_checkpoint": {
+      "revision": "07052fb1f087b406979c9049c8b2ce9896911966",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-26f54d950ec8-70309e04",
+      "tests_passed": 45,
+      "tests_failed": 5,
+      "all_configured_tests_attempted": true,
+      "artifact_sha256": "fbaad75b436ff1d03a3c41d20769f03abf2e4fca4605ae6ca02cb1fad26fce86",
+      "repairs_pending_native_verification": [
+        "Borrowed callback diagnostic, admitted local reference capture and rejection of an escaping reference capture",
+        "AST import compares ordinary function shape before rejecting changed or erased native borrowed-result owners",
+        "Opaque key-path fixture replays with the pinned virtual runtime headers",
+        "Emission-policy positive control explicitly enables ASan at compile and link",
+        "C++ exception enable/disable flags go to the driver, preserving independent Objective-C exception mode"
+      ],
+      "still_under_investigation": [
+        "Unnamed-template projection bridge interface emission"
+      ],
+      "failure_collection": "Independent assertion-based cases now run in separate child processes; all cases still must pass. Failed current compiler inputs and executables are retained for one day, separately from accepted SDK artifacts."
+    },
+    "frontend_fuzz_checkpoint": {
+      "run": 42488455572,
+      "job": 128755480117,
+      "revision": "07052fb1f087b406979c9049c8b2ce9896911966",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-26f54d950ec8-802c019b",
+      "status": "PASS",
+      "campaigns": 3,
+      "controls": 6,
+      "commands": 55,
+      "artifact_sha256": "8ef2407ab8892bdda035575696cd6703bae38a125645fd24f586929af93a5ba2"
+    },
+    "core_diagnosis": {
+      "run": 42495426909,
+      "revision": "af58fb80f167497eb375ff1cc73ea8fb69001560",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-f2174d730013-70309e04",
+      "status": "FAILED_FRONTEND",
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42495426909",
+      "scope": "Explicit core-only diagnostic selection. Full aggregate and SDK publication are disabled; this is not full SDK qualification.",
+      "superseded_queued_request": {
+        "run": 42495087183,
+        "status": "CANCELLED_BEFORE_EXECUTION",
+        "reason": "Separate diagnostic concurrency group starts core work alongside existing extended profiles"
+      },
+      "foundation": "PASS",
+      "compiler_regressions_passed": 563,
+      "native_unit_tests_passed": 461,
+      "frontend_tests_passed": 47,
+      "frontend_tests_failed": 3,
+      "all_configured_tests_attempted": true,
+      "result_artifact_sha256": "796936eabe737530e1d84a4906a0b4e1739ac8c20e9a718c26846350232b3392",
+      "failure_collection": {
+        "emitter_cases_passed": 132,
+        "emitter_cases_attempted": 158,
+        "import_cases_passed": 16,
+        "import_cases_attempted": 17,
+        "borrowed_cases_passed": 9,
+        "borrowed_cases_attempted": 11
+      }
+    },
+    "source_coverage_checkpoint": {
+      "run": 42488455572,
+      "job": 128755480096,
+      "revision": "07052fb1f087b406979c9049c8b2ce9896911966",
+      "status": "FAILED_KNOWN_FRONTEND_FIXTURE",
+      "failure": "Opaque key-path fixture reparsed without its pinned virtual runtime-header mapping",
+      "repair_revision": "80b4b5366fc134ad51f2c246ea0311462a230db9",
+      "artifact_sha256": "c63b3eaabb62f14642b9ec9c568c2d89fbf38986444838c100d71e6659d1bd67",
+      "artifact_download_verified": true
+    },
+    "local_frontend_repair_checkpoint": {
+      "status": "PASS",
+      "scope": "Targeted local frontend diagnostics; not complete compiler or SDK qualification",
+      "compiler_foundation": "llvmorg-23.1.5-392dfff97d29-f2174d730013-70309e04",
+      "native_printer_overlay": {
+        "source": "clang/lib/AST/StmtPrinter.cpp",
+        "candidate_source_identity": "llvmorg-23.1.5-392dfff97d29-954801de6f9a-70309e04",
+        "foundation_prefix_unchanged": true,
+        "accepted_sdk": false
+      },
+      "emitter_cases_passed": 164,
+      "import_cases_passed": 17,
+      "borrowed_cases_passed": 11,
+      "previously_unenrolled_emitter_cases_now_executed": 6,
+      "ctest_programs_passed": 3,
+      "CTest_seconds": 158.42,
+      "complete_current_source_CI_still_required": true,
+      "repairs": [
+        "Preserve named template-specialization callable owners independently of physical imported header paths",
+        "Prevent factory-result identity recursion at named template roots",
+        "Resolve unnamed member projections to their published outer dependency owner",
+        "Keep provider-owned extern variable specializations complete on replay",
+        "Publish ordinary/native coroutine Blocks with their own dependency, promise and written-body context",
+        "Retain consumed ownership attributes and omit synthetic coroutine scope wrappers in native Block printing",
+        "Refresh stale positive reader/admission expectations while preserving unsupported/private-dependency rejection controls"
+      ]
+    },
+    "artifact_transport_checkpoint": {
+      "run": 42500956208,
+      "status": "PASS",
+      "source_run": 42495426909,
+      "source_debug_artifact": 13625290901,
+      "scope": "Download-only diagnostic artifact transport; no compiler execution and no SDK publication",
+      "parts": 4,
+      "maximum_part_MiB": 480,
+      "payload_sha256": "43303eef7a72a66468cd8423624584cd302132b487b1fbc225b0220351618e96",
+      "inner_archive_checksum_verified": true,
+      "reassembled_compiler_inputs_bytes": 608002556
+    },
+    "implementation_analysis": {
+      "run": 42537224777,
+      "revision": "14a04b4ecf5102e3ce08b27b7f85d4992cdac425",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-5916ec08b8a2-0fcb354b",
+      "status": "IN_PROGRESS",
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42537224777",
+      "partition_jobs": {
+        "0": 128904192630,
+        "1": 128904192603,
+        "2": 128904192767,
+        "3": 128904192660
+      }
+    },
+    "upstream_repair_checkpoint": {
+      "scope": "Focused local replay using retained compiler libraries, actual changed code-generation source and exact-version test tools; not SDK qualification.",
+      "upstream_failed_cases_resolved": 451,
+      "test_tool_failures": 439,
+      "expectation_failures": 11,
+      "code_generation_crashes": 1,
+      "focused_lit_cases_passed": 450,
+      "global_initializer_regression_profiles_passed": 8,
+      "original_crashing_upstream_case": "PASS: original FileCheck under matching exception flags",
+      "source_seal": "PASS",
+      "prepared_tree": "905250cc2c1edf42e59c21061db202c1973eaf93",
+      "dispatch_controls": "Explicit GNUstep lookup/direct sends across ARC/MRC and C++20/23, with exact call-result ownership and global stores"
+    },
+    "coverage_repair_checkpoint": {
+      "status": "PASS_LOCAL_NATIVE_AND_CONTROLS_FULL_INSTRUMENTED_RETRY_REQUIRED",
+      "shards": 8,
+      "test_deadline_seconds_per_shard": 900,
+      "completeness": "Retained JUnit must show identical complete catalogues, exact disjoint case execution and passes, all eight shards and one executable identity. Diagnostic selection cannot pass.",
+      "profile_collection": "Build-ID/module-signature locked online merging across fork and exec; real native branch controls retain every child/exec branch with one profile instead of one per process.",
+      "profile_storage_limit_bytes": 268435456,
+      "focused_coverage_and_tool_controls_passed": 46,
+      "additional_export_owner_and_revision_controls_passed": 125,
+      "native_shard_partition": {
+        "shards": 8,
+        "cases": 164,
+        "catalogue_sha256": "db28296b0d3a5ee9a0db76764a132aed5998d8fa55535ff215ac76b5d1fba8ef"
+      },
+      "native_shard_scope": "Retained f217 compiler libraries with canonical native printer overlay; all eight shard commands pass and independently verified JUnit covers all 164 cases. Not complete instrumented SDK qualification.",
+      "bounded_passed_JUnit_output_bytes": 16777216,
+      "native_suite_failure_collection_controls_passed": 5,
+      "shared_library_profile_merge_controls": "PASS: four pinned native binary/DSO \u00d7 merged/per-process fixtures preserve all fork/exec branches; full coverage owner requires all four unskipped before building LLVM."
+    },
+    "analysis_partition_repair": {
+      "status": "IMPLEMENTED",
+      "full_inventory_partitions": 4,
+      "dependency_scoped_partitions": 1,
+      "native_default_timeout_seconds": 600,
+      "large_frontend_units_timeout_seconds": 1800,
+      "maintained_compiler_timeout_seconds": 3600,
+      "focused_controls_passed": 127,
+      "terminal_completeness": "All partition indices, same full logical inventory and frozen source/header inputs, same compiler/config identity, disjoint union of every dependency-selected fresh native action.",
+      "source_repairs": "All seven finding units repaired and exported; all 17 previously reported Static Analyzer locations are clear in focused local replay. Complete matching Clang-Tidy/SDK qualification remains required."
+    },
+    "compiler_analysis_repair_checkpoint": {
+      "status": "PASS_FOCUSED_LOCAL_REPLAY",
+      "scope": "Previously reported Static Analyzer locations in actual canonical C++ translation units, using retained f217 compiler engine/headers; not complete matched Clang-Tidy or SDK qualification.",
+      "reported_units": 7,
+      "reported_diagnostics_cleared": 17,
+      "modern_cxx_regression_suites_passed": 6,
+      "source_seal": "PASS",
+      "prepared_tree": "58ab1811696fe17b8ca6b8a5d4d76fa5798ee7cc",
+      "repairs": [
+        "Initialize importer pointer/context outputs on failure paths and retain canonical redeclaration invariants",
+        "Retire constructor-state bookkeeping while its evaluator frame is still active; preserve optional argument outputs and absent-frame constant evaluation",
+        "Snapshot coroutine alignment and builtin-call classification across callbacks",
+        "Use resolved type/constraint/constructor invariants and validate decoded expression results",
+        "Reject incomplete concrete keypaths and non-prototyped resource cleanup callbacks",
+        "Preserve dependent matrix comparison and native vector/pointer subtype contracts"
+      ],
+      "diagnostic_limits": "Standalone driver additionally reports unselected dead-store/LLVM bit-shift diagnostics; this replay is restricted to the previously selected defect checkers and affected Clang units.",
+      "focused_tooling_controls_passed": 161
+    },
+    "global_initializer_dispatch_controls": {
+      "status": "PASS_FOCUSED_NATIVE_REPLAY",
+      "configurations": 8,
+      "export_and_upstream_tool_controls_passed": 4,
+      "source_seal": "PASS",
+      "prepared_tree": "905250cc2c1edf42e59c21061db202c1973eaf93",
+      "scope": "Actual corrected code generator with retained diagnostic libraries; complete current-source hosted qualification remains required."
+    },
+    "core_checkpoint": {
+      "run": 42528854066,
+      "job": 128878819997,
+      "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
+      "status": "FAILED_TOOL_AND_ORCHESTRATION_PREREQUISITES",
+      "artifact": 13638414519,
+      "artifact_sha256": "6f01fc57decdced9a753cd1185d7f99226a7b2a0ef894cf3125ba7171b262a4a",
+      "passed_suites": {
+        "frontend_programs": 50,
+        "runtime_tests": 10,
+        "installed_commands": 37,
+        "sanitizer_executions": 4,
+        "Swift_consumer_cases": 8,
+        "semantic_workload_and_import_summaries": 64
+      },
+      "upstream": {
+        "passed": 4157,
+        "unsupported": 220,
+        "expectedly_failed": 3,
+        "failed": 1,
+        "failure": "Modules/pr93497.cppm requires exact-fork opt"
+      },
+      "orchestration_failures": [
+        "Private SDK candidate was incorrectly ordered after its sanitizer consumers",
+        "Nested lit Python helpers dropped the no-bytecode policy and changed the prepared source"
+      ],
+      "SDK_packaging": "BLOCKED; no accepted archive produced"
+    },
+    "native_harness_repair": {
+      "revision": "facffee19e95b7b5771dec2695803ae86dd69482",
+      "status": "PASS_FOCUSED_CONTROLS_HOSTED_RETRY_REQUIRED",
+      "focused_controls_passed": 105,
+      "native_lit_cases_passed": 2,
+      "unpatched_nested_python_control_rejected": true,
+      "source_seal": "PASS",
+      "prepared_tree": "af4bb535063d95a62b3201df0a6b92152a411908",
+      "repairs": [
+        "Build and hash exact-fork opt before the complete upstream selection",
+        "Keep the sealed private SDK before sanitizer products; block failed prerequisites and publish only after the complete native batch passes",
+        "Preserve PYTHONDONTWRITEBYTECODE through lit child environments; new real nested import regression writes no prepared-source bytecode"
+      ],
+      "remaining_hosted_work": "Repaired complete qualification running; preceding independent analysis/coverage jobs continue to expose additional defects."
+    },
+    "preceding_frontend_fuzz": {
+      "status": "PASS",
+      "run": 42528854066,
+      "job": 128878820042,
+      "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-ecf695f956f6-802c019b",
+      "campaigns_passed": 3,
+      "controls_passed": 6,
+      "executions": [
+        35759,
+        25234,
+        395
+      ],
+      "artifact": 13638981154,
+      "artifact_sha256": "12e3c24fe4c53c479533c34f024971914c51d15e30995b9f0443edf452053b9f"
+    },
+    "current_frontend_fuzz_minimizer_repair": {
+      "status": "PASS_FOCUSED_REAL_LIBFUZZER_AND_SANITIZER_CONTROLS_HOSTED_RETRY_REQUIRED",
+      "failed_run": 42537224777,
+      "failed_job": 128904209267,
+      "failure_scope": "Runner rejected libFuzzer's natural zero exit after preserving the injected cleanup fault and reducing it to four bytes",
+      "policy": "Only minimization accepts natural zero, the reviewed injected-fault exit, or a runner-owned bounded timeout; exact marker, artifact bounds, two fresh byte replays and original replay remain mandatory",
+      "focused_fuzz_controls_passed": 14,
+      "native_sanitizer_and_product_evidence_controls_passed": 33,
+      "real_pinned_libfuzzer_natural_completion": "PASS",
+      "sanitizer_policy": "Existing fail-closed ambient-option replacement, paired ASan/UBSan/LSan/TSan controls and actual-product loader/evidence contracts remain unchanged and pass focused native execution"
+    },
+    "analysis_reader_and_capture_repair": {
+      "preceding_run": 42528854066,
+      "preceding_job": 128878455772,
+      "completed_variants": 57,
+      "passed_variants": 55,
+      "finding_units": 2,
+      "diagnostics": 15,
+      "repairs": [
+        "Guard a nullable borrowed-summary root without skipping unknown-memory owner/target invalidation",
+        "Require a submodule definition before attributes; validate all fifteen definition fields and scalar/export payload cardinality; reject null module creation",
+        "Keep newly decoded on-disk lookup tables under unique ownership until opaque-vector publication succeeds"
+      ],
+      "source_seal": "PASS",
+      "focused_tooling_controls_passed": 52,
+      "focused_static_analyzer": {
+        "SemaObjC3Borrowed.cpp": "PASS; no diagnostics; 96.78 seconds",
+        "ASTReader.cpp_including_MultiOnDiskHashTable.h": "PASS; no diagnostics; 167.02 seconds",
+        "reported_locations_cleared": 15,
+        "scope": "All selected Static Analyzer checks in retained-library local replay; complete matched hosted analysis remains required"
+      },
+      "native_valid_PCM": "PASS",
+      "native_malformed_PCM": "Clean malformed-module diagnostic with rebuilt reader; retained reader crashes on the same one-record mutation",
+      "matched_hosted_analysis": "Pending consolidated retry after independent owners finish collecting results"
+    },
+    "complete_preceding_analysis_inventory": {
+      "run": 42528854066,
+      "variants": 235,
+      "passed": 232,
+      "finding_units": 3,
+      "reported_diagnostics": 16,
+      "incomplete_or_timed_out": 0,
+      "last_partition_job": 128878455827,
+      "last_partition_artifact": 13643348644,
+      "last_partition_artifact_sha256": "531413d6ea2c9dd721cc9869c2c6edbac4b58c911124297f1eafc52da194f1c6",
+      "final_finding": "EmbedExpr traversal repeatedly forwards callback/state in a loop",
+      "repair": "Invoke the same callable and state as lvalues for each element; preserve early-stop index behavior",
+      "native_regression": "PASS with repair; FAIL with old forwarding expression",
+      "focused_clang_tidy_use_after_move": "PASS on CGExprAgg.cpp including Expr.h",
+      "focused_tooling_controls_passed": 67,
+      "all_sixteen_reported_locations_clear_in_focused_replay": true,
+      "source_seal": "PASS",
+      "superseded_early_campaigns": [
+        42547168207,
+        42547171369
+      ],
+      "scope": "Complete older inventory collected; fresh exact-source hosted qualification still required"
+    },
+    "SDK_package_fixture_and_allocation_repair": {
+      "preceding_run": 42537224777,
+      "preceding_core_job": 128904209288,
+      "artifact": 13643862509,
+      "artifact_sha256": "76745a4569b186f9653b8598728472db59ece6fdedafa790d6385a7171cabde0",
+      "preceding_passing_owners": [
+        "foundation",
+        "runtime",
+        "frontend",
+        "installed",
+        "sanitizers",
+        "upstream",
+        "swift-consumer",
+        "semantic-workloads",
+        "runtime-schedules"
+      ],
+      "preceding_upstream": {
+        "passed": 4158,
+        "unsupported": 220,
+        "expectedly_failed": 3
+      },
+      "repairs": [
+        "Resolve payload destructor exception specifications before native carrier allocation/deletion admission; guard unresolved specifications in pure and mixed ABI predicates",
+        "Require actual object generation for current recursive carrier admissions while preserving genuine exact-diagnostic rejections",
+        "Export all three checked keypath helpers and the sixteen C++ template roots used by the typed package consumer",
+        "Drain every independent installed SDK gate under the existing worker budget before rejecting any failed candidate"
+      ],
+      "recursive_carrier_matrix": {
+        "runtime_executions": 70,
+        "object_generation_admissions": 24,
+        "exact_rejections": 76,
+        "commands": 333
+      },
+      "focused_tooling_with_native_emission_adapter": {
+        "passed": 192,
+        "scope": "Includes all 100 ARC/MRC C++20/C++23 compile controls using rebuilt Sema/ABI objects with retained libraries and the pinned IR backend; not SDK qualification"
+      },
+      "allocation_native_controls_passed": 8,
+      "broader_focused_tooling": {
+        "passed": 328,
+        "capability_skips": 4
+      },
+      "source_seal": "PASS",
+      "superseded_campaigns": [
+        42547976619,
+        42547981394
+      ],
+      "keypath_public_version": "2.12.0; public macros now agree with the implemented module inventory",
+      "stdlib_version_controls_passed": 6,
+      "retained_boundary": "Complete matched SDK packaging, product sanitizers and fresh-host archive checks still required"
+    },
+    "current_completed_LLVM_checkpoint": {
+      "status": "PASS",
+      "run": 42536852949,
+      "job": 128902948174,
+      "revision": "87040229e577625506a31d9caf70bb8d2765026d",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-5916ec08b8a2-0fcb354b",
+      "IR_and_debugger_executions": 21,
+      "semantic_oracle_cases": 63,
+      "controls": 7,
+      "artifact": 13643320355,
+      "artifact_sha256": "2324f9191d610a1eb75899fdd20c12e4e01d36a36dadfa0d93af15bc9d753eb2",
+      "scope": "Passing preceding compiler checkpoint; new reader/capture repairs require their matching hosted campaign"
+    },
+    "native_release_queue": {
+      "revision": "14a04b4ecf5102e3ce08b27b7f85d4992cdac425",
+      "status": "PASS_CONTROLS_AND_HOSTED_CONCURRENCY",
+      "workflow_controls_passed": 86,
+      "focused_Python_controls_passed": 99,
+      "policy": "Preserve active builds; serialize duplicate requests for identical source, isolate repaired revisions",
+      "new_core_job": 128904209288,
+      "older_coverage_job": 128878820091,
+      "both_in_progress_observed": true
+    },
+    "coverage_budget_repair": {
+      "status": "PASS_FOCUSED_NATIVE_REPLAY_HOSTED_RETRY_REQUIRED",
+      "revision": "f8092721796602998956cc584d9d61fccae0ce26",
+      "preceding_run": 42528854066,
+      "preceding_job": 128878820091,
+      "artifact": 13640760679,
+      "artifact_sha256": "5db013487c9af8b5f40c912ff46eac11c7e4e50e380f93e2a9bbbf91fe25760b",
+      "failure": "Shards 0..5 passed; shard 6 exceeded its 900-second CTest deadline after 16 passing cases. No complete instrumented coverage receipt was produced.",
+      "policy_shards": 32,
+      "maximum_cases_per_shard": 6,
+      "deadline_seconds_unchanged": 900,
+      "first_party_selected_suites": 45,
+      "policy_projection": "One bounded policy count drives native CTest registration, explicit index/count arguments and the producer/terminal completeness verifier.",
+      "native_partition": {
+        "shards": 32,
+        "cases": 164,
+        "catalogue_sha256": "db28296b0d3a5ee9a0db76764a132aed5998d8fa55535ff215ac76b5d1fba8ef"
+      },
+      "native_scope": "Changed native CLI with retained f217 diagnostic libraries and canonical printer overlay; not complete instrumented SDK qualification.",
+      "invalid_native_CLI_controls_passed": 6,
+      "focused_controls_passed": 136,
+      "remaining": "Collect running native product/analysis results, then complete the new coverage policy in one consolidated retry."
+    },
+    "preceding_analysis_partition_0": {
+      "run": 42528854066,
+      "job": 128878455810,
+      "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
+      "status": "PASS",
+      "assigned_variants": 52,
+      "fresh_native_executions": 52,
+      "complete_inventory_variants": 235,
+      "artifact": 13639818320,
+      "artifact_sha256": "340b03030d9a8f5cc0705c5daae459ff3ad1ddcf60a5634f75f767f37cd75f3c",
+      "scope": "One complete partition; three other partitions and the terminal union gate remain pending."
+    }
+  },
+  "acceptance_policy": "Promote and activate the candidate only after matching compiler/frontend/runtime, implementation-analysis and fresh Debian/Ubuntu archive qualification pass. Historical receipts remain historical.",
+  "dependency_caching": {
+    "status": "PASS",
+    "tools": [
+      "LLVM bootstrap",
+      "Python interpreter and development environment",
+      "Node/npm",
+      "CMake",
+      "ccache",
+      "signed Swift consumer"
+    ],
+    "sources": [
+      "pinned LLVM bare Git objects",
+      "libobjc2",
+      "robin-map"
+    ],
+    "package_downloads": [
+      "npm",
+      "uv",
+      "pip"
+    ],
+    "identity": "Per-dependency pins and installer recipes; independent of feature commits and compiler patch digests",
+    "admission": "Exact restored tool file/mode/link inventory before execution; existing signed Swift publisher seal; pinned Git objects with full fsck",
+    "excluded": [
+      "compiler build trees",
+      "product SDK archives"
+    ],
+    "focused_python_tests_passed": 91,
+    "workflow_controls_passed": 86,
+    "installed_tool_inventories_checked": 5,
+    "live_CMake_cache_admission": "PASS",
+    "compiler_source_identity_unchanged": true,
+    "hosted_qualification": {
+      "revision": "07f5bb17d572b8eb401a5932f23d58b07039311a",
+      "cold": {
+        "run": 42475757968,
+        "status": "PASS",
+        "tool_and_source_cache_entries_published": 8,
+        "job_seconds": 179,
+        "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42475757968"
+      },
+      "warm": {
+        "run": 42475996283,
+        "status": "PASS",
+        "tool_and_source_cache_entries_restored": 8,
+        "admitted_tools": 6,
+        "source_cache_hits": 3,
+        "job_seconds": 101,
+        "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42475996283",
+        "artifact_sha256": "256df427ee61a6258ce3f9d28ed92ce94c0087d71acc6a64353d15151adb09a7"
+      },
+      "quick": {
+        "run": 42475762194,
+        "status": "PASS",
+        "cache_hits": [
+          "Python interpreter",
+          "Python packages",
+          "CMake"
+        ],
+        "tests_passed": 1520,
+        "subtests_passed": 33,
+        "explicit_skips": 107
+      }
+    },
+    "all_CI_entry_points": "Native/manual/periodic LLVM owners use the shared host action; quick/documentation/planning owners reuse Python packages; all setup-node callers cache npm and prefer cached downloads",
+    "retired_contract": "Remove the unenrolled Windows-era test requiring every workflow command to use npm bridge; native workflow and dependency routing contracts now execute in policy CI",
+    "current_revision_cache_reuse": {
+      "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
+      "observation": "GitHub cache API last-access timestamps during new release/LLVM setup",
+      "restored_dependency_entries": 8,
+      "dependency_keys_unchanged_by_new_compiler_patch": true,
+      "observed_utc": "2026-11-08T22:13:26.474672Z"
+    }
+  },
+  "SDK_full_installed_gate_repairs": {
+    "qualified_checkpoint": "909ed84269e10706abcd2627b9500933f9a64e7f",
+    "release_run": 42551751093,
+    "LLVM_run": 42551755792,
+    "compiler_patch_digest": "08d925b118b2a694150712edd6ba2baf0c82a7f04b84acd5a6e8d300b04e2d32",
+    "core_artifact": {
+      "id": 13650842537,
+      "sha256": "37fc8859fceb4f485dc52973032902b08c9c17778240c45a846d85b35cc75c9a",
+      "bytes": 59306698
+    },
+    "native_owners_passed": [
+      "foundation",
+      "runtime",
+      "frontend",
+      "installed",
+      "sanitizers",
+      "upstream",
+      "swift-consumer",
+      "semantic-workloads",
+      "runtime-schedules"
+    ],
+    "foundation": {
+      "compiler_regressions_passed": 572,
+      "native_units_passed": 462,
+      "unsupported": 3
+    },
+    "upstream": {
+      "passed": 4159,
+      "unsupported": 220,
+      "expected_failures": 3
+    },
+    "packaging": {
+      "independent_gates": 33,
+      "passed": 26,
+      "failed": 7,
+      "later_gates_not_started": 0,
+      "failed_gates": [
+        "typed_keypath_packages",
+        "native_async",
+        "native_async_packages",
+        "native_features",
+        "record_carriers",
+        "heap_carriers",
+        "cxx_interfaces"
+      ]
+    },
+    "blocked": "Product sanitizer qualification requires a passing private SDK package",
+    "repairs": [
+      "Queue imported private keypath descriptor/accessor definitions for consumer code generation",
+      "Establish named ancestor ABI owners before Sema reports an inline member in an unnamed record",
+      "Instantiate foreign pointer destruction only for pointer task storage, preserving const C++ value results",
+      "Keep generated native frame callbacks in an artificial debug location scope for inlinable exception-hook calls",
+      "Require current positive native object/interface admissions alongside remaining precise rejections",
+      "Load Python zstd only for sanitizer evidence retention/replay; normal installed helpers work with distribution Python"
+    ],
+    "admission_counts": {
+      "record": {
+        "native_objects": 2,
+        "rejections": 8
+      },
+      "heap": {
+        "native_objects": 5,
+        "rejections": 7
+      },
+      "cxx_interfaces": {
+        "interfaces": 8,
+        "rejections": 8
+      }
+    },
+    "focused": {
+      "tooling_passed": 340,
+      "native_capability_skips": 4,
+      "module_names_native_configurations": 9,
+      "keypath_IR_configurations": 4,
+      "async_callback_IR_configurations": 4,
+      "const_task_IR_configurations": 2,
+      "callback_static_analysis_diagnostics": 0,
+      "old_importer_has_undefined_helpers": true,
+      "old_callback_fails_LLVM_verification": true,
+      "old_early_member_naming_fails": true,
+      "module_names_nested_named_ancestors": 24
+    },
+    "fuzz": {
+      "run": 42551751093,
+      "job": 128948758143,
+      "artifact": 13649730391,
+      "artifact_sha256": "ac98aee2a844c542a3b7ce3ee6ba50cf94deb647ba765875e4d478575d927d55",
+      "source": "909ed84269e10706abcd2627b9500933f9a64e7f",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-08d925b118b2-802c019b",
+      "status": "PASS",
+      "campaigns": [
+        {
+          "strategy": "raw-dictionary",
+          "status": "PASS",
+          "executions": 17069
+        },
+        {
+          "strategy": "structured-pair",
+          "status": "PASS",
+          "executions": 12088
+        },
+        {
+          "strategy": "frontend-syntax-sema",
+          "status": "PASS",
+          "executions": 311
+        }
+      ],
+      "controls": [
+        {
+          "name": "mandatory-and-persistent-reset-replay",
+          "status": "PASS"
+        },
+        {
+          "name": "frontend-exact-persistent-reset-replay",
+          "status": "PASS"
+        },
+        {
+          "name": "property-fault-detected-reduced-and-replayed",
+          "status": "PASS",
+          "original_bytes": 934,
+          "reduced_bytes": 861,
+          "stable_replays": 2
+        },
+        {
+          "name": "boundary-fault-detected-reduced-and-replayed",
+          "status": "PASS",
+          "original_bytes": 934,
+          "reduced_bytes": 860,
+          "stable_replays": 2
+        },
+        {
+          "name": "frontend-result-cleanup-fault-detected-reduced-and-replayed",
+          "status": "PASS",
+          "original_bytes": 36,
+          "reduced_bytes": 4,
+          "stable_replays": 2
+        },
+        {
+          "name": "omitted-production-decoder-feedback-rejected",
+          "status": "PASS"
+        }
+      ]
+    },
+    "LLVM": {
+      "run": 42551755792,
+      "job": 128948878061,
+      "artifact": 13650235463,
+      "artifact_sha256": "85d6adc4cc7212862adf7ec5732361410e108b1d6b0734edc3c60799dea46052",
+      "artifact_bytes": 187909307,
+      "source": "909ed84269e10706abcd2627b9500933f9a64e7f",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-08d925b118b2-49025fa3",
+      "status": "PASS",
+      "IR_and_debugger_executions": 21,
+      "oracle_cases": 63,
+      "oracle_controls": 7
+    },
+    "analysis_completed": [
+      {
+        "run": 42551751093,
+        "job": 128948763870,
+        "artifact": 13651630749,
+        "artifact_sha256": "5cae28ccf12d03f8edb98fbf317824b220363135c6f168ad79aebacde8ee95f0",
+        "source": "909ed84269e10706abcd2627b9500933f9a64e7f",
+        "source_build_id": "llvmorg-23.1.5-392dfff97d29-08d925b118b2-49025fa3",
+        "status": "PASS",
+        "partition": {
+          "count": 4,
+          "index": 0
+        },
+        "inventory_variants": 235,
+        "analyzed_variants": 52,
+        "diagnostics": 0,
+        "timed_out": 0,
+        "incomplete": 0
+      },
+      {
+        "run": 42551751093,
+        "job": 128948763747,
+        "artifact": 13650152527,
+        "artifact_sha256": "e43ad4ae3b38a2811566f6f0549f00fb042956547e6ea08b50f582a6690f1574",
+        "artifact_bytes": 3378694,
+        "source": "909ed84269e10706abcd2627b9500933f9a64e7f",
+        "source_build_id": "llvmorg-23.1.5-392dfff97d29-08d925b118b2-49025fa3",
+        "status": "PASS",
+        "partition": {
+          "count": 4,
+          "index": 1
+        },
+        "inventory_variants": 235,
+        "analyzed_variants": 51,
+        "diagnostics": 0,
+        "incomplete": 0,
+        "timed_out": 0
+      },
+      {
+        "run": 42551751093,
+        "job": 128948763839,
+        "artifact": 13651418386,
+        "artifact_sha256": "d746b679872afd091eddc49013006d88bf458da95408237db5b715c34f78a28e",
+        "source": "909ed84269e10706abcd2627b9500933f9a64e7f",
+        "source_build_id": "llvmorg-23.1.5-392dfff97d29-08d925b118b2-49025fa3",
+        "status": "PASS",
+        "partition": {
+          "count": 4,
+          "index": 2
+        },
+        "inventory_variants": 235,
+        "analyzed_variants": 75,
+        "diagnostics": 0,
+        "timed_out": 0,
+        "incomplete": 0
+      },
+      {
+        "run": 42551751093,
+        "job": 128948763804,
+        "artifact": 13652565375,
+        "artifact_sha256": "dae49e4770ceff889d20f80944b663b55b515416a32ac116c1449ab5efaf2fe2",
+        "source": "909ed84269e10706abcd2627b9500933f9a64e7f",
+        "source_build_id": "llvmorg-23.1.5-392dfff97d29-08d925b118b2-49025fa3",
+        "status": "PASS",
+        "partition": {
+          "count": 4,
+          "index": 3
+        },
+        "inventory_variants": 235,
+        "analyzed_variants": 57,
+        "diagnostics": 0,
+        "timed_out": 0,
+        "incomplete": 0
+      }
+    ],
+    "analysis_remaining_partitions": [],
+    "coverage_status": "PASS",
+    "replacement_archive_accepted": false,
+    "analysis_total_passed": 235,
+    "coverage": {
+      "run": 42551751093,
+      "job": 128948758113,
+      "artifact": 13652615529,
+      "artifact_sha256": "01f78fb393a390431773cc7ac41aa24ee02f6f88af886087636b55204649cb57",
+      "source": "909ed84269e10706abcd2627b9500933f9a64e7f",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-08d925b118b2-07b7bed9",
+      "status": "PASS",
+      "emitter_partition": {
+        "cases": 164,
+        "catalogue_sha256": "db28296b0d3a5ee9a0db76764a132aed5998d8fa55535ff215ac76b5d1fba8ef",
+        "shards": 32
+      },
+      "first_party_suites": 45,
+      "compiler_suites": 5,
+      "controls": [
+        {
+          "name": "concurrent-process-profile-isolation",
+          "status": "PASS"
+        },
+        {
+          "name": "zero-hit-and-targeted-recovery-branch",
+          "status": "PASS"
+        },
+        {
+          "name": "wrong-binary",
+          "status": "PASS"
+        },
+        {
+          "name": "missing-profile",
+          "status": "PASS"
+        },
+        {
+          "name": "corrupt-profile",
+          "status": "PASS"
+        }
+      ]
+    }
+  }
+}

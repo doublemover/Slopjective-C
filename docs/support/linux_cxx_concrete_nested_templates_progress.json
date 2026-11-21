@@ -1,0 +1,46 @@
+{
+  "schema": "objc3c.linux-cxx-concrete-nested-template-progress.v1",
+  "status": "FOCUSED_SOURCE_VALIDATED",
+  "date": "2026-10-28",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-42e3e65408b1-00b75dc3",
+  "compiler_patch_digest": "42e3e65408b1bb47e1c8bde2639b958cb9f56e283653e9586304a50d2887dad9",
+  "base_checkpoint": "44517fe39bc618a4f53cd0a5eec943977892010b",
+  "frontend_input_sha256": "7570d817824abb392883adb2499a38e139e798783d98f93feba61f68d81d6399",
+  "concurrency_module_version": "2.55.0",
+  "required_semantic": "objc3.cxx-concrete-nested-templates.v1",
+  "verification": {
+    "optimized_compiler_build": "PASS",
+    "emitter_suite": "PASS",
+    "dialects": [
+      "c++20",
+      "c++23"
+    ],
+    "source_free_runtime_configurations": 8,
+    "source_free_runtime_commands": 32,
+    "provider_source_removed": true,
+    "virtual_lifetime_accounting": true,
+    "exact_signed_zero_identity": true,
+    "reports": [
+      {
+        "path": "out/concrete-nested-template-build.log",
+        "sha256": "6f066b41f5facbd128f20d8b72f31423bd88fc46086d233ff1396b0fd7caf354"
+      },
+      {
+        "path": "out/concrete-nested-template-emitter-test.log",
+        "sha256": "dd373e5a1bb7d9c7ca9234bbebbb7e772b2052bd6c74c6d9588160911a23c8e4"
+      },
+      {
+        "path": "out/native-validation/concrete-nested-template-packages-normal/qualification.json",
+        "sha256": "0ecf2d8fdf5fe6f06db2cffa03a74eac689e2939b48ee2161cb28551a6672aaa"
+      }
+    ]
+  },
+  "accepted_sdk_version": "2.52.0",
+  "sdk_rebuilt": false,
+  "deferred": [
+    "Combined compiler/frontend/tooling/sanitizer validation for source 2.53 and later",
+    "Coordinated SDK delivery after the next implementation batch"
+  ],
+  "profile_conformance_claimed": false,
+  "native_linux_aarch64_qualified": false
+}

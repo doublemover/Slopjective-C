@@ -3,7 +3,7 @@
 The compiler uses one patched LLVM/Clang SDK. The authoritative upstream tag,
 commit, exact development tool versions, build configuration and canonical
 extension patch series are recorded in [manifest.json](manifest.json). The
-current foundation is LLVM 23.1.3. No system Clang substitution is admitted.
+current foundation is LLVM 23.1.5. No system Clang substitution is admitted.
 
 ## Build the Linux SDK
 

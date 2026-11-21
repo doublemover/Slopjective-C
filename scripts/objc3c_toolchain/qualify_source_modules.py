@@ -11,9 +11,19 @@ import subprocess
 import tempfile
 import time
 
+if __package__:
+    from .diagnostic_termination import require_diagnostic_exit
+else:
+    from diagnostic_termination import require_diagnostic_exit
+
 
 def qualify(sdk: Path, output: Path) -> dict:
+    sdk, output = sdk.resolve(), output.resolve()
+    if output.is_relative_to(sdk) or sdk.is_relative_to(output):
+        raise ValueError('source module qualification output must be disjoint from the SDK')
     output.mkdir(parents=True, exist_ok=True)
+    receipt = output / 'summary.json'
+    receipt.unlink(missing_ok=True)
     example = sdk / 'share/objc3c/examples/managed'
     records = []
     negative = []
@@ -32,11 +42,17 @@ def qualify(sdk: Path, output: Path) -> dict:
 
             def run(name, expected):
                 log_path = output / f'{optimization}-{name}.log'
-                with log_path.open('w') as log:
-                    subprocess.run([os.sys.executable, '-B', str(example / 'build.py'),
-                        '--source-dir', str(sources), '--output-dir', str(build),
-                        '--optimization', optimization], cwd=client, stdout=log,
-                        stderr=subprocess.STDOUT, check=True, timeout=180)
+                try:
+                    with log_path.open('w') as log:
+                        subprocess.run([os.sys.executable, '-B', str(example / 'build.py'),
+                            '--source-dir', str(sources), '--output-dir', str(build),
+                            '--optimization', optimization], cwd=client, stdout=log,
+                            stderr=subprocess.STDOUT, check=True, timeout=180)
+                except subprocess.SubprocessError:
+                    lookup = build / 'lookup.log'
+                    if lookup.is_file():
+                        shutil.copyfile(lookup, output / f'{optimization}-{name}-lookup.log')
+                    raise
                 report = json.loads((build / 'build-report.json').read_text())
                 actual = {stage for stage, row in report['stages'].items() if row['reused']}
                 if actual != set(expected):
@@ -101,20 +117,57 @@ def qualify(sdk: Path, output: Path) -> dict:
                 if arc:
                     command.append('--arc')
                 command += ['--', '--no-default-config', '-fblocks', '-' + optimization]
-                result = subprocess.run(command, cwd=client, capture_output=True, text=True, timeout=180)
-                (output / f'{optimization}-reject-{case}.log').write_text(result.stdout + result.stderr)
-                if result.returncode == 0 or code not in result.stderr or obj.exists() or deps.exists():
+                result = subprocess.run(command, cwd=client, stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT, text=True, errors='replace', timeout=180)
+                log = output / f'{optimization}-reject-{case}.log'
+                log.write_text(result.stdout)
+                try:
+                    require_diagnostic_exit(result.returncode, result.stdout, code)
+                except ValueError as error:
+                    raise ValueError(f'{optimization} {case}: invalid import rejection; see {log}; {error}') from error
+                if obj.exists() or deps.exists():
                     raise ValueError(f'{optimization} {case}: invalid import did not fail atomically with {code}')
                 negative.append({'optimization': optimization, 'case': case,
-                                 'exit_code': result.returncode, 'diagnostic': code, 'outputs_absent': True})
+                                 'exit_code': result.returncode, 'expected_exit_code': 1,
+                                 'expected_termination': 'diagnostic-exit',
+                                 'diagnostic': code, 'outputs_absent': True})
             if dependency_record['modules'][0]['fingerprint'] != identity['semantic_fingerprint']:
                 raise ValueError('dependency lock did not update after the API edit')
+            # These headers live outside source membership/old depfiles. Fresh
+            # preprocessing must notice both negative lookup and priority changes.
+            probe = b'\n#if __has_include("../early/route.h")\n#include "../early/route.h"\n#else\n#include "../late/route.h"\n#endif\n'
+            late, early = client / 'late', client / 'early'
+            late.mkdir(exist_ok=True)
+            early.mkdir(exist_ok=True)
+            (early / 'route.h').unlink(missing_ok=True)
+            external = late / 'route.h'
+            external.write_text('#define PRIVATE_ROUTE 1\n')
+            provider.write_bytes(provider.read_bytes() + probe)
+            run('external-lookup-baseline', ('arc-interface', 'consumer'))
+            run('external-lookup-warm', all_stages)
+            stamp = external.stat()
+            external.write_text('#define PRIVATE_ROUTE 2\n')
+            os.utime(external, ns=(stamp.st_atime_ns, stamp.st_mtime_ns))
+            run('external-header-preserved-mtime', ('arc-interface', 'consumer'))
+            (early / 'route.h').write_text('#define PRIVATE_ROUTE 3\n')
+            run('new-earlier-header', ('arc-interface', 'consumer'))
+            (early / 'route.h').unlink()
+            run('removed-earlier-header', ('arc-interface', 'consumer'))
+            # Repeat the negative lookup in the actual managed consumer too.
+            main = sources / 'main.m'
+            main.write_bytes(main.read_bytes() + b'\n#if __has_include("../consumer-extra.h")\n#include "../consumer-extra.h"\n#endif\n')
+            run('consumer-lookup-baseline', ('provider', 'arc-interface'))
+            run('consumer-lookup-warm', all_stages)
+            (client / 'consumer-extra.h').write_text('#define PRIVATE_CONSUMER 1\n')
+            run('new-consumer-header', ('provider', 'arc-interface'))
+            (client / 'consumer-extra.h').unlink()
+            run('removed-consumer-header', ('provider', 'arc-interface'))
     result = {'schema': 'objc3c.installed-source-modules.v1', 'status': 'PASS',
               'sdk_seal': records[0]['sdk_seal'], 'outside_checkout': True,
               'builds': records, 'rejected_imports': negative,
               'source_builder_sha256': hashlib.sha256((example / 'build.py').read_bytes()).hexdigest(),
               'limits': 'Example module graph, not a general package manager. Build timings exclude full SDK admission and final verification; elapsed timings include both. The native linker runs on every invocation.'}
-    (output / 'summary.json').write_text(json.dumps(result, indent=2) + '\n')
+    receipt.write_text(json.dumps(result, indent=2) + '\n')
     return result
 
 

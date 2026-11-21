@@ -1,11 +1,43 @@
 #include "service_internal.h"
 #include "service_autorelease_pool.h"
 #include "service_actor.h"
+#include "service_group.h"
+#include "runtime/public/objc3_async_c.h"
 
 #include <cstdlib>
 #include <cstring>
 #include <new>
+#include <unordered_set>
 #include <utility>
+
+namespace {
+// Protects AwaitTarget::waiting_dependencies and serializes wait admission.
+std::mutex task_dependency_graph;
+}
+
+struct ObjC3TaskDependencyWaiter {
+  enum class State { Pending, Linked, Detached };
+
+  explicit ObjC3TaskDependencyWaiter(std::shared_ptr<objc3_task::AwaitTarget> target)
+      : edges{std::move(target), {}} {}
+
+  ObjC3TaskAwaitEdges edges;
+  ObjC3TaskAwaitContinuation continuation;
+  std::list<objc3_task::Waiter>::iterator position;
+  State state{State::Pending}; // Protected by the dependency's task mutex.
+
+  static void unlink(void *opaque) noexcept {
+    auto &registration = *static_cast<ObjC3TaskDependencyWaiter *>(opaque);
+    const auto &dependency = registration.edges.direct;
+    std::lock_guard<std::mutex> lifetime(dependency->mutex);
+    if (auto *task = dependency->task) {
+      std::lock_guard<std::mutex> lock(task->mutex);
+      if (registration.state == State::Linked)
+        task->waiters.erase(registration.position);
+      registration.state = State::Detached;
+    }
+  }
+};
 
 extern "C" objc3_service_status
 objc3_async_result_type_validate(const objc3_async_result_type *type) {
@@ -63,6 +95,40 @@ objc3_async_result_type_equal(const objc3_async_result_type *left,
 }
 
 namespace {
+using AwaitTarget = objc3_task::AwaitTarget;
+
+bool branching_dependencies_reach(std::vector<std::shared_ptr<AwaitTarget>> pending,
+                                  const AwaitTarget *target) {
+  std::unordered_set<const AwaitTarget *> visited;
+  while (!pending.empty()) {
+    auto node = std::move(pending.back());
+    pending.pop_back();
+    if (node.get() == target) return true;
+    if (!visited.insert(node.get()).second) continue;
+    for (const auto &weak_registration : node->scope_dependencies)
+      if (auto registration = weak_registration.lock())
+        pending.push_back(registration->member);
+    const auto edges = node->waiting_dependencies.lock();
+    if (!edges || !edges->active.load(std::memory_order_acquire)) continue;
+    if (edges->direct) pending.push_back(edges->direct);
+    else pending.insert(pending.end(), edges->members.begin(), edges->members.end());
+  }
+  return false;
+}
+
+bool dependency_reaches(const ObjC3TaskAwaitEdges &start, const AwaitTarget *target) {
+  if (!start.direct) return branching_dependencies_reach(start.members, target);
+  // Ordinary chains stay allocation-free until a group obligation branches.
+  for (auto node = start.direct;;) {
+    if (node.get() == target) return true;
+    if (!node->scope_dependencies.empty())
+      return branching_dependencies_reach({node}, target);
+    const auto edges = node->waiting_dependencies.lock();
+    if (!edges || !edges->active.load(std::memory_order_acquire)) return false;
+    if (!edges->direct) return branching_dependencies_reach(edges->members, target);
+    node = edges->direct;
+  }
+}
 
 thread_local objc3_task_t *current_service_task = nullptr;
 
@@ -77,7 +143,7 @@ struct AllocationHeader { void *base; };
 
 struct TaskReleaseGuard {
   objc3_task_t *task;
-  ~TaskReleaseGuard() { objc3_task_internal_release(task); }
+  ~TaskReleaseGuard() { if (task) objc3_task_internal_release(task); }
 };
 
 struct ResumeDispatch {
@@ -86,6 +152,19 @@ struct ResumeDispatch {
 };
 
 void cancel_task(objc3_task_t *task) noexcept {
+  if (objc3::services::task_group_scope_abort(task)) return;
+  // Forced loss of a continuation is cancellation of the task's structured
+  // work too. Publish descendant flags/wakes before reporting this outcome.
+  objc3_task_request_cancel(task);
+  {
+    std::lock_guard<std::mutex> lock(task->mutex);
+    if (task->awaiting && task->await_cancellation_shielded) {
+      // A broken callback or lost external owner cannot reclaim a structured
+      // scope's native frame before its already-registered cleanup finishes.
+      task->cancel_after_cleanup = true;
+      return;
+    }
+  }
   objc3_completion cancelled{};
   cancelled.struct_size = sizeof(cancelled);
   cancelled.version = OBJC3_SERVICE_ABI_VERSION;
@@ -99,6 +178,9 @@ void run_dispatch(void *context) {
   objc3_service_run_task_resume(dispatch->task);
 }
 
+// Consumes one already-retained task lease from the notifying operation.
+void wake_awaiting_task(objc3_task_t *task, bool force_cancel = false) noexcept;
+
 void destroy_dispatch(void *context) {
   std::unique_ptr<ResumeDispatch> dispatch(
       static_cast<ResumeDispatch *>(context));
@@ -109,7 +191,8 @@ void destroy_dispatch(void *context) {
     }
     // Actor cancellation discards queued jobs. Such a continuation must not
     // leave a suspended task and its native frame unreachable.
-    cancel_task(dispatch->task);
+    wake_awaiting_task(dispatch->task, true);
+    return; // The trampoline now owns the discarded dispatch's task lease.
   }
   objc3_task_internal_release(dispatch->task);
 }
@@ -162,44 +245,50 @@ void release_rejected_dispatch(ResumeDispatch *dispatch) {
   objc3_task_internal_release(task);
 }
 
-struct AwaitContinuation {
-  std::shared_ptr<objc3_task::AwaitTarget> target;
-  uint64_t generation;
-};
-
-void wake_awaiting_task(objc3_task_t *task) noexcept {
-  const auto status = objc3_task_schedule_resume(task);
-  if (status == OBJC3_SERVICE_OK || status == OBJC3_SERVICE_ALREADY_COMPLETED)
+void wake_awaiting_task(objc3_task_t *task, bool force_cancel) noexcept {
+  struct WakeQueue {
+    objc3_task_t *head{nullptr};
+    objc3_task_t *tail{nullptr};
+    bool draining{false};
+  };
+  static thread_local WakeQueue queue;
+  // Transfer the caller's lease instead of trying to retain again during
+  // queue pressure, OOM or reference-count saturation.
+  if (force_cancel) task->wake_cancel.store(true, std::memory_order_release);
+  if (task->wake_pending.exchange(true, std::memory_order_acq_rel)) {
+    objc3_task_internal_release(task);
     return;
-  objc3_completion cancelled{};
-  cancelled.struct_size = sizeof(cancelled);
-  cancelled.version = OBJC3_SERVICE_ABI_VERSION;
-  cancelled.kind = OBJC3_COMPLETION_CANCELLED;
-  (void)objc3_task_complete(task, &cancelled);
+  }
+  task->wake_next = nullptr;
+  if (queue.tail) queue.tail->wake_next = task;
+  else queue.head = task;
+  queue.tail = task;
+  if (queue.draining) return;
+  queue.draining = true;
+  while (queue.head) {
+    auto *current = queue.head;
+    queue.head = current->wake_next;
+    if (!queue.head) queue.tail = nullptr;
+    current->wake_next = nullptr;
+    current->wake_pending.store(false, std::memory_order_release);
+    if (current->wake_cancel.exchange(false, std::memory_order_acq_rel)) {
+      cancel_task(current);
+    } else {
+      const auto status = objc3_task_schedule_resume(current);
+      if (status != OBJC3_SERVICE_OK && status != OBJC3_SERVICE_ALREADY_COMPLETED)
+        cancel_task(current);
+    }
+    // Completion callbacks may append more failed wakes. Drain those after
+    // this completion/frame cleanup returns, without allocating or recursing.
+    objc3_task_internal_release(current);
+  }
+  queue.draining = false;
 }
 
 void dependency_completed(void *context, const objc3_completion *) {
-  std::unique_ptr<AwaitContinuation> continuation(
-      static_cast<AwaitContinuation *>(context));
-  objc3_task_t *parent = nullptr;
-  {
-    // The token does not retain the parent. Its lock protects the raw pointer
-    // against final deletion; try_retain rejects a record already at zero.
-    std::lock_guard<std::mutex> lock(continuation->target->mutex);
-    parent = continuation->target->task;
-    if (!objc3_task_internal_retain(parent)) return;
-  }
-  TaskReleaseGuard guard{parent};
-  bool wake = false;
-  {
-    std::lock_guard<std::mutex> lock(parent->mutex);
-    if (!parent->terminal && parent->awaiting &&
-        parent->await_generation == continuation->generation) {
-      parent->awaiting = false;
-      wake = true;
-    }
-  }
-  if (wake) wake_awaiting_task(parent);
+  auto &registration = *static_cast<ObjC3TaskDependencyWaiter *>(context);
+  registration.edges.active.store(false, std::memory_order_release);
+  objc3_task_finish_await(registration.continuation);
 }
 
 void *allocate_payload(uint64_t size, uint64_t alignment) noexcept {
@@ -292,8 +381,30 @@ objc3_completion task_view(const objc3_task_t *task) noexcept {
   return value;
 }
 
+bool task_quiescent_locked(const objc3_task_t *task) noexcept {
+  return task->terminal && task->frame_destroyed && !task->frame_destroying &&
+         !task->resume_active && task->callbacks_active == 0 &&
+         task->continuation_owners_active == 0;
+}
+
+void notify_quiescence(objc3_task_t *task) noexcept {
+  std::shared_ptr<ObjC3TaskQuiescenceObserver> observer;
+  {
+    std::lock_guard<std::mutex> lock(task->mutex);
+    if (!task_quiescent_locked(task)) return;
+    observer = task->quiescence_observers;
+  }
+  // These are scheduler notifications, not completion callbacks. Counting them
+  // as active completion callbacks would make a notified group temporarily
+  // unjoinable on a different worker. The caller retains the task throughout.
+  for (; observer; observer = observer->next) {
+    CurrentTaskScope current(task);
+    try { observer->notify(observer->context.get()); } catch (...) {}
+  }
+}
+
 void invoke_waiters(objc3_task_t *task,
-                    const std::vector<objc3_task::Waiter> &waiters,
+                    const std::list<objc3_task::Waiter> &waiters,
                     const objc3_completion &value) noexcept {
   for (const auto &waiter : waiters) {
     {
@@ -306,6 +417,7 @@ void invoke_waiters(objc3_task_t *task,
     }
     task->completed.notify_all();
   }
+  notify_quiescence(task);
 }
 
 void finish_frame_destruction(objc3_task_t *task, void *frame,
@@ -314,12 +426,39 @@ void finish_frame_destruction(objc3_task_t *task, void *frame,
     CurrentTaskScope current(task);
     objc3_task_destroy_frame(frame, destroy);
   }
+  std::shared_ptr<void> scope_owner;
+  {
+    std::lock_guard<std::mutex> lock(task->mutex);
+    scope_owner = std::move(task->group_scope_owner);
+  }
+  {
+    CurrentTaskScope current(task);
+    scope_owner.reset();
+  }
   {
     std::lock_guard<std::mutex> lock(task->mutex);
     task->frame_destroying = false;
     task->frame_destroyed = true;
   }
   task->completed.notify_all();
+  notify_quiescence(task);
+}
+
+void finish_continuation_owner(objc3_task_t *task,
+                               std::shared_ptr<void> &owner) noexcept {
+  if (!owner) return;
+  {
+    // A payload destructor may reenter a blocking wait on this very task.
+    // Preserve callback identity until all retained cleanup resources are gone.
+    CurrentTaskScope current(task);
+    owner.reset();
+  }
+  {
+    std::lock_guard<std::mutex> lock(task->mutex);
+    --task->continuation_owners_active;
+  }
+  task->completed.notify_all();
+  notify_quiescence(task);
 }
 
 void release_payload(objc3_task_t *task) noexcept {
@@ -333,10 +472,38 @@ void release_payload(objc3_task_t *task) noexcept {
 
 } // namespace
 
+objc3_task::AwaitTarget::~AwaitTarget() {
+  // Releasing the last descendant can reclaim an arbitrarily deep chain of
+  // completed ancestor tokens. A nested destructor hands its one strong parent
+  // to the outer loop rather than recursively dropping another shared_ptr.
+  // The TLS pointer is trivial and owns no state at thread teardown.
+  static thread_local std::shared_ptr<AwaitTarget> *deferred_parent = nullptr;
+  if (deferred_parent) {
+    *deferred_parent = std::move(structured_parent);
+    return;
+  }
+  auto next = std::move(structured_parent);
+  std::shared_ptr<AwaitTarget> pending;
+  deferred_parent = &pending;
+  while (next) {
+    next.reset();
+    next = std::move(pending);
+  }
+  deferred_parent = nullptr;
+}
+
 objc3_task_t::~objc3_task() {
+  objc3_task_retire_await_edges_locked(this);
   if (await_target) {
     std::lock_guard<std::mutex> lock(await_target->mutex);
     await_target->task = nullptr;
+  }
+  // One task can be registered in many independent groups. Drop the immutable
+  // observation chain iteratively: shared_ptr's recursive next destruction
+  // would otherwise make final task release consume unbounded native stack.
+  while (quiescence_observers) {
+    auto observer = std::move(quiescence_observers);
+    quiescence_observers = std::move(observer->next);
   }
   // A last handle released while suspended becomes an implicit cancellation.
   // The release path normally terminalizes first; this is a defensive fallback.
@@ -362,8 +529,7 @@ objc3_service_status objc3_task_wait_quiescent(objc3_task_t *task) {
   if (!objc3_task_internal_retain(task)) return OBJC3_SERVICE_NOT_READY;
   std::unique_lock<std::mutex> lock(task->mutex);
   auto quiescent = [task] {
-    return task->terminal && task->frame_destroyed && !task->frame_destroying &&
-           !task->resume_active && task->callbacks_active == 0;
+    return task_quiescent_locked(task);
   };
   // A task can hop to any executor after this check. Never block an executor
   // callback on pending task work, even when its current destination differs.
@@ -384,8 +550,29 @@ bool objc3_task_internal_retain(objc3_task_t *task) {
   return task && objc3::services::try_retain(task->references);
 }
 
-void objc3_task_internal_release(objc3_task_t *task) {
-  if (task->references.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+namespace {
+void release_task_reference(objc3_task_t *task, bool check_cleanup) {
+  bool last, only_cleanup = false;
+  {
+    std::lock_guard<std::mutex> lock(task->reference_mutex);
+    const auto previous = task->references.fetch_sub(1, std::memory_order_acq_rel);
+    last = previous == 1;
+    if (!last && check_cleanup && task->cleanup_references &&
+        previous - 1 == task->cleanup_references) {
+      // Own a temporary reference before unlocking: a notification can retire
+      // the last cleanup lease concurrently. This hold is released below
+      // without repeating the same orphan check.
+      task->references.fetch_add(1, std::memory_order_relaxed);
+      only_cleanup = true;
+    }
+  }
+  if (only_cleanup) {
+    // An explicit cleanup await without a compiler scope keeps its established
+    // lease semantics. Compiler scopes instead cancel their unfinished work;
+    // an earlier shielded dependency still finishes before their own cleanup.
+    (void)objc3::services::task_group_scope_abort(task);
+    release_task_reference(task, false);
+  } else if (last) {
     bool needs_cancel;
     {
       std::lock_guard<std::mutex> lock(task->mutex);
@@ -394,31 +581,60 @@ void objc3_task_internal_release(objc3_task_t *task) {
     if (needs_cancel) {
       // Keep the record alive across cancellation callbacks and their reentry.
       task->references.store(1, std::memory_order_release);
-      objc3_completion cancelled{};
-      cancelled.struct_size = sizeof(cancelled);
-      cancelled.version = OBJC3_SERVICE_ABI_VERSION;
-      cancelled.kind = OBJC3_COMPLETION_CANCELLED;
-      (void)objc3_task_complete(task, &cancelled);
-      objc3_task_internal_release(task);
+      cancel_task(task);
+      release_task_reference(task, true);
     } else {
       delete task;
     }
   }
 }
+} // namespace
 
-extern "C" objc3_service_status objc3_task_start(
-    const objc3_task_start_options *options, objc3_task_t **out_task) {
-  if (!out_task) return OBJC3_SERVICE_INVALID_ARGUMENT;
-  *out_task = nullptr;
+void objc3_task_internal_release(objc3_task_t *task) {
+  release_task_reference(task, true);
+}
+
+bool objc3_task_cleanup_retain(objc3_task_t *task) {
+  if (!task) return false;
+  std::lock_guard<std::mutex> lock(task->reference_mutex);
+  if (!objc3_task_internal_retain(task)) return false;
+  ++task->cleanup_references;
+  return true;
+}
+
+void objc3_task_cleanup_release(objc3_task_t *task) {
+  if (!task) return;
+  {
+    std::lock_guard<std::mutex> lock(task->reference_mutex);
+    --task->cleanup_references;
+  }
+  release_task_reference(task, true);
+}
+
+namespace {
+objc3_service_status start_task(
+    const objc3_task_start_options *options, objc3_task_t **out_task,
+    objc3_task_t *parent = nullptr,
+    objc3::services::TaskGroup *group = nullptr, bool scope_body = false,
+    bool completion_owned = false) {
+  if (!out_task && !completion_owned) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  if (out_task) *out_task = nullptr;
   if (!options || options->struct_size < sizeof(objc3_task_start_options) ||
       options->version != OBJC3_SERVICE_ABI_VERSION ||
       (bool(options->executor) == bool(options->actor)) ||
-      !options->resume || (options->frame && !options->destroy))
+      !options->resume || (options->frame && !options->destroy) ||
+      (completion_owned && (group || !options->completion)))
     return options && options->version != OBJC3_SERVICE_ABI_VERSION
                ? OBJC3_SERVICE_UNSUPPORTED_VERSION
                : OBJC3_SERVICE_INVALID_ARGUMENT;
   auto *task = new (std::nothrow) objc3_task;
   if (!task) return OBJC3_SERVICE_OUT_OF_MEMORY;
+  try {
+    task->await_target = std::make_shared<objc3_task::AwaitTarget>(task);
+  } catch (...) {
+    delete task;
+    return OBJC3_SERVICE_OUT_OF_MEMORY;
+  }
   if (options->result_type) {
     const auto status = objc3_async_result_type_validate(options->result_type);
     if (status != OBJC3_SERVICE_OK) {
@@ -453,32 +669,104 @@ extern "C" objc3_service_status objc3_task_start(
   task->frame_destroyed = options->frame == nullptr;
   task->resume = options->resume;
   task->destroy = options->destroy;
+  task->completion_owned = completion_owned;
   if (options->completion) {
     try {
-      task->waiters.push_back({options->completion, options->completion_context});
+      task->waiters.push_back({options->completion, options->completion_context, {}});
     } catch (...) {
       task->frame = nullptr; // Ownership transfers only after start succeeds.
       delete task;
       return OBJC3_SERVICE_OUT_OF_MEMORY;
     }
   }
+  if (parent) {
+    try {
+      // Register before the first resume can be published. Cancellation and
+      // registration use the same token lock: the child is either traversed
+      // by an ongoing request or inherits the already-published request.
+      std::lock_guard<std::mutex> lock(parent->await_target->mutex);
+      auto &children = parent->await_target->structured_children;
+      // After cancellation, wake traversal uses stable vector positions while
+      // temporarily dropping the token lock around callback-capable dispatch.
+      if (!parent->await_target->cancel_requested) {
+        size_t kept = 0;
+        for (const auto &weak_child : children)
+          if (auto child = weak_child.lock()) {
+            child->structured_index = kept;
+            children[kept++] = child;
+          }
+        children.resize(kept);
+      }
+      task->await_target->structured_index = children.size();
+      children.push_back(task->await_target);
+      task->await_target->structured_parent = parent->await_target;
+      task->await_target->cancel_requested =
+          parent->await_target->cancel_requested;
+      task->cancel_requested.store(task->await_target->cancel_requested,
+                                    std::memory_order_release);
+    } catch (...) {
+      task->frame = nullptr;
+      delete task;
+      return OBJC3_SERVICE_OUT_OF_MEMORY;
+    }
+  }
+  if (group) {
+    const auto registered = objc3::services::task_group_add_task(group, task,
+                                                                scope_body);
+    if (registered != OBJC3_SERVICE_OK) {
+      // The caller still owns the unstarted frame. No body can observe its
+      // borrowed captures before group registration succeeds.
+      {
+        std::lock_guard<std::mutex> lock(task->mutex);
+        task->frame = nullptr;
+        task->frame_destroyed = true;
+        task->terminal = true;
+      }
+      objc3_task_internal_release(task);
+      return registered;
+    }
+  }
+  // Keep the caller's handle independent of the completion lease before
+  // scheduling. The callback may finish on a worker before start returns.
+  const bool caller_and_completion = out_task && completion_owned;
+  if (caller_and_completion) task->references.fetch_add(1, std::memory_order_relaxed);
   const objc3_service_status queued = objc3_task_schedule_resume(task);
   if (queued != OBJC3_SERVICE_OK) {
-    task->frame = nullptr;
     {
       std::lock_guard<std::mutex> lock(task->mutex);
-      task->terminal = true;
+      task->frame = nullptr;
+      task->frame_destroyed = true;
+      if (!group) task->terminal = true;
     }
+    if (group) {
+      // Registration is already visible. Publish a cancelled, frame-less
+      // member so joins remain quiescent even when queue publication fails.
+      // Frame disposal stays with the caller, as on every failed start.
+      objc3_completion cancelled{};
+      cancelled.struct_size = sizeof(cancelled);
+      cancelled.version = OBJC3_SERVICE_ABI_VERSION;
+      cancelled.kind = OBJC3_COMPLETION_CANCELLED;
+      (void)objc3_task_complete(task, &cancelled);
+    }
+    if (caller_and_completion) objc3_task_internal_release(task);
     objc3_task_internal_release(task);
     return queued;
   }
-  *out_task = task;
+  if (out_task) *out_task = task;
   return OBJC3_SERVICE_OK;
 }
+} // namespace
 
-extern "C" objc3_service_status objc3_task_start_child(
+extern "C" objc3_service_status objc3_task_start(
+    const objc3_task_start_options *options, objc3_task_t **out_task) {
+  return start_task(options, out_task);
+}
+
+namespace {
+objc3_service_status start_child(
     objc3_task_t *parent, const objc3_task_start_options *options,
-    objc3_task_t **out_task) {
+    objc3_task_t **out_task, bool explicit_destination,
+    objc3::services::TaskGroup *group = nullptr, bool scope_body = false) {
   if (!out_task) return OBJC3_SERVICE_INVALID_ARGUMENT;
   *out_task = nullptr;
   if (!parent || current_service_task != parent || !options ||
@@ -486,7 +774,9 @@ extern "C" objc3_service_status objc3_task_start_child(
     return OBJC3_SERVICE_INVALID_ARGUMENT;
   if (options->version != OBJC3_SERVICE_ABI_VERSION)
     return OBJC3_SERVICE_UNSUPPORTED_VERSION;
-  if (options->executor || options->actor)
+  if (explicit_destination
+          ? bool(options->executor) == bool(options->actor)
+          : options->executor || options->actor)
     return OBJC3_SERVICE_INVALID_ARGUMENT;
   auto inherited = *options;
   {
@@ -495,10 +785,25 @@ extern "C" objc3_service_status objc3_task_start_child(
       return OBJC3_SERVICE_ALREADY_COMPLETED;
     if (!parent->resume_active || parent->awaiting || parent->resume_requested)
       return OBJC3_SERVICE_INVALID_ARGUMENT;
-    if (parent->actor) inherited.actor = parent->actor;
-    else inherited.executor = parent->executor;
+    if (!explicit_destination) {
+      if (parent->actor) inherited.actor = parent->actor;
+      else inherited.executor = parent->executor;
+    }
   }
-  return objc3_task_start(&inherited, out_task);
+  return start_task(&inherited, out_task, parent, group, scope_body);
+}
+} // namespace
+
+extern "C" objc3_service_status objc3_task_start_child(
+    objc3_task_t *parent, const objc3_task_start_options *options,
+    objc3_task_t **out_task) {
+  return start_child(parent, options, out_task, false);
+}
+
+extern "C" objc3_service_status objc3_task_start_child_on(
+    objc3_task_t *parent, const objc3_task_start_options *options,
+    objc3_task_t **out_task) {
+  return start_child(parent, options, out_task, true);
 }
 
 extern "C" objc3_task_t *objc3_task_retain(objc3_task_t *task) {
@@ -515,22 +820,99 @@ extern "C" void objc3_task_request_cancel(objc3_task_t *task) {
   if (objc3_task_mark_cancel(task)) objc3_task_wake_cancelled(task);
 }
 
-bool objc3_task_mark_cancel(objc3_task_t *task) {
-  task->cancel_requested.store(true, std::memory_order_release);
-  std::lock_guard<std::mutex> lock(task->mutex);
-  if (!task->terminal && task->awaiting) {
-    task->awaiting = false;
-    return true;
+namespace {
+using CancellationTarget = std::shared_ptr<objc3_task::AwaitTarget>;
+
+CancellationTarget next_cancellation_target(CancellationTarget current,
+                                            const CancellationTarget &root) {
+  {
+    std::lock_guard<std::mutex> lock(current->mutex);
+    for (const auto &weak_child : current->structured_children)
+      if (auto child = weak_child.lock()) return child;
   }
-  return false;
+  while (current != root) {
+    auto parent = current->structured_parent;
+    {
+      std::lock_guard<std::mutex> lock(parent->mutex);
+      // Cancellation freezes existing child positions. New registrations append
+      // and inherit cancellation before their first queue publication.
+      for (size_t index = current->structured_index + 1;
+           index < parent->structured_children.size(); ++index)
+        if (auto sibling = parent->structured_children[index].lock())
+          return sibling;
+    }
+    current = std::move(parent);
+  }
+  return {};
+}
+
+bool mark_cancel_tree(const CancellationTarget &root) {
+  bool wake = false;
+  for (auto target = root; target; target = next_cancellation_target(target, root)) {
+    std::lock_guard<std::mutex> lifetime(target->mutex);
+    target->cancel_requested = true;
+    if (auto *task = target->task) {
+      // The token protects the raw record through its destruction boundary.
+      // No retained task is released under a group/publication lock, so marking
+      // cannot invoke completion observers or native frame cleanup.
+      task->cancel_requested.store(true, std::memory_order_release);
+      std::lock_guard<std::mutex> lock(task->mutex);
+      if (!task->terminal && task->awaiting && !task->await_cancellation_shielded) {
+        if (task->await_status) *task->await_status = OBJC3_SERVICE_CANCELLED;
+        task->await_status = nullptr;
+        task->await_result_task = nullptr;
+        task->awaiting = false;
+        task->await_cancellation_shielded = false;
+        objc3_task_retire_await_edges_locked(task);
+        if (task->await_retirement.ticket)
+          task->cancel_retirement = std::exchange(task->await_retirement, {});
+        task->cancel_wake_pending = true;
+        wake = true;
+      }
+    }
+  }
+  return wake;
+}
+
+void wake_cancelled_tree(const CancellationTarget &root) {
+  for (auto target = root; target; target = next_cancellation_target(target, root)) {
+    objc3_task_t *task = nullptr;
+    {
+      std::lock_guard<std::mutex> lifetime(target->mutex);
+      if (objc3_task_internal_retain(target->task)) task = target->task;
+    }
+    if (task) {
+      TaskReleaseGuard guard{task};
+      bool wake;
+      ObjC3TaskAwaitRetirement retirement;
+      {
+        std::lock_guard<std::mutex> lock(task->mutex);
+        wake = std::exchange(task->cancel_wake_pending, false) && !task->terminal;
+        retirement = std::exchange(task->cancel_retirement, {});
+      }
+      // No token or group lock spans dispatch, which may synchronously invoke
+      // completion or frame cleanup if admission fails.
+      retirement.retire();
+      if (wake) wake_awaiting_task(std::exchange(guard.task, nullptr));
+    }
+  }
+}
+} // namespace
+
+bool objc3_task_mark_cancel(objc3_task_t *task) {
+  return mark_cancel_tree(task->await_target);
 }
 
 void objc3_task_wake_cancelled(objc3_task_t *task) {
-  wake_awaiting_task(task);
+  wake_cancelled_tree(task->await_target);
 }
 
 extern "C" int objc3_task_is_cancel_requested(const objc3_task_t *task) {
   return task && task->cancel_requested.load(std::memory_order_acquire) ? 1 : 0;
+}
+
+extern "C" int objc3_task_current_cancel_requested(void) {
+  return objc3_task_is_cancel_requested(objc3_task_current_callback());
 }
 
 extern "C" objc3_service_status objc3_task_schedule_resume(objc3_task_t *task) {
@@ -541,6 +923,8 @@ extern "C" objc3_service_status objc3_task_schedule_resume(objc3_task_t *task) {
     std::lock_guard<std::mutex> lock(task->mutex);
     if (task->terminal)
       return OBJC3_SERVICE_ALREADY_COMPLETED;
+    if (task->awaiting && task->await_cancellation_shielded)
+      return OBJC3_SERVICE_NOT_READY;
     if (task->completion_claimed) {
       // A user payload copy can fail. Preserve the wake until that claim
       // resolves instead of treating an in-progress copy as terminal success.
@@ -610,6 +994,10 @@ extern "C" objc3_service_status objc3_task_complete(
     std::lock_guard<std::mutex> lock(task->mutex);
     if (task->terminal || task->completion_claimed)
       return OBJC3_SERVICE_ALREADY_COMPLETED;
+    if (task->group_scope ||
+        (task->group_scope_forced && completion->kind != OBJC3_COMPLETION_CANCELLED) ||
+        (task->awaiting && task->await_cancellation_shielded))
+      return OBJC3_SERVICE_NOT_READY;
     task->completion_claimed = true;
   }
 
@@ -650,14 +1038,16 @@ extern "C" objc3_service_status objc3_task_complete(
       task->completion_claimed = false;
       resume = std::exchange(task->resume_after_completion_claim, false);
     }
-    if (resume) wake_awaiting_task(task);
+    if (resume) wake_awaiting_task(std::exchange(task_guard.task, nullptr));
     return copy_status;
   }
 
-  std::vector<objc3_task::Waiter> waiters;
+  std::list<objc3_task::Waiter> waiters;
   void *frame_to_destroy = nullptr;
   objc3_frame_destroy frame_destructor = nullptr;
   objc3_completion borrowed{};
+  std::shared_ptr<void> continuation_owner;
+  ObjC3TaskAwaitRetirement retirement, cancelled_retirement;
   {
     std::lock_guard<std::mutex> lock(task->mutex);
     task->kind = completion->kind;
@@ -673,9 +1063,21 @@ extern "C" objc3_service_status objc3_task_complete(
     task->error = retained_error;
     task->terminal = true;
     task->awaiting = false;
+    task->await_cancellation_shielded = false;
+    task->cancel_after_cleanup = false;
+    task->await_status = nullptr;
+    task->await_result_task = nullptr;
+    objc3_task_retire_await_edges_locked(task);
+    retirement = std::exchange(task->await_retirement, {});
+    cancelled_retirement = std::exchange(task->cancel_retirement, {});
     task->completion_claimed = false;
     task->resume_after_completion_claim = false;
     task->resume_requested = false;
+    continuation_owner = std::move(task->continuation_owner);
+    if (continuation_owner) ++task->continuation_owners_active;
+    for (const auto &waiter : task->waiters)
+      if (waiter.registration)
+        waiter.registration->state = ObjC3TaskDependencyWaiter::State::Detached;
     waiters.swap(task->waiters);
     task->callbacks_active += static_cast<uint32_t>(waiters.size());
     if (!task->resume_active && task->frame) {
@@ -685,12 +1087,17 @@ extern "C" objc3_service_status objc3_task_complete(
     }
     borrowed = task_view(task);
   }
+  retirement.retire();
+  cancelled_retirement.retire();
   task->completed.notify_all();
   invoke_waiters(task, waiters, borrowed);
   if (frame_to_destroy)
     finish_frame_destruction(task, frame_to_destroy, frame_destructor);
   else
     task->completed.notify_all();
+  finish_continuation_owner(task, continuation_owner);
+  if (task->completion_owned)
+    objc3_task_internal_release(task);
   return OBJC3_SERVICE_OK;
 }
 
@@ -708,7 +1115,7 @@ extern "C" objc3_service_status objc3_task_add_waiter(
       ++task->callbacks_active;
       call_now = true;
     } else {
-      try { task->waiters.push_back({callback, context}); }
+      try { task->waiters.push_back({callback, context, {}}); }
       catch (...) { return OBJC3_SERVICE_OUT_OF_MEMORY; }
     }
   }
@@ -722,51 +1129,214 @@ extern "C" objc3_service_status objc3_task_add_waiter(
       --task->callbacks_active;
     }
     task->completed.notify_all();
+    notify_quiescence(task);
   }
   return OBJC3_SERVICE_OK;
 }
 
-extern "C" objc3_service_status objc3_task_await(
-    objc3_task_t *parent, objc3_task_t *dependency) {
-  if (!parent || !dependency || parent == dependency ||
-      current_service_task != parent)
+objc3_service_status objc3_task_add_group_observers(
+    objc3_task_t *task, objc3_completion_callback completion, void *context,
+    std::shared_ptr<ObjC3TaskQuiescenceObserver> quiescence) {
+  if (!task || !completion || !quiescence || !quiescence->notify)
     return OBJC3_SERVICE_INVALID_ARGUMENT;
-  std::unique_ptr<AwaitContinuation> continuation;
-  bool cancelled = false;
+  if (!objc3_task_internal_retain(task)) return OBJC3_SERVICE_NOT_READY;
+  TaskReleaseGuard guard{task};
+  objc3_completion borrowed{};
+  bool call_now = false;
   try {
+    std::lock_guard<std::mutex> lock(task->mutex);
+    // Allocate the completion slot before publishing either observer. A
+    // completed task cannot consume context and then fail registration.
+    if (!task->terminal)
+      task->waiters.push_back({completion, context, {}});
+    quiescence->next = task->quiescence_observers;
+    task->quiescence_observers = std::move(quiescence);
+    if (task->terminal) {
+      borrowed = task_view(task);
+      ++task->callbacks_active;
+      call_now = true;
+    }
+  } catch (...) {
+    return OBJC3_SERVICE_OUT_OF_MEMORY;
+  }
+  if (call_now) {
+    {
+      CurrentTaskScope current(task);
+      try { completion(context, &borrowed); } catch (...) {}
+    }
+    {
+      std::lock_guard<std::mutex> lock(task->mutex);
+      --task->callbacks_active;
+    }
+    task->completed.notify_all();
+    notify_quiescence(task);
+  }
+  return OBJC3_SERVICE_OK;
+}
+
+objc3_service_status objc3_task_register_scope_dependency(
+    const std::shared_ptr<AwaitTarget> &owner, const std::shared_ptr<AwaitTarget> &member,
+    std::shared_ptr<ObjC3TaskScopeDependency> &registration) {
+  try {
+    std::lock_guard<std::mutex> graph(task_dependency_graph);
+    ObjC3TaskAwaitEdges dependency;
+    dependency.direct = member;
+    if (dependency_reaches(dependency, owner.get())) return OBJC3_SERVICE_INVALID_ARGUMENT;
+    auto ticket = std::make_shared<ObjC3TaskScopeDependency>(member);
+    owner->scope_dependencies.push_back(ticket);
+    registration = std::move(ticket);
+  } catch (...) {
+    return OBJC3_SERVICE_OUT_OF_MEMORY;
+  }
+  return OBJC3_SERVICE_OK;
+}
+
+void objc3_task_retire_scope_dependencies(const std::shared_ptr<AwaitTarget> &owner) {
+  std::lock_guard<std::mutex> graph(task_dependency_graph);
+  decltype(owner->scope_dependencies){}.swap(owner->scope_dependencies);
+}
+
+objc3_service_status objc3_task_prepare_await(
+    objc3_task_t *parent, ObjC3TaskAwaitContinuation &continuation,
+    objc3_service_status *status, objc3_task_t **result_task,
+    bool cancellation_shielded, ObjC3TaskAwaitRetirement retirement,
+    std::shared_ptr<ObjC3TaskAwaitEdges> edges) {
+  if (!parent || current_service_task != parent)
+    return OBJC3_SERVICE_INVALID_ARGUMENT;
+  try {
+    std::unique_lock<std::mutex> graph(task_dependency_graph, std::defer_lock);
+    if (edges) graph.lock();
     std::lock_guard<std::mutex> lock(parent->mutex);
     if (parent->terminal || parent->completion_claimed)
       return OBJC3_SERVICE_ALREADY_COMPLETED;
     if (!parent->resume_active || parent->awaiting || parent->resume_requested)
       return OBJC3_SERVICE_INVALID_ARGUMENT;
-    if (parent->await_generation == UINT64_MAX)
+    // Reserve the last generation for a compiler scope's allocation-free
+    // finalizer. Body awaits can never steal or reuse its continuation token.
+    if (parent->await_generation == UINT64_MAX ||
+        (parent->group_scope && parent->await_generation == UINT64_MAX - 1))
       return OBJC3_SERVICE_NOT_READY;
     if (!parent->await_target)
       parent->await_target = std::make_shared<objc3_task::AwaitTarget>(parent);
-    continuation = std::make_unique<AwaitContinuation>(AwaitContinuation{
-        parent->await_target, ++parent->await_generation});
-    cancelled = parent->cancel_requested.load(std::memory_order_acquire);
-    parent->awaiting = !cancelled;
+    if (edges && (cancellation_shielded || !objc3_task_is_cancel_requested(parent))) {
+      if (dependency_reaches(*edges, parent->await_target.get()))
+        return OBJC3_SERVICE_INVALID_ARGUMENT;
+      edges->active.store(true, std::memory_order_release);
+      parent->await_target->waiting_dependencies = edges;
+      parent->await_edges = std::move(edges);
+    }
+    continuation = {parent->await_target, ++parent->await_generation};
+    parent->await_status = status;
+    parent->await_result_task = result_task;
+    parent->await_cancellation_shielded = cancellation_shielded;
+    parent->await_retirement = std::move(retirement);
+    parent->awaiting = true;
   } catch (...) {
     return OBJC3_SERVICE_OUT_OF_MEMORY;
   }
-  if (cancelled) {
-    // Queue the cancellation observation after the active resume returns.
-    wake_awaiting_task(parent);
-    return OBJC3_SERVICE_OK;
+  return OBJC3_SERVICE_OK;
+}
+
+ObjC3TaskAwaitClaim objc3_task_claim_await(
+    const ObjC3TaskAwaitContinuation &continuation, objc3_service_status status,
+    objc3_task_t *owned_result, std::shared_ptr<void> continuation_owner) {
+  ObjC3TaskAwaitClaim claim;
+  objc3_task_t *parent = nullptr;
+  {
+    // The token does not retain the parent. Its lock protects the raw pointer
+    // against final deletion; try_retain rejects a record already at zero.
+    std::lock_guard<std::mutex> lock(continuation.target->mutex);
+    parent = continuation.target->task;
+    if (!objc3_task_internal_retain(parent)) return claim;
   }
-  // A completed dependency can call back before add_waiter returns. Transfer
-  // the independent token first and never touch it on successful registration.
-  auto *context = continuation.release();
-  const auto status = objc3_task_add_waiter(dependency, dependency_completed,
-                                           context);
-  if (status != OBJC3_SERVICE_OK) {
-    std::unique_ptr<AwaitContinuation> failed(context);
+  claim.parent = parent;
+  {
     std::lock_guard<std::mutex> lock(parent->mutex);
-    if (parent->await_generation == failed->generation)
+    if (!parent->terminal && parent->awaiting &&
+        parent->await_generation == continuation.generation) {
+      if (!parent->await_cancellation_shielded &&
+          parent->cancel_requested.load(std::memory_order_acquire))
+        status = OBJC3_SERVICE_CANCELLED;
+      if (parent->await_status) *parent->await_status = status;
+      if (status == OBJC3_SERVICE_OK && owned_result && parent->await_result_task) {
+        *parent->await_result_task = owned_result;
+        claim.transferred_result = true;
+      }
+      parent->await_status = nullptr;
+      parent->await_result_task = nullptr;
       parent->awaiting = false;
+      parent->await_cancellation_shielded = false;
+      objc3_task_retire_await_edges_locked(parent);
+      parent->await_retirement = {};
+      claim.cancel_after_cleanup = std::exchange(parent->cancel_after_cleanup, false);
+      parent->continuation_owner = std::move(continuation_owner);
+      claim.wake = true;
+    }
   }
-  return status;
+  return claim;
+}
+
+void objc3_task_dispatch_await(ObjC3TaskAwaitClaim claim) {
+  if (!claim.parent) return;
+  TaskReleaseGuard guard{claim.parent};
+  if (claim.wake) {
+    wake_awaiting_task(std::exchange(guard.task, nullptr), claim.cancel_after_cleanup);
+  }
+}
+
+void objc3_task_finish_await(const ObjC3TaskAwaitContinuation &continuation,
+                            objc3_service_status status,
+                            std::shared_ptr<void> continuation_owner) {
+  objc3_task_dispatch_await(objc3_task_claim_await(
+      continuation, status, nullptr, std::move(continuation_owner)));
+}
+
+extern "C" objc3_service_status objc3_task_await(
+    objc3_task_t *parent, objc3_task_t *dependency) {
+  if (!parent || !dependency || parent == dependency)
+    return OBJC3_SERVICE_INVALID_ARGUMENT;
+  if (current_service_task != parent) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  if (!objc3_task_internal_retain(dependency)) return OBJC3_SERVICE_NOT_READY;
+  TaskReleaseGuard guard{dependency};
+  using Registration = ObjC3TaskDependencyWaiter;
+  std::shared_ptr<Registration> registration;
+  std::list<objc3_task::Waiter> waiter;
+  try {
+    registration = std::make_shared<Registration>(dependency->await_target);
+    waiter.push_back({dependency_completed, registration.get(), registration});
+  } catch (...) { return OBJC3_SERVICE_OUT_OF_MEMORY; }
+  auto edges = std::shared_ptr<ObjC3TaskAwaitEdges>(registration, &registration->edges);
+  const auto preparation = objc3_task_prepare_await(
+      parent, registration->continuation, nullptr, nullptr, false,
+      {registration, Registration::unlink}, std::move(edges));
+  if (preparation != OBJC3_SERVICE_OK) return preparation;
+  objc3_completion borrowed{};
+  bool call_now = false;
+  {
+    std::lock_guard<std::mutex> lock(dependency->mutex);
+    // Cancellation or terminal publication may retire the ticket even before
+    // the dependency acquires its list node. No allocation follows suspension.
+    if (registration->state == Registration::State::Detached)
+      return OBJC3_SERVICE_OK;
+    if (!objc3_task_is_cancel_requested(parent)) {
+      if (!dependency->terminal) {
+        registration->position = waiter.begin();
+        registration->state = Registration::State::Linked;
+        dependency->waiters.splice(dependency->waiters.end(), waiter);
+        return OBJC3_SERVICE_OK;
+      }
+      borrowed = task_view(dependency);
+      ++dependency->callbacks_active;
+      call_now = true;
+    }
+    registration->state = Registration::State::Detached;
+  }
+  if (call_now) invoke_waiters(dependency, waiter, borrowed);
+  else {
+    registration->edges.active.store(false, std::memory_order_release);
+    objc3_task_finish_await(registration->continuation);
+  }
+  return OBJC3_SERVICE_OK;
 }
 
 extern "C" objc3_service_status objc3_task_get_completion(
@@ -783,7 +1353,8 @@ extern "C" objc3_service_status objc3_task_wait(objc3_task_t *task) {
   if (!objc3_task_internal_retain(task)) return OBJC3_SERVICE_NOT_READY;
   std::unique_lock<std::mutex> lock(task->mutex);
   if (!task->terminal && (current_service_task == task ||
-      objc3::services::executor_current_identity() != 0)) {
+      objc3::services::executor_current_identity() != 0 ||
+      (task->executor && task->executor->manual))) {
     lock.unlock();
     objc3_task_internal_release(task);
     return OBJC3_SERVICE_NOT_READY;
@@ -886,7 +1457,9 @@ objc3_service_status start_async_frame(objc3_async_frame *frame,
                                        objc3_executor_t *executor,
                                        objc3_actor_t *actor,
                                        objc3_task_t *parent,
-                                       objc3_task_t **out_task) {
+                                       objc3_task_t **out_task,
+                                       objc3::services::TaskGroup *group = nullptr,
+                                       bool scope_body = false) {
   if (!out_task)
     return OBJC3_SERVICE_INVALID_ARGUMENT;
   *out_task = nullptr;
@@ -903,8 +1476,8 @@ objc3_service_status start_async_frame(objc3_async_frame *frame,
   options.destroy = frame->destroy;
   options.result_type = frame->result_type;
   const auto started = parent
-                           ? objc3_task_start_child(parent, &options, out_task)
-                           : objc3_task_start(&options, out_task);
+      ? start_child(parent, &options, out_task, executor || actor, group, scope_body)
+      : objc3_task_start(&options, out_task);
   if (started == OBJC3_SERVICE_OK)
     *frame = {};
   return started;
@@ -915,6 +1488,54 @@ extern "C" objc3_service_status
 objc3_async_frame_start(objc3_async_frame *frame, objc3_executor_t *executor,
                         objc3_actor_t *actor, objc3_task_t **out_task) {
   return start_async_frame(frame, executor, actor, nullptr, out_task);
+}
+
+namespace {
+objc3_service_status submit_async_frame(
+    objc3_async_frame *frame, objc3_executor_t *executor, objc3_actor_t *actor,
+    objc3_completion_callback completion, void *context, objc3_task_t **out_task) {
+  if (out_task) *out_task = nullptr;
+  const auto validated = objc3_async_frame_validate(frame);
+  if (validated != OBJC3_SERVICE_OK) return validated;
+  if (!completion || (executor && actor)) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  objc3_executor_t *global = nullptr;
+  if (!executor && !actor) {
+    const auto status = objc3_executor_get_global(&global);
+    if (status != OBJC3_SERVICE_OK) return status;
+    executor = global;
+  }
+  // Clear the caller's carrier before publishing work. The callback may run
+  // and free caller-owned storage before start_task returns.
+  const auto owned = std::exchange(*frame, {});
+  objc3_task_start_options options{};
+  options.struct_size = sizeof(options);
+  options.version = OBJC3_SERVICE_ABI_VERSION;
+  options.executor = executor;
+  options.actor = actor;
+  options.frame = owned.context;
+  options.resume = owned.resume;
+  options.destroy = owned.destroy;
+  options.result_type = owned.result_type;
+  options.completion = completion;
+  options.completion_context = context;
+  const auto started = start_task(&options, out_task, nullptr, nullptr, false, true);
+  if (started != OBJC3_SERVICE_OK) *frame = owned;
+  if (global) objc3_executor_release(global);
+  return started;
+}
+} // namespace
+
+extern "C" objc3_service_status objc3_async_frame_submit(
+    objc3_async_frame *frame, objc3_executor_t *executor, objc3_actor_t *actor,
+    objc3_completion_callback completion, void *context) {
+  return submit_async_frame(frame, executor, actor, completion, context, nullptr);
+}
+
+extern "C" objc3_service_status objc3_async_frame_submit_task(
+    objc3_async_frame *frame, objc3_executor_t *executor, objc3_actor_t *actor,
+    objc3_completion_callback completion, void *context, objc3_task_t **out_task) {
+  if (!out_task) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  return submit_async_frame(frame, executor, actor, completion, context, out_task);
 }
 
 extern "C" objc3_service_status
@@ -928,15 +1549,81 @@ objc3_async_frame_start_child(objc3_async_frame *frame, objc3_task_t *parent,
   return start_async_frame(frame, nullptr, nullptr, parent, out_task);
 }
 
+extern "C" objc3_service_status objc3_async_frame_spawn_in_group(
+    objc3_async_frame *frame, objc3_task_group_t *group, objc3_task_t **out_task) {
+  if (!out_task) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  *out_task = nullptr;
+  if (!group) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  const auto status = objc3_async_frame_validate(frame);
+  if (status != OBJC3_SERVICE_OK) return status;
+  if (!current_service_task) return OBJC3_SERVICE_NOT_READY;
+  return start_async_frame(frame, nullptr, nullptr, current_service_task,
+      out_task, reinterpret_cast<objc3::services::TaskGroup *>(group));
+}
+
+extern "C" objc3_service_status objc3_async_frame_spawn_scope_body(
+    objc3_async_frame *frame, objc3_task_group_t *group, objc3_task_t **out_task) {
+  if (!out_task) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  *out_task = nullptr;
+  const auto status = objc3_async_frame_validate(frame);
+  if (status != OBJC3_SERVICE_OK) return status;
+  if (!current_service_task) return OBJC3_SERVICE_NOT_READY;
+  auto *root = objc3::services::task_group_scope_current(current_service_task);
+  if (!root || root != reinterpret_cast<objc3::services::TaskGroup *>(group))
+    return OBJC3_SERVICE_INVALID_ARGUMENT;
+  return start_async_frame(frame, nullptr, nullptr, current_service_task,
+                            out_task, root, true);
+}
+
+extern "C" objc3_service_status objc3_async_frame_start_child_on(
+    objc3_async_frame *frame, objc3_task_t *parent, objc3_executor_t *executor,
+    objc3_actor_t *actor, objc3_task_t **out_task) {
+  if (!parent || bool(executor) == bool(actor)) {
+    if (out_task) *out_task = nullptr;
+    return OBJC3_SERVICE_INVALID_ARGUMENT;
+  }
+  return start_async_frame(frame, executor, actor, parent, out_task);
+}
+
+extern "C" objc3_service_status objc3_async_frame_spawn(
+    objc3_async_frame *frame, objc3_task_t **out_task) {
+  if (!out_task) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  *out_task = nullptr;
+  const auto status = objc3_async_frame_validate(frame);
+  if (status != OBJC3_SERVICE_OK) return status;
+  auto *parent = objc3_task_current_callback();
+  if (!parent) return OBJC3_SERVICE_NOT_READY;
+  return objc3_async_frame_start_child(frame, parent, out_task);
+}
+
+extern "C" objc3_service_status objc3_async_frame_detach(
+    objc3_async_frame *frame, objc3_task_t **out_task) {
+  if (!out_task) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  *out_task = nullptr;
+  const auto status = objc3_async_frame_validate(frame);
+  if (status != OBJC3_SERVICE_OK) return status;
+  objc3_executor_t *global = nullptr;
+  const auto destination = objc3_executor_get_global(&global);
+  if (destination != OBJC3_SERVICE_OK) return destination;
+  const auto started = objc3_async_frame_start(frame, global, nullptr, out_task);
+  objc3_executor_release(global);
+  return started;
+}
+
 void objc3_service_run_task_resume(void *context) {
   auto *task = static_cast<objc3_task_t *>(context);
   void *frame = nullptr;
   objc3_task_resume resume = nullptr;
+  bool resume_failed = false;
+  std::shared_ptr<void> continuation_owner;
   {
     std::lock_guard<std::mutex> lock(task->mutex);
     task->resume_queued = false;
-    if (!task->terminal && !task->resume_active) {
+    if (!task->terminal && !task->resume_active &&
+        !(task->group_scope && task->group_scope_forced)) {
       task->resume_active = true;
+      continuation_owner = std::move(task->continuation_owner);
+      if (continuation_owner) ++task->continuation_owners_active;
       frame = task->frame;
       resume = task->resume;
     }
@@ -947,8 +1634,13 @@ void objc3_service_run_task_resume(void *context) {
     // another worker that can resume immediately. The destination's outer
     // callback pool alone would drain too late for that handoff.
     objc3::services::CallbackAutoreleasePool pool;
-    try { resume(task, frame); } catch (...) {}
+    try { resume(task, frame); } catch (...) { resume_failed = true; }
   }
+  // A callback violates the C contract if it throws. Contain that failure
+  // without leaving a live frame suspended with no reachable continuation.
+  // Keep resume_active until the common cleanup path, so cancellation
+  // observers cannot destroy the native frame before this slice has ended.
+  if (resume_failed) cancel_task(task);
   void *frame_to_destroy = nullptr;
   objc3_frame_destroy frame_destructor = nullptr;
   ResumeDispatch *rejected = nullptr;
@@ -969,6 +1661,8 @@ void objc3_service_run_task_resume(void *context) {
     finish_frame_destruction(task, frame_to_destroy, frame_destructor);
   else
     task->completed.notify_all();
+  notify_quiescence(task);
   release_rejected_dispatch(rejected);
   if (dispatch_status != OBJC3_SERVICE_OK) cancel_task(task);
+  finish_continuation_owner(task, continuation_owner);
 }

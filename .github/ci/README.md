@@ -49,3 +49,12 @@ to every source checkout. Source refs are not workflow_dispatch inputs.
 Schedule-only reusable definitions live alongside the dispatcher; existing
 push/PR/manual workflow definitions remain unchanged except retirement of old
 recurring cron entries. Scheduled checks do not validate an unmerged PR head.
+
+The reusable Linux workload now lives in `adaptive-closeout.yml` and calls the
+same source-based owner as the PR native gate. Workflow-contract tests parse the
+actual caller/callee YAML and required job/step names, preventing another dangling
+reference from passing policy checks. Run `npm ci --ignore-scripts`, then
+`node --test .github/ci/adaptive-ci.test.mjs .github/ci/workflow-contract.test.mjs`
+and `node .github/ci/workflow-contract.mjs`. The native execution and acceptance
+boundaries are documented in
+[Linux native assurance](../../docs/roadmap/linux_native_assurance.md).

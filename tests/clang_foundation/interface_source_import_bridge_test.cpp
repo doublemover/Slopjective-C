@@ -1,3 +1,4 @@
+#include "native_target_test_support.h"
 #include "clang_foundation/interface_source_import_bridge.h"
 #include "clang_foundation/compile_session.h"
 #include "clang_foundation/interface_artifact_io.h"
@@ -303,7 +304,7 @@ CompileRequest SourceRequest(const std::filesystem::path &root,
   request.input_path = "source-import-bridge-consumer.m";
   request.language = BaseLanguage::ObjectiveC;
   request.objc3 = true;
-  request.arguments = {"--target=x86_64-unknown-linux-gnu"};
+  request.arguments = {"--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
   request.source_text = std::move(source);
   request.interface_search_paths = {root.string()};
   return request;

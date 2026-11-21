@@ -3,6 +3,8 @@
 #include "runtime/stdlib/opaque_service_storage.h"
 
 #include <algorithm>
+#include <array>
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -35,15 +37,23 @@ std::size_t ElementStride(const objc3_value_ops &ops) {
   return remainder == 0 ? effective_size : effective_size + alignment - remainder;
 }
 
-struct Buffer final {
+constexpr std::size_t kChunkElements = 32;
+constexpr unsigned kTreeLevel = 2;
+constexpr std::size_t kBranchSlots = 32;
+static_assert(kMaxElements == (1u << 20));
+#ifdef OBJC3_GENERIC_ARRAY_STORAGE_TESTING
+std::atomic<std::uint64_t> metadata_slots_copied{0};
+std::atomic<std::uint64_t> nodes_allocated{0};
+std::atomic<std::uint64_t> chunks_allocated{0};
+#endif
+
+struct Chunk final {
   objc3_value_ops ops{};
   std::size_t stride = 1;
   std::size_t alignment = alignof(std::max_align_t);
-  std::size_t count = 0;
   std::size_t initialized = 0;
   void *data = nullptr;
-
-  ~Buffer() noexcept {
+  ~Chunk() noexcept {
     if (!data) return;
     for (std::size_t i = initialized; i > 0; --i) {
       try { ops.destroy(static_cast<std::byte *>(data) + (i - 1) * stride); }
@@ -55,23 +65,84 @@ struct Buffer final {
     return static_cast<std::byte *>(data) + index * stride;
   }
 };
+std::shared_ptr<Chunk> AllocateChunk(const objc3_value_ops &ops, std::size_t count) {
+  auto chunk = std::make_shared<Chunk>();
+  chunk->ops = ops;
+  chunk->stride = ElementStride(ops);
+  chunk->alignment = std::max<std::size_t>(alignof(std::max_align_t), ops.payload_alignment);
+  if (!chunk->stride || count > std::numeric_limits<std::size_t>::max() / chunk->stride)
+    return nullptr;
+  chunk->data = ::operator new(count * chunk->stride,
+                               std::align_val_t(chunk->alignment), std::nothrow);
+  if (!chunk->data) return nullptr;
+#ifdef OBJC3_GENERIC_ARRAY_STORAGE_TESTING
+  ++chunks_allocated;
+#endif
+  return chunk;
+}
 
-std::shared_ptr<Buffer> AllocateBuffer(const objc3_value_ops &ops,
-                                       std::size_t count) {
+// Three bounded levels index 32,768 immutable payload chunks. Publication never
+// mutates a shared node/chunk: append/set replace one chunk and copy one path.
+struct Node final {
+  std::array<std::shared_ptr<Node>, kBranchSlots> children{};
+  std::array<std::shared_ptr<Chunk>, kBranchSlots> chunks{};
+};
+std::shared_ptr<Node> NewNode(const std::shared_ptr<Node> &source = {}) {
+#ifdef OBJC3_GENERIC_ARRAY_STORAGE_TESTING
+  ++nodes_allocated;
+  if (source) metadata_slots_copied += 2 * kBranchSlots;
+#endif
+  return source ? std::make_shared<Node>(*source) : std::make_shared<Node>();
+}
+std::size_t Slot(std::size_t chunk, unsigned level) {
+  return (chunk >> (5 * level)) & (kBranchSlots - 1);
+}
+void PutUnpublishedChunk(std::shared_ptr<Node> &node, unsigned level,
+                         std::size_t index, std::shared_ptr<Chunk> chunk) {
+  if (!node) node = NewNode();
+  if (!level) { node->chunks[Slot(index, 0)] = std::move(chunk); return; }
+  PutUnpublishedChunk(node->children[Slot(index, level)], level - 1, index,
+                      std::move(chunk));
+}
+std::shared_ptr<Node> ReplaceChunk(const std::shared_ptr<Node> &source,
+                                  unsigned level, std::size_t index,
+                                  const std::shared_ptr<Chunk> &chunk) {
+  auto node = NewNode(source);
+  if (!level) node->chunks[Slot(index, 0)] = chunk;
+  else node->children[Slot(index, level)] = ReplaceChunk(
+      source ? source->children[Slot(index, level)] : nullptr,
+      level - 1, index, chunk);
+  return node;
+}
+struct Buffer final {
+  objc3_value_ops ops{};
+  std::size_t stride = 1;
+  std::size_t alignment = alignof(std::max_align_t);
+  std::size_t count = 0;
+  std::shared_ptr<Node> root;
+  const std::shared_ptr<Chunk> &ChunkAt(std::size_t index) const {
+    const Node *node = root.get();
+    for (unsigned level = kTreeLevel; level; --level)
+      node = node->children[Slot(index / kChunkElements, level)].get();
+    return node->chunks[Slot(index / kChunkElements, 0)];
+  }
+  void *At(std::size_t index) const { return ChunkAt(index)->At(index % kChunkElements); }
+  void MarkInitialized(std::size_t index) { ++ChunkAt(index)->initialized; }
+};
+std::shared_ptr<Buffer> AllocateBuffer(const objc3_value_ops &ops, std::size_t count) {
   auto result = std::make_shared<Buffer>();
   result->ops = ops;
   result->stride = ElementStride(ops);
-  if (result->stride == 0) return nullptr;
-  result->alignment = std::max<std::size_t>(alignof(std::max_align_t),
-      static_cast<std::size_t>(ops.payload_alignment));
-  result->count = count;
-  if (count == 0) return result;
-  if (count > std::numeric_limits<std::size_t>::max() / result->stride)
+  if (!result->stride || count > std::numeric_limits<std::size_t>::max() / result->stride)
     return nullptr;
-  result->data = ::operator new(count * result->stride,
-                                std::align_val_t(result->alignment),
-                                std::nothrow);
-  return result->data ? result : nullptr;
+  result->alignment = std::max<std::size_t>(alignof(std::max_align_t), ops.payload_alignment);
+  result->count = count;
+  for (std::size_t start = 0; start < count; start += kChunkElements) {
+    auto chunk = AllocateChunk(ops, std::min(kChunkElements, count - start));
+    if (!chunk) return nullptr;
+    PutUnpublishedChunk(result->root, kTreeLevel, start / kChunkElements, std::move(chunk));
+  }
+  return result;
 }
 
 Status CopyElement(const objc3_value_ops &ops, void *destination,
@@ -238,7 +309,7 @@ Status BuildArray(const objc3_value_ops &ops, const void *elements,
           std::align_val_t(candidate->alignment));
       return status;
     }
-    ++candidate->initialized;
+    candidate->MarkInitialized(i);
   }
   if (zero_source) ::operator delete(zero_source,
       std::align_val_t(candidate->alignment));
@@ -280,17 +351,35 @@ Status CloneWithReplacement(const std::shared_ptr<Buffer> &source,
   if (!ops.copy_init) return OBJC3_GENERIC_COLLECTION_UNSUPPORTED_OPERATION;
   const std::size_t new_count = remove ? source->count - 1
       : source->count + (append ? 1 : 0);
-  candidate = AllocateBuffer(ops, new_count);
-  if (!candidate) return OBJC3_GENERIC_COLLECTION_OUT_OF_MEMORY;
-  for (std::size_t target = 0; target < new_count; ++target) {
-    const void *from = nullptr;
-    if (append && target == source->count) from = replacement;
-    else if (!append && !remove && target == replacement_index) from = replacement;
-    else from = source->At(remove && target >= replacement_index ? target + 1 : target);
-    const Status status = CopyElement(ops, candidate->At(target), from);
-    if (status != OBJC3_GENERIC_COLLECTION_OK) return status;
-    ++candidate->initialized;
+  if (remove) {
+    // Ordered erase shifts the suffix and remains O(N) payload work.
+    candidate = AllocateBuffer(ops, new_count);
+    if (!candidate) return OBJC3_GENERIC_COLLECTION_OUT_OF_MEMORY;
+    for (std::size_t target = 0; target < new_count; ++target) {
+      const auto *from = source->At(target >= replacement_index ? target + 1 : target);
+      const Status status = CopyElement(ops, candidate->At(target), from);
+      if (status != OBJC3_GENERIC_COLLECTION_OK) return status;
+      candidate->MarkInitialized(target);
+    }
+    return OBJC3_GENERIC_COLLECTION_OK;
   }
+  const auto changed_index = append ? source->count : replacement_index;
+  const auto start = (changed_index / kChunkElements) * kChunkElements;
+  const auto chunk_count = std::min(kChunkElements, new_count - start);
+  auto chunk = AllocateChunk(ops, chunk_count);
+  if (!chunk) return OBJC3_GENERIC_COLLECTION_OUT_OF_MEMORY;
+  for (std::size_t i = 0; i < chunk_count; ++i) {
+    const auto index = start + i;
+    const void *from = index == changed_index ? replacement : source->At(index);
+    const Status status = CopyElement(ops, chunk->At(i), from);
+    if (status != OBJC3_GENERIC_COLLECTION_OK) return status;
+    ++chunk->initialized;
+  }
+  candidate = std::make_shared<Buffer>(*source);
+  candidate->count = new_count;
+  candidate->root = ReplaceChunk(source->root, kTreeLevel,
+                                  changed_index / kChunkElements, chunk);
+
   return OBJC3_GENERIC_COLLECTION_OK;
 }
 
@@ -679,3 +768,12 @@ extern "C" Status objc3_generic_iterator_next(objc3_generic_iterator_t iterator,
   return found ? result : InspectIterator(iterator);
 } catch (const std::bad_alloc &) { return OBJC3_GENERIC_COLLECTION_OUT_OF_MEMORY; }
   catch (...) { return OBJC3_GENERIC_COLLECTION_INVALID_ARGUMENT; }
+
+#ifdef OBJC3_GENERIC_ARRAY_STORAGE_TESTING
+extern "C" void objc3_test_array_storage_reset() {
+  metadata_slots_copied = 0; nodes_allocated = 0; chunks_allocated = 0;
+}
+extern "C" std::uint64_t objc3_test_array_metadata_slots() { return metadata_slots_copied; }
+extern "C" std::uint64_t objc3_test_array_nodes() { return nodes_allocated; }
+extern "C" std::uint64_t objc3_test_array_chunks() { return chunks_allocated; }
+#endif

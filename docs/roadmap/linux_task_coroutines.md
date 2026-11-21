@@ -48,6 +48,16 @@ lifetime of a shared dependency. Tasks can also start on actor mailboxes and
 [hop between retained destinations](linux_task_hops.md), preserving affinity
 through later yields and dependency waits.
 
+The delivered [C++ group-scope span](linux_cxx_group_scopes.md) adds automatic
+finalization for `objc_task_group` coroutine definitions and a retained
+`task_group_handle::current_scope()` view. Its promise keeps pending returns and
+errors at final suspension until shielded group quiescence, then publishes
+without resuming the completed coroutine. `with_task_group` retains its callable
+through callback-frame cleanup and provides an independent child group for user
+iteration and joins. Grouped starts register membership before dispatch. The
+[current acceptance](../support/linux_cxx_frame_value_acceptance.json) binds
+source and installed evidence separately.
+
 Awaiting a handle always queues a continuation on the parent's executor, even
 when the dependency is already complete. It never blocks a worker, pumps a manual
 executor or runs the parent inline on the dependency's executor. C clients use
@@ -75,6 +85,21 @@ runs. It leaves shared dependencies running. `task_checkpoint` observes
 cancellation without suspension; `task_yield` queues a new resume and observes
 cancellation when execution continues. Code without an await, checkpoint or
 yield remains responsible for its own cancellation checks.
+
+The runtime also implements [nonblocking closed-group joins and typed result
+iteration](linux_task_group_await.md) through `objc3_task_group_await`,
+`objc3_task_group_await_next` and `objc3::task_group_handle`. The installed 12-mode normal
+coroutine/group matrix passes. The [preceding source delivery](../support/linux_cxx_group_scope_acceptance.json)
+retains its 12 dedicated coroutine sanitizer configurations. Current frame-value
+source/PCH instrumentation is bound by the current acceptance.
+
+[Raw handle adapters](linux_async_handle_joins.md) expose
+`objc3::join_task<T>(task)` and `objc3::finish_task_group(group)`. They return lazy
+tasks with independent ownership acquired at construction. Nontrivial C++
+results use the existing result operations; failed type adoption disposes only
+the adapter, preserving the caller's original handle. A group adapter closes
+the tree on first resume and joins quiescence. These explicit joins do not
+introduce automatic structured-scope cleanup.
 
 Releasing the last suspended parent handle terminalizes its task and destroys
 its frame. Child callbacks carry a separate lifetime token and generation, not a
@@ -121,8 +146,9 @@ suspension, a 2,048-level await chain, group integration and worker races.
 The sanitizer owner builds the task, executor, group, actor and value/error
 service implementations together with provider and consumer frames. It runs
 ASan/LeakSanitizer/UBSan and ThreadSanitizer at O0/O2 in C++20 and Objective-C++ (C++20 mode)
-ARC/MRC. The underlying GNUstep Objective-C runtime is the selected SDK binary;
-these probes do not claim to rebuild it with instrumentation.
+ARC/MRC. Current source qualification supplies matching instrumented GNUstep
+runtime variants, so GNU libobjc, project services and clients are checked
+together. Installed qualification binds the packaged runtime separately.
 
 The pinned GNUstep source also fixes selector/dispatch lock ordering. Registration
 acquires the runtime lock before mutating selectors and grows dispatch tables
@@ -131,8 +157,8 @@ operation. Dispatch's built-in selectors initialize before classes can receive
 messages, avoiding lazy registration under the class-initialization lock. The
 ARC/MRC threaded coroutine probes retain TSan's lock-order diagnostics.
 
-The [acceptance receipt](../support/linux_async_cxx_callables_acceptance.json) binds
-the installed SDK, its source and runtime identities, native/debugger matrices,
-sanitizer instrumentation and fresh Debian/Ubuntu executions. The
+The earlier [task-bridge receipt](../support/linux_async_cxx_callables_acceptance.json)
+retains its source/runtime identities and native/debugger evidence. The current
+acceptance linked above records the expanded source instrumentation and delivery. The
 [latency report](../support/linux_async_cxx_callables_latency.json) records five quiet
 runs against the current regression budgets.

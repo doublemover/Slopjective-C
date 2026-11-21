@@ -1,0 +1,108 @@
+{
+  "schema": "objc3c.linux-native-hosts.v1",
+  "versions": {
+    "llvm": "23.1.5",
+    "node": "26.13.0",
+    "cmake": "4.4.5",
+    "ccache": "4.14.2"
+  },
+  "ccache_minisign_public_key": "RWQX7yXbBedVfI4PNx6FLdFXu9GHUFsr28s4BVGxm4BeybtnX3P06saF",
+  "hosts": {
+    "linux-x86_64": {
+      "machine": "x86_64",
+      "target_triple": "x86_64-unknown-linux-gnu",
+      "elf_machine": 62,
+      "runner": "ubuntu-26.04",
+      "debian_arch": "amd64",
+      "library_triplet": "x86_64-linux-gnu",
+      "prefixes": {
+        "llvm": "llvm-23.1.5",
+        "node": "node-v26.13.0-linux-x64",
+        "cmake": "cmake-4.4.5-linux-x86_64",
+        "ccache": "ccache-4.14.2-linux-x86_64-glibc"
+      },
+      "assets": {
+        "llvm": {
+          "url": "https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.5/LLVM-23.1.5-Linux-X64.tar.xz",
+          "sha256": "f72edb0b36580ece7f52e23858f00c18fad4e87395ea7ad05d7e55c39f8fc78a",
+          "asset_id": 705655313
+        },
+        "node": {
+          "url": "https://nodejs.org/dist/v26.13.0/node-v26.13.0-linux-x64.tar.xz",
+          "sha256": "d28a96af6c38596f6d9d97c0ee531c13d238d757742387d1928de822d959e997"
+        },
+        "cmake": {
+          "url": "https://github.com/Kitware/CMake/releases/download/v4.4.5/cmake-4.4.5-linux-x86_64.tar.gz",
+          "sha256": "ed85135c5a5135b45e50423cb406dea04ca3338da0b8ef3c9ede963559680be0",
+          "asset_id": 682699189
+        },
+        "ccache": {
+          "url": "https://github.com/ccache/ccache/releases/download/v4.14.2/ccache-4.14.2-linux-x86_64-glibc.tar.xz",
+          "sha256": "bd1313f5316f594443dcb4113a4191c666ac6450e0cf016ff8cb8b080f46c160",
+          "asset_id": 653390076
+        },
+        "ccache_signature": {
+          "url": "https://github.com/ccache/ccache/releases/download/v4.14.2/ccache-4.14.2-linux-x86_64-glibc.tar.xz.minisig",
+          "sha256": "ceb1801696622649844d2cdc0ba61c60864b5290636fa6b4ff24b17c33a55ca4",
+          "asset_id": 653390079
+        },
+        "minisign": {
+          "url": "https://deb.debian.org/debian/pool/main/m/minisign/minisign_0.12-1_amd64.deb",
+          "sha256": "4a3f9611a0e363e5c574129dc0195ba951c6be4b8f7ac13d64880000e3b22ebe"
+        },
+        "libsodium": {
+          "url": "https://deb.debian.org/debian/pool/main/libs/libsodium/libsodium23_1.0.18-1+deb13u1_amd64.deb",
+          "sha256": "9ff9d97bb7ce3aee7f6e6ec3a785cdbe237454a7b9fd84728121bc4ef2bebebe"
+        }
+      }
+    },
+    "linux-aarch64": {
+      "machine": "aarch64",
+      "target_triple": "aarch64-unknown-linux-gnu",
+      "elf_machine": 183,
+      "runner": "ubuntu-26.04-arm",
+      "debian_arch": "arm64",
+      "library_triplet": "aarch64-linux-gnu",
+      "prefixes": {
+        "llvm": "llvm-23.1.5",
+        "node": "node-v26.13.0-linux-arm64",
+        "cmake": "cmake-4.4.5-linux-aarch64",
+        "ccache": "ccache-4.14.2-linux-aarch64-glibc"
+      },
+      "assets": {
+        "llvm": {
+          "url": "https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.5/LLVM-23.1.5-Linux-ARM64.tar.xz",
+          "sha256": "44f1e4b7a125b2763d56386a199928dd57ec32e151cc6042dce2f7b0da7bb651",
+          "asset_id": 705824806
+        },
+        "node": {
+          "url": "https://nodejs.org/dist/v26.13.0/node-v26.13.0-linux-arm64.tar.xz",
+          "sha256": "406fe3fbde1c054adff8b297c16fdb5af6659db327c1ac8acd46b56ef1af9a92"
+        },
+        "cmake": {
+          "url": "https://github.com/Kitware/CMake/releases/download/v4.4.5/cmake-4.4.5-linux-aarch64.tar.gz",
+          "sha256": "301d5063ab259577c1b57ce5490b1aab9ea5c56dc4c822f73499553dab94925f",
+          "asset_id": 682698880
+        },
+        "ccache": {
+          "url": "https://github.com/ccache/ccache/releases/download/v4.14.2/ccache-4.14.2-linux-aarch64-glibc.tar.xz",
+          "sha256": "1f3c155db005d3d1b99ce5c8ce40a1afd45507fef0168c36a6b0fd6e628d0168",
+          "asset_id": 653389937
+        },
+        "ccache_signature": {
+          "url": "https://github.com/ccache/ccache/releases/download/v4.14.2/ccache-4.14.2-linux-aarch64-glibc.tar.xz.minisig",
+          "sha256": "e2c6ea7eea5603935a9ad53ae1f2d8055261ff09bd573274f57d16f9c9491a14",
+          "asset_id": 653389955
+        },
+        "minisign": {
+          "url": "https://deb.debian.org/debian/pool/main/m/minisign/minisign_0.12-1_arm64.deb",
+          "sha256": "b0a81d2052217c5e19eb41f9db289a03d018cdf493c0bb0a28c99b0185583209"
+        },
+        "libsodium": {
+          "url": "https://deb.debian.org/debian/pool/main/libs/libsodium/libsodium23_1.0.18-1+deb13u1_arm64.deb",
+          "sha256": "d94fc46204b65a965e356ebc19f9f88aeb20a9c777cb9a6569e75f75d0ae5523"
+        }
+      }
+    }
+  }
+}

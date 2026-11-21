@@ -1,0 +1,263 @@
+{
+  "schema": "objc3c.linux-cxx-unnamed-template-projections-progress.v1",
+  "status": "SOURCE_VALIDATED",
+  "date": "2026-10-29",
+  "implementation_commit": "f692bf0309c49111c5a08cd35d6a8615492c96d3",
+  "native_identity_commit": "2692a6fa6dcf1bd1540ff0e41d62d127cd6f9910",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-cdda8571c0ee-00b75dc3",
+  "compiler_patch_digest": "cdda8571c0eef3acf75fa1fd1141c43f2e70401bfe9013a2b96a3e7dd31c334c",
+  "compiler_binary_sha256": "22609336a5e38361af0b6928169ac1c95224d1bf509db7c1e72896268a4e02b9",
+  "frontend_binary_sha256": "22031aefed2e0c00199ec11aed1e6763c092e014d95a87eb04f23ee9387370aa",
+  "frontend_source_identity_sha256": "31f5531cfd73495c5141ecd32ea6dc902fca7d0709108ead46df5f0fdcba988b",
+  "concurrency_module_version": "2.92.0",
+  "system_module_version": "2.16.0",
+  "keypath_module_version": "2.6.0",
+  "source_inputs": [
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_artifact_io.cpp",
+      "sha256": "58afb5b231a545940f44e35b84a406ae61f685009ee6e4e0e8a63b50017eee67"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_codec.cpp",
+      "sha256": "03edb0af8aab12a2bc21fe1a3aa4bae88a61ec2eb24703f75315ff2b621eeb1e"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_contract.cpp",
+      "sha256": "dbcf1ba3d174aeb14008e6d746ae3f0ede91125a42d39a8e50205ac901c75126"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_contract.h",
+      "sha256": "fffed7844e0e4a575c303190652a6f8a96d3919d1fb3000843f2aa7220d21ae1"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_emitter.cpp",
+      "sha256": "9446e04d65e21d5b87cc603675b9cae87a1ba5841eb1e814af40a8fbaf40a05a"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_import.cpp",
+      "sha256": "64ba6a3e4f0a9be3086a2776cb1c993fb2a1bfe42c8f6b697e3493f67251340e"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_module_resolver.cpp",
+      "sha256": "050a99d526670b327aa34b189817cd73b4a6021e5756a05cfa7abf7ae0879a7b"
+    },
+    {
+      "path": "scripts/objc3c_toolchain/qualify_native_async_packages.py",
+      "sha256": "67ca48ad9edc3677f1bccabce94000758804b8a3b67058aacabfbb698236c565"
+    },
+    {
+      "path": "scripts/objc3c_toolchain/run_linux_factory_batch.py",
+      "sha256": "4b94ebaa563a7ffff1fcd2eac13ca35e391ed12f12746b1ca8464590454eb0e3"
+    },
+    {
+      "path": "stdlib/module_inventory.json",
+      "sha256": "af458327ce1260a2cdc0de823685211acbbd5e49c3b0d9a2cfb33ccf3b920e64"
+    },
+    {
+      "path": "tests/clang_foundation/interface_emitter_test.cpp",
+      "sha256": "2fff9bab907258635ff85e115139f5cbaf315897228dd61809f36f4e78c277ae"
+    },
+    {
+      "path": "tests/clang_foundation/interface_import_test.cpp",
+      "sha256": "5572f7dd26450e483b058dafcc56a340ac72c7543f1a23ca42f67066d45fa72f"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/app/factory_package_checks.h",
+      "sha256": "99d6cc544c6c56e683ddb209f2313c4348196b456e42082468614bdd40cbbea0"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/module.mm",
+      "sha256": "388cffd67ee784498d10dcef74eb2e056644c0d405887291663d25370566de82"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/package.json",
+      "sha256": "a71c8bfc64912512a48c9dc6098192d5838d9971def3b86267fa5264131b35e5"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/unnamed_template_projections.h",
+      "sha256": "872065f53e99f60476ec0d2b5401861cb4a638c23414615336e65672bb9f86df"
+    }
+  ],
+  "validation": {
+    "frontend_suites": 33,
+    "native_unit_tests": 237,
+    "compiler_regressions": 412,
+    "unsupported_compiler_cases": 3,
+    "focused_tooling_tests": 27,
+    "frontend_report": {
+      "path": "out/unnamed-projections-complete-frontends-final.log",
+      "sha256": "e192721971779b12fa2d1f75cb45cd54e6851489546d6e55b903cfe8c2589c0b"
+    },
+    "tooling_report": {
+      "path": "out/unnamed-projections-accepted-tooling.log",
+      "sha256": "5a7cd7a6372907f137d811c25cf378c11d9fba72ee5ae92634bd6eddd0d6d386"
+    },
+    "native_reports": [
+      {
+        "path": "out/unnamed-projections-native-check-0.log",
+        "sha256": "d31a56e6fc2639ecd1d27370ed32c3bddffd5eed73a5d07d32347e31e319a897"
+      },
+      {
+        "path": "out/unnamed-projections-native-check-1.log",
+        "sha256": "608f2355b2f281e5338b9a5c2b9dda5d1fc5781735bc2b5c75f453292fb946fc"
+      },
+      {
+        "path": "out/unnamed-projections-native-check-2.log",
+        "sha256": "e5ff8c5f3f2a4f6b88dc9bddd8c7b77511028c6073193a089c401e886bd08758"
+      },
+      {
+        "path": "out/unnamed-projections-native-check-3.log",
+        "sha256": "8a15826725c09bd8bd59ffb8c796bffd3e36d252b37ac5cfd562d261f9b8912f"
+      },
+      {
+        "path": "out/unnamed-projections-native-check-4.log",
+        "sha256": "27a3374053af5ff69439d05767648ca4001c2b8f19ab11e3f442ea463c40245e"
+      }
+    ],
+    "package_reports": [
+      {
+        "path": "out/native-validation/unnamed-projections-lifetime-correct-packages-normal/qualification.json",
+        "sha256": "5d97a0243f9458788b29961158fd38e6125e2b7f5a22978bd6e0f8e44f1c850b",
+        "mode": "normal",
+        "full_fixture": false,
+        "configurations": 8,
+        "commands": 56,
+        "development_input_lock": "590170ff9448804107a8f247b0e5c3596ce98fef7160445282eb33ed4dcc850c"
+      },
+      {
+        "path": "out/native-validation/unnamed-projections-lifetime-correct-packages-eager/qualification.json",
+        "sha256": "e2027bf9ed63878627fb8633ae3a4554f76addc82e9d086e78817ae098e70198",
+        "mode": "eager",
+        "full_fixture": false,
+        "configurations": 8,
+        "commands": 56,
+        "development_input_lock": "590170ff9448804107a8f247b0e5c3596ce98fef7160445282eb33ed4dcc850c"
+      },
+      {
+        "path": "out/native-validation/unnamed-projections-lifetime-correct-packages-asan/qualification.json",
+        "sha256": "24939d9c0b878884ca3be118dededc6eb5d40705a6d6e45a5a0260ce9c1fa711",
+        "mode": "asan",
+        "full_fixture": false,
+        "configurations": 8,
+        "commands": 56,
+        "development_input_lock": "28ec26949de8171ffead32ca849e87856fc67fbbafea292ce1b8f946ae260719"
+      },
+      {
+        "path": "out/native-validation/unnamed-projections-lifetime-correct-packages-tsan/qualification.json",
+        "sha256": "15e97fdd07587ce74fe975123ce1bd4e5e2eb705f7b80bacfc826e896f2e5322",
+        "mode": "tsan",
+        "full_fixture": false,
+        "configurations": 8,
+        "commands": 56,
+        "development_input_lock": "9a934a406a633f4757d2f796325751c592afb9ed117827b3f9b12b31e080024c"
+      },
+      {
+        "path": "out/native-validation/unnamed-projections-lifetime-correct-full-packages-normal/qualification.json",
+        "sha256": "c8eb05b3c18f68177d64027583dc72123955703543bd69e0f09e8c801851b06d",
+        "mode": "normal",
+        "full_fixture": true,
+        "configurations": 1,
+        "commands": 7,
+        "development_input_lock": "590170ff9448804107a8f247b0e5c3596ce98fef7160445282eb33ed4dcc850c"
+      },
+      {
+        "path": "out/native-validation/unnamed-projections-lifetime-correct-full-packages-asan/qualification.json",
+        "sha256": "150573be8fb9c30b1f1b74b2779801096691aeff7fa35a7ce20de686726be3e0",
+        "mode": "asan",
+        "full_fixture": true,
+        "configurations": 1,
+        "commands": 7,
+        "development_input_lock": "28ec26949de8171ffead32ca849e87856fc67fbbafea292ce1b8f946ae260719"
+      },
+      {
+        "path": "out/native-validation/unnamed-projections-lifetime-correct-full-packages-tsan/qualification.json",
+        "sha256": "194b0fdb654c7211c2ad5f16aa70bac2a2f64cf41c45fbf61de1430cc51a9ba2",
+        "mode": "tsan",
+        "full_fixture": true,
+        "configurations": 1,
+        "commands": 7,
+        "development_input_lock": "9a934a406a633f4757d2f796325751c592afb9ed117827b3f9b12b31e080024c"
+      }
+    ],
+    "focused_package_configurations": 32,
+    "focused_package_commands": 224,
+    "full_fixture_smoke_configurations": 3,
+    "full_fixture_smoke_commands": 21,
+    "retained_prior_failure_reports": [
+      {
+        "path": "out/unnamed-projections-focused-frontends.log",
+        "sha256": "d445486bc9ecf5ddbab214b50ad7e0e5be81dea60a1dc26ee97d06f2168270d2"
+      },
+      {
+        "path": "out/unnamed-projections-complete-frontends.log",
+        "sha256": "09c7665a5e581b70cfda163feb0b9f0682d44cbad3e2150a7faa9eda2d4dd3f0"
+      },
+      {
+        "path": "out/unnamed-projections-type-surfaces-frontends.log",
+        "sha256": "9d8ceb5594ae2486e4d05419a0e5cdf3ab4acd74bed2cc74fa129b3c66b20cdf"
+      },
+      {
+        "path": "out/unnamed-projections-second-provider-diagnostics.log",
+        "sha256": "cde5d73b5ae32766318a76615dcae963ec1497539ca1207949cd6a02b211864c"
+      },
+      {
+        "path": "out/unnamed-projections-import-trace.log",
+        "sha256": "7690cfde6d246b9cffe662a818f7ecfddd33a47c8268e95dbf6c3571d264766f"
+      },
+      {
+        "path": "out/native-validation/unnamed-projections-packages-normal/qualification.json",
+        "sha256": "24cb825cf8972b73ea0460e86fc15e27c06b34d8669376423110ee7b54236bf6"
+      },
+      {
+        "path": "out/native-validation/unnamed-projections-admitted-packages-normal/qualification.json",
+        "sha256": "3846bdff8d6a1722c688cf2229a67ab0aaa47f084e5b3c11d578662d81dd2771"
+      },
+      {
+        "path": "out/native-validation/unnamed-projections-complete-packages-normal/qualification.json",
+        "sha256": "50bd11c3a800fd4848ee3055fbc30858d56e6582517f046c00ec7ded61fe4fc0"
+      },
+      {
+        "path": "out/native-validation/unnamed-projections-complete-packages-eager/qualification.json",
+        "sha256": "3c327f19be4f95eb7938c3203ace2788ecad0b4ab8d6f64d5cc240772ea118b7"
+      },
+      {
+        "path": "out/native-validation/unnamed-projections-complete-packages-asan/qualification.json",
+        "sha256": "b69e1d8a3f8fa64a06ade3b879c9c33399376e6722b9df2d1d75e1826807690d"
+      },
+      {
+        "path": "out/native-validation/unnamed-projections-complete-packages-tsan/qualification.json",
+        "sha256": "30916669f1ffdcfbc6ef00ba2fcb2907dc41be91ef1524037442ddb363bd11de"
+      }
+    ],
+    "native_lifetime_probe": {
+      "path": "out/unnamed-projections-native-lifetime-probe.log",
+      "sha256": "99dbbc48bf3c88932d68a5f429728aff6669dfa44483b6ecec5c6b59854dc052"
+    }
+  },
+  "implemented": [
+    "Public aliases, signatures, overloads, callbacks, arrays, member pointers, shared storage, fields and bases preserve unnamed template member nominal origins and native C++ values.",
+    "Closed type, pack, template-template, enum integral, structural, declaration and null member-pointer arguments preserve ordered originating owners and exact converted values; template defaults and nested class/alias templates replay.",
+    "Native anonymous member USRs use lexical ordinals under class-template owners, without source filenames or line/column dependence.",
+    "Second providers project locked dependency types by reusing only previously admitted exact export identities and their template parameter owners.",
+    "Capability admission rejects missing requirements and namespace-only projection owners; private originating owners remain rejected."
+  ],
+  "scope": [
+    "The native backend is unchanged after the 237-unit/412-regression run. Final frontend and package reports bind the final facade and fixtures.",
+    "Normal/eager/ASan+UBSan/TSan packages each cover C++20/C++23, ARC/MRC and O0/O2 after provider source deletion and package relocation. The full async fixture has one smoke configuration per normal/ASan/TSan mode.",
+    "Runtime service and GNUstep binaries are reused unchanged from source 2.91. This batch changes public interface projection and native indexing identity, without modifying runtime or ownership/isolation lowering.",
+    "The full five-family source/PCH runtime matrix remains recorded at source 2.91; it is not claimed to have rerun against this new native indexing build.",
+    "Earlier failed reports remain distinct. A native-only witness reproduced the original counter failure: a by-value argument temporary lives through the whole conditional expression. The corrected witness checks cleanup in the following full expression. No compiler change was required for that failure; no SDK archive was rebuilt."
+  ],
+  "accepted_sdk_version": "2.62.0",
+  "sdk_rebuilt": false,
+  "profile_conformance_claimed": false,
+  "native_linux_aarch64_qualified": false,
+  "remaining": [
+    "Broader dependent lookup and unnamed contexts outside complete template-owned member graphs; unmodeled declaration contracts and general standard-library publication/implementations.",
+    "General indirect/union/alias and borrowed-result precision, mutable/reference/generic/lazy callable analysis, global/foreign/MRC and exceptional ownership effects.",
+    "Remaining abstract spawn/group forms, isolation/Sendable crossings and complete Strict Concurrency enforcement.",
+    "Dependent/effectful/isolated and borrowed/resource keypaths; undefined nullable nonnull/scalar/aggregate result policy and Part 8 resource-union boundary.",
+    "Remaining specified language/library/metaprogramming/foreign interop, required diagnostics and complete Core/Strict/Strict Concurrency/Strict System profiles.",
+    "Native Linux AArch64 implementation/qualification and coordinated post-2.62 SDK delivery."
+  ]
+}

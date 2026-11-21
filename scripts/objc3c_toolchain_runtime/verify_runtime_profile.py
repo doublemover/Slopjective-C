@@ -12,6 +12,7 @@ from pathlib import Path
 if not __package__:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from scripts.objc3c_toolchain_runtime.source_patches import verify_source
+from scripts.objc3c_toolchain.linux_host import HOSTS, host_identity, native_linux_host, require_elf
 
 PIN = "e877e782fb965c4e870d2ecf6aff58dddc6290ae"
 WINDOWS_TOOLS = ("clang.exe", "clang++.exe", "lld-link.exe")
@@ -26,7 +27,7 @@ def fail(message: str) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--manifest", type=Path, default=Path(__file__).with_name("runtime-profile.json"))
-    parser.add_argument("--profile", default="windows-x86_64")
+    parser.add_argument("--profile", default=native_linux_host() if sys.platform == "linux" else "windows-x86_64")
     parser.add_argument("--source", type=Path, help="existing local libobjc2 checkout; this tool never downloads")
     parser.add_argument("--robin-map-source", type=Path, help="existing local robin-map checkout at the profile pin")
     parser.add_argument("--bin-dir", type=Path, help="directory containing pinned Clang and LLD drivers")
@@ -38,18 +39,29 @@ def main() -> int:
     except (OSError, ValueError, KeyError) as exc:
         return fail(f"runtime manifest is unreadable or lacks {args.profile}: {exc}")
 
+    if args.profile in HOSTS:
+        try:
+            identity = host_identity(args.profile, require_native=True)
+            if profile.get('target_triple') != identity['target_triple']:
+                return fail('runtime target differs from the native Linux architecture')
+        except ValueError as error:
+            return fail(str(error))
+
     robin_pin = profile.get("robin_map_commit", "")
     robin_release = profile.get("robin_map_release", "")
     if manifest.get("schema_version") != 1:
         return fail("unsupported runtime manifest schema")
-    if args.profile in ("windows-x86_64", "linux-x86_64"):
+    if args.profile in ("windows-x86_64", *HOSTS):
         if profile.get("runtime_commit") != PIN or profile.get("runtime_release") != "2.3":
             return fail("GNUstep runtime pin does not match libobjc2 v2.3 commit " + PIN)
-        abi = "2.2" if args.profile == "linux-x86_64" else "2.0"
+        abi = "2.2" if args.profile in HOSTS else "2.0"
         if profile.get("objc_abi_flag") != "-fobjc-runtime=gnustep-" + abi:
             return fail("GNUstep-v2 ABI flag is missing or changed")
         if profile.get("blocks_provider") != "libobjc2-embedded":
             return fail("profile must select exactly the embedded Blocks provider")
+
+    if args.profile in HOSTS and profile.get("autorelease_pool_policy") != "native-arc-only":
+        return fail("Linux GNUstep 2.2 requires native ARC pools without a Foundation mode switch")
 
     if args.profile == "windows-x86_64":
         if profile.get("runtime_build_drivers") != ["clang.exe", "clang++.exe"]:
@@ -60,7 +72,7 @@ def main() -> int:
             return fail("Windows runtime profile must name the VS2022 v143 environment")
         if profile.get("runtime_linker") != "lld-link.exe" or profile.get("runtime_generator") != "Ninja":
             return fail("Windows runtime profile must use Ninja and LLD")
-    if args.profile in ("windows-x86_64", "linux-x86_64"):
+    if args.profile in ("windows-x86_64", *HOSTS):
         if args.bin_dir:
             admitted = json.loads((Path(__file__).resolve().parents[2] / "toolchains/llvm/manifest.json").read_text())
             expected_version = admitted["upstream"]["tag"].removeprefix("llvmorg-")
@@ -71,11 +83,13 @@ def main() -> int:
                 return fail("toolchain executables unavailable: " + ", ".join(missing))
             for compiler in required_tools:
                 try:
+                    if args.profile in HOSTS:
+                        require_elf(args.bin_dir / compiler, args.profile)
                     version = subprocess.check_output(
                         [str(args.bin_dir / compiler), "--version"], text=True,
                         stderr=subprocess.STDOUT,
                     )
-                except (OSError, subprocess.CalledProcessError) as exc:
+                except (OSError, ValueError, subprocess.CalledProcessError) as exc:
                     return fail(f"cannot query {compiler}: {exc}")
                 if expected_version not in version or expected_commit not in version:
                     return fail(f"{compiler} is not from pinned LLVM {expected_version}: {version.splitlines()[0]}")
@@ -92,7 +106,7 @@ def main() -> int:
             return fail(f"cannot read local runtime revision: {exc}")
         if revision != PIN:
             return fail(f"runtime source is {revision}, expected pinned commit {PIN}")
-        if args.profile == 'linux-x86_64':
+        if args.profile in HOSTS:
             try:
                 verify_source(Path(__file__).resolve().parents[2], args.source, profile)
             except (OSError, ValueError, subprocess.SubprocessError) as exc:
@@ -118,7 +132,7 @@ def main() -> int:
         for symbol in ("_Block_copy", "_Block_release"):
             if not re.search(r"\b" + symbol + r"\s*\(\s*const\s+void\s*\*", blocks_header):
                 return fail(f"pinned objc/blocks_runtime.h does not declare {symbol}(const void *)")
-        if args.profile in ("windows-x86_64", "linux-x86_64"):
+        if args.profile in ("windows-x86_64", *HOSTS):
             if args.robin_map_source is None or not args.robin_map_source.is_dir():
                 return fail("local pinned robin-map source is unavailable; configure would fetch from the network")
             try:

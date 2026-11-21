@@ -16,6 +16,11 @@ typedef struct objc3_text_builder_v2_opaque *objc3_text_builder_v2_t;
 // Text inputs must be valid UTF-8; embedded NUL is ordinary data.
 int objc3_runtime_stdlib_text_v2_create_utf8_checked(
     const char *bytes, uint64_t byte_count, objc3_text_v2_t *out_text);
+// Imported metadata is checked against the decoded bytes before a token is
+// published. Rejected scalar counts cannot consume permanent token capacity.
+int objc3_runtime_stdlib_text_v2_create_utf8_record_checked(
+    const char *bytes, uint64_t byte_count, uint64_t scalar_count,
+    objc3_text_v2_t *out_text);
 int objc3_runtime_stdlib_text_v2_retain_checked(objc3_text_v2_t text,
                                                  objc3_text_v2_t *out_text);
 int objc3_runtime_stdlib_text_v2_release_checked(objc3_text_v2_t text);

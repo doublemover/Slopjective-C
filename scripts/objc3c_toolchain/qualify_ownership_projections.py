@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from contextvars import copy_context
 from concurrent.futures import ThreadPoolExecutor
 import json
 from pathlib import Path
@@ -146,7 +147,7 @@ def qualify(sdk: Path, output: Path, jobs: int = 1) -> dict:
                       for ownership in ('arc', 'mrc') for opt in ('O0', 'O2')]
     cases, failures = [], []
     with ThreadPoolExecutor(max_workers=jobs) as executor:
-        futures = [executor.submit(qualify_case, sdk, output, *mode) for mode in configurations]
+        futures = [executor.submit(copy_context().run, qualify_case, sdk, output, *mode) for mode in configurations]
         for mode, future in zip(configurations, futures):
             try:
                 cases.append(future.result())

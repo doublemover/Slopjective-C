@@ -1,0 +1,443 @@
+#include "clang_foundation/compile_session.h"
+#include "clang_foundation/meta_package.h"
+#include "clang_foundation/frontend_api.h"
+#include "clang_foundation/interface_codec.h"
+#include "llvm/Support/Error.h"
+#include "llvm/Support/Program.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/JSON.h"
+#include "llvm/Support/raw_ostream.h"
+#include <cassert>
+#include <algorithm>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+using namespace objc3::clang_foundation;
+namespace fs=std::filesystem;
+namespace {
+std::string JSON(const llvm::json::Value &value) {
+  std::string bytes;llvm::raw_string_ostream out(bytes);out<<value;out.flush();return bytes;
+}
+void Write(const fs::path &path,const std::string &bytes) {std::ofstream out(path);out<<bytes;assert(out.good());}
+void Success(const CompileResult &result) {
+  if(!result.success){std::cerr<<result.failure<<'\n';for(const auto &D:result.diagnostics)std::cerr<<D.message<<'\n';
+    if(result.interface_artifact)for(const auto &D:result.interface_artifact->diagnostics)std::cerr<<D.code<<": "<<D.message<<'\n';
+    for(const auto &D:result.interface_import_diagnostics)std::cerr<<D.code<<": "<<D.message<<'\n';}
+  assert(result.success);
+}
+void Execute(const std::vector<std::string> &command) {
+  std::vector<llvm::StringRef> args(command.begin(),command.end());
+  auto status=llvm::sys::ExecuteAndWait(command.front(),args);
+  if(status)std::cerr<<"native metaprogramming witness failed: "<<command.front()<<" ("<<status<<")\n";
+  assert(status==0);
+}
+llvm::json::Object Text(const char *text){return llvm::json::Object{{"text",text}};}
+}
+int main() {
+  llvm::SmallString<128> temporary;assert(!llvm::sys::fs::createUniqueDirectory("objc3-meta-expansion",temporary));
+  fs::path root(temporary.c_str());struct Cleanup{fs::path path;~Cleanup(){fs::remove_all(path);}}cleanup{root};
+  llvm::json::Value document(llvm::json::Object{
+    {"contract_id","objc3c.meta.package.v1"},{"id","test.ast"},{"version","1.0.0"},
+    {"requires",llvm::json::Object{{"meta_revision",1},{"extension_abi",24}}},
+    {"capabilities",llvm::json::Array{}},
+    {"entrypoints",llvm::json::Array{
+      llvm::json::Object{{"name","Snapshot"},{"kind","derive"},{"requires",llvm::json::Array{}},
+        {"protocols",llvm::json::Array{"GeneratedProtocol"}},
+        {"declarations",llvm::json::Array{Text("- (int)checksum;")}},
+        {"implementations",llvm::json::Array{Text("- (int)checksum { return 0"),
+          llvm::json::Object{{"for_each","properties"},{"where",llvm::json::Object{{"kind","integer"}}},
+            {"body",llvm::json::Array{Text(" + self.${member.getter}")}}},Text("; }")}}},
+      llvm::json::Object{{"name","FortyTwo"},{"kind","macro"},{"requires",llvm::json::Array{}},
+        {"declarations",llvm::json::Array{Text("- (int)answer;")}},
+        {"implementations",llvm::json::Array{Text("- (int)answer { return META_VALUE; }")}}},
+      llvm::json::Object{{"name","Doubled"},{"kind","property-behavior"},{"requires",llvm::json::Array{}},
+        {"dispatch","dynamic"},{"executor","none"},{"declarations",llvm::json::Array{}},
+        {"implementations",llvm::json::Array{llvm::json::Object{{"for_each","properties"},
+          {"body",llvm::json::Array{Text("- (${member.type})${member.getter} { return self.value * 2; }")}}}}}},
+      llvm::json::Object{{"name","WrongDispatch"},{"kind","property-behavior"},{"requires",llvm::json::Array{}},
+        {"dispatch","direct"},{"executor","none"},{"declarations",llvm::json::Array{}},
+        {"implementations",llvm::json::Array{Text("- (int)broken { return 1; }")}}},
+      llvm::json::Object{{"name","MissingAccessor"},{"kind","property-behavior"},{"requires",llvm::json::Array{}},
+        {"dispatch","dynamic"},{"executor","none"},{"declarations",llvm::json::Array{}},
+        {"implementations",llvm::json::Array{Text("- (int)unrelated { return 1; }")}}}
+    }}});
+  for(const char *affinity:{"none","main","global","named:meta.worker","actor","actor@named:meta.worker"}) {
+    document.getAsObject()->getArray("entrypoints")->push_back(llvm::json::Object{
+      {"name",std::string("Affinity_")+std::to_string(document.getAsObject()->getArray("entrypoints")->size())},
+      {"kind","property-behavior"},{"requires",llvm::json::Array{}},
+      {"dispatch","dynamic"},{"executor",affinity},{"declarations",llvm::json::Array{}},
+      {"implementations",llvm::json::Array{Text("- (int)answer { return 42; }")}}});
+  }
+  document.getAsObject()->getArray("entrypoints")->push_back(llvm::json::Object{
+    {"name","TypedContracts"},{"kind","derive"},{"requires",llvm::json::Array{}},
+    {"declarations",llvm::json::Array{Text("- (int)contracts;"),
+      llvm::json::Object{{"for_each","properties"},{"body",llvm::json::Array{
+        llvm::json::Object{{"if","member.resource"},{"then",llvm::json::Array{Text("- (int)meta_${member.name}_resource;")}}},
+        llvm::json::Object{{"if","member.borrowed"},{"then",llvm::json::Array{Text("- (int)meta_${member.name}_borrowed;")}}}}}},
+      llvm::json::Object{{"for_each","ivars"},{"body",llvm::json::Array{
+        llvm::json::Object{{"if","member.resource"},{"then",llvm::json::Array{Text("- (int)meta_${member.name}_resource;")}}},
+        llvm::json::Object{{"if","member.borrowed"},{"then",llvm::json::Array{Text("- (int)meta_${member.name}_borrowed;")}}}}}}}},
+    {"implementations",llvm::json::Array{Text("- (int)contracts { return 0"),
+      llvm::json::Object{{"for_each","properties"},{"body",llvm::json::Array{
+        llvm::json::Object{{"if","member.resource"},{"then",llvm::json::Array{Text(" + 1")}}},
+        llvm::json::Object{{"if","member.borrowed"},{"then",llvm::json::Array{Text(" + 2")}}}}}},Text("; }")}}});
+  for(const char *name:{"Stored","DirectStored","ActorStored"}) {
+    document.getAsObject()->getArray("entrypoints")->push_back(llvm::json::Object{
+      {"name",name},{"kind","property-behavior"},{"requires",llvm::json::Array{"objc3.meta.storage.v1"}},
+      {"dispatch",std::string(name)=="DirectStored"?"direct":"dynamic"},
+      {"executor",std::string(name)=="ActorStored"?"actor":"none"},
+      {"ivars",llvm::json::Array{llvm::json::Object{{"for_each","properties"},
+        {"body",llvm::json::Array{Text("${member.type} __meta_${member.name};")}}}}},
+      {"declarations",llvm::json::Array{}},
+      {"implementations",llvm::json::Array{llvm::json::Object{{"for_each","properties"},
+        {"body",llvm::json::Array{Text("- (${member.type})${member.getter} { return __meta_${member.name}; }"),
+          llvm::json::Object{{"if","member.writable"},{"then",llvm::json::Array{
+            Text("- (void)${member.setter}(${member.type})value { __meta_${member.name}=value; }")}}}}}}}}});
+  }
+  std::string error;auto fingerprint=ComputeMetaPackageFingerprint(JSON(document),error);assert(fingerprint);
+  (*document.getAsObject())["fingerprint"]=*fingerprint;
+  const auto manifest=root/"objc3-meta.json",lock=root/"lock.json";
+  Write(manifest,JSON(document));
+  Write(lock,JSON(llvm::json::Object{{"contract_id","objc3c.meta.lock.v1"},
+    {"packages",llvm::json::Array{llvm::json::Object{{"id","test.ast"},{"version","1.0.0"},{"fingerprint",*fingerprint}}}}}));
+  CompileRequest request;request.input_path=(root/"module.m").string();request.objc3=true;
+  request.objc_runtime="gnustep-2.2";request.meta_packages={root.string()};request.meta_lock=lock.string();
+  request.source_text=R"source(
+@protocol GeneratedProtocol
+- (int)checksum;
+@end
+__attribute__((objc_macro)) void marker(void);
+enum { META_VALUE = 42 };
+#define META_VALUE __DATE__
+__attribute__((objc_root_class,objc_derive("test.ast::Snapshot"),objc_expand("FortyTwo")))
+@interface Counter <GeneratedProtocol> { Class isa; }
+@property(nonatomic) int value;
+@property(nonatomic) int other;
+@end
+#define checksum compiler_must_not_expand_this_macro
+@implementation Counter
+@end
+#undef checksum
+int invoke(Counter *value) { return [value checksum] + [value answer]; }
+)source";
+  for(bool arc:{false,true}) for(int mode:{0,1,2}) {
+    request.language=mode?BaseLanguage::ObjectiveCxx:BaseLanguage::ObjectiveC;
+    request.arguments=mode?std::vector<std::string>{mode==1?"-std=c++20":"-std=c++23"}:std::vector<std::string>{"-std=c17"};
+    request.arguments.insert(request.arguments.end(),{"-MD","-MF",(root/"module.d").string()});
+    request.arc=arc;Success(Compile(request));
+    {std::ifstream dep(root/"module.d");std::string bytes((std::istreambuf_iterator<char>(dep)),{});
+      assert(bytes.find(manifest.string())!=std::string::npos && bytes.find(lock.string())!=std::string::npos);
+      assert(bytes.find(".objc3-meta-")==std::string::npos);}
+
+    request.emit=EmitKind::LLVM;request.output_path=(root/(arc?"arc.ll":"mrc.ll")).string();
+    Success(Compile(request));
+    std::ifstream input(request.output_path);std::string ir((std::istreambuf_iterator<char>(input)),{});
+    assert(ir.find("checksum")!=std::string::npos && ir.find("answer")!=std::string::npos);
+    assert(ir.find("ret i32 42")!=std::string::npos);
+    assert(!Compile(request).semantic_dependency_record.empty());
+    auto object_request=request;object_request.emit=EmitKind::Object;object_request.output_path=(root/"provider.o").string();
+    auto object=Compile(object_request);Success(object);
+    Write(root/"main.c",R"witness(
+extern void *objc_getClass(const char *);
+extern void *class_createInstance(void *,__SIZE_TYPE__);
+extern void *sel_registerName(const char *);
+extern void *objc_msgSend(void *,void *,...);
+extern void *object_dispose(void *);
+int main(void) {
+  void *cls=objc_getClass("Counter");if(!cls)return 1;
+  void *value=class_createInstance(cls,0);if(!value)return 2;
+  const char *names[]={"setValue:","setOther:"};
+  for(int i=0;i<2;++i) {
+    void *selector=sel_registerName(names[i]);
+    ((void (*)(void *,void *,int))objc_msgSend)(value,selector,21);
+  }
+  const char *getters[]={"checksum","answer"};
+  for(int i=0;i<2;++i) {
+    void *selector=sel_registerName(getters[i]);
+    if(((int (*)(void *,void *))objc_msgSend)(value,selector)!=42)return 3+i;
+  }
+  object_dispose(value);return 0;
+}
+)witness");
+    const fs::path runtime=OBJC3_META_TEST_OBJC_LIBRARY;
+    Execute({object.compiler_driver_path,"--no-default-config","-fuse-ld=lld",object_request.output_path,
+      (root/"main.c").string(),runtime.string(),"-Wl,-rpath,"+runtime.parent_path().string(),"-o",(root/"witness").string()});
+    Execute({(root/"witness").string()});
+    request.emit=EmitKind::Syntax;request.output_path.clear();
+    auto exported=request;exported.emit_semantic_interface=true;
+    exported.module_name="test.Generated";exported.package_identity="test-meta-v1";
+    exported.interface_exports={"Counter","GeneratedProtocol","marker"};
+    auto provider=Compile(exported);Success(provider);
+    assert(provider.interface_artifact && provider.interface_artifact->success);
+    const auto &artifact=*provider.interface_artifact;
+    assert(artifact.source_bytes.find("objc3.meta.expanded.v1:")!=std::string::npos);
+    assert(artifact.source_bytes.find("objc_derive(")==std::string::npos);
+    assert(artifact.source_bytes.find("objc_macro")!=std::string::npos);
+    assert(artifact.sidecar_json.find(kMetaprogrammingSemantic)!=std::string::npos);
+    auto capabilities=SupportedSemanticInterfaceCapabilities();
+    std::vector<llvm::StringRef> restricted;
+    for(auto capability:capabilities)if(capability!=kMetaprogrammingSemantic)restricted.push_back(capability);
+    auto unsupported=DecodeSemanticInterfaceSidecar(artifact.sidecar_json,artifact.source_bytes,restricted);
+    assert(!unsupported);llvm::consumeError(unsupported.takeError());
+    auto decoded=DecodeSemanticInterfaceSidecar(artifact.sidecar_json,artifact.source_bytes,capabilities);assert(decoded);
+    auto forged=*decoded;std::erase(forged.required_semantics,std::string(kMetaprogrammingSemantic));
+    forged.module.semantic_fingerprint=ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(forged));
+    std::vector<std::string> supported;for(auto C:capabilities)supported.push_back(C.str());
+    assert(!ValidateSemanticInterface(forged,forged.module,forged.canonical_source_sha256,forged.declarations,supported).ok());
+
+    auto interface=root/"Generated.objc3i";
+    Write(interface,artifact.source_bytes);Write(interface.string()+".json",artifact.sidecar_json);
+    fs::rename(manifest,root/"hidden-manifest.json");
+    CompileRequest consumer;consumer.input_path=(root/"consumer.m").string();consumer.objc3=true;
+    consumer.language=request.language;consumer.arguments=request.arguments;
+    consumer.arc=arc;consumer.objc_runtime="gnustep-2.2";
+    consumer.source_text="int consume(Counter *value){return [value checksum]+[value answer];}";
+    InterfaceImportInput imported_input;imported_input.source_path=interface.string();
+    imported_input.sidecar_path=interface.string()+".json";imported_input.locked_identity=artifact.identity;
+    consumer.imported_interfaces={imported_input};
+    auto imported=Compile(consumer);
+    fs::rename(root/"hidden-manifest.json",manifest);
+    Success(imported);
+    assert(!imported.imported_declarations.empty());
+  }
+  objc3c_frontend_v3_options options{};options.struct_size=sizeof(options);options.abi_version=OBJC3C_FRONTEND_V3_ABI;
+  options.base.struct_size=sizeof(options.base);options.base.abi_version=OBJC3C_FRONTEND_V2_ABI;
+  options.base.input_path=request.input_path.c_str();options.base.source=request.source_text->c_str();
+  options.base.source_size=request.source_text->size();options.base.objc3=1;options.base.language=2;
+  options.base.objc_runtime="gnustep-2.2";
+  const auto package_path=root.string(),lock_path=lock.string();const char *paths[]={package_path.c_str()};
+  options.meta_packages=paths;options.meta_package_count=1;options.meta_lock=lock_path.c_str();
+  objc3c_frontend_v2_result *handle=nullptr;
+  assert(objc3c_frontend_v3_compile(&options,&handle)==0 && handle);
+  auto record=objc3c_frontend_v3_result_dependency_record(handle);
+  assert(record && std::string(record).find(manifest.string())!=std::string::npos);
+  objc3c_frontend_v2_result_destroy(handle);handle=nullptr;
+  auto invalid=options;invalid.meta_packages=nullptr;
+  assert(objc3c_frontend_v3_compile(&invalid,&handle)==2 && !handle);
+  invalid=options;invalid.meta_lock=nullptr;
+  assert(objc3c_frontend_v3_compile(&invalid,&handle)==2 && !handle);
+  invalid=options;invalid.struct_size=offsetof(objc3c_frontend_v3_options,meta_lock);
+  assert(objc3c_frontend_v3_compile(&invalid,&handle)==2 && !handle);
+  for(const char *standard:{"c++20","c++23"}) {
+    CompileRequest entries;entries.input_path=(root/"entrypoints.cpp").string();
+    entries.language=BaseLanguage::Cxx;entries.arguments={std::string("-std=")+standard};
+    entries.emit_semantic_interface=true;entries.module_name="test.MetaEntries";entries.package_identity="meta-entries-v1";
+    entries.interface_exports={"meta_template","MetaEntries","MetaGenericEntries","meta_redeclared"};
+    entries.source_text=R"entries(
+template<class T> __attribute__((objc_macro)) inline constexpr T meta_template(T value){return value;}
+template<class T> __attribute__((objc_macro)) inline constexpr T meta_redeclared(T value);
+template<class T> inline constexpr T meta_redeclared(T value){return value;}
+struct MetaEntries {
+ __attribute__((objc_macro)) static constexpr int concrete(int value){return value+1;}
+ template<class T> __attribute__((objc_macro)) static constexpr T generic(T value){return value;}
+ __attribute__((objc_macro)) constexpr int member(int value)const{return value;}
+ static constexpr int outlined(int value);
+ struct Nested {__attribute__((objc_macro)) static constexpr int nested(int value){return value;}};
+};
+__attribute__((objc_macro)) constexpr int MetaEntries::outlined(int value){return value;}
+template<class T>struct MetaGenericEntries {
+ __attribute__((objc_macro)) static constexpr T invoke(T value){return value;}
+};
+)entries";
+    auto built=Compile(entries);Success(built);assert(built.interface_artifact);
+    const auto &artifact=*built.interface_artifact;
+    auto sidecar=DecodeSemanticInterfaceSidecar(artifact.sidecar_json,artifact.source_bytes,SupportedSemanticInterfaceCapabilities());assert(sidecar);
+    bool template_marked=false,record_marked=false,class_template_marked=false,redeclared_marked=false;
+    std::string original_record_identity;
+    for(const auto &D:sidecar->declarations) {
+      if(D.qualified_name=="meta_redeclared")redeclared_marked=HasMetaprogrammingIdentity(D);
+      if(D.qualified_name=="meta_template")template_marked=HasMetaprogrammingIdentity(D);
+      if(D.qualified_name=="MetaGenericEntries")class_template_marked=HasMetaprogrammingIdentity(D);
+      if(D.qualified_name=="MetaEntries") {
+        original_record_identity=D.canonical_type_identity;
+        record_marked=HasMetaprogrammingIdentity(D);
+        auto section=D.canonical_type_identity.substr(D.canonical_type_identity.find(";expanded-metaprogramming:v1;"));
+        for(const char *name:{"concrete","generic","member","nested","outlined"})assert(section.find(name)!=std::string::npos);
+      }
+    }
+    assert(template_marked && record_marked && class_template_marked && redeclared_marked);
+    auto altered=entries;
+    const std::string marker="__attribute__((objc_macro)) constexpr int member";
+    auto position=altered.source_text->find(marker);assert(position!=std::string::npos);
+    altered.source_text->replace(position,marker.size(),"constexpr int member");
+    auto changed=Compile(altered);Success(changed);assert(changed.interface_artifact);
+    auto changed_sidecar=DecodeSemanticInterfaceSidecar(changed.interface_artifact->sidecar_json,
+        changed.interface_artifact->source_bytes,SupportedSemanticInterfaceCapabilities());assert(changed_sidecar);
+    auto changed_record=std::find_if(changed_sidecar->declarations.begin(),changed_sidecar->declarations.end(),[](const auto &D){return D.qualified_name=="MetaEntries";});
+    assert(changed_record!=changed_sidecar->declarations.end() && changed_record->canonical_type_identity!=original_record_identity);
+    auto forged=*sidecar;
+    auto forged_owner=std::find_if(forged.declarations.begin(),forged.declarations.end(),[](const auto &D){return D.qualified_name=="MetaEntries";});
+    assert(forged_owner!=forged.declarations.end());forged_owner->kind="Var";
+    forged.module.semantic_fingerprint=ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(forged));
+    std::vector<std::string> supported;for(auto C:SupportedSemanticInterfaceCapabilities())supported.push_back(C.str());
+    auto rejected_owner=ValidateSemanticInterface(forged,forged.module,forged.canonical_source_sha256,forged.declarations,supported);
+    assert(std::any_of(rejected_owner.diagnostics.begin(),rejected_owner.diagnostics.end(),[](const auto &D){return D.code=="O3IFC145" && D.message.find("metaprogramming")!=std::string::npos;}));
+    auto interface=root/"MetaEntries.objc3i";Write(interface,artifact.source_bytes);Write(interface.string()+".json",artifact.sidecar_json);
+    auto consumer=entries;consumer.emit_semantic_interface=false;consumer.interface_exports.clear();
+    consumer.input_path=(root/"entry-consumer.cpp").string();
+    consumer.source_text="static_assert(meta_template(42)==42);static_assert(MetaEntries::concrete(41)==42);static_assert(MetaEntries::generic(42)==42);constexpr MetaEntries entry;static_assert(entry.member(42)==42);static_assert(MetaEntries::Nested::nested(42)==42);static_assert(MetaGenericEntries<int>::invoke(42)==42);static_assert(meta_redeclared(42)==42);static_assert(MetaEntries::outlined(42)==42);";
+    InterfaceImportInput input;input.source_path=interface.string();input.sidecar_path=interface.string()+".json";input.locked_identity=artifact.identity;
+    consumer.imported_interfaces={input};Success(Compile(consumer));
+  }
+  auto behavior=request;behavior.source_text=R"source(
+__attribute__((objc_root_class)) @interface Behavior
+@property(nonatomic) int value;
+@property(nonatomic,readonly) int twice __attribute__((objc_property_behavior("Doubled")));
+@end
+@implementation Behavior @end
+int use(Behavior *value){return value.twice;}
+)source";
+  Success(Compile(behavior));
+  auto directBehavior=request;directBehavior.source_text=R"source(
+__attribute__((objc_root_class,objc_direct_members)) @interface DirectBehavior
+@property(nonatomic,readonly) int broken __attribute__((objc_property_behavior("WrongDispatch")));
+@end
+@implementation DirectBehavior @end
+)source";
+  Success(Compile(directBehavior));
+  // Explicit behavior contracts must match effective native affinity on
+  // declarations and implementations, including inherited and actor binding.
+  for(bool arc:{false,true})for(const char *standard:{"c17","c++20","c++23"}) {
+    auto affinity=request;affinity.arc=arc;
+    affinity.language=std::string(standard)=="c17"?BaseLanguage::ObjectiveC:BaseLanguage::ObjectiveCxx;
+    affinity.arguments={std::string("-std=")+standard,"-fblocks",std::string("-I")+OBJC3_META_TEST_RUNTIME_HEADERS};
+    affinity.strict_concurrency=true;
+    auto typed=affinity;typed.emit_semantic_interface=true;typed.module_name="test.TypedQueries";
+    typed.package_identity="meta-typed-queries-v1";typed.interface_exports={"meta_close","MetaHandle","MetaAlias","MetaLoan","MetaTyped"};
+    typed.source_text=R"typed(
+void meta_close(int) __attribute__((nothrow));
+typedef int MetaHandle __attribute__((objc_requires_cleanup(meta_close),objc_resource_family(MetaHandles),objc_invalid(-1)));
+typedef MetaHandle MetaAlias;
+typedef borrowed const char *MetaLoan;
+__attribute__((objc_root_class,objc_derive("TypedContracts"))) @interface MetaTyped {
+ MetaAlias stored_handle;
+ MetaLoan stored_loan;
+}
+@property(nonatomic,readonly) MetaAlias handle;
+@property(nonatomic,readonly) MetaLoan loan;
+@end
+)typed";
+    auto typed_result=Compile(typed);Success(typed_result);assert(typed_result.interface_artifact);
+    for(const char *name:{"meta_handle_resource","meta_loan_borrowed","meta_stored_handle_resource","meta_stored_loan_borrowed"})
+      assert(typed_result.interface_artifact->source_bytes.find(name)!=std::string::npos);
+    for(unsigned shape=0;shape!=4;++shape) {
+      auto stored=affinity;
+      stored.source_text=std::string(affinity.language==BaseLanguage::ObjectiveC?"#include \"objc3_runtime_services.h\"\n":"#include \"objc3_task.hpp\"\n")+
+          "__attribute__((objc_root_class)) @interface StoredRoot {Class isa;} @end\n"+
+          (shape==1?"__attribute__((objc_direct_members)) @interface":shape==2?"actor class":shape==3?"__attribute__((objc_root_class)) @interface":"@interface")+
+          (shape==3?" Stored { Class isa; @public int authored; }\n":" Stored : StoredRoot\n")+
+          "@property(nonatomic) int value __attribute__((objc_property_behavior(\""+
+          (shape==1?"DirectStored":shape==2?"ActorStored":"Stored")+"\")));\n"+
+          "@property(nonatomic) int other __attribute__((objc_property_behavior(\""+
+          (shape==1?"DirectStored":shape==2?"ActorStored":"Stored")+"\")));\n@end\n@implementation StoredRoot @end\n@implementation Stored @end\n";
+      stored.emit=EmitKind::Object;stored.output_path=(root/"stored.o").string();
+      auto provider=Compile(stored);Success(provider);
+      auto exported=stored;exported.emit=EmitKind::Syntax;exported.output_path.clear();exported.emit_semantic_interface=true;
+      exported.module_name="test.Stored";exported.package_identity="meta-storage-v1";exported.interface_exports={"StoredRoot","Stored"};
+      auto api=Compile(exported);Success(api);assert(api.interface_artifact && api.interface_artifact->success);
+      const auto &artifact=*api.interface_artifact;
+      assert(artifact.source_bytes.find("__meta_value")!=std::string::npos && artifact.source_bytes.find("__meta_other")!=std::string::npos);
+      auto interface=root/"Stored.objc3i";Write(interface,artifact.source_bytes);Write(interface.string()+".json",artifact.sidecar_json);
+      auto consumer=affinity;consumer.meta_packages.clear();consumer.meta_lock.clear();
+      InterfaceImportInput imported;imported.source_path=interface.string();imported.sidecar_path=interface.string()+".json";imported.locked_identity=artifact.identity;
+      consumer.imported_interfaces={imported};
+      consumer.source_text=std::string(affinity.language==BaseLanguage::ObjectiveC?"#include \"objc3_runtime_services.h\"\n":"#include \"objc3_task.hpp\"\n")+
+          (shape==2?"int read(Stored *value) __objc3_async_frame {return __objc3_await [value value];}":
+          (affinity.language==BaseLanguage::ObjectiveC?std::string(""):std::string("extern \"C\" "))+
+          "int stored_access(Stored *value){"+(shape==3?"value->authored=10;":"")+
+          "value.value=40;value.other=2;return value.value+value.other"+(shape==3?"+(value->authored==10?0:100)":"")+";}");
+      fs::rename(manifest,root/"hidden-manifest.json");auto imported_result=Compile(consumer);
+      fs::rename(root/"hidden-manifest.json",manifest);Success(imported_result);
+      if(shape!=2) {
+        consumer.emit=EmitKind::Object;consumer.output_path=(root/"stored-consumer.o").string();
+        Success(Compile(consumer));
+        Write(root/"stored-main.c",R"storage(
+extern void *objc_getClass(const char *);extern void *class_createInstance(void *,__SIZE_TYPE__);
+extern void *object_dispose(void *);extern int stored_access(void *);
+int main(void){void *cls=objc_getClass("Stored");if(!cls)return 1;void *value=class_createInstance(cls,0);if(!value)return 2;
+ int sum=stored_access(value);object_dispose(value);return sum==42?0:3;}
+)storage");
+        const fs::path runtime=OBJC3_META_TEST_OBJC_LIBRARY;
+        Execute({provider.compiler_driver_path,"--no-default-config","-fuse-ld=lld",stored.output_path,
+          consumer.output_path,(root/"stored-main.c").string(),runtime.string(),"-Wl,-rpath,"+runtime.parent_path().string(),"-o",(root/"stored-witness").string()});
+        Execute({(root/"stored-witness").string()});
+      }
+      auto collision=stored;collision.emit=EmitKind::Syntax;collision.output_path.clear();
+      if(shape==3)collision.source_text->replace(collision.source_text->find("int authored;"),std::string("int authored;").size(),"int __meta_value;");
+      if(shape==3)assert(!Compile(collision).success);
+    }
+    for(unsigned mode=0;mode!=6;++mode) {
+      const std::string rootClass="@protocol Sendable @end\n__attribute__((objc_root_class)) @interface MetaRoot <Sendable> { Class isa; } @end\n";
+      const std::string binding=mode==1?"__attribute__((objc_executor(main))) ":
+          mode==2?"__attribute__((objc_executor(global))) ":
+          mode==3 || mode==5?"__attribute__((objc_executor(named(\"meta.worker\")))) ":"";
+      const std::string declaration=mode>=4?"actor class":"@interface";
+      affinity.source_text=rootClass+binding+declaration+" MetaAffinity : MetaRoot\n"+
+          "@property(nonatomic,readonly) int answer __attribute__((objc_property_behavior(\"Affinity_"+
+          std::to_string(5+mode)+"\")));\n@end\n@implementation MetaAffinity @end\n";
+      auto result=Compile(affinity);Success(result);
+      auto exported=affinity;exported.emit_semantic_interface=true;
+      exported.module_name="test.MetaAffinity";exported.package_identity="meta-affinity-v1";
+      exported.interface_exports={"Sendable","MetaRoot","MetaAffinity"};auto provider=Compile(exported);Success(provider);
+      assert(provider.interface_artifact && provider.interface_artifact->success);
+      auto interface=root/"Affinity.objc3i";Write(interface,provider.interface_artifact->source_bytes);
+      Write(interface.string()+".json",provider.interface_artifact->sidecar_json);
+      InterfaceImportInput imported;imported.source_path=interface.string();imported.sidecar_path=interface.string()+".json";
+      imported.locked_identity=provider.interface_artifact->identity;
+      auto consumer=affinity;consumer.meta_packages.clear();consumer.meta_lock.clear();consumer.imported_interfaces={imported};
+      consumer.source_text=std::string(affinity.language==BaseLanguage::ObjectiveC?"#include \"objc3_runtime_services.h\"\n":"#include \"objc3_task.hpp\"\n")+(mode==0?"int read(MetaAffinity *value){return [value answer];}":
+          "int read(MetaAffinity *value) __objc3_async_frame {return __objc3_await [value answer];}");
+      fs::rename(manifest,root/"hidden-manifest.json");auto consumed=Compile(consumer);
+      fs::rename(root/"hidden-manifest.json",manifest);Success(consumed);
+      if(mode!=0) {
+        auto native=consumer;native.emit=EmitKind::LLVM;native.output_path=(root/"affinity-consumer.ll").string();
+        Success(Compile(native));std::ifstream input(native.output_path);
+        std::string ir((std::istreambuf_iterator<char>(input)),{});
+        assert(ir.find("objc3_task_hop")!=std::string::npos);
+        if(mode>=4)assert(ir.find("objc3_actor_get_or_create_for_object")!=std::string::npos);
+        if(mode!=4)assert(ir.find(mode==1?"objc3_executor_get_main":mode==2?"objc3_executor_get_global":"objc3_executor_get_named")!=std::string::npos);
+      }
+      if(mode!=0) {
+        consumer.source_text="int read(MetaAffinity *value){return [value answer];}";
+        auto rejected=Compile(consumer);assert(!rejected.success);
+      }
+      auto mismatch=affinity;
+      const auto name=mismatch.source_text->find("Affinity_"+std::to_string(5+mode));assert(name!=std::string::npos);
+      mismatch.source_text->replace(name,("Affinity_"+std::to_string(5+mode)).size(),"Affinity_"+std::to_string(5+(mode+1)%6));
+      auto rejected=Compile(mismatch);assert(!rejected.success);
+      assert(std::any_of(rejected.diagnostics.begin(),rejected.diagnostics.end(),[](const auto &D){return D.message.find("executor differs")!=std::string::npos;}));
+    }
+  }
+  auto badBehavior=behavior;badBehavior.source_text=R"source(
+__attribute__((objc_root_class)) @interface Broken
+@property(nonatomic,readonly) int broken __attribute__((objc_property_behavior("WrongDispatch")));
+@end
+@implementation Broken @end
+)source";
+  assert(!Compile(badBehavior).success);
+  badBehavior.source_text=R"source(
+__attribute__((objc_root_class)) @interface Broken
+@property(nonatomic,readonly) int broken __attribute__((objc_property_behavior("MissingAccessor")));
+@end
+@implementation Broken @end
+)source";
+  assert(!Compile(badBehavior).success);
+  auto conflict=request;conflict.source_text=R"source(
+__attribute__((objc_root_class,objc_expand("FortyTwo"))) @interface Conflict
+- (int)answer;
+@end
+)source";
+  assert(!Compile(conflict).success);
+  auto unknown=request;unknown.source_text="__attribute__((objc_derive(\"Missing\"),objc_root_class)) @interface Missing @end";
+  Write(root/"module.d","keep-old-dependencies");
+  auto rejected=Compile(unknown);assert(!rejected.success && rejected.failure.find("unresolved")!=std::string::npos);
+  {std::ifstream input(root/"module.d");std::string text;std::getline(input,text);assert(text=="keep-old-dependencies");}
+  auto dependencyCollision=request;dependencyCollision.arguments={"-MD","-MF",manifest.string()};
+  assert(!Compile(dependencyCollision).success);
+  auto collision=request;collision.emit=EmitKind::Object;collision.output_path=manifest.string();
+  rejected=Compile(collision);assert(!rejected.success && rejected.failure.find("aliases")!=std::string::npos);
+  auto duplicate=request;duplicate.source_text="__attribute__((objc_root_class,objc_expand(\"FortyTwo\"),objc_expand(\"FortyTwo\"))) @interface Duplicate @end";
+  rejected=Compile(duplicate);assert(!rejected.success && rejected.failure.find("duplicate")!=std::string::npos);
+  auto noPackages=request;noPackages.meta_packages.clear();noPackages.meta_lock.clear();
+  assert(!Compile(noPackages).success);
+}

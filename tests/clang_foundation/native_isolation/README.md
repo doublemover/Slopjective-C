@@ -1,0 +1,115 @@
+# Native executor and actor entry witnesses
+
+All 48 source/PCH execution configurations pass normally and under ASan/UBSan
+and TSan, including mixed provider/consumer ownership. The installed SDK feature
+gate also passes; see the [integration receipt](../../../docs/support/linux_native_feature_integration_acceptance.json).
+Compile
+`provider.m` with Objective-C 3 C17, blocks, native exceptions and strict
+concurrency, then `client.m` with the same settings. Exercise ARC/MRC provider
+and client combinations, O0/O2, source declarations and a PCH of `provider.h`.
+Link the installed runtime and GNUstep 2.2 Objective-C runtime.
+
+The provider's real compiler-generated frames enter main/global/named
+destinations, enter an explicitly associated actor, and assert the original
+caller destination after every await. The client pumps only its documented
+manual executors and checks exactly-once source argument evaluation, nil
+messages, parent cancellation before child entry, lexical cleanup, and retained
+object result destruction. The actor binding pins its receiver until the
+mailbox is closed, quiescent and explicitly unbound; automatic allocation or
+deallocation association is not claimed.
+
+The existing `../isolation_contracts_test.cpp` covers source and IR diagnostics,
+ARC/MRC C17/C++20/23 calls, exact named lookup bytes, PCH/import/ODR metadata and
+source-free contract preservation. The C++ task caller also enters a C provider's
+actor and checks destination restoration and independent result ownership.
+Public actor/Strict Concurrency conformance remains gated by the capability matrix.
+
+The 2.30 source additions exercise record arguments/results, array fields,
+caller restoration, actor entry and cancellation before target execution.
+`owned-packet.m` is compiled independently under ARC in every client/provider
+combination and proves managed record ownership without granting MRC aggregate
+admission. `cxx-packet.mm` supplies move-only parameter and successive throwing
+construction witnesses. Both implementation sources are removed before client
+and PCH compilation. Their expanded validation is recorded separately from the
+earlier 48-configuration acceptance above.
+
+The 2.31 source additions compile `consuming.m` under ARC independently of the
+other provider's ownership mode. It checks transferred object/Block parameters,
+consuming receivers, retained self results and native-frame targets. Receiver
+and argument snapshots survive later operands clearing their original owners;
+throwing later arguments unwind the snapshots. Each successful, cancelled or
+allocation-failed entry has exact destruction and target-invocation checks.
+
+The 2.32 source additions exercise named class messages directly in the client
+translation unit, including C++ callers. Inherited dispatch preserves the
+written class; scalar, record, void, retained object and native-frame results
+observe their destination executor. Consumed object/Block class parameters use
+the ARC provider. Cancellation checks target invocation and source evaluation
+counts independently.
+
+The 2.33 source additions distinguish lexical super dispatch from differing
+subclass overrides. Instance/class/category, actor-super and ARC consuming-self
+cases check success, cancellation and failed entry allocation, with exact
+argument/entry/destruction counts. C++ clients add ordinary task-method super
+entry. The original actor fixture now uses an actor subclass to cover inherited
+mailbox identity while preserving its existing actor/executor assertions.
+
+The 2.37 source additions compile `snapshots.m` in the provider's ARC/MRC mode.
+Object receivers, class/function object arguments and Block arguments are
+released or replaced by a later argument before frame creation. Sixteen runtime
+scenarios per configuration cover success, cancellation before entry, allocation
+failure and throwing later arguments, with exact destruction and entry counts.
+The witnesses detect premature destruction without dereferencing freed storage.
+
+The MRC consumption source span always compiles `mrc-consuming.m` without ARC.
+It covers consumed object/Block arguments, consuming self and class methods,
+combined receiver/argument consumption, and native-frame targets. Cancellation
+before entry and between lazy frames, plus failure of the first and second frame
+allocations, require exact destruction without target execution. Synchronous
+initializers return self, nil or a replacement object. Additional ARC frame
+receivers in `consuming.m` include self reassignment and combined consumption;
+the client checks the replacement's independent lifetime.
+
+The 2.96 source additions compile `task-consuming.mm` twice, independently under
+ARC and MRC. It supplies C++ task targets with consumed object/Block parameters,
+class/instance receivers and combined consumption. ARC consuming self can be
+replaced while suspended. Manual bodies use RAII to balance their incoming claim
+when a later await cancels. The client separately cancels before body entry and
+during its yield, destroys a task without starting it, and catches a throwing
+parameter move before promise construction. Every case checks exact body-entry,
+source-evaluation and object-destruction counts.
+
+The 2.97 source additions compile `cf-runtime.m` once and `cf-consuming.mm` under
+both ownership modes. The runtime fixture implements the standard CF retain and
+release ABI with separate live/destruction counters. Each configuration runs
+120 CF scenarios: functions, class methods, combined consuming receivers and CF
+arguments, synchronous/frame/task targets and function typedef declarations.
+Null inputs must skip generated CF retain/release operations. Unused tasks and
+throwing parameter moves add independent prologue cleanup checks. Other cases
+cancel before or between frames, cancel a suspended body, or fail either native
+allocation. These compiler ownership witnesses do not qualify a CF framework.
+
+The 2.102 source additions compile `task-results.mm` independently under ARC and
+MRC. Each client configuration runs 672 new scenarios across native-frame,
+crossing task and same-executor task callers. Initializers return self, nil or
+replacements before/after suspension. Retained object/Block and retained,
+borrowed, null and unannotated CF-pointer results keep distinct ownership.
+Cancellation runs before entry, after argument setup, during the producer yield
+and after publication. Borrowed source owners disappear before consumer resume;
+exact object/CF destruction and nil body/argument counters remain mandatory.
+Normal/direct/actor nil calls cover scalar, object, Block, record, floating and
+void logical values plus consumed object, Block and CF operands. A direct method
+is defined before any call so its nil hook must be prepared during definition.
+
+Source 2.103 compiles `integrated-cf.mm` under ARC and MRC and checks 1,084
+NSObject/CF ownership scenarios per configuration. CF and NS claims remain
+independent from strong/weak/unsafe slots. Weak frame pins and MRC handoffs must
+use weak loads without overwriting the runtime slot representation.
+
+Source 2.105 compiles `explicit-cxx-storage.mm` independently in both modes. Its
+C++ union and aggregate types have distinct ARC/MRC identities so linker ODR
+coalescing cannot mix their lifetime operations or counters. All 296 scenarios
+per configuration check exact wrapper/object destruction across synchronous,
+frame, task and static member entries, three caller routes, cancellation and
+unused-entry disposal. User-provided C++ lifetimes own the active union arm;
+these witnesses do not infer an implicit C/resource union cleanup policy.

@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "clang_foundation/interface_contract.h"
+#include "clang_foundation/interface_resource_limits.h"
 
 namespace llvm {
 template <typename T> class ArrayRef;
@@ -18,9 +19,12 @@ class ASTImporterSharedState;
 class DiagnosticsEngine;
 class FileManager;
 class NamedDecl;
+class Preprocessor;
 }
 
 namespace objc3::clang_foundation {
+
+struct StandardLibraryHeaderManifest;
 
 // The lock identity is supplied by the build/package resolver. Artifact paths
 // locate bytes but never stand in for this canonical provider identity.
@@ -52,6 +56,8 @@ struct InterfaceImportTarget {
   bool strict_concurrency = false;
   std::vector<std::string> ast_arguments;
   bool allow_function_overloads = false;
+  unsigned native_asm_dialect = 0;
+  InterfaceResourceLimits resource_limits;
 };
 
 struct InterfaceImportReport {
@@ -64,8 +70,12 @@ struct InterfaceImportReport {
   // These identities are recorded only after ASTImporter has inserted the
   // corresponding declarations in the consumer ASTContext.
   std::vector<InterfaceDeclarationIdentity> imported_declarations;
+  // Verified inline definitions require backend registration as well as Sema
+  // insertion. Provider-only code cannot supply consumer-only ODR uses.
+  std::vector<clang::NamedDecl *> inline_definitions;
   std::vector<clang::NamedDecl *> visible_lookup_declarations;
-  // Imported TU lookup declarations (including unscoped enum constants)
+  // Imported TU lookup declarations (including unscoped enum constants) and
+  // verified Objective-C methods for the position-sensitive selector pool,
   // grouped by their originating module. Each vector
   // is filtered by that module's own sidecar declaration identities; types
   // re-emitted through a dependency include do not become exports of the
@@ -83,6 +93,7 @@ public:
       std::vector<InterfaceContractDiagnostic> &diagnostics);
 
   ~InterfaceImportSession();
+  [[nodiscard]] InterfaceResourceUsage GetResourceUsage() const;
   InterfaceImportSession(InterfaceImportSession &&) noexcept;
   InterfaceImportSession &operator=(InterfaceImportSession &&) noexcept;
   InterfaceImportSession(const InterfaceImportSession &) = delete;
@@ -90,14 +101,25 @@ public:
 
   // Imports validated Clang declarations into the supplied target translation
   // unit before its source is parsed, so ordinary Sema lookup sees them.
+  // A supplied target preprocessor also records admitted canonical include
+  // guards, preventing textual copies from redeclaring imported AST nodes.
   [[nodiscard]] InterfaceImportReport ImportInto(
       clang::ASTContext &target_context,
       clang::FileManager &target_file_manager,
       bool source_scoped_visibility = false,
-      std::shared_ptr<clang::ASTImporterSharedState> shared_state = {});
+      std::shared_ptr<clang::ASTImporterSharedState> shared_state = {},
+      const StandardLibraryHeaderManifest *native_header_prelude = nullptr,
+      clang::Preprocessor *native_preprocessor = nullptr,
+      unsigned native_asm_dialect = 0);
 
   [[nodiscard]] std::vector<InterfaceSourceArtifact>
   GetSourceArtifacts() const;
+  [[nodiscard]] bool RequiresRuntimeHeader() const;
+  [[nodiscard]] bool RequiresTaskHeader() const;
+  [[nodiscard]] bool RequiresCompletionHeader() const;
+  [[nodiscard]] bool RequiresCoroutineHeader() const;
+  [[nodiscard]] std::vector<std::string> StandardLibraryHeaders() const;
+  [[nodiscard]] bool RequiresKeyPathHeader() const;
 
 private:
   struct Impl;

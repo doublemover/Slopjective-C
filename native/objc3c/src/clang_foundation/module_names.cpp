@@ -1,3 +1,5 @@
+#include "standard_library_specializations.h"
+#include "standard_coroutine_types.h"
 #include "clang_foundation/module_names.h"
 #include "clang_foundation/interface_codec.h"
 #include "clang_foundation/interface_emitter.h"
@@ -5,15 +7,30 @@
 #include "clang/AST/Attr.h"
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/DeclObjC.h"
+#include "clang/AST/DeclTemplate.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Basic/FileManager.h"
 #include "clang/Basic/SourceManager.h"
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/VirtualFileSystem.h"
+#include <algorithm>
 #include <filesystem>
 
 namespace objc3::clang_foundation {
+namespace {
+std::string CPUVariantFamilyId(const std::string &identity) {
+  for(llvm::StringRef marker:{"@cpu-target@","@cpu-version@"}) {
+    const auto at=identity.rfind(marker.str());
+    if(at==std::string::npos || identity.size()!=at+marker.size()+64)continue;
+    for(char c:llvm::StringRef(identity).drop_front(at+marker.size()))
+      if(!((c>='0' && c<='9') || (c>='a' && c<='f')))return identity;
+    return identity.substr(0,at);
+  }
+  return identity;
+}
+}
 std::string BuildModuleOwnedName(const std::string &module,
                                  const std::string &package,
                                  const std::string &stable_id) {
@@ -24,21 +41,48 @@ std::string BuildModuleOwnedName(const std::string &module,
          ComputeInterfaceSourceSha256(field(module) + field(package)) + "_" +
          ComputeInterfaceSourceSha256(stable_id);
 }
-bool HasValidModuleOwnedName(const InterfaceModuleIdentity &module,
+bool HasValidNativeSymbolName(const InterfaceModuleIdentity &module,
                              const InterfaceDeclarationIdentity &declaration) {
+  if (HasNativeExternalBindingIdentity(declaration)) {
+    const auto &symbol=declaration.native_symbol_name;
+    if (!IsNativeExternalBindingOwner(declaration) || symbol.empty() ||
+        symbol.starts_with("__objc3_m_") ||
+        std::any_of(symbol.begin(),symbol.end(),[](unsigned char c){return c<32 || c==127;}))return false;
+    const auto binding=NativeExternalBindingIdentity(symbol);
+    if (!declaration.canonical_type_identity.starts_with(binding))return false;
+    // The outer binding wraps one native type. Marker-looking bytes in either
+    // its length-delimited symbol or its type arguments remain ordinary data.
+    const llvm::StringRef type=llvm::StringRef(declaration.canonical_type_identity).drop_front(binding.size());
+    return !type.empty() && !type.starts_with(kNativeExternalBindingMarker);
+  }
+  if (declaration.kind == "Concept") {
+    std::string owner = module.canonical_name;
+    if (owner.ends_with(".__ownership_producer"))
+      owner.resize(owner.size() - std::string(".__ownership_producer").size());
+    return declaration.native_symbol_name.empty() &&
+        declaration.canonical_type_identity.starts_with(
+            "concept{owner=" + BuildModuleOwnedName(owner, module.package_identity,
+                                                    declaration.stable_id) + ";");
+  }
+  if(HasCxxDeductionGuideIdentity(declaration))return declaration.native_symbol_name.empty();
   if (declaration.native_symbol_name.empty())
     return true;
-  if (declaration.kind != "Function" && declaration.kind != "CXXMethod" &&
-      declaration.kind != "Var" &&
+  if (declaration.kind != "Function" && declaration.kind != "FunctionTemplate" &&
+      declaration.kind != "VarTemplate" && declaration.kind != "VarTemplateSpecialization" && declaration.kind != "ClassTemplate" &&
+      declaration.kind != "TypeAliasTemplate" &&
+      !IsCxxMemberDeclarationKind(declaration.kind) &&
+      declaration.kind != "Var" && declaration.kind != "CXXRecord" &&
       declaration.kind != "ObjCInterface" &&
       declaration.kind != "ObjCProtocol" && declaration.kind != "ObjCCategory")
     return false;
   std::string owner = module.canonical_name;
   if (owner.ends_with(".__ownership_producer"))
     owner.resize(owner.size() - std::string(".__ownership_producer").size());
+  const auto family=((declaration.kind=="Function" || declaration.kind=="CXXMethod") && HasNativeEmissionPolicyIdentity(declaration) &&
+      declaration.canonical_type_identity.find(";native-cpu-variant:v1;")!=std::string::npos)
+      ?CPUVariantFamilyId(declaration.stable_id):declaration.stable_id;
   return declaration.native_symbol_name ==
-         BuildModuleOwnedName(owner, module.package_identity,
-                              declaration.stable_id);
+         BuildModuleOwnedName(owner, module.package_identity, family);
 }
 namespace {
 std::filesystem::path SourceFile(const clang::ASTContext &context,
@@ -91,18 +135,152 @@ bool IsModuleOwnedSource(const clang::ASTContext &context,
   return !relative.empty() && !relative.is_absolute() &&
          *relative.begin() != "..";
 }
+std::string ReadModuleOwnedAbiTag(const clang::AbiTagAttr *attribute) {
+  std::string owner;
+  if(attribute)
+    for(auto tag:attribute->tags())
+      if(tag.starts_with("__objc3_m_")) {
+        if(!owner.empty() && owner!=tag)return {};
+        owner=tag.str();
+      }
+  return owner;
+}
+bool HasModuleOwnedAbiTag(const clang::AbiTagAttr *attribute,const std::string &expected) {
+  return !expected.empty() && ReadModuleOwnedAbiTag(attribute)==expected;
+}
+bool HasOnlyNativeAbiTags(const clang::AbiTagAttr *attribute) {
+  if(!attribute || !attribute->tags_size())return false;
+  return std::all_of(attribute->tags_begin(),attribute->tags_end(),
+      [](llvm::StringRef tag){return !tag.starts_with("__objc3_m_");});
+}
+
+const clang::CXXDeductionGuideDecl *NativeDeductionGuide(const clang::NamedDecl *declaration) {
+  if(const auto *pattern=llvm::dyn_cast_or_null<clang::FunctionTemplateDecl>(declaration))
+    declaration=pattern->getTemplatedDecl();
+  return llvm::dyn_cast_or_null<clang::CXXDeductionGuideDecl>(declaration);
+}
 std::string ReadNativeSymbolName(const clang::NamedDecl *declaration) {
+  if(NativeDeductionGuide(declaration))return {};
+  if (const auto *specialization = llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(declaration))
+    return ReadNativeSymbolName(specialization->getSpecializedTemplate());
+  if (const auto *pattern = llvm::dyn_cast<clang::ClassTemplateDecl>(declaration))
+    declaration = pattern->getTemplatedDecl();
+  if (const auto *pattern = llvm::dyn_cast<clang::TypeAliasTemplateDecl>(declaration))
+    declaration = pattern->getTemplatedDecl();
+  if (const auto *alias = llvm::dyn_cast<clang::TypeAliasDecl>(declaration);
+      alias && alias->getDescribedAliasTemplate()) {
+    for (const auto *annotation:alias->specific_attrs<clang::AnnotateAttr>())
+      if (annotation->args_size()==0 && annotation->getAnnotation().starts_with("objc3.alias-owner:"))
+        return annotation->getAnnotation().drop_front(sizeof("objc3.alias-owner:")-1).str();
+    // Member alias templates inherit the nominal owner and enclosing template
+    // arguments from their record context; they have no independent tag.
+    for (const auto *scope=alias->getDeclContext();scope;scope=scope->getParent())
+      if (const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(scope))
+        if (auto owner=ReadNativeSymbolName(record);!owner.empty()) return owner;
+  }
+  if (const auto *specialization = llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(declaration)) {
+    if (specialization->getSpecializationKind()==clang::TSK_ExplicitSpecialization &&
+        !specialization->isStaticDataMember()) {
+      if (const auto *label=specialization->getAttr<clang::AsmLabelAttr>()) return label->getLabel().str();
+      return {};
+    }
+    return ReadNativeSymbolName(specialization->getSpecializedTemplate());
+  }
+  if (const auto *pattern = llvm::dyn_cast<clang::VarTemplateDecl>(declaration))
+    declaration = pattern->getTemplatedDecl();
+  if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration))
+    if (variable->getDescribedVarTemplate())
+      if (auto owner=ReadModuleOwnedAbiTag(variable->getAttr<clang::AbiTagAttr>()); !owner.empty())
+        return owner;
+  if (const auto *pattern = llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration))
+    declaration = pattern->getTemplatedDecl();
+  if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
+    if (const auto *pattern = function->getPrimaryTemplate()) {
+      if (function->getTemplateSpecializationKind()==clang::TSK_ExplicitSpecialization &&
+          !llvm::isa<clang::CXXMethodDecl>(function)) {
+        if (const auto *label=function->getAttr<clang::AsmLabelAttr>()) return label->getLabel().str();
+        return {};
+      }
+      return ReadNativeSymbolName(pattern);
+    }
+  if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
+    if (function->getDescribedFunctionTemplate())
+      if (auto owner=ReadModuleOwnedAbiTag(function->getAttr<clang::AbiTagAttr>()); !owner.empty())
+        return owner;
   if (const auto *label = declaration->getAttr<clang::AsmLabelAttr>())
     return label->getLabel().str();
+  if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration))
+    if(auto owner=ReadModuleOwnedAbiTag(function->getAttr<clang::AbiTagAttr>());!owner.empty())return owner;
   if (const auto *name = declaration->getAttr<clang::ObjCRuntimeNameAttr>())
     return name->getMetadataName().str();
+  if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration))
+    if (auto owner=ReadModuleOwnedAbiTag(record->getCanonicalDecl()->getAttr<clang::AbiTagAttr>()); !owner.empty())
+        return owner;
   if (llvm::isa<clang::ObjCCategoryDecl>(declaration))
     for (const auto *a : declaration->specific_attrs<clang::AnnotateAttr>())
       if (a->getAnnotation().starts_with("objc3.module-name:"))
         return a->getAnnotation().drop_front(18).str();
   return {};
 }
+std::string ReadCxxConceptOwner(const clang::NamedDecl *declaration) {
+  for (const auto *attribute : declaration->specific_attrs<clang::AnnotateAttr>())
+    if (attribute->getAnnotation().starts_with("objc3.concept-owner:"))
+      return attribute->getAnnotation().drop_front(sizeof("objc3.concept-owner:") - 1).str();
+  return {};
+}
+bool ApplyCxxConceptOwners(clang::ASTContext &context,
+                          const std::string &module,
+                          const std::string &package,
+                          const std::string &source_root) {
+  struct Concepts : clang::RecursiveASTVisitor<Concepts> {
+    clang::ASTContext &context;
+    const std::string &module, &package, &source_root;
+    Concepts(clang::ASTContext &context, const std::string &module,
+             const std::string &package, const std::string &source_root)
+        : context(context), module(module), package(package), source_root(source_root) {}
+    bool VisitConceptDecl(clang::ConceptDecl *declaration) {
+      if (!IsModuleOwnedSource(context, declaration->getLocation(), source_root)) return true;
+      const auto expected = BuildModuleOwnedName(module, package,
+                                                ReadInterfaceDeclarationStableId(declaration));
+      unsigned count = 0;
+      for (const auto *attribute : declaration->specific_attrs<clang::AnnotateAttr>())
+        if (attribute->getAnnotation().starts_with("objc3.concept-owner:")) {
+          if (++count > 1 || attribute->args_size() ||
+              attribute->getAnnotation().drop_front(sizeof("objc3.concept-owner:") - 1) != expected) {
+            return false;
+          }
+        }
+      if (!count)
+        declaration->addAttr(clang::AnnotateAttr::Create(
+            context, "objc3.concept-owner:" + expected, nullptr, 0,
+            declaration->getLocation()));
+      return true;
+    }
+  };
+  std::string nominal_module = module;
+  if (nominal_module.ends_with(".__ownership_producer"))
+    nominal_module.resize(nominal_module.size() - std::string(".__ownership_producer").size());
+  Concepts visitor(context, nominal_module, package, source_root);
+  return visitor.TraverseDecl(context.getTranslationUnitDecl());
+}
 namespace {
+bool setModuleOwnedAbiTag(clang::ASTContext &context,clang::NamedDecl *declaration,
+                           llvm::StringRef expected) {
+  llvm::SmallVector<llvm::StringRef,4> tags;
+  for(const auto *attribute:declaration->specific_attrs<clang::AbiTagAttr>())
+    for(auto tag:attribute->tags()) {
+      if(tag.starts_with("__objc3_m_") && tag!=expected)return false;
+      tags.push_back(tag);
+    }
+  tags.push_back(context.Idents.get(expected).getName());
+  std::sort(tags.begin(),tags.end());tags.erase(std::unique(tags.begin(),tags.end()),tags.end());
+  declaration->dropAttr<clang::AbiTagAttr>();
+  // Publish the complete effective contract on every redeclaration, including
+  // inherited vendor tags. Never let a foreign reserved tag acquire this owner.
+  declaration->addAttr(clang::AbiTagAttr::Create(context,tags.data(),tags.size(),
+                                               declaration->getSourceRange()));
+  return true;
+}
 class NamingVisitor : public clang::RecursiveASTVisitor<NamingVisitor> {
 public:
   NamingVisitor(clang::ASTContext &context, const std::string &module,
@@ -114,14 +292,19 @@ public:
   }
   bool VisitNamedDecl(clang::NamedDecl *decl) {
     if (decl->isImplicit() ||
-        (!decl->getIdentifier() && !llvm::isa<clang::CXXMethodDecl>(decl)) ||
-        llvm::isa<clang::CXXConstructorDecl, clang::CXXDestructorDecl,
-                  clang::CXXConversionDecl>(decl) ||
+        (!decl->getIdentifier() && !llvm::isa<clang::FunctionDecl>(decl)) ||
         !IsModuleOwnedSource(context_, decl->getLocation(), source_root_))
       return true;
     const auto *owner = decl->getDeclContext();
     while (owner && llvm::isa<clang::LinkageSpecDecl>(owner))
       owner = owner->getParent();
+    // Closure and local-class members have lexical ABI discriminators, not
+    // independent public USRs. The native mangler inherits module ownership
+    // from their enclosing function; a direct asm label can collapse distinct
+    // closure layouts with the same call-operator signature.
+    if (const auto *record = llvm::dyn_cast_or_null<clang::CXXRecordDecl>(owner);
+        record && (record->isLambda() || record->isLocalClass()))
+      return true;
     if (!owner || (!owner->isTranslationUnit() &&
                    !llvm::isa<clang::NamespaceDecl, clang::CXXRecordDecl>(owner)))
       return true;
@@ -130,32 +313,207 @@ public:
           decl,
           "runtime aliases cannot be introduced by a module with owned names");
     const bool category = llvm::isa<clang::ObjCCategoryDecl>(decl);
-    if (!category && !decl->isExternallyVisible())
+    const auto *variable_pattern = llvm::dyn_cast<clang::VarDecl>(decl);
+    const bool variable_template = variable_pattern &&
+        (variable_pattern->getDescribedVarTemplate() ||
+         llvm::isa<clang::VarTemplateSpecializationDecl>(decl));
+    auto *alias=llvm::dyn_cast<clang::TypeAliasDecl>(decl);
+    const auto *alias_pattern=alias?alias->getDescribedAliasTemplate():nullptr;
+    if (!category && !decl->isExternallyVisible() && !variable_template && !alias_pattern)
       return true;
+    if (alias_pattern) {
+      if (llvm::isa<clang::CXXRecordDecl>(alias->getDeclContext())) return true;
+      const auto expected=BuildModuleOwnedName(module_,package_,ReadInterfaceDeclarationStableId(alias_pattern));
+      for (const auto *redecl:alias_pattern->redecls()) {
+        auto *definition=redecl->getTemplatedDecl();
+        if (!IsModuleOwnedSource(context_,definition->getLocation(),source_root_))
+          return Error(decl,"module-owned alias template redeclares a foreign ABI");
+        unsigned count=0;
+        for (const auto *annotation:definition->specific_attrs<clang::AnnotateAttr>())
+          if (annotation->getAnnotation().starts_with("objc3.alias-owner:"))
+            if (++count!=1 || annotation->args_size()!=0 ||
+                annotation->getAnnotation().drop_front(sizeof("objc3.alias-owner:")-1)!=expected)
+              return Error(decl,"alias template ABI owner conflicts with its module/package");
+        if (!count) definition->addAttr(clang::AnnotateAttr::Create(
+            context_,"objc3.alias-owner:"+expected,nullptr,0,definition->getLocation()));
+      }
+      return true;
+    }
+    // A guide participates in class deduction, never native symbol emission.
+    if(NativeDeductionGuide(decl))return true;
     const bool value = llvm::isa<clang::FunctionDecl, clang::VarDecl>(decl);
     const bool runtime =
         llvm::isa<clang::ObjCInterfaceDecl, clang::ObjCProtocolDecl,
                   clang::ObjCCategoryDecl>(decl);
-    if (!value && !runtime)
+    auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(decl);
+    if (!value && !runtime && !record)
       return true;
-    if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(decl))
-      if (function->getDescribedFunctionTemplate() ||
-          function->getType()->isDependentType())
+    // Members and specializations retain native template mangling. A concrete
+    // asm label on a pattern member would alias every specialization.
+    for (const auto *scope = decl->getDeclContext(); scope; scope = scope->getParent())
+      if (const auto *parent = llvm::dyn_cast<clang::CXXRecordDecl>(scope);
+          parent && (parent->getDescribedClassTemplate() ||
+                     llvm::isa<clang::ClassTemplateSpecializationDecl>(parent)))
         return true;
-    if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(decl))
-      if (variable->getDescribedVarTemplate() ||
-          variable->getType()->isDependentType())
+    // A traits customization belongs to its module-owned return type. The
+    // standard primary's ABI must not acquire a package-specific tag.
+    if (IsPublishedStandardSpecialization(decl)) return true;
+    if (record && record->getDescribedClassTemplate()) {
+      const auto expected = BuildModuleOwnedName(module_, package_,
+          ReadInterfaceDeclarationStableId(record->getDescribedClassTemplate()));
+      for (auto *redecl : record->redecls()) {
+        if (!redecl->isImplicit() && !IsModuleOwnedSource(context_, redecl->getLocation(), source_root_))
+          return Error(decl, "module-owned class template redeclares a foreign ABI");
+        if (!setModuleOwnedAbiTag(context_, redecl, expected))
+          return Error(decl, "class template ABI tag conflicts with its owning module");
+      }
+      return true;
+    }
+    if (auto *specialization=llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>(record);
+        specialization && (llvm::isa<clang::ClassTemplatePartialSpecializationDecl>(specialization) ||
+        specialization->getSpecializationKind()==clang::TSK_ExplicitSpecialization)) {
+      const auto expected=BuildModuleOwnedName(module_,package_,
+          ReadInterfaceDeclarationStableId(specialization->getSpecializedTemplate()));
+      for (auto *redecl:specialization->redecls()) {
+        if (!redecl->isImplicit() && !IsModuleOwnedSource(context_,redecl->getLocation(),source_root_))
+          return Error(decl,"explicit class specialization redeclares a foreign ABI");
+        if (!setModuleOwnedAbiTag(context_, redecl, expected))
+          return Error(decl, "explicit class specialization conflicts with its primary owner");
+      }
+      return true;
+    }
+    if (record && (record->isDependentContext() ||
+                   record->getDescribedClassTemplate() ||
+                   record->getTemplateSpecializationKind() !=
+                       clang::TSK_Undeclared))
+      return true;
+    if (auto *function = llvm::dyn_cast<clang::FunctionDecl>(decl)) {
+      // Class-template friends are reconstructed from their owning pattern.
+      // Use one template owner tag on both the pattern and every instantiated
+      // friend instead of inventing a concrete asm label during a call visit.
+      if(!llvm::isa<clang::CXXMethodDecl>(function))
+        if(const auto *lexical=llvm::dyn_cast<clang::CXXRecordDecl>(function->getLexicalDeclContext())) {
+          const clang::ClassTemplateDecl *pattern=nullptr;
+          for(const clang::DeclContext *scope=lexical;scope && !pattern;scope=scope->getParent())
+            if(const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(scope)) {
+              pattern=record->getDescribedClassTemplate();
+              if(const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(record))
+                pattern=specialization->getSpecializedTemplate();
+            }
+          if(pattern) {
+            if(!VisitNamedDecl(const_cast<clang::CXXRecordDecl *>(pattern->getTemplatedDecl())))return false;
+            const auto expected=ReadNativeSymbolName(pattern);
+            llvm::SmallVector<clang::FunctionDecl *,2> targets{function};
+            if(auto *primary=function->getPrimaryTemplate())targets.push_back(primary->getTemplatedDecl());
+            // Sema can instantiate a friend template before the owning class
+            // reaches the top-level naming callback. Bind its instantiated
+            // primary too; callable identity and later clones read that owner.
+            for(auto *target:targets)for(auto *redecl:target->redecls()) {
+              if(!redecl->isImplicit() && !IsModuleOwnedSource(context_,redecl->getLocation(),source_root_))
+                return Error(decl,"class-template friend redeclares a foreign ABI");
+              if(redecl->hasAttr<clang::AsmLabelAttr>() || !setModuleOwnedAbiTag(context_,redecl,expected))
+                return Error(decl,"class-template friend conflicts with its template ABI owner");
+            }
+            return true;
+          }
+        }
+      if (function->getPrimaryTemplate()) {
+        const bool explicit_namespace=!llvm::isa<clang::CXXMethodDecl>(function) &&
+            function->getTemplateSpecializationKind()==clang::TSK_ExplicitSpecialization;
+        if (!explicit_namespace) {
+          const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(function);
+          if (!method || method->getTemplateSpecializationKind()!=clang::TSK_ExplicitSpecialization) return true;
+          const auto expected=BuildModuleOwnedName(module_,package_,ReadInterfaceDeclarationStableId(function->getPrimaryTemplate()));
+          for (auto *redecl:function->redecls()) {
+            if (!redecl->isImplicit() && !IsModuleOwnedSource(context_,redecl->getLocation(),source_root_))
+              return Error(decl,"member function specialization redeclares a foreign ABI");
+            if (redecl->hasAttr<clang::AsmLabelAttr>())
+              return Error(decl,"member function specialization cannot replace its primary native ABI");
+            if (!setModuleOwnedAbiTag(context_, redecl, expected))
+              return Error(decl, "member function specialization conflicts with its primary ABI owner");
+          }
+          return true;
+        }
+        if (ReadInterfaceDeclarationStableId(function).empty())
+          return Error(decl,"explicit function specialization exceeds the module ABI argument contract");
+      }
+      if (const auto *pattern = function->getDescribedFunctionTemplate()) {
+        for (const auto *prior : function->redecls())
+          if (!prior->isImplicit() &&
+              !IsModuleOwnedSource(context_, prior->getLocation(), source_root_))
+            return Error(decl, "module-owned function template redeclares a foreign ABI");
+        const auto expected = BuildModuleOwnedName(module_, package_,
+            ReadInterfaceDeclarationStableId(pattern));
+        for (auto *redecl : function->redecls()) {
+          if (redecl->hasAttr<clang::AsmLabelAttr>())
+            return Error(decl, "function template cannot carry a concrete asm label");
+          if (!setModuleOwnedAbiTag(context_, redecl, expected))
+            return Error(decl, "function template ABI tag conflicts with its owning module");
+        }
         return true;
+      }
+      if (function->isDeleted() || function->getType()->isDependentType()) return true;
+    }
+    if (auto *variable = llvm::dyn_cast<clang::VarDecl>(decl)) {
+      if (const auto *specialization=llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(variable)) {
+        if (specialization->isStaticDataMember() &&
+            (llvm::isa<clang::VarTemplatePartialSpecializationDecl>(specialization) ||
+             specialization->getSpecializationKind()==clang::TSK_ExplicitSpecialization)) {
+          const auto expected=BuildModuleOwnedName(module_,package_,ReadInterfaceDeclarationStableId(specialization->getSpecializedTemplate()));
+          for (auto *redecl:variable->redecls()) {
+            if (!redecl->isImplicit() && !IsModuleOwnedSource(context_,redecl->getLocation(),source_root_))
+              return Error(decl,"member variable specialization redeclares a foreign ABI");
+            if (redecl->hasAttr<clang::AsmLabelAttr>())
+              return Error(decl,"member variable specialization cannot replace its primary native ABI");
+            if (!setModuleOwnedAbiTag(context_, redecl, expected))
+              return Error(decl, "member variable specialization conflicts with its primary ABI owner");
+          }
+          return true;
+        }
+        if (llvm::isa<clang::VarTemplatePartialSpecializationDecl>(specialization) ||
+            specialization->getSpecializationKind()!=clang::TSK_ExplicitSpecialization ||
+            specialization->isStaticDataMember()) return true;
+        if (ReadInterfaceDeclarationStableId(specialization).empty())
+          return Error(decl,"explicit variable specialization exceeds the module ABI argument contract");
+      }
+      if (const auto *pattern = variable->getDescribedVarTemplate()) {
+        if (variable->getStorageClass()==clang::SC_Static && !variable->isStaticDataMember()) return true;
+        const auto expected = BuildModuleOwnedName(module_, package_, ReadInterfaceDeclarationStableId(pattern));
+        for (auto *redecl : variable->redecls()) {
+          if (!redecl->isImplicit() && !IsModuleOwnedSource(context_,redecl->getLocation(),source_root_))
+            return Error(decl,"module-owned variable template redeclares a foreign ABI");
+          if (redecl->hasAttr<clang::AsmLabelAttr>())
+            return Error(decl,"variable template cannot carry a concrete asm label");
+          if (!setModuleOwnedAbiTag(context_, redecl, expected))
+            return Error(decl, "variable template ABI tag conflicts with its owning module");
+        }
+        return true;
+      }
+      if (variable->getType()->isDependentType()) return true;
+    }
     if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(decl);
         function && function->isMain())
       return Error(
           decl,
           "a module with owned names cannot define the platform entry point");
+    // Sema reports an inline member before its enclosing record reaches the
+    // top-level consumer. Projected unnamed-member identities include their
+    // named outer owner's ABI: establish that owner before naming the member.
+    for (auto *scope=decl->getDeclContext(); scope; scope=scope->getParent())
+      if (auto *parent=llvm::dyn_cast<clang::CXXRecordDecl>(scope);
+          parent && parent->getIdentifier()) {
+        // The nearest named parent recursively establishes the whole chain.
+        // Visiting every ancestor here would repeat that work exponentially.
+        if (!VisitNamedDecl(parent)) return false;
+        break;
+      }
     const auto stable_id = ReadInterfaceDeclarationStableId(decl);
     if (stable_id.empty())
       return Error(decl,
                    "module-owned declaration has no stable native identity");
-    const auto expected = BuildModuleOwnedName(module_, package_, stable_id);
+    const auto *named_function=llvm::dyn_cast<clang::FunctionDecl>(decl);
+    const auto family=named_function && named_function->isMultiVersion()?CPUVariantFamilyId(stable_id):stable_id;
+    const auto expected = BuildModuleOwnedName(module_, package_, family);
     // A local declaration may refine an SDK ABI (for example a retained-return
     // annotation on class_createInstance). Keep that foreign binding. Defining
     // it here would claim another owner's ABI and must fail.
@@ -170,8 +528,14 @@ public:
         foreign |=
             prior != decl && !prior->isImplicit() &&
             !IsModuleOwnedSource(context_, prior->getLocation(), source_root_);
+    if (record)
+      for (const auto *prior : record->redecls())
+        foreign |= prior != decl && !prior->isImplicit() &&
+                   !IsModuleOwnedSource(context_, prior->getLocation(),
+                                        source_root_);
     if (foreign) {
       const bool definition =
+          (record && record->isThisDeclarationADefinition()) ||
           (llvm::isa<clang::FunctionDecl>(decl) &&
            llvm::cast<clang::FunctionDecl>(decl)
                ->doesThisDeclarationHaveABody()) ||
@@ -191,6 +555,13 @@ public:
             return Error(decl, "module-owned category requires one native name "
                                "without arguments");
         }
+    }
+    if (record) {
+      for (auto *redecl : record->redecls()) {
+        if (!setModuleOwnedAbiTag(context_, redecl, expected))
+          return Error(decl, "explicit type ABI tag conflicts with its owning module");
+      }
+      return true;
     }
     const auto prior = ReadNativeSymbolName(decl);
     if (!prior.empty()) {

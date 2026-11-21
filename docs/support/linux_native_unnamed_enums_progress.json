@@ -1,0 +1,51 @@
+{
+  "development_only": true,
+  "source_version": "2.146",
+  "system_version": "2.72",
+  "prepared_source_tree": "9b7732e48db3af44e4d3c93bbc1be5599bd2e40a",
+  "extension_abi": 24,
+  "compiler_identity_resealed": false,
+  "matched_sdk_produced": false,
+  "publication_profiles": 6,
+  "production_decoder_exact_replays": 620,
+  "adjacent_frontend_groups": 9,
+  "all_focused_checks_passed": true,
+  "native": {
+    "configurations": 4,
+    "compile_link_execution_operations": 24,
+    "all_passed": true,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ],
+    "provider_source_removed_before_consumption": true,
+    "consumers_per_provider": 2,
+    "profiles": [
+      "C++20 plain O0",
+      "C++23 MRC O2",
+      "C++23 ARC O2",
+      "C++23 ARC O2 with implicit static destructors disabled"
+    ],
+    "enum_controls": [
+      "equal-valued distinct native enum types",
+      "overloaded body-defined helpers",
+      "aliases and enclosing generic returns",
+      "native constructor/destructor priority dependencies"
+    ]
+  },
+  "reader_contract": "objc3.native-unnamed-enums.v1",
+  "negative_controls": [
+    "missing/invented capabilities and older readers",
+    "private/static dependency remains excluded",
+    "non-inline entry without native external linkage remains excluded"
+  ],
+  "completed_prior_consolidation": {
+    "source_version": "2.145",
+    "compiler_discovered": 547,
+    "compiler_executable_passed": 544,
+    "compiler_unsupported": 3,
+    "selected_frontend_groups_passed": 70,
+    "ast_controls_passed": 61
+  },
+  "full_current_consolidation": "remaining implementation precedes matched analysis and SDK delivery"
+}

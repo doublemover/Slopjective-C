@@ -25,9 +25,11 @@ version, implemented surface and remaining obligations against the
 fake integer helpers and package metadata are no longer library inputs.
 
 `objc3.core`, `objc3.errors`, `objc3.text`, `objc3.collections` and
-`objc3.concurrency` are native imports. `objc3.keypath` and `objc3.system` remain
-unimplemented and their imports fail. Module presence does not claim a complete
-Core or Strict profile.
+`objc3.concurrency` are native imports. The development `objc3.system` module is
+available under `-fobjc3-profile=strict-system` and supplies Linux resource
+helpers. The partial native `objc3.keypath` module supplies typed paths and
+immutable metadata; its development version is 2.14.0. Module presence does not claim a
+complete Core or Strict profile.
 
 Text uses validated UTF-8 and explicit byte/scalar lengths; embedded NUL is data.
 Prefixes count Unicode scalars. Concrete and generic collections use opaque
@@ -39,13 +41,64 @@ module headers live in `stdlib/include/objc3`.
 evaluate the input once, and evaluate the factory expression only for None.
 `orThrow` is a throwing Block call: use `tryValue`, `tryOptional` or `tryForce` as
 for any checked throwing call. The factory returns `id<Error>` for `orThrow`;
-`okOr` preserves the factory's concrete error type. The helpers support payloads
-admitted by the compiler's Block call ABI; unsupported types are diagnosed.
+`okOr` preserves the factory's concrete error type and lowers directly through
+native matching, so a success path does not copy an inactive C++ callable.
+`orThrow` supports payloads admitted by the compiler's Block call ABI; unsupported
+types are diagnosed.
+
+Strict profiles also check that error-factory results statically conform to
+`Error`, including inherited protocols, class adoption and categories. Native
+checking preserves the factory expression and its value/ownership recipe; it
+introduces no runtime wrapper. Compatibility helpers retain their concrete error
+types without claiming the constrained Core library contract.
+
+The development headers also provide `resultFromStatus(status, successValue,
+makeError)` for zero-success status APIs. The status runs once; the success
+expression runs only for zero, and the error factory is constructed/called only
+for nonzero with the original status. `statusOrThrow(status, makeError)` bridges
+void-success operations to checked `id<Error>` propagation. `resultFromErrorOut(success, successValue, errorValue, makeError)` bridges
+BOOL/error-out APIs: it runs the operation before capturing outputs, ignores
+error storage on success, and lets the domain factory normalize even a missing
+error on failure. It accepts NSError-style object slots without requiring a
+Foundation dependency in the library. Domain-specific factories retain the API's error meaning. The native adapter controls cover positive and negative strict-profile factory
+checking. Consult the inventory and matching SDK receipt for delivery status.
 
 The concurrency module exposes the shared task/frame, group, cancellation,
 executor and serial actor ABI. Include `<objc3c/runtime/objc3_task.hpp>` explicitly
-for the C++ coroutine adapter. Public async/await and actor language capabilities
-remain reserved until compiler lowering and isolation are complete.
+for the C++ coroutine adapter. The development compiler accepts contextual public `async`/`await` spellings,
+backed by the shared frame ABI. Public async/actor feature predicates remain
+reserved until the complete language, interop and delivery contracts pass.
+
+The development `objc3.system` header exposes `objc3_file_descriptor` and
+`objc3_heap_buffer` with native cleanup, family and sentinel contracts. Descriptor
+helpers adopt raw ownership explicitly, duplicate a borrowed descriptor into a
+new owner, and close once with POSIX status/errno behavior. Close is not retried
+after EINTR and is not declared nonthrowing because it is a cancellation point.
+Heap-buffer helpers allocate, adopt and free ordinary libc storage. Adoption is
+explicitly unsafe: the caller promises ownership and the correct deallocator.
+
+```objective-c
+@import objc3.system;
+
+void allocate(void) {
+  @resource(objc3_heap_buffer_free, invalid: (void *)0)
+  objc3_heap_buffer buffer = objc3_heap_buffer_allocate(64);
+  if (buffer == (void *)0) return;
+  /* Use buffer. Scope exit frees it. */
+}
+```
+
+The headers have focused native source/PCH, publication and runtime controls;
+their existence does not establish complete profile or current-archive acceptance.
+The installed gate is wired for C17/C++20/C++23, ARC/MRC, O0/O2, profile rejection
+and ownership diagnostics. The compiler source now also implements native
+`withLifetime(owner) { ... }` and `keepAlive(owner);` with strong precise owners
+under ARC and MRC. These statements need no library import; `objc3.system`
+imports retain their Strict System gate. Borrowed-pointer contracts and escape
+checking are authored in the native compiler; remaining alias/diagnostic boundaries
+and complete Strict System conformance remain outstanding. Source 2.263 / System 2.189 is the current development checkpoint. SDK 2.62 /
+extension ABI 21 remains the last accepted archive; extension ABI 24 source
+changes still require one fresh matching SDK campaign.
 
 Run the installed integration gate with:
 
@@ -56,3 +109,22 @@ python3 -B SDK/share/objc3c/source-build/qualify_stdlib.py \
 
 Builds and tests use disposable directories under `TMPDIR`; receipts and logs
 remain in the requested output directory.
+
+The development `objc3.keypath` 2.12 module exposes native typed property literals,
+get/set applications, readonly conversion and immutable metadata. Implemented
+lanes include record-field writeback, dependent root/application/pack forms,
+nullable traversal/writeback, native nontrivial records and explicitly owned C++
+resource/union values. Copy, setter and nullable-chain failures retain native
+cleanup contracts. Broader effect/isolation forms, extracted borrowed/raw-resource
+lifetimes and implicit union active-arm cleanup remain in the inventory.
+
+Structured runtime development includes parent cancellation propagation,
+canonical main/global destinations and retained named executor lookup. The global
+destination has four workers; explicitly created executors retain their serial
+contract. Concrete task/group APIs, native ownership/cancellation lanes and
+source-free callable graphs have focused controls. Complete profile and matching
+SDK acceptance remain separate gates.
+
+The [Linux roadmap](../docs/roadmap/linux_forward_development.md) links each source
+milestone, its executable controls and its remaining boundaries. Development
+module versions and historical receipts must not be treated as archive promotion.

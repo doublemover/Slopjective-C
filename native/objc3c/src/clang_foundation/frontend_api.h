@@ -89,6 +89,11 @@ typedef struct objc3c_frontend_v3_options {
   uint8_t module_owned_names;
   /* Optional tail: owning source/header tree; NULL uses the input directory. */
   const char *module_source_root;
+  /* Explicit deterministic metaprogramming inputs, with an exact package lock.
+   * No ambient package search. The complete optional tail is atomic. */
+  const char *const *meta_packages;
+  size_t meta_package_count;
+  const char *meta_lock;
 } objc3c_frontend_v3_options;
 
 typedef struct objc3c_frontend_v2_location {
@@ -104,8 +109,15 @@ int objc3c_frontend_v2_compile(const objc3c_frontend_v2_options *options,
 int objc3c_frontend_v3_compile(const objc3c_frontend_v3_options *options,
                              objc3c_frontend_v2_result **out_result);
 /* Compiler/import identity record for cache and editor invalidation. Borrowed
- * from the result handle and present only after a successful imported compile. */
+ * from the result handle after a successful imported or metaprogramming compile. */
 const char *objc3c_frontend_v3_result_dependency_record(
+    const objc3c_frontend_v2_result *result);
+/* UTF-8 objc3c.native-diagnostics.v1 JSON, including source-bound fix-it sets.
+ * Borrowed until result destruction; NULL for a NULL result. Edits use exclusive
+ * byte offsets into their named physical source buffer, with a SHA-256 guard.
+ * Hex filename/replacement fields preserve arbitrary bytes; text fields are
+ * display strings. Apply a full diagnostic edit set only to matching source. */
+const char *objc3c_frontend_v3_result_diagnostics_json(
     const objc3c_frontend_v2_result *result);
 void objc3c_frontend_v2_result_destroy(objc3c_frontend_v2_result *result);
 int objc3c_frontend_v2_result_success(const objc3c_frontend_v2_result *result);

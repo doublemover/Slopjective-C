@@ -1,0 +1,52 @@
+{
+  "development_only": true,
+  "source_version": "2.145",
+  "system_version": "2.71",
+  "prepared_source_tree": "9b7732e48db3af44e4d3c93bbc1be5599bd2e40a",
+  "extension_abi": 24,
+  "compiler_identity_resealed": false,
+  "matched_sdk_produced": false,
+  "ast_controls": 61,
+  "publication_profiles": 6,
+  "alternate_cxx_static_policies_per_profile": 3,
+  "production_decoder_exact_replays": 600,
+  "native": {
+    "configurations": 4,
+    "compile_link_execution_operations": 24,
+    "all_passed": true,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ],
+    "profiles": [
+      "C++20 plain O0",
+      "C++23 MRC O2",
+      "C++23 ARC O2",
+      "C++23 ARC O2 with implicit static destructors disabled"
+    ],
+    "provider_source_removed_before_consumption": true,
+    "consumers_per_provider": 2,
+    "controls": [
+      "native startup and shutdown callback priorities",
+      "inline object initialization priority",
+      "shared local-static and module-owned identity",
+      "no_destroy retains exact process-lifetime objects",
+      "always_destroy overrides implicit destruction suppression",
+      "two independent thread-exit destructors",
+      "exact once-only process finalizers"
+    ]
+  },
+  "reader_contract": "objc3.native-storage-lifetime.v1",
+  "profile_cutover": "C++ destructor registration policy and thread-safe static initialization bind language identity and canonical reparse arguments",
+  "compiler_consolidation": {
+    "discovered": 547,
+    "executable_passed": 544,
+    "unsupported": 3,
+    "all_executable_passed": true
+  },
+  "frontend_consolidation": {
+    "selected_groups": 70,
+    "all_passed": true,
+    "source_checkpoint": "2.145"
+  }
+}

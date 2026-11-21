@@ -17,6 +17,11 @@ def check_host_tools(repo: Path, *, runtime: bool = False) -> dict[str, Any]:
     manifest = json.loads((repo / "toolchains/llvm/manifest.json").read_text())
     tools = manifest["host_tools"]
     errors = []
+    try:
+        from .linux_host import load as load_linux_hosts
+        load_linux_hosts(repo, "linux-x86_64")
+    except (OSError, ValueError, KeyError) as error:
+        errors.append("Linux bootstrap pins: " + str(error))
     for name, filename in (("python", ".python-version"), ("node", ".node-version")):
         if (repo / filename).read_text().strip() != tools[name]:
             errors.append(f"{filename} differs from host_tools.{name}")
@@ -44,6 +49,8 @@ def check_host_tools(repo: Path, *, runtime: bool = False) -> dict[str, Any]:
                 errors.append(f"README.md {label}={value}; expected {expected}")
     llvm_consumers = {
         "native/objc3c/cmake/Objc3ClangFoundation.cmake": [rf"find_package\(LLVM ([0-9.]+) EXACT"],
+        "native/analysis/CMakeLists.txt": [rf"find_package\(LLVM ([0-9.]+) EXACT"],
+        "native/fuzz/CMakeLists.txt": [rf"find_package\(LLVM ([0-9.]+) EXACT"],
         "native/objc3c/cmake/Objc3LinuxRuntime.cmake": [rf'CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL "([0-9.]+)"'],
         "native/objc3c/src/driver/objc3_cli_environment.cpp": [r'version = "([0-9.]+)"'],
         "scripts/install_objc3c_ci_llvm_linux.sh": [r'OBJC3C_CI_LLVM_VERSION:-([0-9.]+)'],
@@ -63,8 +70,15 @@ def check_host_tools(repo: Path, *, runtime: bool = False) -> dict[str, Any]:
             for value in matches:
                 if value != llvm_version:
                     errors.append(f"{filename} LLVM={value}; expected {llvm_version}")
+    cmake_installer = repo / "scripts/objc3c_toolchain/cmake_linux.sh"
+    if cmake_installer.is_file():
+        version = re.search(r"(?m)^version=([0-9.]+)$", cmake_installer.read_text())
+        if not version or version.group(1) != tools["cmake"]:
+            errors.append("Linux CMake installer differs from host_tools.cmake")
     workflow_count = 0
-    for path in sorted((repo / ".github/workflows").glob("*.yml")):
+    owners = [*sorted((repo / ".github/workflows").glob("*.yml")),
+              *sorted((repo / '.github/actions').rglob('action.yml'))]
+    for path in owners:
         contents = path.read_text()
         for name, field in (("node", "node-version"), ("python", "python-version")):
             for value in re.findall(rf"^\s*{field}:\s*['\"]?([^'\"\s]+)", contents, re.M):
@@ -76,7 +90,12 @@ def check_host_tools(repo: Path, *, runtime: bool = False) -> dict[str, Any]:
         for value in re.findall(r"npm install --global npm@([^\s]+)", contents):
             if value != tools["npm"]:
                 errors.append(f"{path.name} npm={value}; expected {tools['npm']}")
-        for action, revision in re.findall(r"uses: (actions/[A-Za-z0-9_-]+)@([^\s#]+)", contents):
+        for name, pattern in (("uv", r"uv==([0-9.]+)"),
+                              ("python", r"--python\s+['\"]?([0-9.]+)")):
+            for value in re.findall(pattern, contents):
+                if value != tools[name]:
+                    errors.append(f"{path.name} {name}={value}; expected {tools[name]}")
+        for action, revision in re.findall(r"uses: (actions/[A-Za-z0-9_/-]+)@([^\s#]+)", contents):
             pin = manifest.get("ci_actions", {}).get(action)
             if not pin or revision != pin["commit"]:
                 errors.append(f"{path.name} {action} does not use its locked stable commit")

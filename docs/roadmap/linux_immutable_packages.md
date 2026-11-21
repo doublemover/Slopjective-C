@@ -92,3 +92,12 @@ binary formats and interfaces require rebuilding with the current SDK.
 Binary v3 modules also require their canonical `exports` policy. Named policies
 must agree exactly with the native sidecar root names before consumer compilation.
 Earlier binary formats are rejected.
+
+Semantic interface schema 2.2 records a native `export_root` for every declaration.
+Binary installation verifies that each root exists in the interface, that every
+selected export is a native root, and that all roots belong to the selected
+namespace/class/alias/using policy. Namespace ancestors retained for a selected
+leaf do not export siblings. Class static members and friend functions belong
+to their class root. Native import regenerates and compares these root identities
+against the parsed source, and semantic fingerprints bind them. Schema 2.1
+interfaces require regeneration for this cutover.

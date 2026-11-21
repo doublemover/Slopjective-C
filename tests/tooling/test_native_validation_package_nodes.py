@@ -16,6 +16,26 @@ sys.path.insert(0, str(REPO / "scripts"))
 from objc3c_native_validation import package_nodes as package  # noqa: E402
 
 
+@pytest.mark.parametrize('host,target,machine', [
+    ('linux-x86_64', 'x86_64-unknown-linux-gnu', 62),
+    ('linux-aarch64', 'aarch64-unknown-linux-gnu', 183),
+])
+def test_linux_consumer_elf_requires_selected_target_and_exact_runtime(tmp_path, host, target, machine):
+    report = tmp_path / 'linked-elf.json'
+    elf = {'ElfHeader': {'Machine': {'Value': machine},
+          'Ident': {'Class': {'Value': 2}, 'DataEncoding': {'Value': 1}}},
+           'NeededLibraries': ['libobjc.so.4.6', 'libc.so.6']}
+    report.write_text(json.dumps([elf]))
+    package.require_consumer_elf(report, host, target, 'libobjc.so.4.6')
+    for wrong_target, wrong_library in ((target, 'libobjc.so.4'), ('riscv64-unknown-linux-gnu', 'libobjc.so.4.6')):
+        with pytest.raises(ValueError, match='wrong ELF ABI or runtime dependency'):
+            package.require_consumer_elf(report, host, wrong_target, wrong_library)
+    elf['ElfHeader']['Machine']['Value'] = 183 if machine == 62 else 62
+    report.write_text(json.dumps([elf]))
+    with pytest.raises(ValueError, match='wrong ELF ABI or runtime dependency'):
+        package.require_consumer_elf(report, host, target, 'libobjc.so.4.6')
+
+
 def _setup(tmp_path: Path) -> tuple[Path, dict]:
     repo = tmp_path / "checkout"
     fixture_root = repo / package.FIXTURES

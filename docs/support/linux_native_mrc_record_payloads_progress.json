@@ -1,0 +1,61 @@
+{
+  "development_only": true,
+  "source_version": "2.153",
+  "system_version": "2.79",
+  "prepared_source_tree": "8137d825eabec18709d0a32b6fe8689b8a655458",
+  "extension_abi": 24,
+  "compiler_identity_resealed": false,
+  "matched_sdk_produced": false,
+  "reader_contracts": ["objc3.native-mrc-record-payload.v1", "objc3.native-lambda-argument-abi.v1"],
+  "compiler_controls": {
+    "new_focused_cases_passed": 3,
+    "source_pch_commands": 24,
+    "scope": [
+      "MRC record admission and negative boundaries",
+      "ordinary carrier object construction"
+    ],
+    "final_recheck": "12 source/PCH commands for local/reference/discarded/placement and trivial-destructor construction",
+    "main_batch_precedes_final_cleanup_repairs": true
+  },
+  "ast_controls": {
+    "new_focused_tests_passed": 2,
+    "scope": ["valid template overload candidate heads", "owning lambda indirect argument ABI"],
+    "complete_66_test_run": "delegated to CI"
+  },
+  "publication_controls": {
+    "mrc_record_profiles_passed": 2,
+    "owning_closure_profiles_passed": 6,
+    "sanitizer_header_profiles": 4,
+    "scope": [
+      "relocation and exact replay",
+      "older, missing and invented capabilities",
+      "ASan/UBSan/TSan/CFI feature queries without reparse link constraints",
+      "constant array bounds"
+    ],
+    "mrc_closure_groups_precede_final_cleanup_repairs": true
+  },
+  "production_decoder": {
+    "new_families": 2,
+    "earlier_focused_owning_closure_exact_replays_passed": 20,
+    "complete_38_family_run": "delegated to CI"
+  },
+  "native": {
+    "focused_final_profile": "C++20 MRC O0, ASan/UBSan clients with release GNU runtime",
+    "configurations": 1,
+    "compile_link_execute_operations": 6,
+    "consumers_per_provider": 2,
+    "provider_source_removed": true,
+    "full_Cpp20_23_O0_O2_matrix": "delegated to CI",
+    "fault_modes": 7,
+    "all_passed": true
+  },
+  "negative_controls": [
+    "private/deleted payload special members",
+    "volatile storage",
+    "direct managed MRC scalar/Block carrier rules",
+    "throwing copy/move and partial storage cleanup",
+    "task failure and cancellation before entry",
+    "older/missing/invented reader capability"
+  ],
+  "consolidation": "Broad compiler/frontend/runtime sweeps execute in CI. Final matched analysis and one SDK delivery remain pending."
+}

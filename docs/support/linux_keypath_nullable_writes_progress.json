@@ -1,0 +1,93 @@
+{
+  "schema": "objc3c.linux-nullable-keypath-writes-progress.v1",
+  "status": "FOCUSED_SOURCE_VALIDATED",
+  "date": "2026-10-28",
+  "source_checkpoint": "a71a623e95556a8a028c129f7663df3d004b89aa",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-709303dd7ca0-00b75dc3",
+  "compiler_patch_digest": "709303dd7ca0ff4d7a5724e48970ae273c4d1a4b72ec6759f7f1c731d07decd8",
+  "keypath_module_version": "2.4.0",
+  "keypath_descriptor_abi": 2,
+  "interface_schema": "2.2",
+  "runtime_service_abi": 4,
+  "scope": [
+    "Writable nullable object/Block chains with nil no-op updates and unchanged final Value",
+    "Source-ordered exact-once operands, nullable receiver pins and native ARC/MRC normal and exceptional cleanup",
+    "Record routing prefixes without writeback and modified suffixes with exact-once writeback",
+    "Descriptor nullable-writes flag, component writability coherence and rejection of old forced-readonly metadata",
+    "Required published-body semantic capability, source re-emission, native AST import and relocated source-free packages"
+  ],
+  "verification": {
+    "compiler_regressions_passed": 410,
+    "platform_cases_unsupported": 3,
+    "native_ast_contract_tests_passed": 137,
+    "optimized_frontend_suites_passed": 3,
+    "runtime_configurations_passed": 24,
+    "runtime_commands_passed": 156,
+    "source_free_package_configurations_passed": 24,
+    "source_free_package_commands_passed": 96,
+    "source_free_package_modes": [
+      "normal",
+      "normal-eager"
+    ],
+    "reports": [
+      {
+        "path": "out/nullable-keypath-foundation-build.json",
+        "bytes": 6534,
+        "sha256": "6f6a54263ed3715cf3314af02f944d0e8223187dcb5b074354b838abb3b3f471"
+      },
+      {
+        "path": "out/nullable-keypath-verify.json",
+        "bytes": 7444,
+        "sha256": "d900eff9bc744fde9cbaf8892fd9f38ef31f3709b8802341999e14c403bb580f"
+      },
+      {
+        "path": "out/nullable-keypath-frontend.json",
+        "bytes": 1492,
+        "sha256": "b04721736e6699c2224c6ff043234ead92f8d14b56f605765020d4acc2da20ab"
+      },
+      {
+        "path": "out/nullable-keypath-frontend-tests.log",
+        "bytes": 473,
+        "sha256": "f88030c9438d02b0a00d8544e135fbd9e28084dd4d93044a3050c24f587cd8a9"
+      },
+      {
+        "path": "out/nullable-keypath-native-regressions.log",
+        "bytes": 6482,
+        "sha256": "601745f9510ce7cbb68b41ff30aca893f2fddb4ef4119983b6cfa93ab9a1a8a4"
+      },
+      {
+        "path": "out/nullable-keypath-native-tools.log",
+        "bytes": 6450,
+        "sha256": "2fec86f5cd33828195e08011494a5208b61770ea89cc236e8b94e18fc5b5b466"
+      },
+      {
+        "path": "out/nullable-keypath-ast-contracts.log",
+        "bytes": 34490,
+        "sha256": "29a5735aa2b527c5568afcddb85f4c514980dec1d2203516fae52be3f11fb729"
+      },
+      {
+        "path": "out/native-validation/nullable-keypath-runtime-normal/batch.json",
+        "bytes": 152632,
+        "sha256": "11f82c147a97c962730190e5bec7840aede6c26875323d3962a8b1f674def3a3"
+      },
+      {
+        "path": "out/native-validation/nullable-keypath-packages-normal/qualification.json",
+        "bytes": 6707,
+        "sha256": "b0f660ea6c331078765f8e9cea9cba4e2d186a5ea5d0070aa06dc56718c828ab"
+      },
+      {
+        "path": "out/native-validation/nullable-keypath-packages-normal-eager/qualification.json",
+        "bytes": 6697,
+        "sha256": "e0b9f0c8d6da67396da3d5f33498af55a127d5e1f4f4431da0dad9d1a72c2fa4"
+      }
+    ]
+  },
+  "deferred": [
+    "Combined full frontend/tooling and sanitizer checks for the next implementation batch",
+    "Coordinated SDK rebuild/archive and installed-host qualification"
+  ],
+  "accepted_sdk": "2.33.0",
+  "sdk_rebuilt": false,
+  "full_profile_conformance": false,
+  "native_aarch64_qualified": false
+}

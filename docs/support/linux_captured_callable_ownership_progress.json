@@ -1,0 +1,132 @@
+{
+  "schema": "objc3c.linux-captured-callable-ownership-progress.v1",
+  "status": "FOCUSED_VALIDATED",
+  "date": "2026-10-27",
+  "source_checkpoint": "aff606672c19058d168ce88ac0ffc9bf2d4eeb50",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-a9baef4eeb39-00b75dc3",
+  "compiler_patch_digest": "a9baef4eeb3921e2da8872dacab76af63a24243a837f86c6f71d25bd01a74acb",
+  "system_module_version": "2.12.0",
+  "extension_abi": 21,
+  "interface_schema": "2.2",
+  "scope": [
+    "System 2.10: captured-owner consumption through concrete local Block/lambda calls, invoked callable forwarding and ARC callback copy-in/writeback provenance",
+    "System 2.11: mutable lambdas with stable lifetime-sensitive captures, CFG mutation/exposure summaries and independent ARC holding dependencies",
+    "System 2.12: field- and element-sensitive invoked paths through captured records/arrays, aggregate init-captures and structural ARC record copies",
+    "Source/PCH C++20/23 ARC/MRC regression witnesses and source-free inline publication of mutable and record-captured consuming closures",
+    "Source-free C++ packages with exact foreign consumption, retained callbacks, ownership-distinct overloads and integrated-family alias lifetime/destruction"
+  ],
+  "verification": {
+    "foundation": {
+      "path": "out/captured-callable-batch-foundation-build.json",
+      "sha256": "e31d92272f88cfc8ca2a31cdd5ea5a9b5b057b4e28df9eab78e66efa3ebee353"
+    },
+    "source_verification": {
+      "path": "out/captured-callable-batch-source-verification.json",
+      "sha256": "f39fd563d40cdc18d2d418505d39e1ccfae3f4ee9f3dd2c3b83cf229b549fa73"
+    },
+    "native": {
+      "compiler_regressions_passed": 398,
+      "platform_cases_unsupported": 3,
+      "native_unit_tests_passed": 190,
+      "report": {
+        "path": "out/captured-callable-batch-native-batch.json",
+        "sha256": "1895ec02aa68a1b7243adf55cd5d514dbea67068290e7c7775e07b88110f982c"
+      },
+      "logs": [
+        {
+          "path": "out/captured-callable-batch-native-0.log",
+          "sha256": "e5bdab0978f6c2ab0c92698ef44ab210503294f8ae8ecc0a17e660f8493900d7"
+        },
+        {
+          "path": "out/captured-callable-batch-native-1.log",
+          "sha256": "ee384389a8805ad81acdcc2329cc76033e11f331f8b7956f0366fed05ec15529"
+        },
+        {
+          "path": "out/captured-callable-batch-native-2.log",
+          "sha256": "d7687e89f0b12a5a29ba0fad0a1059b00a403506c8582113a086dceb3a4d2ca0"
+        },
+        {
+          "path": "out/captured-callable-batch-native-3.log",
+          "sha256": "f45554355ba801c99a22eab6ccf30f1f77da7ab023b4947cade5e8e17674bd8f"
+        },
+        {
+          "path": "out/captured-callable-batch-native-4.log",
+          "sha256": "be7616abbe0d9790abf9da85aa600c74f568a67321d5a3fbf398726f67e1367a"
+        }
+      ]
+    },
+    "frontend": {
+      "suites_passed": 33,
+      "build": {
+        "path": "out/captured-callable-batch-all-frontend-build.log",
+        "sha256": "399d4b2c091b2806da49a46f16be13e2d2a82c0e9a07307e9f353388700b8ac4"
+      },
+      "tests": {
+        "path": "out/captured-callable-batch-all-frontend-tests.log",
+        "sha256": "3cf34a9d48fd5207c31af7da071b8f093c7d344535427d052ce5de3e94703174"
+      }
+    },
+    "tooling": {
+      "tests_passed": 15,
+      "log": {
+        "path": "out/captured-callable-batch-tooling.log",
+        "sha256": "08106afa14fe3a0a17aed781b0fe12ab4cb07508996485889514a03e1678bdc0"
+      }
+    },
+    "source_free_packages": {
+      "configurations_passed": 24,
+      "commands_passed": 96,
+      "modes": [
+        {
+          "mode": "normal",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/captured-callable-batch-packages-normal/qualification.json",
+            "sha256": "0ecf2d8fdf5fe6f06db2cffa03a74eac689e2939b48ee2161cb28551a6672aaa"
+          }
+        },
+        {
+          "mode": "normal-eager",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/captured-callable-batch-packages-normal-eager/qualification.json",
+            "sha256": "ee65ed7d2f310f670e5cd66f5c3e5db615e709a4249b60f906fdec66268479d9"
+          }
+        },
+        {
+          "mode": "asan",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/captured-callable-batch-packages-asan/qualification.json",
+            "sha256": "5faa760017ec053f3263d93f9e0bd87221a03effe236ddbc903684fb185e9109"
+          }
+        }
+      ]
+    },
+    "binaries": {
+      "build_clang": {
+        "path": "out/toolchains/objc3-development/build-linux-x86_64/bin/clang",
+        "sha256": "184dd0920eed34ac0ddf6a7991f31781847eb90eab4329d4f27bedd86489d2f5"
+      },
+      "stage_clang": {
+        "path": "out/toolchains/objc3-development/stage-linux-x86_64/bin/clang",
+        "sha256": "8a7ddbd6c8194fb6e79bab63b1f33d1516f491da6d75d5fda6bba98f75924dfe"
+      },
+      "facade": {
+        "path": "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c",
+        "sha256": "895a58f904cb68cd1edee586140a7a8e623a5c8f53658655ede54b7764632644"
+      }
+    }
+  },
+  "delivery": {
+    "accepted_sdk_version": "2.33.0",
+    "sdk_archive_rebuilt": false,
+    "acceptance_receipt": "docs/support/linux_source_batch_2_33_acceptance.json",
+    "broader_combined_runtime_and_sanitizer_batch": "deferred to a larger implementation batch",
+    "full_profile_conformance_claimed": false,
+    "native_aarch64_qualified": false
+  }
+}

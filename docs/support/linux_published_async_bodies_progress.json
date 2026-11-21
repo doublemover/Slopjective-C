@@ -1,0 +1,140 @@
+{
+  "schema": "objc3c.linux-published-async-bodies-progress.v1",
+  "status": "FOCUSED_VALIDATED",
+  "date": "2026-10-27",
+  "source_checkpoint": "27be1597cb9bb46953b4724cdd11ad0f14296e86",
+  "native_checkpoint": "0f857720c65d7f2dcf5346cc2c48753d012c58c8",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-90cc2582614e-00b75dc3",
+  "compiler_patch_digest": "90cc2582614ea675c2989265ddb005d8c83a1f32e0f3a2badac3d0b816423afa",
+  "concurrency_module_version": "2.34.0",
+  "interface_schema": "2.2",
+  "required_semantic": "objc3.cxx-async-definitions.v1",
+  "extension_abi": 21,
+  "scope": [
+    "Published concrete native-frame and C++ task bodies around logical async calls and isolation entries with source-only body/dependency identities",
+    "Native await/coroutine AST import, early callable contracts and instantiated class/function/alias/variable member-template origins",
+    "Exact task-header provenance and content identity, complete C++ runtime reparses and eager prelude coordination",
+    "Backend registration for imported inline bodies, implicit template instantiations and private isolation thunks"
+  ],
+  "verification": {
+    "foundation_compile_and_stage": {
+      "path": "out/published-isolation-foundation-build.json",
+      "sha256": "ac8d110974d8c98aa039c9373a55fd15bd3e3b953273b1e8052324526a2d6372"
+    },
+    "source_verification": {
+      "path": "out/published-isolation-source-verification.json",
+      "sha256": "79dead93549482e28dfe17dda175dd02ef7d81a5a415773f06d03d72f5a328eb"
+    },
+    "native_regressions": {
+      "passed": 6,
+      "log": {
+        "path": "out/published-isolation-native-regressions.log",
+        "sha256": "7a241643d750bbffe731b53da9d35fabf5732197968cbd345ded14146f896748"
+      }
+    },
+    "native_ast_tests": {
+      "passed": 120,
+      "log": {
+        "path": "out/published-isolation-native-all-units.log",
+        "sha256": "b7361dad3aa780d549a9b563de8e727daa880e663ad5a9679e9e369d56929516"
+      }
+    },
+    "frontend": {
+      "suites": [
+        "interface_contract",
+        "interface_codec",
+        "interface_import",
+        "interface_emitter"
+      ],
+      "log": {
+        "path": "out/published-isolation-frontend-tests.log",
+        "sha256": "5b7087782ed4c8cdd1fcb099b64000edcd1cba20194522f49e67f85c6c44f8dd"
+      }
+    },
+    "tooling": {
+      "passed": 14,
+      "log": {
+        "path": "out/published-isolation-tooling-tests.log",
+        "sha256": "8f91a2c1e444c79591ec433c7bedcd1cb1c587f6a6369dc0ddd805b037a2691d"
+      }
+    },
+    "source_free_packages": [
+      {
+        "mode": "normal",
+        "configurations": 8,
+        "commands": 32,
+        "provider_source_removed": true,
+        "report": {
+          "path": "out/native-validation/published-isolation-packages-normal/qualification.json",
+          "sha256": "0ecf2d8fdf5fe6f06db2cffa03a74eac689e2939b48ee2161cb28551a6672aaa"
+        }
+      },
+      {
+        "mode": "normal-eager",
+        "configurations": 8,
+        "commands": 32,
+        "provider_source_removed": true,
+        "report": {
+          "path": "out/native-validation/published-isolation-packages-normal-eager/qualification.json",
+          "sha256": "ee65ed7d2f310f670e5cd66f5c3e5db615e709a4249b60f906fdec66268479d9"
+        }
+      },
+      {
+        "mode": "asan",
+        "configurations": 8,
+        "commands": 32,
+        "provider_source_removed": true,
+        "report": {
+          "path": "out/native-validation/published-isolation-packages-asan/qualification.json",
+          "sha256": "5faa760017ec053f3263d93f9e0bd87221a03effe236ddbc903684fb185e9109"
+        }
+      }
+    ],
+    "isolation_source_and_pch": [
+      {
+        "mode": "normal",
+        "configurations": 48,
+        "commands": 360,
+        "report": {
+          "path": "out/native-validation/published-isolation-runtime-normal/batch.json",
+          "sha256": "7b5b4752ca1c02c85ae0cae7b962d4618ff78fbfb94ef0d073e7d7877f810251"
+        }
+      },
+      {
+        "mode": "asan",
+        "configurations": 48,
+        "commands": 360,
+        "report": {
+          "path": "out/native-validation/published-isolation-runtime-asan/batch.json",
+          "sha256": "ae385d1e1e8f3de2745aca46e080e4c475145dd7799e8448680a4239f25207bb"
+        }
+      }
+    ],
+    "binary_snapshot": [
+      {
+        "path": "out/toolchains/objc3-development/stage-linux-x86_64/bin/clang-23",
+        "sha256": "526a2cbe405ae89a0a2595568a3b023fa23101b3a7b7a8f7cc09ea6b3c4c04d5"
+      },
+      {
+        "path": "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c",
+        "sha256": "f4df4cf734f76e33c6a79583c1a6401050747c3ff4a136ec3a550bf9e6b94e6a"
+      }
+    ],
+    "public_task_header": {
+      "path": "native/objc3c/src/runtime/public/objc3_task.hpp",
+      "sha256": "e509dc75153dffaa795c2d4c9a70eb22314f5138cc837fba25b272d458ddc985"
+    }
+  },
+  "delivery": {
+    "accepted_sdk": "2.33.0",
+    "new_archive_built": false,
+    "broader_combined_batch_deferred": true
+  },
+  "remaining": [
+    "Nonisolated native-frame adapters and runtime/custom awaiter operands in ordinary published C++ task bodies",
+    "Task-ABI isolated targets, MRC/CF consumption, init-family entry, dynamic Class receivers and automatic actor association",
+    "Remaining generic, ownership, structured concurrency, key-path, diagnostic and profile implementation in the Linux roadmap",
+    "Native Linux AArch64 qualification on a native host"
+  ],
+  "profile_conformance_claimed": false
+}

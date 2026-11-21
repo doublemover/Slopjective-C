@@ -25,7 +25,7 @@ def qualify(sdk: Path, output: Path) -> dict:
         shutil.copyfile(Path(__file__).parent / name, sources / name)
     report = {'schema': 'objc3c.installed-heap-carriers.v1', 'status': 'running',
               'sdk_seal': json.loads((sdk / 'objc3-sdk.json').read_text())['seal_sha256'],
-              'commands': [], 'executions': [], 'rejections': [], 'interfaces': [],
+              'commands': [], 'executions': [], 'rejections': [], 'admissions': [], 'interfaces': [],
               'source_hashes': {name: hashlib.sha256((sources / name).read_bytes()).hexdigest()
                                 for name in names}}
     path = output / 'qualification.json'
@@ -105,9 +105,17 @@ def qualify(sdk: Path, output: Path) -> dict:
         for language in ('objective-c', 'objective-c++'):
             for case in (1, 2, 3, 4, 5, 6):
                 key = language + '-rejected-' + str(case)
+                admitted = case in (1, 2) or (case == 5 and language.endswith('++'))
+                obj = output / (key + '.o')
                 run(key, [compiler, *flags(language, 'O0'), '-DCASE=' + str(case),
-                          '-c', 'carrier-heap-rejected.m', '-o', output / 'rejected.o'], expected=1)
+                          '-c', 'carrier-heap-rejected.m', '-o', obj], expected=0 if admitted else 1)
+                if admitted:
+                    if not obj.is_file() or not obj.read_bytes().startswith(b'\x7fELF'):
+                        raise ValueError(key + ' did not emit its admitted native object')
+                    report['admissions'].append({'language': language, 'case': case})
+                    continue
                 text = (output / (key + '.log')).read_text()
+                if obj.exists(): raise ValueError(key + ' published a rejected object')
                 if 'error:' not in text or any(word in text for word in ('PLEASE submit a bug report', 'Assertion failed')):
                     raise ValueError(key + ' failed without a source diagnostic')
                 report['rejections'].append({'language': language, 'case': case})
@@ -123,11 +131,16 @@ def qualify(sdk: Path, output: Path) -> dict:
         run('pch-link', [compiler, output / (key + '-native.o'), output / (key + '-provider.o'),
                          consumer, '-o', executable])
         execute('pch-application', executable)
-        assert len(report['executions']) == 17
-        assert len(report['rejections']) == 12
-        assert len(report['interfaces']) == 4
-        assert len({row['semantic_fingerprint'] for row in report['interfaces']}) == 2
-        assert all(row['runtime_abi'] == 'gnustep-2.2;arc' for row in report['interfaces'])
+        if not (len(report['executions']) == 17):
+            raise ValueError('installed qualification contract failed: qualify-heap-carriers.py:126')
+        if len(report['rejections']) != 7 or len(report['admissions']) != 5:
+            raise ValueError('installed qualification contract failed: qualify-heap-carriers.py:127')
+        if not (len(report['interfaces']) == 4):
+            raise ValueError('installed qualification contract failed: qualify-heap-carriers.py:128')
+        if not (len({row['semantic_fingerprint'] for row in report['interfaces']}) == 2):
+            raise ValueError('installed qualification contract failed: qualify-heap-carriers.py:129')
+        if not (all((row['runtime_abi'] == 'gnustep-2.2;arc' for row in report['interfaces']))):
+            raise ValueError('installed qualification contract failed: qualify-heap-carriers.py:130')
         run('seal-after', [sys.executable, '-B', sdk / 'share/objc3c/verify-sdk.py', sdk])
         report['status'] = 'PASS'
     except BaseException as error:

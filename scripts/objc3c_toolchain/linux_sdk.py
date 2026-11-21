@@ -11,6 +11,7 @@ import subprocess
 import sys
 import time
 
+from .linux_host import native_linux_host, native_target
 from .build import build_foundation
 from .core import build_plans, verify_development
 from .facade import facade_identity
@@ -19,15 +20,21 @@ from .install_sdk import install
 from .package import inventory, package_sdk, verify_sdk
 from .qualify_installed import qualify_installed
 from .sdk_example import write_json
+from .native_headers import discover as discover_native_headers, materialize as materialize_native_headers
 
 
-PROJECT_SDK_PREFIXES = ('bin/objc3', 'bin/clang-scan-deps', 'lib/libobjc',
+# FileCheck is added by project packaging, with its bytes bound separately in
+# input_identity. It must not mutate the reusable LLVM foundation signature.
+PROJECT_SDK_PREFIXES = ('bin/objc3', 'bin/clang-scan-deps', 'bin/FileCheck', 'lib/libobjc',
                         'lib/cmake/objc3c/', 'include/objc/', 'include/objc3c/',
                         'include/objc3/', 'include/runtime/', 'share/objc3c/')
 
 
 def is_project_sdk_path(name: str) -> bool:
-    return name == 'objc3-sdk.json' or any(
+    parts = Path(name).parts
+    compiler_runtimes = (len(parts) >= 5 and parts[:2] == ('lib', 'clang') and parts[3] == 'lib')
+    native_headers = len(parts) >= 4 and parts[:2] == ('lib', 'clang') and parts[3] == 'objc3-native-headers'
+    return compiler_runtimes or native_headers or name in ('objc3-sdk.json', 'bin/clang.cfg', 'bin/clang++.cfg') or any(
         name == prefix.rstrip('/') or name.startswith(prefix)
         for prefix in PROJECT_SDK_PREFIXES)
 
@@ -57,7 +64,7 @@ def adopt_candidate_foundation(repo: Path, source: Path, prefix: Path,
     signature = foundation_identity(source)
     if signature != expected_contents or foundation_identity(prefix) != signature:
         raise ValueError('candidate foundation differs from its source; preserving staging outputs')
-    stage = repo / 'out/toolchains/objc3-development/stage-linux-x86_64'
+    stage = repo / ('out/toolchains/objc3-development/stage-' + native_linux_host())
     reclaimed = source.absolute() == stage.absolute() and not source.is_symlink()
     result = {'source': str(source), 'prefix': str(prefix),
               'foundation_contents': signature, 'duplicate_stage_reclaimed': reclaimed}
@@ -66,13 +73,40 @@ def adopt_candidate_foundation(repo: Path, source: Path, prefix: Path,
     return result
 
 
+def _qualification_input_path(repo: Path, path: Path) -> Path:
+    try:
+        resolved = path.resolve(strict=True)
+    except (OSError, RuntimeError) as error:
+        raise ValueError(f'qualification input cannot be resolved: {path}') from error
+    if not resolved.is_relative_to(repo):
+        raise ValueError(f'qualification input escapes the checkout: {path}')
+    return resolved
+
+
 def input_identity(repo: Path, sdk: Path) -> dict:
+    repo = repo.resolve(strict=True)
     files = set()
     for directory in ('scripts/objc3c_toolchain', 'scripts/objc3c_toolchain_runtime',
                       'scripts/objc3c_native_validation', 'tests/clang_foundation',
-                      'tests/tooling/fixtures/clang_foundation', 'native/objc3c/src/runtime', 'stdlib/include'):
-        files.update(path for path in (repo / directory).rglob('*') if path.is_file()
-                     and '__pycache__' not in path.parts and path.suffix not in ('.pyc',))
+                      'tests/tooling/fixtures/clang_foundation', 'native/objc3c/src/runtime', 'native/objc3c/tests', 'stdlib/include'):
+        root = repo / directory
+        if not (root.exists() or root.is_symlink()):
+            continue
+        pending = [(root, frozenset())]
+        while pending:
+            path, ancestors = pending.pop()
+            if path.name == '__pycache__' or path.suffix == '.pyc':
+                continue
+            resolved = _qualification_input_path(repo, path)
+            if resolved.is_dir():
+                if resolved in ancestors:
+                    raise ValueError(f'qualification input directory cycle: {path}')
+                lineage = ancestors | {resolved}
+                pending.extend((path / child.name, lineage) for child in resolved.iterdir())
+            elif resolved.is_file():
+                files.add(path)
+            else:
+                raise ValueError(f'qualification input must be a regular file: {path}')
     # Qualification owners, including editor fixtures and shared executor code,
     # are authoritative inputs to release reuse rather than a second file list.
     from scripts.objc3c_native_validation.plan import build_plan
@@ -81,32 +115,57 @@ def input_identity(repo: Path, sdk: Path) -> dict:
         files.update(repo / name for name in node['identity_inputs'])
     files.add(repo / 'scripts/install_objc3c_linux.sh')
     files.add(repo / 'stdlib/module_inventory.json')
-    files.add(repo / 'out/toolchains/objc3-development/build-linux-x86_64/bin/llvm-tblgen')
+    files.add(repo / 'toolchains/linux-hosts.json')
+    files.add(repo / ('out/toolchains/objc3-development/build-' + native_linux_host()) / 'bin/llvm-tblgen')
+    files.add(repo / ('out/toolchains/objc3-development/build-' + native_linux_host()) / 'bin/FileCheck')
     from .package import distribution_license
     license_file = distribution_license(repo)
     if license_file is not None:
         files.add(license_file)
-    inputs = {path.relative_to(repo).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
-              for path in sorted(files)}
-    configure = build_plans(repo, host='linux-x86_64')['configure']
+    inputs, input_resolution = {}, {}
+    for path in sorted(files):
+        resolved = _qualification_input_path(repo, path)
+        if not resolved.is_file():
+            raise ValueError(f'qualification input must be a regular file: {path}')
+        relative = path.relative_to(repo).as_posix()
+        with resolved.open('rb') as stream:
+            inputs[relative] = hashlib.file_digest(stream, 'sha256').hexdigest()
+        if resolved != path:
+            input_resolution[relative] = resolved.relative_to(repo).as_posix()
+    configure = build_plans(repo, host=native_linux_host())['configure']
     # The build plan reports mutable output inventories for consumers. Release
     # reuse binds the actual foundation contents separately; reclaiming its
     # duplicate stage must not change the source/configuration identity.
     foundation_inputs = {key: value for key, value in configure.items()
                          if key not in ('identity', 'sdk_consumers')}
     foundation_plan = hashlib.sha256(json.dumps(foundation_inputs, sort_keys=True).encode()).hexdigest()
+    native_headers = discover_native_headers(sdk / 'bin/clang')
+    from .compiler_runtimes import discover as discover_runtimes
+    runtimes = discover_runtimes(repo, Path(os.environ['OBJC3C_BOOTSTRAP_LLVM_ROOT']))
     payload = {'foundation_contents': foundation_identity(sdk), 'foundation_plan': foundation_plan,
-               'frontend': facade_identity(repo)['sha256'], 'inputs': inputs}
+               'native_headers': {'sha256': native_headers['sha256']}, 'compiler_runtimes': runtimes,
+               'frontend': facade_identity(repo)['sha256'], 'inputs': inputs,
+               'input_resolution': input_resolution}
     return {'sha256': hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest(), **payload}
 
 
-def build_sdk(repo: Path, *, fetch: bool = False, install_root: Path | None = None, foundation_sdk: Path | None = None) -> dict:
+def build_sdk(repo: Path, *, fetch: bool = False, install_root: Path | None = None, foundation_sdk: Path | None = None,
+              compiler_instrumentation_profile: str | None = None) -> dict:
     repo = repo.resolve()
     base = repo / 'out/toolchains/linux-sdk-builds'
     base.mkdir(parents=True, exist_ok=True)
     with (base / '.pipeline.lock').open('a+b') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        return _build_sdk(repo, base, fetch, install_root or repo / 'out/toolchains/linux-sdk', foundation_sdk)
+        instrumentation = None
+        if compiler_instrumentation_profile:
+            from .compiler_instrumentation import build_and_qualify
+            instrumentation = build_and_qualify(repo, profile=compiler_instrumentation_profile, fetch=fetch)
+        report = _build_sdk(repo, base, fetch, install_root or repo / 'out/toolchains/linux-sdk', foundation_sdk)
+        # This is evidence about a distinct compiler-process graph, not a claim
+        # that the ordinary shipped archive contains instrumented libraries.
+        if instrumentation is not None:
+            report = {**report, 'compiler_implementation_qualification': instrumentation}
+        return report
 
 
 def _install_qualified_archive(report: dict, directory: Path, install_root: Path,
@@ -142,7 +201,7 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
     if not bootstrap:
         raise ValueError('set OBJC3C_BOOTSTRAP_LLVM_ROOT to the pinned bootstrap LLVM SDK')
     os.environ['OBJC3C_BOOTSTRAP_LLVM_ROOT'] = str(Path(bootstrap).resolve())
-    sdk = repo / 'out/toolchains/objc3-development/stage-linux-x86_64'
+    sdk = repo / ('out/toolchains/objc3-development/stage-' + native_linux_host())
     if foundation_sdk is None and (install_root / 'current/objc3-sdk.json').is_file():
         active = (install_root / 'current').resolve()
         if json.loads((active / 'objc3-sdk.json').read_text())['source_build_id'] == verify_development(repo)['build_id']:
@@ -150,18 +209,22 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
     if foundation_sdk is not None:
         sdk = foundation_sdk.resolve()
         cached = verify_sdk(sdk)
-        if cached['source_build_id'] != verify_development(repo)['build_id']:
+        if (cached['source_build_id'] != verify_development(repo)['build_id'] or
+                cached.get('target') != native_target()):
             raise ValueError('cached SDK foundation differs from the current source and build configuration')
         foundation = {'status': 'passed', 'cache_hit': True, 'prefix': str(sdk),
                       'source_identity': cached['source_build_id'], 'seal_sha256': cached['seal_sha256']}
     else:
-        foundation = build_foundation(repo, host='linux-x86_64', fetch=fetch, stage=True)
+        foundation = build_foundation(repo, host=native_linux_host(), fetch=fetch, stage=True)
     identity = input_identity(repo, sdk)
     directory = base / identity['sha256']
     directory.mkdir(exist_ok=True)
     receipt_path = directory / 'release.json'
     if receipt_path.exists():
         receipt = json.loads(receipt_path.read_text())
+        if (not isinstance(receipt, dict) or receipt.get('status') != 'PASS' or
+                receipt.get('input_identity') != identity['sha256']):
+            raise ValueError('cached release receipt does not match the qualification identity')
         # Publication makes the checked archive authoritative. The mutable
         # candidate may have been reclaimed or edited after release.
         installed = install(Path(receipt['archive']), receipt['archive_sha256'], install_root)
@@ -207,6 +270,12 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
     try:
         report['candidate_foundation'] = adopt_candidate_foundation(
             repo, foundation_source, prefix, expected_contents=identity['foundation_contents'])
+        headers = discover_native_headers(prefix / 'bin/clang')
+        if headers['sha256'] != identity['native_headers']['sha256']:
+            raise ValueError('native standard headers changed before SDK assembly')
+        report['native_standard_headers'] = materialize_native_headers(prefix, headers)
+        from .compiler_runtimes import materialize as materialize_runtimes
+        report['compiler_runtimes'] = materialize_runtimes(prefix, identity['compiler_runtimes'])
         runtime = repo / 'out/toolchains/libobjc2-v2.3'
         run('runtime', [sys.executable, '-B', '-m', 'scripts.objc3c_toolchain_runtime.build_linux',
             '--repo', repo, '--compiler-root', sdk, '--report-file', directory / 'runtime-report.json',
@@ -225,15 +294,19 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
         run('runtime-tests', ['ctest', '--test-dir', clients, '--no-tests=error',
                               '--output-on-failure', '--timeout', '30', '--stop-on-failure'])
         run('runtime-install', ['cmake', '--install', clients, '--prefix', prefix])
-        frontend = repo / 'out/toolchains/objc3-facade/build-linux-x86_64'
+        frontend = repo / ('out/toolchains/objc3-facade/build-' + native_linux_host())
         configure = ['cmake', '-S', repo / 'native/objc3c', '-B', frontend, '-G', 'Ninja',
             f'-DOBJC3C_CLANG_FOUNDATION_ROOT={sdk}', f'-DCMAKE_CXX_COMPILER={Path(bootstrap) / "bin/clang++"}',
-            f'-DPython3_EXECUTABLE={sys.executable}', '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld', '-DBUILD_TESTING=ON']
+            f'-DPython3_EXECUTABLE={sys.executable}',
+            '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
+            '-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
+            '-DCMAKE_MODULE_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
+            '-DBUILD_TESTING=ON']
         ccache = shutil.which('ccache')
         if ccache:
             configure.append(f'-DCMAKE_CXX_COMPILER_LAUNCHER={ccache}')
         run('frontend-configure', configure)
-        jobs = build_plans(repo, host='linux-x86_64')['configure']['host_environment']['resource_limits']['compile_jobs']
+        jobs = build_plans(repo, host=native_linux_host())['configure']['host_environment']['resource_limits']['compile_jobs']
         run('frontend-build', ['cmake', '--build', frontend, '--target',
                                'objc3c', 'clang-scan-deps', '--parallel', str(jobs)])
         report['frontend_test_output_reclamation'] = qualify_frontend_tests(
@@ -258,10 +331,10 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
                                    expected_identity=identity['sha256'])
         report.update(status='PASS', resumed_qualified_archive=False,
                       elapsed_seconds=round(time.monotonic() - started, 6))
-        receipt_path.write_text(json.dumps(report, indent=2) + '\n')
+        write_json(receipt_path, report)
         return {**report, 'cache_hit': False}
     except Exception as error:
         report.update(status='FAIL', error=str(error))
         raise
     finally:
-        (directory / 'build-report.json').write_text(json.dumps(report, indent=2) + '\n')
+        write_json(directory / 'build-report.json', report)

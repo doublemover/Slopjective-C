@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .environment import WORKFLOW_RUNNER_MODE, WORKFLOW_RUNNER_SURFACE
+from .public_bridge_constants import WORKFLOW_RUNNER_MODE, WORKFLOW_RUNNER_SURFACE
 
 
 @dataclass(frozen=True)

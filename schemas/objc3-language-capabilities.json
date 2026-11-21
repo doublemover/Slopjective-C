@@ -2,7 +2,7 @@
   "schema_version": 1,
   "compiler_family": "clang-foundation",
   "language_revision": 202610,
-  "extension_abi_revision": 20,
+  "extension_abi_revision": 24,
   "features": [
     {
       "name": "defer",
@@ -22,17 +22,44 @@
             "native-package:consumer-source",
             "editor:qualification"
           ]
+        },
+        {
+          "triple": "aarch64-unknown-linux-gnu",
+          "runtime": "gnustep-2.2",
+          "profile": "compatibility",
+          "evidence": [
+            "clang/test/ObjC3/CodeGen/public-defer.c",
+            "carriers:expression:clang:defer-public-runtime:O0",
+            "carriers:expression:clang:defer-public-runtime:O2",
+            "native-package:consumer-eager",
+            "native-package:consumer-source",
+            "editor:qualification"
+          ]
         }
       ]
     },
     {
       "name": "optionals",
       "macro": "OPTIONALS",
-      "aliases": ["OPTIONAL"],
+      "aliases": [
+        "OPTIONAL"
+      ],
       "state": "implemented",
       "qualified_targets": [
         {
           "triple": "x86_64-unknown-linux-gnu",
+          "runtime": "gnustep-2.2",
+          "profile": "compatibility",
+          "evidence": [
+            "clang/test/ObjC3/Parser/public-carriers.mm",
+            "clang/test/ObjC3/AST/public-carriers-print.mm",
+            "clang/test/ObjC3/LanguageMode/public-carriers-feature.m",
+            "installed-public-carrier-call-storage-and-package-suites",
+            "editor:qualification"
+          ]
+        },
+        {
+          "triple": "aarch64-unknown-linux-gnu",
           "runtime": "gnustep-2.2",
           "profile": "compatibility",
           "evidence": [
@@ -62,17 +89,42 @@
             "installed-public-carrier-call-storage-and-package-suites",
             "editor:qualification"
           ]
+        },
+        {
+          "triple": "aarch64-unknown-linux-gnu",
+          "runtime": "gnustep-2.2",
+          "profile": "compatibility",
+          "evidence": [
+            "clang/test/ObjC3/Parser/public-carriers.mm",
+            "clang/test/ObjC3/AST/public-carriers-print.mm",
+            "clang/test/ObjC3/LanguageMode/public-carriers-feature.m",
+            "installed-public-carrier-call-storage-and-package-suites",
+            "editor:qualification"
+          ]
         }
       ]
     },
     {
       "name": "throws",
       "macro": "THROWS",
-      "aliases": ["TYPED_THROWS"],
+      "aliases": [
+        "TYPED_THROWS"
+      ],
       "state": "implemented",
       "qualified_targets": [
         {
           "triple": "x86_64-unknown-linux-gnu",
+          "runtime": "gnustep-2.2",
+          "profile": "compatibility",
+          "evidence": [
+            "clang/test/ObjC3/Parser/public-errors.mm",
+            "installed-managed-throws-18-forced-failures",
+            "installed-runtime-direct-nested-record-heap-call-suites",
+            "editor:qualification"
+          ]
+        },
+        {
+          "triple": "aarch64-unknown-linux-gnu",
           "runtime": "gnustep-2.2",
           "profile": "compatibility",
           "evidence": [
@@ -87,7 +139,9 @@
     {
       "name": "async_await",
       "macro": "ASYNC_AWAIT",
-      "aliases": ["ASYNC"],
+      "aliases": [
+        "ASYNC"
+      ],
       "state": "reserved",
       "qualified_targets": []
     },

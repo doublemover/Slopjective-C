@@ -1,8 +1,6 @@
 """Check the current Linux reader routes against CLI and SDK source owners."""
 from __future__ import annotations
 
-from contextlib import redirect_stdout
-import io
 import json
 from pathlib import Path
 import re
@@ -21,16 +19,18 @@ RETIRED = re.compile(
 
 
 def check(repo: Path) -> dict:
-    paths = [repo / 'README.md', *sorted((repo / 'docs/tutorials').glob('*.md')),
+    contributor_routes = ('CONTRIBUTING.md',
+                          'docs/runbooks/objc3c_public_command_surface.md',
+                          'docs/runbooks/objc3c_maintainer_workflows.md')
+    paths = [repo / 'README.md', *(repo / name for name in contributor_routes),
+             *sorted((repo / 'docs/tutorials').glob('*.md')),
              *sorted((repo / 'showcase').rglob('*')),
              *sorted((repo / 'site/src').glob('*')), repo / 'site/index.md']
     errors = []
-    help_text = io.StringIO()
-    with redirect_stdout(help_text):
-        try:
-            cli.main(['--help'])
-        except SystemExit as exit:
-            if exit.code: raise
+    commands = cli.repository_commands()
+    for name in contributor_routes:
+        if not (repo / name).is_file():
+            errors.append(f'{name}: missing current contributor entrypoint')
     checked = []
     for path in paths:
         if not path.is_file():
@@ -42,9 +42,15 @@ def check(repo: Path) -> dict:
         # never route back through the removed workflows.
         if relative != 'README.md' and RETIRED.search(content):
             errors.append(f'{relative}: retired compiler workflow')
-        for command in re.findall(r'(?:npm run objc3c --|python -m scripts\.objc3c_toolchain)\s+([\w-]+)', content):
-            if not re.search(r'\b' + re.escape(command) + r'\b', help_text.getvalue()):
+        for command in re.findall(
+                r'(?:npm\s+run\s+objc3c\s+--|python(?:3)?(?:\s+-B)?\s+-m\s+'
+                r'scripts\.objc3c_toolchain)\s+([A-Za-z][\w-]*)', content):
+            if command not in commands:
                 errors.append(f'{relative}: unknown repository command {command}')
+        if relative == 'docs/runbooks/objc3c_public_command_surface.md':
+            documented = re.findall(r'^\| `([\w-]+)` \|', content, re.MULTILINE)
+            if set(documented) != commands or len(documented) != len(commands):
+                errors.append(f'{relative}: command appendix differs from registered CLI')
         if path.suffix != '.md':
             continue
         base = repo / 'site' if relative == 'site/src/index.body.md' else path.parent

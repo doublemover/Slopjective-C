@@ -9,7 +9,8 @@
   "provider_ownership": "arc",
   "exports": [
     "c_frame_factory",
-    "c_frame_destroyed"
+    "c_frame_destroyed",
+    "c_frame_scoped"
   ],
   "dependencies": []
 }

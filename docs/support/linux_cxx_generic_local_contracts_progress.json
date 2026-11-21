@@ -1,0 +1,152 @@
+{
+  "schema": "objc3c.linux-generic-local-contracts-progress.v1",
+  "status": "SOURCE_VALIDATED",
+  "date": "2026-10-28",
+  "source_checkpoint": "e054f913db16768b1c30fe8c2f6f014130ed1676",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-2efd8063d621-00b75dc3",
+  "compiler_patch_digest": "2efd8063d621468ab222617fe0c9b90f0ac8c5632151496ac061f182e733fd03",
+  "frontend_input_sha256": "4a97866e695ef7986f6abf6bbe372fe51fa4afca1cadd001fdbda957d439faba",
+  "concurrency_module_version": "2.40.0",
+  "system_module_version": "2.14.0",
+  "keypath_module_version": "2.3.0",
+  "interface_schema": "2.2",
+  "extension_abi": 21,
+  "scope": [
+    "Generic local expression/requires constraints and dependent noexcept; lexical parameters in bodies, defaults, member initializers and constant data",
+    "Recursive named structural template values with bases, arrays and null pointer leaves; exact floating bits distinguish signed zeros and NaN payloads",
+    "Structural template parameter object identity excludes compiler addresses; complete argument-type and sorted unresolved-overload dependencies prevent private unused types or constraint-only overloads from disappearing",
+    "Hard cutover to generic-local capability/identity v2 across emission, codec/module validation, artifact loading, resolution and import; no v1 admission alias",
+    "Native printing retains trailing constraints and unqualified lexical requirement parameters under fully qualified policies",
+    "Native import defers trailing constraints until function/parameter registration, restores final prototype parameter bindings, and attaches requirement parameters to their owning body/declaration list",
+    "Pure C++20/23 source-free objects and ARC/MRC O0/O2 packages exercise constraints, structural bases/arrays/nulls, floating bits, public overloads and captured local class overloads"
+  ],
+  "verification": {
+    "foundation": {
+      "path": "out/constrained-generics-foundation-build.json",
+      "sha256": "e14e107eafbeee7326704673cd5307fa4ba60a29b1f433ed0569915423bdc2f1",
+      "bytes": 6562
+    },
+    "source_verification": {
+      "path": "out/constrained-generics-source-verification.json",
+      "sha256": "82487478a07e8f27dd1d3cb68dbb9593d37b5392f25f6069684929b41bcb4723",
+      "bytes": 7444
+    },
+    "compiler_regressions_passed": 407,
+    "platform_cases_unsupported": 3,
+    "native_unit_tests_passed": 194,
+    "native_report": {
+      "path": "out/constrained-generics-native-batch.json",
+      "sha256": "bec0ad6254be4b92b983f56a1784a5f9259fa55f577291101fbb8fbed8d3fd89",
+      "bytes": 2026
+    },
+    "native_logs": [
+      {
+        "path": "out/constrained-generics-native-0.log",
+        "sha256": "0f0b3c4ff50028f96324be75b779da25b2518e05f63c5810cbca5d1a2dc12c13",
+        "bytes": 6699
+      },
+      {
+        "path": "out/constrained-generics-native-1.log",
+        "sha256": "098b8b8c4eeb68e53bcc0fcf8e15151412620d53fd9ba015890cdecc1c6c9bdd",
+        "bytes": 33517
+      },
+      {
+        "path": "out/constrained-generics-native-2.log",
+        "sha256": "b6fae661ab628a1f4b34abab80eb77b81a20f4a2ba5e4aaff4b663d22295bf1f",
+        "bytes": 1113
+      },
+      {
+        "path": "out/constrained-generics-native-3.log",
+        "sha256": "0ac7289da5b52fd8bb66814e612890bef820a52eb6c29b4f76a64297404d2623",
+        "bytes": 4598
+      },
+      {
+        "path": "out/constrained-generics-native-4.log",
+        "sha256": "0b91509d7259410f6fca71a03f935e7930354270255da2a259ab35d866105d37",
+        "bytes": 5152
+      }
+    ],
+    "frontend_suites_passed": 33,
+    "tooling_tests_passed": 332,
+    "tooling_tests_skipped": 3,
+    "tooling_subtests_passed": 33,
+    "frontend_checkpoint": {
+      "path": "out/constrained-generics-frontend-checkpoint.json",
+      "sha256": "836866ae6054ee9ac24de4dc36610272c9724ef17e4afe0ce98869c33a56e8ce",
+      "bytes": 1153
+    },
+    "compiled_binaries": [
+      {
+        "path": "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c",
+        "sha256": "280da0a78b976a366484e87d68163570c66917154b0d16cfbd65f81b5b1ddd08",
+        "bytes": 201600744
+      }
+    ],
+    "source_free_packages": {
+      "configurations_passed": 24,
+      "commands_passed": 96,
+      "modes": [
+        {
+          "mode": "normal",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/constrained-generics-packages-normal/qualification.json",
+            "sha256": "0ecf2d8fdf5fe6f06db2cffa03a74eac689e2939b48ee2161cb28551a6672aaa",
+            "bytes": 4559
+          }
+        },
+        {
+          "mode": "normal-eager",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/constrained-generics-packages-normal-eager/qualification.json",
+            "sha256": "ee65ed7d2f310f670e5cd66f5c3e5db615e709a4249b60f906fdec66268479d9",
+            "bytes": 4549
+          }
+        },
+        {
+          "mode": "asan",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/constrained-generics-packages-asan/qualification.json",
+            "sha256": "5faa760017ec053f3263d93f9e0bd87221a03effe236ddbc903684fb185e9109",
+            "bytes": 4557
+          }
+        }
+      ]
+    },
+    "regression_evidence": {
+      "requires_parameter_shape_before": {
+        "path": "out/constrained-generics-requires-shape-before.log",
+        "sha256": "c8fad18e2e8315452dbf4776b31c7786d6613dda56fe849a5e82d32c9ea71485",
+        "bytes": 4294
+      },
+      "requires_parameter_shape_after": {
+        "path": "out/constrained-generics-requires-shape-after.log",
+        "sha256": "84959d064496503306f2ed7f0b6fcc6d07904173f82ada03aec9f89bd6f56628",
+        "bytes": 593
+      },
+      "private_constraint_overload_after": {
+        "path": "out/constrained-generics-private-overload-after.log",
+        "sha256": "f5efb71c1b888042e23cd018f7951d1f9062fb9699dde7c33455b7313e46ec79",
+        "bytes": 125
+      }
+    },
+    "prior_complete_runtime_matrices": "docs/support/linux_keypath_subscripts_progress.json"
+  },
+  "delivery": {
+    "accepted_sdk_version": "2.33.0",
+    "sdk_archive_rebuilt": false,
+    "full_profile_conformance_claimed": false,
+    "native_aarch64_qualified": false
+  },
+  "remaining": [
+    "Public templates, named concepts and escaping closure types; local/unnamed specialization types and effectful generic callables",
+    "Address-bearing/declaration/template template arguments, unsupported structural representations and public unions",
+    "Remaining ownership, isolation, structured runtime, language/library/profile implementation and coordinated SDK delivery",
+    "Native Linux AArch64 implementation and qualification on a native host"
+  ]
+}

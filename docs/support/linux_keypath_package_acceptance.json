@@ -1,0 +1,79 @@
+{
+  "schema": "objc3c.linux-keypath-package-acceptance.v1",
+  "status": "PASS",
+  "date": "2026-10-25",
+  "scope": "Linux x86-64 SDK module imports and typed-keypath source/binary package delivery",
+  "implementation_commit": "ed228a481",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-49f322e67e0d-00b75dc3",
+  "profile_conformance_claimed": false,
+  "native_linux_aarch64_qualified": false,
+  "sdk": {
+    "release_receipt": {
+      "path": "out/toolchains/linux-sdk-builds/9d00f85d47d461114d83da0e97577895f89bf412ebb972aa24e4690482690f4b/release.json",
+      "sha256": "677a7fce1f1a49232d8158b7e0a0eb6895c919c617ea57122b09c73d615cfb0c"
+    },
+    "seal_sha256": "6b7dcd87d22fe675574c1131221d29771d9359aac1944b66e7a3cae45bc7cc0f",
+    "archive": "llvmorg-23.1.3-0d261d1ca552-49f322e67e0d-00b75dc3-linux-x86_64-6b7dcd87d22fe675.tar.zst",
+    "archive_sha256": "303e84dad4f2a741d9ccd94c20eaa92bc2b3e94dc7d913bcf32793c8f5ecacad",
+    "archive_bytes": 434694917
+  },
+  "qualification": {
+    "foundation_reused": true,
+    "foundation_source_build_id": "llvmorg-23.1.3-0d261d1ca552-49f322e67e0d-00b75dc3",
+    "foundation_evidence": "linux_native_feature_integration_acceptance.json",
+    "foundation_scope": "355 Clang/index/query regressions and 166 native contracts, unchanged LLVM binary",
+    "facade_suites_passed": 32,
+    "gnustep_runtime_tests_passed": 8,
+    "installed_consumer_checks_passed": 37,
+    "installed_gates_passed": 32,
+    "native_integration": {
+      "path": "out/native-validation/linux-sdk-20261025T144225822039Z/summary.json",
+      "sha256": "accea63e4d17befc3c3120a3529a18a7a1630cd41856989dcd583367d5ff1c98"
+    },
+    "typed_keypath_packages": {
+      "status": "PASS",
+      "modes": 12,
+      "executions": 36,
+      "readonly_rejections": 12
+    },
+    "tooling_tests_passed": 160
+  },
+  "fresh_distributions": {
+    "report": {
+      "path": "out/native-validation/keypath-package-fresh-linux/qualification.json",
+      "sha256": "f900a13f8c7a32e787541e2b545c5692738b2e86a4d3f10edc149966da90314a"
+    },
+    "scope": "native-features",
+    "qualifier_sha256": "6ccbb60dec510982f65ee85361c22ac952a2e41301c4506defcce9cf52909730",
+    "qualifier_commit": "ed228a481",
+    "distributions": [
+      {
+        "distribution": "debian13",
+        "image": "debian:13-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f",
+        "container": "objc3-features-debian13-836d6f6d79e2",
+        "status": "PASS",
+        "ordinary_user": true,
+        "exit_code": 0,
+        "log_sha256": "4b9926f6dee839ea44bebbfd58684996f47532136a8cedff7a1bd21044dc3967",
+        "tmpfs_execution_verified": true,
+        "container_removed": true
+      },
+      {
+        "distribution": "ubuntu2604",
+        "image": "ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944",
+        "container": "objc3-features-ubuntu2604-6088b843b822",
+        "status": "PASS",
+        "ordinary_user": true,
+        "exit_code": 0,
+        "log_sha256": "6060fd93fdc964dba79b7b4d53c09796c50884d9e5fc62ae9aacb7f4379d75ab",
+        "tmpfs_execution_verified": true,
+        "container_removed": true
+      }
+    ]
+  },
+  "limitations": [
+    "This archive predates C++ coroutine lexical-pool development.",
+    "Later compiler-witness enrollment and repaired capture persistence fixtures are not included in this archive.",
+    "Fresh-distribution scope executes selected consumers; host release runs all 32 installed gates."
+  ]
+}

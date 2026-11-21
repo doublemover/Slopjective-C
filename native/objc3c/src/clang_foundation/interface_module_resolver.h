@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -23,10 +24,13 @@ struct InterfaceModuleRequest {
 
 struct InterfaceModuleResolution {
   bool success = false;
+  bool requires_coroutine_header = false;
+  std::vector<std::string> standard_library_headers;
   std::vector<InterfaceImportInput> artifacts;
   std::vector<std::string> dependency_order;
   std::vector<std::string> visible_module_names;
   std::vector<InterfaceContractDiagnostic> diagnostics;
+  InterfaceResourceUsage resource_usage;
 };
 
 // Resolve canonical module names against checked `.objc3i.json`/`.objc3i`
@@ -36,6 +40,14 @@ struct InterfaceModuleResolution {
     const std::vector<std::string> &search_roots,
     const std::vector<InterfaceModuleRequest> &requested_modules,
     const InterfaceImportTarget &target);
+
+// Deterministic test boundary for replacing an indexed artifact before its
+// selected bytes are reread. Production callers use ResolveInterfaceModules.
+[[nodiscard]] InterfaceModuleResolution ResolveInterfaceModulesForTesting(
+    const std::vector<std::string> &search_roots,
+    const std::vector<InterfaceModuleRequest> &requested_modules,
+    const InterfaceImportTarget &target,
+    const std::function<void()> &after_index);
 
 // Stable relative include spelling emitted into canonical interfaces.
 [[nodiscard]] std::string BuildInterfaceIncludePath(

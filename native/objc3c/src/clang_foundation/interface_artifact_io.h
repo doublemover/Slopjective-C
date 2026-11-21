@@ -34,11 +34,11 @@ WriteSemanticInterfaceArtifactWithObject(
     const std::string &staged_object_path,
     const std::string &final_object_path);
 
-// Stage and publish a dependency record before publishing its compiler
-// products. If the product publisher fails or throws, restore the previous
-// record. The publisher must preserve its own products on failure.
-[[nodiscard]] bool PublishCompilationProductsWithDependencyRecord(
-    const std::string &record_path, const std::string &record_bytes,
-    const std::function<bool()> &publish_products, std::string &failure);
+// Publish an auxiliary text file and restore its prior contents if product
+// publication fails. The publisher must preserve its own products on failure.
+[[nodiscard]] bool PublishCompilationProductsWithTextArtifact(
+    const std::string &path, const std::string &bytes,
+    const std::function<bool()> &publish_products, std::string &failure,
+    const std::string &description = "dependency record");
 
 }  // namespace objc3::clang_foundation

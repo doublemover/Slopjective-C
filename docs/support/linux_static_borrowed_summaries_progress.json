@@ -1,0 +1,53 @@
+{
+  "development_only": true,
+  "source_version": "2.148",
+  "system_version": "2.74",
+  "prepared_source_tree": "801d4d29911afb81d5f0417c72994a24f420635c",
+  "extension_abi": 24,
+  "compiler_identity_resealed": false,
+  "matched_sdk_produced": false,
+  "compiler": {
+    "borrowed_regressions_passed": 56,
+    "expanded_static_result_commands": 18,
+    "all_passed": true
+  },
+  "publication_profiles": 6,
+  "adjacent_frontend_groups": 9,
+  "production_decoder_exact_replays": 660,
+  "production_decoder_families": 33,
+  "native": {
+    "configurations": 4,
+    "strict_system_objective_cxx_configurations": 3,
+    "compile_link_execution_operations": 24,
+    "consumers_per_provider": 2,
+    "provider_source_removed_before_consumption": true,
+    "all_passed": true,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ]
+  },
+  "reader_contract": "objc3.borrowed-result-proofs.v1",
+  "budgets": {
+    "shared_steps": 4096,
+    "maximum_depth": 32
+  },
+  "negative_controls": [
+    "TLS, mutable and unknown sources",
+    "recursive summaries",
+    "multi-statement definitions",
+    "C external inline or replaceable external definitions",
+    "weak/weakref/alias/ifunc functions",
+    "declaration-only signature does not claim body proof",
+    "missing or invented capability and older reader",
+    "public borrowed-result escape remains rejected"
+  ],
+  "completed_prior_consolidation": {
+    "source_version": "2.147",
+    "compiler_discovered": 549,
+    "compiler_executable_passed": 546,
+    "compiler_unsupported": 3
+  },
+  "all_focused_checks_passed": true,
+  "full_current_consolidation": "full matched analysis and SDK follow remaining feature implementation"
+}

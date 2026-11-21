@@ -23,12 +23,15 @@ bool UsesInterfaceCompiler(int argc, char **argv) {
   for (int i = 1; i < argc; ++i) {
     std::string_view arg(argv[i]);
     if (arg == "--") break;
-    if (arg == "--emit-object" || arg == "--emit-llvm" ||
+    if (arg == "--diagnostics-json" || arg == "--emit-object" || arg == "--emit-llvm" ||
         arg == "--emit-interface" || arg == "--project-ownership" ||
         arg == "--export-declaration" || arg == "--module-source-root" ||
+        arg == "--export-c-async" || arg == "--emit-c-async-header" ||
+        arg == "--export-c-throws" || arg == "--emit-c-header" ||
+        arg == "--emit-swift-overlay" || arg == "--swift-c-module" ||
         arg == "--module-owned-names" || arg == "--import-spi" ||
         arg == "--import-module" || arg == "--emit-dependency-record" ||
-        arg == "--source-imports")
+        arg == "--source-imports" || arg == "--meta-package" || arg == "--meta-lock")
       return true;
   }
   return false;

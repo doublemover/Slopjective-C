@@ -1,0 +1,118 @@
+{
+  "schema": "objc3c.linux-carrier-captures-progress.v1",
+  "status": "FOCUSED_VALIDATED",
+  "source_checkpoint": "eac6fb0c8be38b8918b746a277ccbf1472b2ef72",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-27dcb2349936-00b75dc3",
+  "concurrency_module_version": "2.25.0",
+  "scope": [
+    "ARC/MRC selected-arm plain scalar Optional/Result captures and moves",
+    "Pure C++ payload creation move, const heap copy, active destruction and constructor/copy failure cleanup",
+    "Nested C++ guard/match snapshots use recursive semantic copies",
+    "Stable coalescing print/reparse and parenthesis-insensitive typed expression contracts"
+  ],
+  "native": {
+    "lit_passed": 373,
+    "lit_unsupported": 3,
+    "unit_passed": 179,
+    "report": {
+      "path": "out/carrier-captures-native-tests.json",
+      "sha256": "6a7dca9c3bafa60b157c1875f38f191f12cb1ec0658da09bf456a9a5c6adce69"
+    }
+  },
+  "frontend": {
+    "suites_passed": ["explicit_capture_lists", "interface_emitter", "interface_module_names"],
+    "logs": [
+      {
+        "path": "out/carrier-snapshot-capture-test.log",
+        "sha256": "c4864910dff6ccec666c68516c702c7f5971bc3bd3e10abdd6fd4bccb0fbf2a7"
+      },
+      {
+        "path": "out/carrier-snapshot-emitter-test.log",
+        "sha256": "d8fcafd12f1f5554e42db2eb9462e5d37073d4e39dbf85881b8acdc9e2b0572a"
+      },
+      {
+        "path": "out/carrier-snapshot-names-test.log",
+        "sha256": "7c409c2a436436f33cb8c8b0680d12306a28eaa92fd560a07889e94112cacdbe"
+      }
+    ]
+  },
+  "runtime_matrices": [
+    {
+      "mode": "normal",
+      "configurations": 24,
+      "commands": 126,
+      "report": {
+        "path": "out/native-validation/carrier-captures-final-normal/batch.json",
+        "sha256": "0c85b31429d5fe730c0eaf3ec9ed42da26126f7d97f90bdc918e3d5c50516fe0"
+      }
+    },
+    {
+      "mode": "asan",
+      "configurations": 24,
+      "commands": 126,
+      "report": {
+        "path": "out/native-validation/carrier-captures-final-asan/batch.json",
+        "sha256": "769aae8becbb8c89ce6e2552e9b8f5b73557875364d4343f4fb8c738e9555695"
+      }
+    }
+  ],
+  "source_free_cpp_packages": {
+    "configurations": 8,
+    "commands": 32,
+    "axes": [
+      "C++20/C++23",
+      "ARC/MRC",
+      "O0/O2",
+      "provider source removed",
+      "consumer object linked first"
+    ],
+    "report": {
+      "path": "out/native-validation/carrier-captures-package-normal/qualification.json",
+      "sha256": "aa7641176054da525529b8effeb8313f6ba0468888f1a014efbc0c154a36af92"
+    }
+  },
+  "delivery": {
+    "accepted_sdk": "2.9.0",
+    "new_archive_built": false
+  },
+  "remaining": [
+    "Mixed ARC/C++ carrier capture ownership partitions",
+    "Unqualified runtime leaf/ownership shapes",
+    "Throwing resource disposal, foreign/raw return staging and remaining exceptional/profile projections",
+    "Installed SDK/archive cutover and native AArch64 qualification"
+  ],
+  "source_inputs": [
+    {
+      "path": "toolchains/llvm/manifest.json",
+      "sha256": "d143655ed672039cbb150eda102a3dc676b5bca8d6eb2d29085b3b41790d6f6b"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_emitter.cpp",
+      "sha256": "391ad211d98f08fada7b2bb345d647a4c5c60732655b293fb92292b8725acaff"
+    },
+    {
+      "path": "tests/clang_foundation/explicit_capture_lists/runtime.h",
+      "sha256": "5efddda3a36d9378ae011f6cd56baf05976be109bb231a364afc5c7da148fd59"
+    },
+    {
+      "path": "tests/clang_foundation/explicit_capture_lists/exceptions.mm",
+      "sha256": "c558a056b692e291db0cd9bc325e2919dd738cbc2f5df449ab280a597f8e013e"
+    },
+    {
+      "path": "tests/clang_foundation/explicit_capture_lists_test.cpp",
+      "sha256": "9bc4b8002da4de953b76f359dbe00a760fb02b0fc574b6ac83e6b85111daaab2"
+    },
+    {
+      "path": "tests/clang_foundation/interface_emitter_test.cpp",
+      "sha256": "a0a5def628c8327532170bfd068eef32616776e760a2d4b826daa02d876f5e53"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/module.mm",
+      "sha256": "42dafb1699ceeb380f0175bca552e7d83d30811dae4c590b8592534581a4a71e"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/app/main.mm",
+      "sha256": "369308d907a697877aa97a2b296be6538cfdd243d68338853dac10c74b9b5ad9"
+    }
+  ]
+}

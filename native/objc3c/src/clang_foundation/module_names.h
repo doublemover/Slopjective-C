@@ -3,8 +3,10 @@
 #include <string>
 namespace clang {
 class ASTContext;
+class AbiTagAttr;
 class Decl;
 class NamedDecl;
+class CXXDeductionGuideDecl;
 class SourceLocation;
 } // namespace clang
 namespace objc3::clang_foundation {
@@ -13,7 +15,8 @@ namespace objc3::clang_foundation {
 std::string BuildModuleOwnedName(const std::string &module,
                                  const std::string &package,
                                  const std::string &stable_id);
-bool HasValidModuleOwnedName(const InterfaceModuleIdentity &module,
+// Admits exact reserved ownership or a separately framed external ABI binding.
+bool HasValidNativeSymbolName(const InterfaceModuleIdentity &module,
                              const InterfaceDeclarationIdentity &declaration);
 std::string NormalizeModuleSourceRoot(const clang::ASTContext &context,
                                       const std::string &root);
@@ -21,6 +24,18 @@ bool IsModuleOwnedSource(const clang::ASTContext &context,
                          clang::SourceLocation location,
                          const std::string &root = {});
 std::string ReadNativeSymbolName(const clang::NamedDecl *declaration);
+// Guides have a nominal template owner and no independent native entry point.
+const clang::CXXDeductionGuideDecl *NativeDeductionGuide(const clang::NamedDecl *declaration);
+// Native vendor tags coexist with one distinct reserved module owner.
+std::string ReadModuleOwnedAbiTag(const clang::AbiTagAttr *attribute);
+bool HasModuleOwnedAbiTag(const clang::AbiTagAttr *attribute,
+                          const std::string &expected);
+bool HasOnlyNativeAbiTags(const clang::AbiTagAttr *attribute);
+std::string ReadCxxConceptOwner(const clang::NamedDecl *declaration);
+bool ApplyCxxConceptOwners(clang::ASTContext &context,
+                          const std::string &module,
+                          const std::string &package,
+                          const std::string &source_root = {});
 bool ApplyModuleOwnedNames(clang::ASTContext &context, clang::Decl *declaration,
                            const std::string &module,
                            const std::string &package,

@@ -1,0 +1,25 @@
+{
+  "schema": "objc3c.llvm-development-tools.v2",
+  "foundation_profile": "compiler-asan-ubsan",
+  "build_targets": [
+    "opt",
+    "llvm-dis",
+    "llvm-reduce"
+  ],
+  "foundation_tools": [
+    "clang",
+    "clang++",
+    "llc",
+    "llvm-dwarfdump",
+    "ld.lld"
+  ],
+  "pipelines": [
+    "default<O0>",
+    "default<O2>"
+  ],
+  "purpose": "Development verifiers and reducers; not an SDK distribution component",
+  "hosts": [
+    "linux-x86_64",
+    "linux-aarch64"
+  ]
+}

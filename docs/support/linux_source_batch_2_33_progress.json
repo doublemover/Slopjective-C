@@ -1,0 +1,102 @@
+{
+  "schema": "objc3c.linux-source-batch-2.33-progress.v1",
+  "status": "SOURCE_VALIDATED",
+  "source_checkpoint": "4368656f5d1d8f1ee4a1d4c689cd6c29cf63c533",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-e3f042ad7bc3-00b75dc3",
+  "compiler_patch_digest": "e3f042ad7bc3689163a08fae309db32f9ad41c6b02c91c5f2b00650244bdf224",
+  "concurrency_module_version": "2.33.0",
+  "keypath_module_version": "2.2.0",
+  "extension_abi": 21,
+  "interface_schema": "2.2",
+  "service_abi": 4,
+  "frame_abi": 1,
+  "keypath_metadata_layout": 2,
+  "scope": [
+    "Qualified record executor/actor arguments/results, ARC-owned fields and C++ move/copy/destruction hooks",
+    "ARC consumed object/Block parameters and consuming receivers, single adoption and owning message-operand snapshots",
+    "Named class entry and lexical instance/class/category super entry, including actor mailboxes and C++ task callers",
+    "Native signed/unsigned bit-fields and inherited C++ record fields with access, base adjustment and exact property writeback"
+  ],
+  "verification": {
+    "foundation": {
+      "compiler_regressions_passed": 375,
+      "platform_cases_unsupported": 3,
+      "native_unit_tests_passed": 179,
+      "report": {
+        "path": "out/toolchains/objc3-development/build-linux-x86_64/foundation-runs/20261027T110646.376265Z/report.json",
+        "sha256": "12bc923872dde6e661b0d77653a2ffac3ba6fc25fd80c747fde15c0c8da42f9d"
+      }
+    },
+    "frontend": {
+      "suites_passed": 33,
+      "reclaimed_executables": 32,
+      "reclaimed_bytes": 3413021528,
+      "report": {
+        "path": "out/native-validation/source-batch-2.33-frontend/qualification.json",
+        "sha256": "573653c7c14d17d7135b643795edb13f796469c1aecd26d7fb4b175601853eb8"
+      }
+    },
+    "tooling": {
+      "tests_passed": 287,
+      "log": {
+        "path": "out/source-batch-2.33-tooling-tests.log",
+        "sha256": "2ed313e82311cde24ccd6a74d6cdacca7f83857e373068eed95b443178b94622"
+      }
+    },
+    "runtime_matrices": [
+      {
+        "mode": "normal",
+        "configurations": 168,
+        "commands": 1110,
+        "report": {
+          "path": "out/native-validation/source-batch-2.33-normal/batch.json",
+          "sha256": "e40e6153344fe94f216e91f0407640f75ab2149c9dd746ad3d91d8637ad1c3af"
+        }
+      },
+      {
+        "mode": "asan",
+        "configurations": 168,
+        "commands": 1110,
+        "report": {
+          "path": "out/native-validation/source-batch-2.33-asan/batch.json",
+          "sha256": "6133004885cf66b3e79331d3e431f77d5ec302643ea8eef9f5802f6b04e83b34"
+        }
+      },
+      {
+        "mode": "tsan",
+        "configurations": 168,
+        "commands": 1110,
+        "report": {
+          "path": "out/native-validation/source-batch-2.33-tsan/batch.json",
+          "sha256": "428d4f2c7e301e436b2397e6b88848919f6d5d2f62b640ef9891a65f60ad8927"
+        }
+      }
+    ],
+    "native_source_verification": {
+      "path": "out/source-batch-2.33-source-verification.json",
+      "sha256": "95284815ac4d3a38b8eff0bb1ec81e886de55caf9edcacd9f39fc9a8e77f3911"
+    },
+    "source_binary_snapshot": [
+      {
+        "path": "out/toolchains/objc3-development/stage-linux-x86_64/bin/clang-23",
+        "sha256": "5056d8b81f22522464ff1ce892d78b983da1dba86085db6dc1d1f5d1a3140f66"
+      },
+      {
+        "path": "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c",
+        "sha256": "cb293b090bdb1876f9b4d88e3ad8461268fbe029ef1d71710d43130f5ead47a9"
+      }
+    ]
+  },
+  "delivery": {
+    "accepted_sdk": "2.29.0",
+    "next_sdk": "2.33.0",
+    "new_archive_built": false
+  },
+  "remaining": [
+    "Coordinated SDK installation and expanded source-free package qualification, followed by exact archive checks on fresh Debian/Ubuntu",
+    "MRC/CF consumption, init-family entry, ordinary C++ task-ABI isolated targets, unqualified dynamic Class receivers and automatic actor association",
+    "Nullable writable paths and nonnull/scalar/aggregate nullable-chain results; dependent/effectful/isolated and borrowed/resource path contracts",
+    "Remaining ownership/capture, language/library, diagnostic and profile implementation in the Linux roadmap",
+    "Native Linux AArch64 qualification on a native host"
+  ]
+}

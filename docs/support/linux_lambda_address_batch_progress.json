@@ -1,0 +1,251 @@
+{
+  "schema": "objc3c.linux-lambda-address-batch-progress.v1",
+  "status": "SOURCE_VALIDATED",
+  "date": "2026-10-29",
+  "source_checkpoint": "00c2bef508e853c1007ac4e733fa6c2fa95429fa",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-386c2a6d9284-00b75dc3",
+  "compiler_patch_digest": "386c2a6d9284524e7e96b0c1d3618d3ef72255276875e3c6552966e5fb4908fe",
+  "frontend_input_sha256": "c9ad416f4771b0691b7643b6c7ae2ba00821b65bf3781b803b191d6dc92fb587",
+  "source_spans": [
+    "2.74",
+    "2.75",
+    "2.76",
+    "2.77"
+  ],
+  "concurrency_module_version": "2.77.0",
+  "keypath_module_version": "2.4.0",
+  "system_module_version": "2.14.0",
+  "semantic_interface_schema": "2.2",
+  "extension_abi_revision": 21,
+  "runtime_service_abi": 4,
+  "async_frame_abi": 1,
+  "keypath_metadata_layout": 2,
+  "scope": [
+    "Native async/frame and typed-error generic members and member templates with inherited-constructor using import",
+    "Effectful namespace/member specializations, callback aliases and variable templates with dependent errors",
+    "Function/object/reference/member and structural address template arguments with exact native APValue import",
+    "Concrete and closed generic effectful lambdas, deduced owned closure factories and balanced capture lifetimes"
+  ],
+  "verification": {
+    "compiler_regressions_passed": 412,
+    "platform_cases_unsupported": 3,
+    "native_unit_tests_passed": 226,
+    "optimized_frontend_suites_passed": 33,
+    "tooling_tests_passed": 335,
+    "tooling_tests_skipped": 3,
+    "tooling_subtests_passed": 33,
+    "tooling_selection": {
+      "path": "out/build-identity-tooling-selection.json",
+      "bytes": 1790,
+      "sha256": "687d176d781032312770854149f58e0584e655a50955a5d6e7b92282432fd47b"
+    },
+    "additional_historical_tooling_collection": {
+      "status": "FAILED_COLLECTION",
+      "errors": 5,
+      "scope": "Unrestricted historical tooling directory, outside the maintained Linux selection; references removed or changed planning/workflow scripts",
+      "report": {
+        "path": "out/template-publication-batch-all-tooling-collection.log",
+        "bytes": 6367,
+        "sha256": "0c775d5e5a1562d644369c9c364c9838ff195f7e491541f96a8a36f72bd61239"
+      }
+    },
+    "reports": [
+      {
+        "path": "out/lambda-address-batch-source-verification.json",
+        "bytes": 2842,
+        "sha256": "ea9e31e3694141ae699f8bf426288d23228947d858060f8e5c7a6796d54ca703"
+      },
+      {
+        "path": "out/lambda-address-batch-native-batch.json",
+        "bytes": 2026,
+        "sha256": "9aa19f5aa8502cabf6aa9d862d677e385dd6cf4d144c50c8cca2d519fe79841a"
+      },
+      {
+        "path": "out/lambda-address-batch-frontend-checkpoint.json",
+        "bytes": 1325,
+        "sha256": "7ee3ebd335508a199d40ce511fb28c42c397c234e78314855a3552e936f4e972"
+      },
+      {
+        "path": "out/lambda-address-batch-tooling.log",
+        "bytes": 491,
+        "sha256": "cd092a79f590edc0d8f526b5a5344cdbf08495bc6a40646bfdca97d03f9bff5d"
+      }
+    ],
+    "native_logs": [
+      {
+        "path": "out/lambda-address-batch-native-0.log",
+        "bytes": 6698,
+        "sha256": "4cf0a7bc5950f07036cbda0d3c61b27cbc5a29d8b9724f17d338f9aece4286be"
+      },
+      {
+        "path": "out/lambda-address-batch-native-1.log",
+        "bytes": 38937,
+        "sha256": "c1173f0556d0041c8ac98b40ed2170f07351243484dd0cd3be6b793ad359f89d"
+      },
+      {
+        "path": "out/lambda-address-batch-native-2.log",
+        "bytes": 1114,
+        "sha256": "d713ed946e7524c73a550f384850959dc26e435364bd37093d57623a7825a3a1"
+      },
+      {
+        "path": "out/lambda-address-batch-native-3.log",
+        "bytes": 4600,
+        "sha256": "3bf916aabb34c294e2efb702dcbbacd27e7de0008ecbffac4a488f85efa63ad0"
+      },
+      {
+        "path": "out/lambda-address-batch-native-4.log",
+        "bytes": 5166,
+        "sha256": "ad620860cf96bbe07d5bfbcf90373da378ad7499065c6225b691c6ed1ac4c843"
+      }
+    ],
+    "runtime_matrices": [
+      {
+        "mode": "normal",
+        "configurations_passed": 168,
+        "commands_passed": 1158,
+        "report": {
+          "path": "out/native-validation/lambda-address-batch-features-normal/batch.json",
+          "bytes": 1194050,
+          "sha256": "1054a2de1a31172d1b0d840e573044dba0f48e336e45011eaf2e95a12ccaf8da"
+        }
+      },
+      {
+        "mode": "asan",
+        "configurations_passed": 168,
+        "commands_passed": 1158,
+        "report": {
+          "path": "out/native-validation/lambda-address-batch-features-asan/batch.json",
+          "bytes": 1264199,
+          "sha256": "a0dafe575a7b3b6d24b8715af8f9c4e60215c73eb58ee7d333e9e42c2e2f0174"
+        }
+      },
+      {
+        "mode": "tsan",
+        "configurations_passed": 168,
+        "commands_passed": 1158,
+        "report": {
+          "path": "out/native-validation/lambda-address-batch-features-tsan/batch.json",
+          "bytes": 1234006,
+          "sha256": "b7caa5c832e0e4bba37df37da37cb71653ef691c480a8da8dcc7a4f6708dc7c7"
+        }
+      }
+    ],
+    "source_free_packages": [
+      {
+        "family": "cxx",
+        "mode": "normal",
+        "configurations_passed": 8,
+        "commands_passed": 48,
+        "report": {
+          "path": "out/native-validation/effectful-lambdas-packages-normal/qualification.json",
+          "bytes": 6751,
+          "sha256": "95af322e974c31e7392f5d5284a5f03762cbc98f5d80280430b248b01d9d3f20"
+        }
+      },
+      {
+        "family": "cxx",
+        "mode": "normal-eager",
+        "configurations_passed": 8,
+        "commands_passed": 48,
+        "report": {
+          "path": "out/native-validation/effectful-lambdas-packages-normal-eager/qualification.json",
+          "bytes": 6741,
+          "sha256": "975acdc4dbacfd89c2c6472e6abdc816165b7a4cc159ffb1ad43fa1a870b157e"
+        }
+      },
+      {
+        "family": "cxx",
+        "mode": "asan",
+        "configurations_passed": 8,
+        "commands_passed": 48,
+        "report": {
+          "path": "out/native-validation/effectful-lambdas-packages-asan/qualification.json",
+          "bytes": 6749,
+          "sha256": "41df2a4072f73ac5fe86313e57705d3156e4fb89bbd4d9e31b453e53c66ee10f"
+        }
+      },
+      {
+        "family": "cxx",
+        "mode": "tsan",
+        "configurations_passed": 8,
+        "commands_passed": 48,
+        "report": {
+          "path": "out/native-validation/effectful-lambdas-packages-tsan/qualification.json",
+          "bytes": 6749,
+          "sha256": "cfff55cc98dfd930da2c37282ec658807ef8eeabc1665a34d373bb8a8349563d"
+        }
+      },
+      {
+        "family": "keypath",
+        "mode": "normal",
+        "configurations_passed": 12,
+        "commands_passed": 48,
+        "report": {
+          "path": "out/native-validation/lambda-address-batch-keypath-packages-normal/qualification.json",
+          "bytes": 6707,
+          "sha256": "b0f660ea6c331078765f8e9cea9cba4e2d186a5ea5d0070aa06dc56718c828ab"
+        }
+      },
+      {
+        "family": "keypath",
+        "mode": "normal-eager",
+        "configurations_passed": 12,
+        "commands_passed": 48,
+        "report": {
+          "path": "out/native-validation/lambda-address-batch-keypath-packages-normal-eager/qualification.json",
+          "bytes": 6697,
+          "sha256": "e0b9f0c8d6da67396da3d5f33498af55a127d5e1f4f4431da0dad9d1a72c2fa4"
+        }
+      },
+      {
+        "family": "keypath",
+        "mode": "asan",
+        "configurations_passed": 12,
+        "commands_passed": 48,
+        "report": {
+          "path": "out/native-validation/lambda-address-batch-keypath-packages-asan/qualification.json",
+          "bytes": 6705,
+          "sha256": "5d27a72464bea0a5f9082109d5b391a8749d30843829c7ec5f23a5a777c57df8"
+        }
+      },
+      {
+        "family": "keypath",
+        "mode": "tsan",
+        "configurations_passed": 12,
+        "commands_passed": 48,
+        "report": {
+          "path": "out/native-validation/lambda-address-batch-keypath-packages-tsan/qualification.json",
+          "bytes": 6705,
+          "sha256": "4030142070a45d9c06f018cb7bf3c24e779e2ce1ec09cb2c639aab69321d98d3"
+        }
+      }
+    ],
+    "source_free_package_configurations_passed": 80,
+    "source_free_package_commands_passed": 384,
+    "runtime_source_unchanged_since": "b7e39620bcdfbdde8b517cd61c8d1d0ce9b52ce2",
+    "runtime_archives": [
+      {
+        "path": "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/runtime/libobjc3_runtime_services.a",
+        "bytes": 6377168,
+        "sha256": "4b982590266b0ee7f64f64f074413c84e6323b4d49c1bba8633e1e74e1307979"
+      },
+      {
+        "path": "out/runtime-sanitized/libobjc3_runtime_services.a",
+        "bytes": 2467794,
+        "sha256": "31bb5063247cf8e2587885c539644c8a9fb22799dd7edecffc135e6ebf7df9eb"
+      },
+      {
+        "path": "out/runtime-tsan/libobjc3_runtime_services.a",
+        "bytes": 1150388,
+        "sha256": "3a97d5c497e90c7f7e01c5f3ca596e118e84c6948c82bdc89d9e3107ab7e5e0b"
+      }
+    ]
+  },
+  "accepted_sdk_version": "2.62.0",
+  "sdk_rebuilt": false,
+  "deferred": [
+    "Coordinated SDK delivery, installed gates and exact-archive fresh-host qualification for post-2.62 source milestones"
+  ],
+  "profile_conformance_claimed": false,
+  "native_linux_aarch64_qualified": false
+}

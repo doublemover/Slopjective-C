@@ -1,0 +1,99 @@
+{
+  "schema": "objc3c.linux-published-runtime-awaiters-progress.v1",
+  "status": "FOCUSED_VALIDATED",
+  "date": "2026-10-27",
+  "source_checkpoint": "ea82615d7fbc1af1d2ede42e515b49d301464f6a",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-e6b5e4f6da93-00b75dc3",
+  "compiler_patch_digest": "e6b5e4f6da930aa943f072a750cca515a9226c00ea00544badef473e28cc0603",
+  "concurrency_module_version": "2.36.0",
+  "extension_abi": 21,
+  "interface_schema": "2.2",
+  "service_abi": 4,
+  "frame_abi": 1,
+  "scope": [
+    "Pinned public service/task declarations, target integer aliases and source projection of SDK runtime awaits in concrete inline C++ bodies",
+    "Checkpoint/yield, distinct executor hops, actor identity across yield, typed/raw task joins, completion-order groups, inline class methods and exported constants",
+    "Owned virtual-header buffers through prepared AST destruction, checked capability/header requirements, opaque/private/modified-header rejections and repeated asm-labelled group definitions"
+  ],
+  "verification": {
+    "frontend": {
+      "suites_passed": 33,
+      "build": {
+        "path": "out/runtime-awaiters-all-frontend-build.log",
+        "sha256": "0b27836d62de6844c023dffb944093dc219210aab80f5968330d040a13d32997"
+      },
+      "log": {
+        "path": "out/runtime-awaiters-all-frontend-tests.log",
+        "sha256": "8d679723ba83594097855f7ff0ceefda06e91284f77877948e177b5548c6aa98"
+      }
+    },
+    "tooling": {
+      "tests_passed": 14,
+      "log": {
+        "path": "out/runtime-awaiters-tooling-tests.log",
+        "sha256": "4e075844cb8ab1861080b045f02e17adcae9fff79f3c0702323f5b175fbca64b"
+      }
+    },
+    "source_free_packages": [
+      {
+        "mode": "normal",
+        "configurations": 8,
+        "commands": 32,
+        "report": {
+          "path": "out/native-validation/runtime-awaiters-packages-normal/qualification.json",
+          "sha256": "0ecf2d8fdf5fe6f06db2cffa03a74eac689e2939b48ee2161cb28551a6672aaa"
+        }
+      },
+      {
+        "mode": "normal-eager",
+        "configurations": 8,
+        "commands": 32,
+        "report": {
+          "path": "out/native-validation/runtime-awaiters-packages-normal-eager/qualification.json",
+          "sha256": "ee65ed7d2f310f670e5cd66f5c3e5db615e709a4249b60f906fdec66268479d9"
+        }
+      },
+      {
+        "mode": "asan",
+        "configurations": 8,
+        "commands": 32,
+        "report": {
+          "path": "out/native-validation/runtime-awaiters-packages-asan/qualification.json",
+          "sha256": "5faa760017ec053f3263d93f9e0bd87221a03effe236ddbc903684fb185e9109"
+        }
+      }
+    ],
+    "public_headers": [
+      {
+        "path": "native/objc3c/src/runtime/public/objc3_runtime_services.h",
+        "sha256": "92dbcdc88ab651c56c2283c23fb78c2805e228a2e14bd8699a67b6d18b9ced45"
+      },
+      {
+        "path": "native/objc3c/src/runtime/public/objc3_task.hpp",
+        "sha256": "27571d7b8b02a8fa2cd0fe772f4caf73ec18eb34ac7d84ecf586f2eb68aee72d"
+      }
+    ],
+    "binary_snapshot": [
+      {
+        "path": "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c",
+        "sha256": "adf8c10e8f3398450be141200261e49c9d556539c136882ea451c0dcab3126f0"
+      }
+    ],
+    "documentation": {
+      "path": "out/runtime-awaiters-doc-lint.log",
+      "sha256": "34268372df554dd455b24903f95b1a6135f62c2696581d5ecc0711adac317dbd"
+    }
+  },
+  "delivery": {
+    "accepted_sdk": "2.33.0",
+    "new_archive_built": false,
+    "combined_feature_and_sanitizer_batch_deferred": true
+  },
+  "remaining": [
+    "Dependent/template definitions, public closure types and arbitrary custom coroutine promises",
+    "Remaining ownership, structured runtime, key-path and isolation contracts",
+    "Combined source/sanitizer validation and coordinated SDK cutover after the next coherent implementation batch",
+    "Full language/profile conformance and native Linux AArch64 qualification"
+  ],
+  "profile_conformance_claimed": false
+}

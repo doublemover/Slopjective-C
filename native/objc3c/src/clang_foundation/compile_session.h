@@ -1,9 +1,12 @@
 #pragma once
 
 #include <optional>
+#include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 
+#include "clang_foundation/async_c_exports.h"
 #include "clang_foundation/interface_contract.h"
 #include "clang_foundation/interface_import.h"
 #include "clang_foundation/interface_module_resolver.h"
@@ -14,7 +17,12 @@ enum class BaseLanguage { C, Cxx, ObjectiveC, ObjectiveCxx };
 enum class EmitKind { Syntax, Object, LLVM };
 enum class SemanticProfile { Compatibility, Strict, StrictConcurrency, StrictSystem };
 
+struct MetaCompilation;
 struct CompileRequest {
+  std::vector<std::string> meta_packages;
+  std::string meta_lock;
+  // In-process expansion state; never crosses the public C embedding ABI.
+  std::shared_ptr<MetaCompilation> meta_compilation;
   std::string input_path;
   std::optional<std::string> source_text;
   std::string working_directory;
@@ -32,6 +40,14 @@ struct CompileRequest {
   std::string module_source_root;
   std::optional<bool> projected_arc;
   std::vector<std::string> interface_exports;
+  std::vector<std::string> async_c_exports;
+  std::vector<std::string> throws_c_exports;
+  std::string c_export_header_output_path;
+  // The translation-unit collection pass supplies the exact header bytes.
+  std::optional<std::string> c_export_header;
+  std::string swift_c_module;
+  std::string swift_overlay_output_path;
+  std::optional<std::string> swift_overlay;
   std::string target_triple;
   std::string objc_runtime;
   std::vector<std::string> arguments;
@@ -59,16 +75,34 @@ struct DiagnosticLocation {
   unsigned column = 0;
 };
 
+// Offsets and physical locations address the exact UTF-8 source buffer named
+// by file. Consumers must match source_sha256 before applying the complete
+// diagnostic's edit set; end_offset is exclusive, including token-range hints.
+struct DiagnosticEdit {
+  std::string file;
+  std::string source_sha256;
+  DiagnosticLocation begin;
+  DiagnosticLocation end;
+  std::uint64_t begin_offset=0;
+  std::uint64_t end_offset=0;
+  std::string replacement;
+  bool before_previous_insertions=false;
+};
+
 struct CompileDiagnostic {
   unsigned id = 0;
   unsigned severity = 0;
   std::string message;
   DiagnosticLocation spelling;
   DiagnosticLocation expansion;
+  std::vector<DiagnosticEdit> edits;
+  // If any hint is not representable as a file edit, suppress the entire set.
+  std::string edits_unavailable_reason;
 };
 
 struct CompileResult {
   bool success = false;
+  CExportSource c_export_source;
   std::string failure;
   std::string compiler_identity;
   std::string compiler_driver_path;
@@ -98,5 +132,6 @@ struct CompileResult {
 // Both product entry points own one request and use this in-process frontend.
 // Clang/LLVM private types never cross the embedding ABI.
 CompileResult Compile(const CompileRequest &request);
+std::string EncodeCompileDiagnostics(const CompileResult &result);
 
 }  // namespace objc3::clang_foundation

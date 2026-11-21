@@ -91,3 +91,48 @@ def test_invalid_patch_inventory_cannot_change_source(tmp_path, damage):
     with pytest.raises(ValueError):
         prepare_source(repo, source, profile)
     assert (source / 'runtime.m').read_text() == 'original runtime\n'
+
+
+def test_dwarf_decoding_handles_full_width_values_and_packed_fields(tmp_path):
+    import shutil
+    from scripts.objc3c_toolchain_runtime.build_linux import runtime_profile
+    from scripts.objc3c_toolchain.linux_host import native_linux_host
+
+    repo = Path(__file__).resolve().parents[2]
+    checkout = repo / 'out/toolchains/libobjc2-v2.3/src'
+    compiler = shutil.which('clang')
+    if not compiler or not checkout.is_dir():
+        pytest.skip('requires Clang and the pinned native runtime source')
+    source = tmp_path / 'source'
+    subprocess.run(['git', '-c', 'advice.detachedHead=false', 'clone',
+                    '--quiet', '--shared', str(checkout), str(source)], check=True)
+    prepare_source(repo, source, runtime_profile(repo, native_linux_host()))
+    executable = tmp_path / 'dwarf-leb'
+    subprocess.run([compiler, '--no-default-config', '-std=c17',
+                    '-fsanitize=undefined', '-fno-sanitize-recover=undefined',
+                    '-I', str(source),
+                    str(repo / 'tests/clang_foundation/runtime_dwarf_leb.c'),
+                    '-o', str(executable)], check=True)
+    subprocess.run([str(executable)], check=True)
+
+
+def test_owned_patch_added_lines_satisfy_clean_checkout_whitespace_admission():
+    repo = Path(__file__).resolve().parents[2]
+    import json
+    profiles = json.loads((repo / 'scripts/objc3c_toolchain_runtime/runtime-profile.json').read_text())['profiles']
+    for row in profiles['linux-x86_64']['source_patches']:
+        patch = repo / row['file']
+        assert hashlib.sha256(patch.read_bytes()).hexdigest() == row['sha256']
+        for number, line in enumerate(patch.read_text().splitlines(), 1):
+            if line.startswith('+') and not line.startswith('+++'):
+                assert line == line.rstrip(' \t'), f'{patch}:{number} fails git apply --whitespace=error'
+
+
+def test_added_whitespace_cannot_be_admitted_as_a_clean_runtime_source_patch(tmp_path):
+    source, profile = source_fixture(tmp_path)
+    patch = tmp_path / profile['source_patches'][0]['file']
+    patch.write_text(patch.read_text().replace('+qualified runtime\n', '+qualified runtime \n'))
+    profile['source_patches'][0]['sha256'] = hashlib.sha256(patch.read_bytes()).hexdigest()
+    with pytest.raises(subprocess.CalledProcessError):
+        prepare_source(tmp_path, source, profile)
+    assert (source / 'runtime.m').read_text() == 'original runtime\n'

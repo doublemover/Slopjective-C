@@ -24,3 +24,6 @@ spec/planning/evidence/**/*.log
 artifacts/
 !native/objc3c/src/artifacts/
 !native/objc3c/src/artifacts/**
+# LLVM source-coverage runtime outputs belong in owned out/ or /tmp lanes.
+*.profraw
+*.profdata

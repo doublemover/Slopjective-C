@@ -1,3 +1,4 @@
+#include "native_target_test_support.h"
 #include "clang_foundation/compile_session.h"
 #include "clang_foundation/frontend_api.h"
 #include "clang_foundation/interface_codec.h"
@@ -6,6 +7,7 @@
 #include <algorithm>
 #include <cassert>
 #include <chrono>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -22,7 +24,7 @@ CompileRequest Request(const fs::path &root, BaseLanguage language,
   r.arc = arc;
   if (r.objc3)
     r.objc_runtime = "gnustep-2.2";
-  r.target_triple = "x86_64-unknown-linux-gnu";
+  r.target_triple = OBJC3_TEST_NATIVE_LINUX_TARGET;
   r.arguments = {"-std=" + standard, "-fblocks"};
   r.module_name = "Names.Provider";
   r.package_identity = "names-v1";
@@ -37,6 +39,12 @@ CompileRequest Request(const fs::path &root, BaseLanguage language,
     #define OWNED_HELPER(name) int name(void) { return 0; }
     OWNED_HELPER(header_helper)
     #ifdef __cplusplus
+    struct EarlyProjectedOwner {
+      struct { int value; int get() const { return value; } } child;
+    };
+    inline int early_projected_value() {
+      return EarlyProjectedOwner{{42}}.child.get();
+    }
     inline int private_initializer() { return 1; }
     template<class T> T private_template(T value) {
       static int local_bias = private_initializer();
@@ -49,6 +57,49 @@ CompileRequest Request(const fs::path &root, BaseLanguage language,
       int private_namespace_global = 0;
       int private_namespace_helper() { return private_namespace_global; }
     }
+    struct NamedRoot {
+      int n;
+      NamedRoot(); virtual ~NamedRoot();
+      virtual int get() const=0;
+      virtual NamedRoot *self();
+    };
+    struct NamedLeft : virtual NamedRoot { NamedLeft(); int get() const override; };
+    struct NamedRight : virtual NamedRoot { NamedRight(); virtual int right() const; };
+    struct NamedDiamond final : NamedLeft, NamedRight {
+      NamedDiamond(); ~NamedDiamond() override;
+      int get() const override final; NamedDiamond *self() override;
+    };
+    namespace NamedScope {
+      struct Point { int n; };
+      int increment(Point);
+    }
+    namespace NamedUsing { using NamedScope::Point; using NamedScope::increment; }
+    class NamedFamily {
+      struct Hidden { int n; };
+    public:
+      struct Value { int n; int get() const; };
+      using Result=Value;
+      enum class Kind : unsigned { Answer=42 };
+    };
+    struct NamedPrefix { long prefix; };
+    class NamedValue {
+      int storage;
+    public:
+      explicit NamedValue(int);
+      NamedValue(const NamedValue&);
+      ~NamedValue();
+      int get() const;
+      explicit operator bool() const;
+    };
+    class NamedDerived : public NamedPrefix, public NamedValue {
+    public: explicit NamedDerived(int);
+    };
+    struct NamedDefaults : NamedPrefix {
+      int n;
+      NamedDefaults() noexcept(false)=default;
+      NamedDefaults(const NamedDefaults&) noexcept=default;
+      ~NamedDefaults()=default;
+    };
     #endif
   )";
   r.source_text = R"(
@@ -65,6 +116,40 @@ CompileRequest Request(const fs::path &root, BaseLanguage language,
     int module_global = 42;
     int implementation_helper(void) { return 1; }
   )";
+  if (language == BaseLanguage::Cxx || language == BaseLanguage::ObjectiveCxx) {
+    // Early callbacks can precede many named owners. Establish each ancestor
+    // once per chain rather than recursively revisiting all its predecessors.
+    for (unsigned depth=0;depth<24;++depth)
+      *r.source_text += "struct DeepOwned"+std::to_string(depth)+" {";
+    *r.source_text += "struct {int get() const {return 42;}} child;";
+    for (unsigned depth=0;depth<24;++depth) *r.source_text += "};";
+    *r.source_text += R"(
+      int NamedFamily::Value::get() const { return n; }
+      int NamedScope::increment(Point point) { return point.n + 1; }
+      NamedRoot::NamedRoot() : n(42) {}
+      NamedRoot::~NamedRoot() {}
+      NamedRoot *NamedRoot::self() { return this; }
+      NamedLeft::NamedLeft() {}
+      int NamedLeft::get() const { return n; }
+      NamedRight::NamedRight() {}
+      int NamedRight::right() const { return n; }
+      NamedDiamond::NamedDiamond() {}
+      NamedDiamond::~NamedDiamond() {}
+      int NamedDiamond::get() const { return n; }
+      NamedDiamond *NamedDiamond::self() { return this; }
+      NamedValue::NamedValue(int n) : storage(n) {}
+      NamedValue::NamedValue(const NamedValue &v) : storage(v.storage) {}
+      NamedValue::~NamedValue() { storage = -1; }
+      int NamedValue::get() const { return storage; }
+      NamedValue::operator bool() const { return storage >= 0; }
+      NamedDerived::NamedDerived(int n) : NamedPrefix{1}, NamedValue(n) {}
+      int class_user() {
+        NamedValue a(42); NamedValue b(a); NamedDerived derived(42);
+        NamedDefaults d{}; d.n=42; NamedDefaults copied(d);
+        return b.get() + derived.get() + copied.n;
+      }
+    )";
+  }
   if (r.objc3)
     *r.source_text += R"(
     @protocol Root
@@ -100,6 +185,10 @@ CompileRequest Request(const fs::path &root, BaseLanguage language,
       int MemberValue::operator()(int n) const { return slot + n; }
     )";
     r.interface_exports.push_back("MemberValue");
+    r.interface_exports.insert(
+        r.interface_exports.end(),
+        {"NamedValue", "NamedPrefix", "NamedDerived", "NamedDefaults",
+         "NamedRoot", "NamedLeft", "NamedRight", "NamedDiamond", "NamedScope", "NamedFamily", "NamedUsing"});
   }
 
   if (r.objc3)
@@ -118,12 +207,11 @@ void Success(const CompileResult &r) {
   }
   assert(r.success);
 }
-const std::vector<llvm::StringRef> semantics = {
-    "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
-    "objc3.native-return-ownership.v1",    "objc3.direct-dispatch.v1",
-    "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",        "objc3.ownership-projection.v1",
-    "objc3.api-availability.v1",           "objc3.api-partitions.v1",
-    "objc3.module-owned-names.v1"};
+const std::vector<llvm::StringRef> semantics = [] {
+  const auto &catalog=SupportedSemanticInterfaceCapabilities();
+  return std::vector<llvm::StringRef>(catalog.begin(),catalog.end());
+}();
+
 void Check(const fs::path &root, BaseLanguage language,
            const std::string &standard, bool arc) {
   auto request = Request(root, language, standard, arc);
@@ -134,9 +222,13 @@ void Check(const fs::path &root, BaseLanguage language,
   auto sidecar = DecodeSemanticInterfaceSidecar(
       built.interface_artifact->sidecar_json,
       built.interface_artifact->source_bytes, semantics);
-  assert(sidecar);
+  if(!sidecar) {
+    std::cerr<<llvm::toString(sidecar.takeError())<<'\n';
+    std::abort();
+  }
   for (const auto &d : sidecar->declarations) {
-    if (d.kind == "Function" || d.kind == "CXXMethod" || d.kind == "Var" || d.kind == "ObjCInterface" ||
+    if (d.kind == "CXXRecord" || d.kind == "Function" || IsCxxMemberDeclarationKind(d.kind) ||
+        d.kind == "Var" || d.kind == "ObjCInterface" ||
         d.kind == "ObjCProtocol" || d.kind == "ObjCCategory") {
       assert(!d.native_symbol_name.empty());
       assert(d.native_symbol_name ==
@@ -149,7 +241,10 @@ void Check(const fs::path &root, BaseLanguage language,
   for (const auto &d : sidecar->declarations) {
     if (d.kind == "ObjCProtocol")
       continue; // Protocol metadata is emitted on use.
-    if (!d.native_symbol_name.empty())
+    if (d.kind != "CXXRecord" &&
+        d.canonical_type_identity.find(";pure=1") == std::string::npos &&
+        !d.native_symbol_name.empty() &&
+        d.canonical_type_identity.find(";defaulted=1;") == std::string::npos)
       assert(ir.find(d.native_symbol_name) != std::string::npos);
   }
   if (request.objc3) {
@@ -158,8 +253,46 @@ void Check(const fs::path &root, BaseLanguage language,
     assert(ir.find("_i_Root__directValue") == std::string::npos);
   }
   if (language == BaseLanguage::Cxx || language == BaseLanguage::ObjectiveCxx) {
-    assert(ir.find("private_template") == std::string::npos);
-    assert(ir.find("private_variable") == std::string::npos);
+    bool constructor = false, destructor = false;
+    for (const auto &d : sidecar->declarations) {
+      if (d.kind == "CXXConstructor" &&
+          d.canonical_type_identity.find(";defaulted=1;") ==
+              std::string::npos) {
+        constructor = true;
+        // Abstract bases have no complete-object constructor entry.
+        const auto owner = d.qualified_name.substr(0, d.qualified_name.rfind("::"));
+        const bool abstract = std::any_of(
+            sidecar->declarations.begin(), sidecar->declarations.end(),
+            [&](const auto &record) {
+              return record.kind == "CXXRecord" && record.qualified_name == owner &&
+                     record.canonical_type_identity.find(";abstract=1") != std::string::npos;
+            });
+        if (!abstract)
+          assert(ir.find(d.native_symbol_name + "_ctor_0") != std::string::npos);
+        assert(ir.find(d.native_symbol_name + "_ctor_1") != std::string::npos);
+      }
+      if (d.kind == "CXXDestructor" &&
+          d.canonical_type_identity.find(";defaulted=1;") ==
+              std::string::npos) {
+        destructor = true;
+        assert(ir.find(d.native_symbol_name + "_dtor_1") != std::string::npos);
+        assert(ir.find(d.native_symbol_name + "_dtor_2") != std::string::npos);
+        if (d.canonical_type_identity.find(";virtual=1;") != std::string::npos)
+          assert(ir.find(d.native_symbol_name + "_dtor_0") != std::string::npos);
+      }
+    }
+    assert(constructor && destructor);
+    for (const auto &d : sidecar->declarations)
+      if (d.kind == "CXXRecord" && d.qualified_name == "NamedDiamond") {
+        assert(ir.find("_ZTV") != std::string::npos);
+        assert(ir.find("_ZTT") != std::string::npos);
+        assert(ir.find(d.native_symbol_name) != std::string::npos);
+      }
+    assert(ir.find("private_templateB139__objc3_m_") != std::string::npos);
+    assert(ir.find("_Z16private_templateIi") == std::string::npos);
+    assert(ir.find("_Z16private_templateIl") == std::string::npos);
+    assert(ir.find("private_variableB139__objc3_m_") != std::string::npos);
+    assert(ir.find("_Z16private_variableILi") == std::string::npos);
     assert(ir.find("private_initializer") == std::string::npos);
     assert(ir.find("private_tls") == std::string::npos);
     assert(ir.find("private_reference") == std::string::npos);
@@ -179,6 +312,25 @@ void Check(const fs::path &root, BaseLanguage language,
   Success(renamed);
   assert(renamed.interface_artifact->identity.semantic_fingerprint !=
          original.semantic_fingerprint);
+  if (language == BaseLanguage::Cxx || language == BaseLanguage::ObjectiveCxx) {
+    auto renamed_sidecar = DecodeSemanticInterfaceSidecar(
+        renamed.interface_artifact->sidecar_json,
+        renamed.interface_artifact->source_bytes, semantics);
+    assert(renamed_sidecar);
+    for (const auto &type : sidecar->declarations)
+      if (type.kind == "CXXRecord" && type.qualified_name == "NamedDiamond") {
+        auto renamed_type = std::find_if(
+            renamed_sidecar->declarations.begin(), renamed_sidecar->declarations.end(),
+            [&](const auto &d) { return d.stable_id == type.stable_id; });
+        assert(renamed_type != renamed_sidecar->declarations.end());
+        assert(!type.native_symbol_name.empty() &&
+               renamed_type->native_symbol_name != type.native_symbol_name);
+        std::ifstream renamed_input(package.output_path);
+        std::string renamed_ir((std::istreambuf_iterator<char>(renamed_input)), {});
+        assert(renamed_ir.find(renamed_type->native_symbol_name) != std::string::npos);
+        assert(renamed_ir.find(type.native_symbol_name) == std::string::npos);
+      }
+  }
   Success(Compile(request));
   auto consumer = Request(root, language, standard, arc);
   consumer.module_owned_names = false;
@@ -193,6 +345,16 @@ void Check(const fs::path &root, BaseLanguage language,
     consumer.source_text = "int client(Child *value, id<Root> protocol) { "
                            "return module_value(module_global) + [value "
                            "directValue] + [value extra] + [protocol value]; }";
+  if (language == BaseLanguage::Cxx || language == BaseLanguage::ObjectiveCxx)
+    *consumer.source_text +=
+        " int structure_client() { NamedDerived v(42); NamedDefaults d{}; "
+        "d.n=42; NamedDefaults copy(d); return v.get()+copy.n; }"
+        " int dispatch_client() { NamedDiamond d; NamedRoot *r=&d; "
+        "NamedRight *right=dynamic_cast<NamedRight*>(r); "
+        "return r->get()+right->right()+(r->self()==r); }"
+        " int namespace_client() { return NamedScope::increment(NamedScope::Point{41}); }"
+        " int nested_client() { NamedFamily::Result value{42}; return value.get(); }"
+        " int using_client() { NamedUsing::Point p{41}; return NamedUsing::increment(p); }";
   InterfaceImportInput imported;
   imported.source_path = request.interface_output_path;
   imported.locked_identity = original;
@@ -242,9 +404,30 @@ void Check(const fs::path &root, BaseLanguage language,
   conflict.interface_exports = {"main"};
   assert(!Compile(conflict).success);
   if (language == BaseLanguage::Cxx || language == BaseLanguage::ObjectiveCxx) {
+    conflict.source_text =
+        "struct __attribute__((abi_tag(\"foreign_tag\"))) Tagged { int n; };";
+    conflict.interface_exports = {"Tagged"};
+    Success(Compile(conflict));
+    conflict.source_text =
+        "struct __attribute__((abi_tag(\"foreign_tag\",\"__objc3_m_foreign\"))) Tagged { int n; };";
+    assert(!Compile(conflict).success);
+    std::ofstream(root / "foreign-template.h") << "template<class T> T foreign_template(T n);\n";
+    auto foreign_template=foreign;
+    foreign_template.interface_exports={"foreign_template"};
+    foreign_template.source_text="#include \"../foreign-template.h\"\n"
+        "template<class T> T foreign_template(T n){return n;}";
+    auto foreign_result=Compile(foreign_template);
+    assert(!foreign_result.success && std::any_of(foreign_result.diagnostics.begin(),
+        foreign_result.diagnostics.end(),[](const auto &diagnostic) {
+          return diagnostic.message.find("foreign ABI") != std::string::npos;
+        }));
+    conflict.source_text = "namespace Q { extern \"C\" int api(); } "
+                           "namespace R { extern \"C\" int api(); }";
+    conflict.interface_exports = {"Q", "R"};
+    assert(!Compile(conflict).success);
     conflict.source_text = "inline int module_global = 42;";
     conflict.interface_exports = {"module_global"};
-    assert(!Compile(conflict).success);
+    assert(Compile(conflict).success);
   }
   auto tampered = *sidecar;
   auto named =
@@ -297,7 +480,7 @@ void Check(const fs::path &root, BaseLanguage language,
     options.base.input_path = input.c_str();
     options.base.source = body.c_str();
     options.base.source_size = body.size();
-    options.base.target_triple = "x86_64-unknown-linux-gnu";
+    options.base.target_triple = OBJC3_TEST_NATIVE_LINUX_TARGET;
     options.base.language = 0;
     options.base.arguments = arguments;
     options.base.argument_count = 1;

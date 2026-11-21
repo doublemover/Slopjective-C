@@ -1,0 +1,29 @@
+{
+  "schema": "objc3c.llvm-development-debugger.v1",
+  "foundation_profile": "compiler-asan-ubsan",
+  "targets": ["lldb", "lldb-server"],
+  "cmake": {
+    "CMAKE_BUILD_TYPE": "Release",
+    "CMAKE_C_FLAGS_RELEASE": "-O1 -DNDEBUG",
+    "CMAKE_CXX_FLAGS_RELEASE": "-O1 -DNDEBUG",
+    "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+    "LLVM_USE_SANITIZER": "Address;Undefined",
+    "LLVM_UBSAN_FLAGS": "-fsanitize=undefined -fno-sanitize=function,vptr -fno-sanitize-recover=undefined",
+    "LLVM_ENABLE_ASSERTIONS": "ON",
+    "LLVM_ENABLE_RTTI": "ON",
+    "LLVM_ENABLE_EH": "ON",
+    "LLVM_LINK_LLVM_DYLIB": "ON",
+    "CLANG_LINK_CLANG_DYLIB": "ON",
+    "LLVM_USE_LINKER": "lld",
+    "LLVM_ENABLE_LLD": "OFF",
+    "LLVM_PARALLEL_LINK_JOBS": "1",
+    "LLDB_INCLUDE_TESTS": "OFF",
+    "LLDB_ENABLE_PYTHON": "OFF",
+    "LLDB_ENABLE_LUA": "OFF",
+    "LLDB_ENABLE_LIBEDIT": "OFF",
+    "LLDB_ENABLE_CURSES": "OFF",
+    "LLDB_ENABLE_LZMA": "OFF",
+    "LLDB_ENABLE_LIBXML2": "OFF"
+  },
+  "boundary": "Fork-matched native C++ debugger for assurance; Python/Lua formatters and interactive terminal integrations are outside this bundle"
+}

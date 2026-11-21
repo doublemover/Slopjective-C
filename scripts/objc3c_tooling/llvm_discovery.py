@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Iterable
 
 
-DEFAULT_LLVM_VERSION = "23.1.3"
+DEFAULT_LLVM_VERSION = "23.1.5"
 CORE_LLVM_TOOLS = ("clang", "clang++", "llc", "llvm-ar")
 
 

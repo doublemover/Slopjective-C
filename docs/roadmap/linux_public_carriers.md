@@ -46,8 +46,16 @@ Expression arms use `=> expression;` and produce one joined result. Result arms
 use `.Ok(let item)` and `.Err(let error)`. `_` ignores a payload, `let` creates a
 constant binding, and `var` creates a mutable binding. `where` guards are checked
 in source order; a guarded case alone does not establish exhaustiveness. There
-is no fallthrough. Overlapping or unreachable cases and nonexhaustive matches
-are diagnosed under the existing native coverage rules.
+is no fallthrough. Compatibility mode warns about missing coverage in a
+closed statement match. Strict profiles diagnose it as an error. The compiler
+can insert a trapping `default` at a writable closing brace. Expression matches
+require exhaustiveness in every profile.
+
+Source 2.271 / System 2.197 also rejects empty match bodies and enforces Part
+5's restrictions on expression guards. Even a function declared `const` or a
+nested match with constant results is inadmissible inside the guard. The tests
+exercise warning promotion and suppression, macro spelling, compiler-applied
+fix-its, and C17/C23 and C++20/C++23 parsing on both Linux targets.
 
 The scrutinee is evaluated once and an active-arm snapshot owns the selected
 payload before a guard or body can mutate the source. Bindings refer to that

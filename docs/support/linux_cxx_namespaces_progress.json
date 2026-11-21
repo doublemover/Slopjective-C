@@ -1,0 +1,97 @@
+{
+  "schema": "objc3c.linux-cxx-namespaces-progress.v1",
+  "status": "FOCUSED_VALIDATED",
+  "source_checkpoint": "77a5f0fcad31fbfe2532d391323d89b3b266012d",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-81217c421c93-00b75dc3",
+  "compiler_patch_digest": "81217c421c93a1703dab36c7aff08a45590843c2d20961256572f1d52489e9d8",
+  "concurrency_module_version": "2.11.0",
+  "required_semantics": ["objc3.cxx-namespaces.v1"],
+  "extension_abi": 21,
+  "interface_schema": "2.1",
+  "runtime_service_abi": 4,
+  "frame_abi": 1,
+  "scope": "Named/nested/inline namespace and namespace-alias package exports; selective publication; complete scoped identities; canonical out-of-line printing; RTTI-mode binding for virtual class contracts",
+  "source_inputs": {
+    "native/objc3c/src/clang_foundation/interface_artifact_io.cpp": "06c671b6749a2db9c0fe4e5e723962a748c57ea5943f5461a90640624e6698dc",
+    "native/objc3c/src/clang_foundation/interface_codec.cpp": "47ee01206c0196ed1c1a896faab81526bc52bc96e2409516362fa569b71852a8",
+    "native/objc3c/src/clang_foundation/interface_contract.cpp": "bfa6463eccf8fa0f3e543eaa4d8b8ecfa9ee2750e9a4fbd4e38b2df49df5cae6",
+    "native/objc3c/src/clang_foundation/interface_contract.h": "f0481669e1f11d4ef972d3a43d27913d5530c1cfef742f1064c897897d3bb98a",
+    "native/objc3c/src/clang_foundation/interface_emitter.cpp": "d8e47b7e0908bfe4581e018685c71117fbf8c866b2ad0d07052d0d47bbede060",
+    "native/objc3c/src/clang_foundation/interface_import.cpp": "2fde6940ef2c0d7470636f13c75f04d231e7e5ab2f81ca1be07bf474e8a10fe7",
+    "native/objc3c/src/clang_foundation/interface_module_resolver.cpp": "6b3941872b861d89da238413f8040fb33ce8042519cedb94a8feec817bae917f",
+    "scripts/objc3c_toolchain/qualify_native_async_packages.py": "263e0791c8b934896092850045856a810b1a036d1dace4c94fc68dc13571b983",
+    "stdlib/module_inventory.json": "2cafef266d5a450facf26b53f57956dc9eff36772903f63e59d08846bf68c588",
+    "tests/clang_foundation/installed_sdk/cpp-data-rejected.mm": "3ed431f1d5a7a54e75982aab2108f1f93b959ee1890cc0cbc5ae0c56aba1529f",
+    "tests/clang_foundation/interface_emitter_test.cpp": "8406ce4fa71c74b2584063bbce10ce09ae958eca90c59168d112415df399493f",
+    "tests/clang_foundation/interface_module_names_test.cpp": "8516ff8b122960b841e6a0fdef0413ce0175c0861da16567bc8862b3eee5aa2d",
+    "tests/clang_foundation/native_async_packages/app/main.mm": "24d4728e236fa4ccbc5f2a9aefad435c455a9393539182ca9eaef861c42bfa58",
+    "tests/clang_foundation/native_async_packages/provider/module.mm": "b32d6d2ea1b62d71508fd816c09ea23d1b05b085b1d0f83f814f8a6270deeea6",
+    "tests/clang_foundation/native_async_packages/provider/package.json": "c7e23d2f962f99aa837649945cc4a8db3cdcef0e8b32ccff2d0bdf0d61e21ca0"
+  },
+  "source_binary_snapshot": {
+    "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c": "f8552942d992a32086360040365230d8c338cc70fcac79801a2ea226411bc7cf",
+    "out/toolchains/objc3-development/stage-linux-x86_64/bin/clang": "a5d90ab92bdff47dfbd7fc687a9a67655691bc50792f7b33035da6402818cc63"
+  },
+  "inherited_compiler_progress": {
+    "path": "docs/support/linux_cxx_class_dispatch_progress.json",
+    "sha256": "e8153c529521da8028e3ce74aa32a8c4a9e03bac77b8288836855d12be069105"
+  },
+  "verification": {
+    "facade_compile_log": {
+      "path": "out/cxx-namespaces-final-compile.log",
+      "sha256": "0b7d89d95fd1e456a80c9eeebb85465027c4d5373a49273f8a72292b65f29ac2"
+    },
+    "focused_facade_suites": [
+      {
+        "suite": "interface_emitter",
+        "status": "PASS",
+        "log": {
+          "path": "out/cxx-namespaces-emitter.log",
+          "sha256": "c64205fe98c32ab463291a83b77dd20f71868157176ecc2b1d6050b35596ea15"
+        }
+      },
+      {
+        "suite": "interface_module_names",
+        "status": "PASS",
+        "log": {
+          "path": "out/cxx-namespaces-names.log",
+          "sha256": "bd2b71553364081988b92e189c06ea7ab388e184aacf22ffa49bbb855135114f"
+        }
+      }
+    ],
+    "source_free_smoke": {
+      "cases": 1,
+      "commands": 4,
+      "standard": "c++20",
+      "ownership": "arc",
+      "optimization": "O0",
+      "provider_source_removed": true,
+      "report": {
+        "path": "out/native-validation/cxx-namespaces-smoke-normal/qualification.json",
+        "sha256": "2c3c9c0ad8422c5ea8c1c248665200239f168239610904a1135dd577a423905c"
+      }
+    },
+    "smoke_runtime_scope": "Source compiler/frontend with accepted SDK 2.9.0 headers/GNU and unchanged development services. Includes the preceding virtual-class fixture plus namespaced ordinary/data/alias/frame consumers. This overlaps the earlier smoke and does not establish installed/package/archive delivery."
+  },
+  "active_sdk": {
+    "changed": false,
+    "concurrency_module_version": "2.9.0",
+    "seal": "0fc4def2426bd3bfd62f7288d4fcb1a73bed8cd27392edf05cd80dcb0024bcc3",
+    "acceptance": {
+      "path": "docs/support/linux_cxx_class_structure_acceptance.json",
+      "sha256": "e099d1065d1e4b789fbc2348f3912b440920cae51b2b5ff2d9a99e20532f3091"
+    }
+  },
+  "deferred_validation": [
+    "Complete source facade/native compiler matrices for the combined implementation batch",
+    "C++20/23 ARC/MRC O0/O2 and ASan/UBSan/TSan source-free execution matrices",
+    "All installed SDK gates and immutable package publication/relocation",
+    "Exact-archive fresh Debian/Ubuntu checks at the next coordinated SDK cutover"
+  ],
+  "remaining_implementation": [
+    "Concrete inline/constexpr/template bodies, defaulted comparisons and out-of-line defaulting",
+    "Member initializers, default arguments, nested classes, namespace attributes and using/lookup-alias projections",
+    "Remaining ownership, concurrency, isolation, keypath, type/library/profile contracts and native Linux AArch64"
+  ],
+  "profile_conformance_claimed": false
+}

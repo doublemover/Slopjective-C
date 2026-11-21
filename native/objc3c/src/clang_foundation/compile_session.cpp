@@ -1,11 +1,19 @@
 #include "clang_foundation/compile_session.h"
+#include "clang_foundation/meta_compilation.h"
+#include <filesystem>
+#include "interface_reparse_options.h"
 #include "clang_foundation/interface_emitter.h"
+#include "clang_foundation/interface_include_guard.h"
 #include "clang_foundation/sdk_identity.h"
 #include "clang_foundation/source_identity.h"
+#include "clang_foundation/runtime_interface_types.h"
 
 #include "clang_foundation/ast_contract_consumer.h"
 #include "clang_foundation/interface_artifact_io.h"
 #include "clang_foundation/interface_source_import_bridge.h"
+#include "clang_foundation/module_names.h"
+#include "clang/AST/Decl.h"
+#include "clang/AST/Attr.h"
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Basic/FileManager.h"
 #include "clang/Basic/LangStandard.h"
@@ -15,10 +23,17 @@
 #include "clang/CodeGen/CodeGenAction.h"
 #include "clang/Driver/Driver.h"
 #include "clang/Frontend/CompilerInstance.h"
+#include "clang/Basic/CodeGenOptions.h"
 #include "clang/Frontend/CompilerInvocation.h"
 #include "clang/Frontend/FrontendActions.h"
 #include "clang/Frontend/MultiplexConsumer.h"
+#include "clang/Frontend/Utils.h"
 #include "clang/Lex/Preprocessor.h"
+#include "clang/Lex/Lexer.h"
+#include "llvm/Support/JSON.h"
+#include "llvm/ADT/StringExtras.h"
+#include "llvm/Support/FormatVariadic.h"
+#include <map>
 #include "clang/Lex/PreprocessorOptions.h"
 #include "clang/Options/Options.h"
 #include "clang/Sema/ExternalSemaSource.h"
@@ -64,6 +79,14 @@ constexpr const char *Profiles[] = {
 class Diagnostics final : public clang::DiagnosticConsumer {
  public:
   explicit Diagnostics(CompileResult &result) : result_(result) {}
+  void BeginSourceFile(const clang::LangOptions &options,const clang::Preprocessor *preprocessor) override {
+    clang::DiagnosticConsumer::BeginSourceFile(options,preprocessor);
+    language_=options;buffer_hashes_.clear();
+  }
+  void EndSourceFile() override {
+    language_.reset();buffer_hashes_.clear();
+    clang::DiagnosticConsumer::EndSourceFile();
+  }
   void HandleDiagnostic(clang::DiagnosticsEngine::Level level,
                         const clang::Diagnostic &info) override {
     clang::DiagnosticConsumer::HandleDiagnostic(level, info);
@@ -87,13 +110,112 @@ class Diagnostics final : public clang::DiagnosticConsumer {
       };
       diagnostic.spelling = locate(manager.getSpellingLoc(info.getLocation()));
       diagnostic.expansion = locate(manager.getExpansionLoc(info.getLocation()));
-    }
+      if(info.getNumFixItHints()) {
+        auto unavailable=[&](const char *reason) {
+          diagnostic.edits.clear();diagnostic.edits_unavailable_reason=reason;
+        };
+        if(!language_)unavailable("missing_language_context");
+        else for(const auto &hint:info.getFixItHints()) {
+          const auto range=clang::Lexer::makeFileCharRange(hint.RemoveRange,manager,*language_);
+          if(range.isInvalid()){unavailable("non_rewritable_range");break;}
+          auto begin=manager.getDecomposedLoc(range.getBegin());
+          auto end=manager.getDecomposedLoc(range.getEnd());
+          if(begin.first!=end.first){unavailable("cross_buffer_range");break;}
+          bool invalid=false;auto buffer=manager.getBufferData(begin.first,&invalid);
+          if(invalid || begin.second>end.second || end.second>buffer.size()) {
+            unavailable("invalid_buffer_range");break;
+          }
+          DiagnosticEdit edit;
+          const auto entry=manager.getFileEntryRefForID(begin.first);
+          if(!entry){unavailable("non_file_buffer");break;}
+          llvm::SmallString<256> filename(entry->getName());
+          if(manager.getFileManager().getVirtualFileSystem().makeAbsolute(filename)) {
+            unavailable("unresolvable_file_path");break;
+          }
+          llvm::sys::path::remove_dots(filename,true);edit.file=filename.str().str();
+          edit.begin={edit.file,manager.getSpellingLineNumber(range.getBegin()),manager.getSpellingColumnNumber(range.getBegin())};
+          edit.end={edit.file,manager.getSpellingLineNumber(range.getEnd()),manager.getSpellingColumnNumber(range.getEnd())};
+          edit.begin_offset=begin.second;edit.end_offset=end.second;
+          auto hash=buffer_hashes_.find(begin.first.getHashValue());
+          if(hash==buffer_hashes_.end())
+            hash=buffer_hashes_.emplace(begin.first.getHashValue(),ComputeInterfaceSourceSha256(buffer)).first;
+          edit.source_sha256=hash->second;
+          edit.replacement=hint.CodeToInsert;
+          if(hint.InsertFromRange.isValid()) {
+            const auto insertion=clang::Lexer::makeFileCharRange(hint.InsertFromRange,manager,*language_);
+            if(insertion.isInvalid()){unavailable("non_rewritable_insertion");break;}
+            const auto bytes=clang::Lexer::getSourceText(insertion,manager,*language_,&invalid);
+            if(invalid){unavailable("invalid_insertion_range");break;}
+            edit.replacement=bytes.str();
+          }
+          edit.before_previous_insertions=hint.BeforePreviousInsertions;
+          diagnostic.edits.push_back(std::move(edit));
+        }
+      }
+    }else if(info.getNumFixItHints())diagnostic.edits_unavailable_reason="missing_source_buffer";
     result_.diagnostics.push_back(std::move(diagnostic));
   }
  private:
   CompileResult &result_;
+  std::optional<clang::LangOptions> language_;
+  std::map<unsigned,std::string> buffer_hashes_;
 };
 
+
+// Parse the exact pinned runtime header before eager AST merging. Its guard
+// also protects a later explicit SDK include in the consumer. A separate marker
+// file lets the parser finish the header and its linkage scope before importing.
+constexpr const char *kEagerRuntimeHeader =
+    "/__objc3_import_runtime/objc3_runtime_services.h";
+constexpr const char *kEagerCompletionHeader =
+    "/__objc3_import_runtime/objc3_async_c.h";
+constexpr const char *kEagerKeyPathHeader =
+    "/__objc3_import_runtime/objc3_keypath.h";
+constexpr const char *kEagerTaskHeader =
+    "/__objc3_import_runtime/objc3_task.hpp";
+constexpr const char *kEagerRuntimePrelude =
+    "/__objc3_import_runtime/prelude.h";
+constexpr const char *kAdmittedInterfaceGuards = "/__objc3_admitted_interface_guards.h";
+constexpr const char *kEagerRuntimeReady = "__objc3_import_runtime_ready";
+
+class InterfaceDependencyFileGenerator final : public clang::DependencyFileGenerator {
+ public:
+  InterfaceDependencyFileGenerator(const clang::DependencyOutputOptions &options,
+                                   std::vector<std::string> memory_inputs)
+      : DependencyFileGenerator(options), memory_inputs_(std::move(memory_inputs)) {}
+
+  void maybeAddDependency(llvm::StringRef filename, bool from_module, bool is_system,
+                          bool is_module, bool direct_import, bool missing) override {
+    if (llvm::is_contained(memory_inputs_, filename)) return;
+    DependencyFileGenerator::maybeAddDependency(filename, from_module, is_system, is_module,
+                                                direct_import, missing);
+  }
+
+ private:
+  std::vector<std::string> memory_inputs_;
+};
+
+class CExportConsumer final : public clang::ASTConsumer {
+public:
+  CExportConsumer(const CompileRequest &request, CompileResult &result)
+      : request_(request), result_(result) {}
+
+  void HandleTranslationUnit(clang::ASTContext &context) override {
+    if (context.getDiagnostics().hasErrorOccurred()) return;
+    result_.c_export_source = GenerateCExports(context, request_.async_c_exports,
+                                               request_.throws_c_exports, result_.failure,
+                                               request_.swift_c_module);
+    if (!result_.failure.empty()) {
+      auto &diagnostics = context.getDiagnostics();
+      diagnostics.Report(diagnostics.getCustomDiagID(clang::DiagnosticsEngine::Error, "%0"))
+          << result_.failure;
+    }
+  }
+
+private:
+  const CompileRequest &request_;
+  CompileResult &result_;
+};
 
 class InterfaceImportConsumer final : public clang::ASTConsumer {
 public:
@@ -107,6 +229,11 @@ public:
   void Initialize(clang::ASTContext &context) override {
     const auto &language = context.getLangOpts();
     const auto &predefines = compiler_.getPreprocessorOpts();
+    if (session_ && (session_->RequiresRuntimeHeader() || session_->RequiresKeyPathHeader() || session_->RequiresCoroutineHeader() || !session_->StandardLibraryHeaders().empty())) {
+      deferred_context_ = &context;
+      waiting_for_runtime_ = true;
+      return;
+    }
     if (session_ && language.ObjC && language.CPlusPlus &&
         (language.ObjCAutoRefCount || language.ObjCWeak) &&
         predefines.UsePredefines &&
@@ -120,18 +247,28 @@ public:
   }
 
   bool HandleTopLevelDecl(clang::DeclGroupRef declarations) override {
+    // All multiplexed consumers have initialized before the first parse event.
+    if (lookup_) lookup_->RegisterInlineDefinitions();
     if (deferred_context_)
-      for (const auto *declaration : declarations)
-        if (const auto *space =
-                llvm::dyn_cast<clang::NamespaceDecl>(declaration);
-            space && space->getName() == "std" &&
-            deferred_context_->getSourceManager().isWrittenInBuiltinFile(
-                space->getLocation())) {
+      for (const auto *declaration : declarations) {
+        bool ready = false;
+        if (waiting_for_runtime_) {
+          const auto *named = llvm::dyn_cast<clang::NamedDecl>(declaration);
+          ready = named && named->getIdentifier() && named->getName() == kEagerRuntimeReady &&
+              deferred_context_->getSourceManager().getFilename(named->getLocation()) == kEagerRuntimePrelude;
+        } else if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration)) {
+          ready = space->getName() == "std" &&
+              deferred_context_->getSourceManager().isWrittenInBuiltinFile(space->getLocation());
+        }
+        if (ready) {
           auto *context = deferred_context_;
           deferred_context_ = nullptr;
+          waiting_for_runtime_ = false;
           ImportDeclarations(*context);
+          if (lookup_) lookup_->RegisterInlineDefinitions();
           break;
         }
+      }
     return true;
   }
 
@@ -141,7 +278,8 @@ public:
       return;
     }
     auto imported = session_->ImportInto(context, compiler_.getFileManager(),
-                                        request_.source_directed_imports);
+                                        request_.source_directed_imports,{},nullptr,&compiler_.getPreprocessor(),
+                                        compiler_.getCodeGenOpts().getInlineAsmDialect());
     result_.interface_import_diagnostics = imported.diagnostics;
     if (!imported.success) {
       std::string message;
@@ -156,18 +294,25 @@ public:
       context.getDiagnostics().Report(id) << result_.failure;
       return;
     }
+    if(result_.resolved_interface_sources.empty())
+      result_.resolved_interface_sources = session_->GetSourceArtifacts();
+    if (lookup_ && !request_.module_imports.empty()) {
+      auto registry = request_.module_imports;
+      // Resolution already checked the invocation-completed lock identities.
+      // The source bridge must compare those same complete identities.
+      for (auto &entry : registry)
+        for (const auto &identity : imported.resolved_modules)
+          if (entry.canonical_name == identity.canonical_name)
+            entry.locked_identity = identity;
+      lookup_->ConfigureSourceRegistry(registry, imported,
+                                       result_.resolved_interface_sources);
+      if (compiler_.hasSema()) lookup_->InitializeSema(compiler_.getSema());
+    }
     result_.imported_declarations = imported.imported_declarations;
-    result_.resolved_interface_dependencies =
-        std::move(imported.direct_dependencies);
+    result_.resolved_interface_dependencies = std::move(imported.direct_dependencies);
     result_.interface_dependency_order = std::move(imported.dependency_order);
     result_.resolved_module_identities = std::move(imported.resolved_modules);
-    result_.resolved_interface_sources = session_->GetSourceArtifacts();
-    if (lookup_ && !request_.module_imports.empty()) {
-      lookup_->ConfigureSourceRegistry(request_.module_imports, imported,
-                                       result_.resolved_interface_sources);
-      if (compiler_.hasSema())
-        lookup_->InitializeSema(compiler_.getSema());
-    }
+    if (lookup_) lookup_->QueueInlineDefinitions(imported.inline_definitions);
     if (request_.source_directed_imports) {
       source_scoped_ = true;
       return;
@@ -182,9 +327,10 @@ public:
   }
 
   void HandleTranslationUnit(clang::ASTContext &context) override {
+    if (lookup_) lookup_->RegisterInlineDefinitions();
     if (deferred_context_) {
       result_.failure =
-          "The compiler ARC prelude did not complete before interface import";
+          "The required compiler/runtime prelude did not complete before interface import";
       auto id = context.getDiagnostics().getCustomDiagID(
           clang::DiagnosticsEngine::Error, "%0");
       context.getDiagnostics().Report(id) << result_.failure;
@@ -212,6 +358,65 @@ private:
   CompileResult &result_;
   bool source_scoped_ = false;
   clang::ASTContext *deferred_context_ = nullptr;
+  bool waiting_for_runtime_ = false;
+};
+
+// A semantic module owns one provider definition for each public C inline
+// function. Consumers replay ISO inline bodies. Change storage only while the
+// backend observes the provider declaration, preserving the source AST seen by
+// Sema, identity generation and the other consumers.
+struct CInlineProviderState {
+  const CompileRequest &request;
+  clang::ASTContext *context=nullptr;
+  std::string source_root;
+  std::vector<std::vector<std::pair<clang::FunctionDecl *,clang::StorageClass>>> saved;
+  explicit CInlineProviderState(const CompileRequest &request):request(request) {}
+  void Initialize(clang::ASTContext &value) {
+    context=&value;
+    source_root=NormalizeModuleSourceRoot(value,request.module_source_root);
+  }
+  void Enter(clang::DeclGroupRef group) {
+    saved.emplace_back();
+    if (!context || context->getLangOpts().CPlusPlus || !request.module_owned_names ||
+        request.emit==EmitKind::Syntax) return;
+    for(auto *declaration:group) {
+      auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration);
+      if (!function || !function->doesThisDeclarationHaveABody() ||
+          !function->isInlined() || !function->isExternallyVisible() ||
+          !IsModuleOwnedSource(*context,function->getLocation(),source_root)) continue;
+      if (context->getLangOpts().GNUInline || function->hasAttr<clang::GNUInlineAttr>()) {
+        const auto id=context->getDiagnostics().getCustomDiagID(clang::DiagnosticsEngine::Error,
+            "semantic C inline providers require ISO inline semantics");
+        context->getDiagnostics().Report(function->getLocation(),id);
+        continue;
+      }
+      saved.back().emplace_back(function,function->getStorageClass());
+      function->setStorageClass(clang::SC_Extern);
+    }
+  }
+  void Leave() {
+    assert(!saved.empty());
+    for(auto [function,storage]:saved.back())function->setStorageClass(storage);
+    saved.pop_back();
+  }
+};
+
+class CInlineProviderConsumer final : public clang::ASTConsumer {
+  std::shared_ptr<CInlineProviderState> state_;
+  bool enter_;
+public:
+  CInlineProviderConsumer(std::shared_ptr<CInlineProviderState> state,bool enter)
+      :state_(std::move(state)),enter_(enter) {}
+  void Initialize(clang::ASTContext &context) override {
+    if(enter_)state_->Initialize(context);
+  }
+  bool HandleTopLevelDecl(clang::DeclGroupRef group) override {
+    if(enter_)state_->Enter(group);else state_->Leave();
+    return true;
+  }
+  void HandleInlineFunctionDefinition(clang::FunctionDecl *function) override {
+    if(enter_)state_->Enter(clang::DeclGroupRef(function));else state_->Leave();
+  }
 };
 template <typename NativeAction>
 class ContractAction final : public NativeAction {
@@ -222,6 +427,28 @@ class ContractAction final : public NativeAction {
       : request_(request), result_(result), imports_(imports),
         lookup_source_(std::move(lookup)) {}
  protected:
+  bool BeginInvocation(clang::CompilerInstance &compiler) override {
+    if (!NativeAction::BeginInvocation(compiler)) return false;
+    auto &options = compiler.getDependencyOutputOpts();
+    if (!imports_ || options.OutputFile.empty()) return true;
+    // Prepared imports have real artifact inputs and synthetic forced includes.
+    // Only the artifact paths can be read and hashed by an external build tool.
+    for (const auto &input : result_.interface_input_paths)
+      options.ExtraDeps.emplace_back(input, clang::EDK_DepFileEntry);
+    std::vector<std::string> memory_inputs;
+    for (const auto &[name, _] : compiler.getPreprocessorOpts().RemappedFileBuffers)
+      if (name == kAdmittedInterfaceGuards || name == kEagerRuntimePrelude ||
+          name == kEagerRuntimeHeader || name == kEagerTaskHeader ||
+          name == kEagerCompletionHeader || name == kEagerKeyPathHeader)
+        memory_inputs.push_back(name);
+    if (!memory_inputs.empty()) {
+      compiler.addDependencyCollector(std::make_shared<InterfaceDependencyFileGenerator>(
+          options, std::move(memory_inputs)));
+      options.OutputFile.clear();
+    }
+    return true;
+  }
+
   bool BeginSourceFileAction(clang::CompilerInstance &compiler) override {
     if (!NativeAction::BeginSourceFileAction(compiler)) return false;
     if (!request_.module_imports.empty()) {
@@ -242,14 +469,27 @@ class ContractAction final : public NativeAction {
       clang::CompilerInstance &compiler, llvm::StringRef input) override {
     auto native = NativeAction::CreateASTConsumer(compiler, input);
     if (!native) return nullptr;
+    if (lookup_source_) lookup_source_->SetDefinitionConsumer(native.get());
     std::vector<std::unique_ptr<clang::ASTConsumer>> consumers;
     // BackendConsumer may clear the AST in HandleTranslationUnit before
     // emitting the native module. Observe that same AST while it is alive.
     if (imports_ || request_.source_directed_imports)
       consumers.push_back(std::make_unique<InterfaceImportConsumer>(
           imports_, compiler, lookup_source_, request_, result_));
-    consumers.push_back(MakeContractConsumer(request_, result_));
+    if(request_.meta_compilation)consumers.push_back(MakeMetaConsumer(request_));
+    if (!request_.async_c_exports.empty() || !request_.throws_c_exports.empty())
+      consumers.push_back(std::make_unique<CExportConsumer>(request_, result_));
+    consumers.push_back(MakeContractConsumer(request_, result_, &compiler.getPreprocessor(),
+                                              compiler.getCodeGenOpts().getInlineAsmDialect()));
+    std::shared_ptr<CInlineProviderState> c_inline;
+    if(request_.module_owned_names && request_.emit!=EmitKind::Syntax &&
+        (request_.language==BaseLanguage::C || request_.language==BaseLanguage::ObjectiveC)) {
+      c_inline=std::make_shared<CInlineProviderState>(request_);
+      consumers.push_back(std::make_unique<CInlineProviderConsumer>(c_inline,true));
+    }
     consumers.push_back(std::move(native));
+    if(c_inline)
+      consumers.push_back(std::make_unique<CInlineProviderConsumer>(std::move(c_inline),false));
     return std::make_unique<clang::MultiplexConsumer>(std::move(consumers));
   }
  private:
@@ -277,6 +517,28 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
                      clang::FileManager *files,
                      std::shared_ptr<clang::PCHContainerOperations> containers,
                      clang::DiagnosticConsumer *diagnostics) override {
+    if(request_.meta_compilation && request_.meta_compilation->collecting) {
+      invocation->getFrontendOpts().SkipFunctionBodies=true;
+      invocation->getDependencyOutputOpts()={};
+    }
+    if(request_.meta_compilation && !request_.meta_compilation->collecting) {
+      auto &dependencies=invocation->getDependencyOutputOpts();
+      llvm::SmallString<256> dependency_output(dependencies.OutputFile);
+      if(!dependency_output.empty() && dependency_output!="-") {
+        if(auto error=files->getVirtualFileSystem().makeAbsolute(dependency_output)) {
+          result_.failure="Cannot resolve dependency output: "+error.message();return false;
+        }
+        for(const auto &input:request_.meta_compilation->packages.inputs) {
+          std::error_code ec;
+          if(std::filesystem::path(std::string(dependency_output)).lexically_normal()==input.path ||
+             std::filesystem::equivalent(std::string(dependency_output),input.path,ec)) {
+            result_.failure="Dependency output aliases a metaprogramming input";return false;
+          }
+        }
+      }
+      for(const auto &input:request_.meta_compilation->packages.inputs)
+        dependencies.ExtraDeps.emplace_back(input.path,clang::EDK_DepFileEntry);
+    }
     const auto &language = invocation->getLangOpts();
     const bool cxx = request_.language == BaseLanguage::Cxx ||
                      request_.language == BaseLanguage::ObjectiveCxx;
@@ -305,13 +567,27 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
       target.runtime_abi += language.ObjCAutoRefCount ? ";arc" : ";manual-reference-counting";
       target.extension_abi = std::string("objc3-extension-abi-") +
           std::to_string(CLANG_OBJC3_EXTENSION_ABI_REVISION) + ":" +
-          CLANG_OBJC3_PATCH_DIGEST;
+          clang::getObjC3PatchDigest().str();
       target.language_revision = language.ObjC3
           ? std::to_string(language.ObjC3Revision) : "objc3-disabled";
       static constexpr const char *profiles[] = {
           "compatibility", "strict", "strict-concurrency", "strict-system"};
       const auto profile_index = static_cast<unsigned>(language.ObjC3Profile);
-      target.language_profile = ReadInterfaceLanguageProfile(language);
+      // Admission happens before the real frontend instance creates its AST.
+      // Derive the same adjusted target from the exact consumer invocation.
+      clang::CompilerInstance target_instance(invocation);
+      // Diagnostic warning mappings read through this VFS even before an AST
+      // exists. Match Tooling's compiler initialization order, including its
+      // overlay files and working directory, rather than bind a null VFS.
+      target_instance.setVirtualFileSystem(files->getVirtualFileSystemPtr());
+      target_instance.setFileManager(files);
+      target_instance.createDiagnostics(diagnostics, false);
+      if (!target_instance.createTarget()) {
+        result_.failure = "Cannot derive the consumer primitive/target ABI";
+        return false;
+      }
+      target.native_asm_dialect = invocation->getCodeGenOpts().getInlineAsmDialect();
+      target.language_profile = ReadInterfaceLanguageProfile(language, target_instance.getTarget(),target.native_asm_dialect);
       target.objc = language.ObjC;
       target.objc3 = language.ObjC3;
       target.arc = language.ObjCAutoRefCount;
@@ -327,6 +603,13 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
           : (language.CPlusPlus ? "c++" : "c");
       target.ast_arguments = BuildInterfaceASTArguments(
           result_.driver_arguments, import_language, standard.getName(), target);
+      AppendInterfaceTargetArguments(target_instance.getTarget(), target.ast_arguments);
+      // Driver configuration files can supply SDK header roots without those
+      // flags appearing in the caller's argv. Reparse against the completed
+      // invocation's effective lookup configuration, including its macros.
+      target_instance.createSourceManager();
+      target_instance.createPreprocessor(clang::TU_Complete);
+      AppendInterfaceHeaderSearchArguments(target_instance.getPreprocessor(),target.ast_arguments);
       auto working_directory = files->getVirtualFileSystem().getCurrentWorkingDirectory();
       if (!working_directory) {
         result_.failure = "Cannot determine interface import working directory: " +
@@ -385,9 +668,6 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
           result_.failure = "Declared module imports require search paths and cannot be mixed with resolved artifact inputs";
           return false;
         }
-        if (request_.source_directed_imports)
-          return FrontendActionFactory::runInvocation(std::move(invocation), files,
-              std::move(containers), diagnostics);
         auto declared = request_.module_imports;
         for (auto &module : declared) {
           if (request_.source_directed_imports)
@@ -401,6 +681,26 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
           if (identity.extension_abi.empty()) identity.extension_abi = target.extension_abi;
           if (identity.language_revision.empty()) identity.language_revision = target.language_revision;
           if (identity.language_profile.empty()) identity.language_profile = target.language_profile;
+        }
+        if (request_.source_directed_imports) {
+          // Prepare compiler-owned protocol declarations before on-demand AST
+          // merging. No provider declaration becomes visible here. Keep unused
+          // invalid registry entries deferred until their source directive.
+          auto headers=ResolveInterfaceModules(search_paths,declared,target);
+          bool needs_coroutine=headers.success && headers.requires_coroutine_header;
+          std::set<std::string> standard_headers(headers.standard_library_headers.begin(),headers.standard_library_headers.end());
+          if(!headers.success)for(const auto &module:declared) {
+            auto selected=ResolveInterfaceModules(search_paths,{module},target);
+            if(selected.success) {
+              needs_coroutine |= selected.requires_coroutine_header;
+              standard_headers.insert(selected.standard_library_headers.begin(),selected.standard_library_headers.end());
+            }
+          }
+          if(needs_coroutine)standard_headers.insert("coroutine");
+          auto &includes=invocation->getPreprocessorOpts().Includes;
+          includes.insert(includes.begin(),standard_headers.begin(),standard_headers.end());
+          return FrontendActionFactory::runInvocation(std::move(invocation), files,
+              std::move(containers), diagnostics);
         }
         auto resolution = ResolveInterfaceModules(
             search_paths, declared, target);
@@ -438,6 +738,54 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
           if (!diagnostic.subject.empty()) result_.failure += " [" + diagnostic.subject + "]";
         }
         return false;
+      }
+    }
+    if (import_session_ && (import_session_->RequiresRuntimeHeader() ||
+                            import_session_->RequiresKeyPathHeader() || import_session_->RequiresCoroutineHeader() || !import_session_->StandardLibraryHeaders().empty())) {
+      auto &preprocessor = invocation->getPreprocessorOpts();
+      std::string prelude;
+      for(const auto &header:import_session_->StandardLibraryHeaders())prelude+="#include <"+header+">\n";
+      if (import_session_->RequiresCoroutineHeader()) prelude+="#include <coroutine>\n";
+      if (import_session_->RequiresRuntimeHeader()) {
+        preprocessor.addRemappedFile(kEagerRuntimeHeader,
+            llvm::MemoryBuffer::getMemBufferCopy(RuntimeInterfaceHeaderSource(),kEagerRuntimeHeader).release());
+        const bool needs_task=import_session_->RequiresTaskHeader();
+        if (needs_task)
+          preprocessor.addRemappedFile(kEagerTaskHeader,
+              llvm::MemoryBuffer::getMemBufferCopy(RuntimeTaskHeaderSource(),kEagerTaskHeader).release());
+        prelude+=std::string("#include \"")+(needs_task?kEagerTaskHeader:kEagerRuntimeHeader)+"\"\n";
+        if (import_session_->RequiresCompletionHeader()) {
+          preprocessor.addRemappedFile(kEagerCompletionHeader,
+              llvm::MemoryBuffer::getMemBufferCopy(RuntimeCompletionHeaderSource(),
+                                                    kEagerCompletionHeader).release());
+          prelude += std::string("#include \"") + kEagerCompletionHeader + "\"\n";
+        }
+      }
+      if (import_session_->RequiresKeyPathHeader()) {
+        preprocessor.addRemappedFile(kEagerKeyPathHeader,
+            llvm::MemoryBuffer::getMemBufferCopy(RuntimeKeyPathHeaderSource(),kEagerKeyPathHeader).release());
+        prelude+=std::string("#include \"")+kEagerKeyPathHeader+"\"\n";
+      }
+      prelude+=std::string("typedef void ")+kEagerRuntimeReady+";\n";
+      preprocessor.addRemappedFile(kEagerRuntimePrelude,
+          llvm::MemoryBuffer::getMemBufferCopy(prelude,kEagerRuntimePrelude).release());
+      preprocessor.Includes.insert(preprocessor.Includes.begin(),kEagerRuntimePrelude);
+    }
+    if(import_session_) {
+      result_.resolved_interface_sources=import_session_->GetSourceArtifacts();
+      std::string guards;
+      for(const auto &source:result_.resolved_interface_sources) {
+        const auto guard=ReadCanonicalInterfaceIncludeGuard(source.source_bytes);
+        if(!guard.empty())guards+="#define "+guard+"\n";
+      }
+      if(!guards.empty()) {
+        // Parser lookahead can enter a dependency include before the deferred
+        // AST-import callback runs. Establish the admitted guards before any
+        // source tokens, without putting them in user -D/reparse arguments.
+        auto &preprocessor=invocation->getPreprocessorOpts();
+        preprocessor.addRemappedFile(kAdmittedInterfaceGuards,
+            llvm::MemoryBuffer::getMemBufferCopy(guards,kAdmittedInterfaceGuards).release());
+        preprocessor.Includes.insert(preprocessor.Includes.begin(),kAdmittedInterfaceGuards);
       }
     }
     return FrontendActionFactory::runInvocation(std::move(invocation), files,
@@ -549,9 +897,18 @@ void BuildDependencyRecord(const CompileRequest &request,
             ",\"native_symbol_name\":" + JsonQuote(decl.native_symbol_name) +
             ",\"type\":" + JsonQuote(decl.canonical_type_identity) +
             ",\"async\":" + (decl.effects.is_async ? "true" : "false") +
+            ",\"async_abi_identity\":" + JsonQuote(decl.effects.async_abi_identity) +
             ",\"throws_kind\":" + JsonQuote(decl.effects.throws_kind) +
             ",\"error_type\":" + JsonQuote(decl.effects.error_type_identity) +
             '}';
+  }
+  json += "],\"metaprogramming\":[";
+  if(request.meta_compilation) {
+    bool first=true;
+    for(const auto &input:request.meta_compilation->packages.inputs) {
+      if(!first)json+=',';first=false;
+      json+="{\"path\":"+JsonQuote(input.path)+",\"sha256\":"+JsonQuote(input.sha256)+'}';
+    }
   }
   json += "]}";
   result.semantic_dependency_record = std::move(json);
@@ -563,7 +920,141 @@ struct TemporaryOutput {
 };
 }  // namespace
 
+std::string EncodeCompileDiagnostics(const CompileResult &result) {
+  auto text=[](llvm::StringRef value) {
+    return llvm::json::isUTF8(value)?value.str():llvm::json::fixUTF8(value);
+  };
+  auto location=[&](const DiagnosticLocation &value) {
+    return llvm::json::Object{{"file",text(value.file)},{"line",value.line},{"column",value.column}};
+  };
+  llvm::json::Array diagnostics;
+  for(const auto &diagnostic:result.diagnostics) {
+    llvm::json::Array edits;
+    for(const auto &edit:diagnostic.edits)
+      edits.push_back(llvm::json::Object{{"file",text(edit.file)},{"file_bytes_hex",llvm::toHex(edit.file,true)},{"source_sha256",edit.source_sha256},
+          {"begin",location(edit.begin)},{"end",location(edit.end)},
+          {"begin_offset",edit.begin_offset},{"end_offset",edit.end_offset},
+          {"replacement",text(edit.replacement)},{"replacement_bytes_hex",llvm::toHex(edit.replacement,true)},{"before_previous_insertions",edit.before_previous_insertions}});
+    diagnostics.push_back(llvm::json::Object{{"id",diagnostic.id},{"severity",diagnostic.severity},
+        {"message",text(diagnostic.message)},{"spelling",location(diagnostic.spelling)},
+        {"expansion",location(diagnostic.expansion)},{"edits",std::move(edits)},
+        {"edits_unavailable_reason",diagnostic.edits_unavailable_reason}});
+  }
+  llvm::json::Array interface_diagnostics;
+  auto add_contract=[&](const auto &rows,llvm::StringRef stage) {
+    for(const auto &diagnostic:rows)
+      interface_diagnostics.push_back(llvm::json::Object{{"stage",stage},{"code",diagnostic.code},
+          {"message",text(diagnostic.message)},{"subject",text(diagnostic.subject)}});
+  };
+  add_contract(result.interface_import_diagnostics,"import");
+  if(result.interface_artifact)add_contract(result.interface_artifact->diagnostics,"publication");
+  return llvm::formatv("{0}",llvm::json::Value(llvm::json::Object{
+      {"contract_id","objc3c.native-diagnostics.v1"},{"success",result.success},
+      {"failure",text(result.failure)},{"compiler_identity",text(result.compiler_identity)},
+      {"diagnostics",std::move(diagnostics)},{"interface_diagnostics",std::move(interface_diagnostics)}})).str();
+}
+
 CompileResult Compile(const CompileRequest &request) {
+  if (!request.swift_overlay_output_path.empty() &&
+      (request.c_export_header_output_path.empty() || request.swift_c_module.empty())) {
+    CompileResult rejected;
+    rejected.failure = "Swift overlay publication requires a C export header and C module identifier";
+    return rejected;
+  }
+  if (!request.c_export_header_output_path.empty() && !request.c_export_header) {
+    CompileResult rejected;
+    if ((request.async_c_exports.empty() && request.throws_c_exports.empty()) || request.emit == EmitKind::Syntax ||
+        request.module_owned_names) {
+      rejected.failure = "C exports require selected effectful entries, a native product, and public C linkage";
+      return rejected;
+    }
+    auto collect = request;
+    if (!collect.source_text) {
+      auto input_path = std::filesystem::path(request.input_path);
+      if (input_path.is_relative() && !request.working_directory.empty())
+        input_path = std::filesystem::path(request.working_directory) / input_path;
+      auto input = llvm::MemoryBuffer::getFile(input_path.string());
+      if (!input) {
+        rejected.failure = "Cannot read C export source: " + input.getError().message();
+        return rejected;
+      }
+      collect.source_text = (*input)->getBuffer().str();
+    }
+    collect.emit = EmitKind::Syntax;
+    const char *c_header = request.async_c_exports.empty() ? "objc3c/runtime/objc3_async_c.h"
+                                                         : "objc3c/runtime/objc3_async_c_export.h";
+    collect.arguments.insert(collect.arguments.begin(), {"-include", c_header});
+    collect.output_path.clear();
+    collect.interface_output_path.clear();
+    collect.dependency_record_output_path.clear();
+    collect.c_export_header_output_path.clear();
+    collect.swift_overlay_output_path.clear();
+    collect.emit_semantic_interface = false;
+    collect.interface_exports.clear();
+    collect.module_source_root.clear();
+    collect.projected_arc.reset();
+    auto preliminary = Compile(collect);
+    if (!preliminary.success) return preliminary;
+
+    auto final = request;
+    final.arguments = std::move(collect.arguments);
+    final.async_c_exports.clear();
+    final.throws_c_exports.clear();
+    if (!final.interface_exports.empty())
+      for (const auto &name : preliminary.c_export_source.interface_exports)
+        if (!llvm::is_contained(final.interface_exports, name))
+          final.interface_exports.push_back(name);
+    final.c_export_header = std::move(preliminary.c_export_source.header);
+    final.swift_overlay = std::move(preliminary.c_export_source.swift_overlay);
+    final.source_text = std::move(*collect.source_text) + preliminary.c_export_source.definitions;
+    return Compile(final);
+  }
+  if(!request.meta_compilation && (!request.meta_packages.empty() || !request.meta_lock.empty())) {
+    CompileResult rejected;
+    if(!request.objc3) {rejected.failure="Metaprogramming requires Objective-C 3.0";return rejected;}
+    auto path=[&](const std::string &value) {
+      std::filesystem::path p(value);
+      if(p.is_relative() && !request.working_directory.empty())p=std::filesystem::path(request.working_directory)/p;
+      return std::filesystem::absolute(p).lexically_normal().string();
+    };
+    std::vector<std::string> packages;
+    for(const auto &input:request.meta_packages)packages.push_back(path(input));
+    std::string error;
+    auto loaded=MetaPackageSet::Load(packages,request.meta_lock.empty()?"":path(request.meta_lock),error);
+    if(!loaded){rejected.failure=error;return rejected;}
+    auto state=std::make_shared<MetaCompilation>();state->packages=std::move(*loaded);
+    // No product may replace the manifest or lock that authorized its expansion.
+    for(const auto &input:state->packages.inputs)
+      for(const auto &output:{request.output_path,request.interface_output_path,request.dependency_record_output_path,
+          request.c_export_header_output_path,
+          request.swift_overlay_output_path,
+          request.interface_output_path.empty()?std::string():request.interface_output_path+".json"}) {
+        if(output.empty())continue;
+        std::error_code ec;
+        if(path(output)==input.path || std::filesystem::equivalent(path(output),input.path,ec)) {
+          rejected.failure="Compilation output aliases a metaprogramming input";return rejected;
+        }
+      }
+    auto collect=request;
+    if(!collect.source_text) {
+      auto input=llvm::MemoryBuffer::getFile(path(request.input_path));
+      if(!input){rejected.failure="Cannot read metaprogramming source: "+input.getError().message();return rejected;}
+      collect.source_text=(*input)->getBuffer().str();
+    }
+    collect.meta_compilation=state;collect.emit=EmitKind::Syntax;
+    collect.output_path.clear();collect.interface_output_path.clear();collect.emit_semantic_interface=false;
+    collect.c_export_header_output_path.clear();collect.c_export_header.reset();
+    collect.swift_overlay_output_path.clear();collect.swift_overlay.reset();
+    collect.interface_exports.clear();collect.projected_arc.reset();collect.dependency_record_output_path.clear();
+    auto preliminary=Compile(collect);
+    if(state->failed){preliminary.success=false;preliminary.failure=state->error;return preliminary;}
+    if(!state->packages.VerifyInputs(error)){rejected.failure=error;return rejected;}
+    // Generated members can resolve source errors in this structural first pass.
+    // The second pass type-checks every original and generated function body.
+    state->collecting=false;
+    auto final=request;final.source_text=std::move(collect.source_text);final.meta_compilation=std::move(state);
+    return Compile(final);
+  }
   CompileResult result;
   result.compiler_identity = clang::getClangFullRepositoryVersion() +
       " Frontend-inputs=" + CompiledFrontendSourceIdentity();
@@ -582,6 +1073,8 @@ CompileResult Compile(const CompileRequest &request) {
     result.failure = "Linked Clang libraries differ from the sealed compiler SDK";
     return result;
   }
+  if(!VerifyNativeHeaderConfiguration(result.compiler_driver_path,result.resource_directory,result.failure))
+    return result;
   const bool objc = request.language == BaseLanguage::ObjectiveC ||
                     request.language == BaseLanguage::ObjectiveCxx;
   if (request.module_owned_names &&
@@ -589,7 +1082,8 @@ CompileResult Compile(const CompileRequest &request) {
     result.failure = "the ownership-producer module suffix is reserved";
     return result;
   }
-  if ((!request.module_source_root.empty() && !request.module_owned_names) ||
+  if ((!request.module_source_root.empty() && !request.module_owned_names &&
+       !request.emit_semantic_interface) ||
       (request.module_owned_names &&
        (request.module_name.empty() || request.package_identity.empty())) ||
       request.input_path.empty() ||
@@ -617,9 +1111,13 @@ CompileResult Compile(const CompileRequest &request) {
   }
   static std::once_flag targets;
   std::call_once(targets, [] {
-    llvm::InitializeNativeTarget();
-    llvm::InitializeNativeTargetAsmPrinter();
-    llvm::InitializeNativeTargetAsmParser();
+    // The SDK can supply more than its host backend. Register the same target
+    // set that its generated LLVM headers describe, so embedded compilation
+    // and the ordinary Clang driver have identical code-generation reach.
+    llvm::InitializeAllTargets();
+    llvm::InitializeAllTargetMCs();
+    llvm::InitializeAllAsmPrinters();
+    llvm::InitializeAllAsmParsers();
   });
   auto physical = llvm::vfs::createPhysicalFileSystem();
   if (!request.working_directory.empty()) {
@@ -644,27 +1142,33 @@ CompileResult Compile(const CompileRequest &request) {
   llvm::SmallString<256> final_output(request.output_path);
   llvm::SmallString<256> interface_output(request.interface_output_path);
   llvm::SmallString<256> record_output(request.dependency_record_output_path);
+  llvm::SmallString<256> c_export_header_output(request.c_export_header_output_path);
+  llvm::SmallString<256> swift_overlay_output(request.swift_overlay_output_path);
   if ((!final_output.empty() && overlay->makeAbsolute(final_output)) ||
       (!interface_output.empty() && overlay->makeAbsolute(interface_output)) ||
-      (!record_output.empty() && overlay->makeAbsolute(record_output))) {
+      (!record_output.empty() && overlay->makeAbsolute(record_output)) ||
+      (!c_export_header_output.empty() && overlay->makeAbsolute(c_export_header_output)) ||
+      (!swift_overlay_output.empty() && overlay->makeAbsolute(swift_overlay_output))) {
     result.failure = "Cannot resolve output paths in the compilation working directory";
     return result;
   }
-  auto aliases_record = [&](const std::string &path) {
-    if (record_output.empty() || path.empty()) return false;
+  auto aliases = [&](llvm::SmallString<256> destination, const std::string &path) {
+    if (destination.empty() || path.empty()) return false;
     llvm::SmallString<256> candidate(path);
     if (overlay->makeAbsolute(candidate)) return true;
-    auto normalized_record = record_output;
-    llvm::sys::path::remove_dots(normalized_record, true);
+    llvm::sys::path::remove_dots(destination, true);
     llvm::sys::path::remove_dots(candidate, true);
 #if defined(_WIN32)
-    if (llvm::StringRef(candidate).equals_insensitive(normalized_record)) return true;
+    if (llvm::StringRef(candidate).equals_insensitive(destination)) return true;
 #else
-    if (candidate == normalized_record) return true;
+    if (candidate == destination) return true;
 #endif
     bool equivalent = false;
-    return !llvm::sys::fs::equivalent(candidate, normalized_record, equivalent) && equivalent;
+    return !llvm::sys::fs::equivalent(candidate, destination, equivalent) && equivalent;
   };
+  auto aliases_record = [&](const std::string &path) { return aliases(record_output, path); };
+  auto aliases_c_export_header = [&](const std::string &path) { return aliases(c_export_header_output, path); };
+  auto aliases_swift_overlay = [&](const std::string &path) { return aliases(swift_overlay_output, path); };
   if (!record_output.empty()) {
     if (aliases_record(request.input_path) || aliases_record(request.output_path) ||
         aliases_record(request.interface_output_path) ||
@@ -673,6 +1177,27 @@ CompileResult Compile(const CompileRequest &request) {
       result.failure = "Dependency record path conflicts with compilation input or outputs";
       return result;
     }
+  }
+  if (!c_export_header_output.empty() &&
+      (!request.c_export_header || request.c_export_header->empty() ||
+       aliases_c_export_header(request.input_path) || aliases_c_export_header(request.output_path) ||
+       aliases_c_export_header(request.dependency_record_output_path) ||
+       aliases_c_export_header(request.interface_output_path) ||
+       (!request.interface_output_path.empty() &&
+        aliases_c_export_header(request.interface_output_path + ".json")))) {
+    result.failure = "C export header path conflicts with compilation input or outputs";
+    return result;
+  }
+  if (!swift_overlay_output.empty() &&
+      (!request.swift_overlay || request.swift_overlay->empty() ||
+       aliases_swift_overlay(request.input_path) || aliases_swift_overlay(request.output_path) ||
+       aliases_swift_overlay(request.dependency_record_output_path) ||
+       aliases_swift_overlay(request.c_export_header_output_path) ||
+       aliases_swift_overlay(request.interface_output_path) ||
+       (!request.interface_output_path.empty() &&
+        aliases_swift_overlay(request.interface_output_path + ".json")))) {
+    result.failure = "Swift overlay path conflicts with compilation input or outputs";
+    return result;
   }
   if (request.emit != EmitKind::Syntax) {
     auto error = llvm::sys::fs::createUniqueFile(std::string(final_output) + ".objc3c-%%%%%%",
@@ -745,17 +1270,32 @@ CompileResult Compile(const CompileRequest &request) {
       std::make_shared<clang::PCHContainerOperations>());
   invocation.setDiagnosticConsumer(&diagnostics);
   result.success = invocation.run() && diagnostics.getNumErrors() == 0;
+  if(result.success && request.meta_compilation &&
+      (request.meta_compilation->failed || !request.meta_compilation->packages.VerifyInputs(result.failure))) {
+    result.success=false;
+    if(result.failure.empty())result.failure=request.meta_compilation->error;
+  }
   if (result.success && request.emit_semantic_interface &&
       (!result.interface_artifact || !result.interface_artifact->success)) {
     result.success = false;
     result.failure = "Semantic interface emission failed";
   }
-  if (result.success && !result.resolved_module_identities.empty())
+  if (result.success && (!result.resolved_module_identities.empty() || request.meta_compilation))
     BuildDependencyRecord(request, result);
   if (result.success && std::any_of(result.interface_input_paths.begin(),
           result.interface_input_paths.end(), aliases_record)) {
     result.success = false;
     result.failure = "Dependency record path conflicts with an imported interface artifact";
+  }
+  if (result.success && std::any_of(result.interface_input_paths.begin(),
+          result.interface_input_paths.end(), aliases_c_export_header)) {
+    result.success = false;
+    result.failure = "C export header path conflicts with an imported interface artifact";
+  }
+  if (result.success && std::any_of(result.interface_input_paths.begin(),
+          result.interface_input_paths.end(), aliases_swift_overlay)) {
+    result.success = false;
+    result.failure = "Swift overlay path conflicts with an imported interface artifact";
   }
   if (result.success && !record_output.empty() && result.semantic_dependency_record.empty()) {
     result.success = false;
@@ -780,14 +1320,43 @@ CompileResult Compile(const CompileRequest &request) {
     }
     return result.success;
   };
-  if (result.success) {
+  auto publish_with_record = [&]() {
     if (record_output.empty()) {
       publish_products();
     } else {
       std::string publication_failure;
-      if (!PublishCompilationProductsWithDependencyRecord(
+      if (!PublishCompilationProductsWithTextArtifact(
               std::string(record_output), result.semantic_dependency_record,
               publish_products, publication_failure)) {
+        result.success = false;
+        if (result.failure.empty()) result.failure = std::move(publication_failure);
+        else result.failure += "; " + publication_failure;
+      }
+    }
+    return result.success;
+  };
+  auto publish_with_header = [&]() {
+    if (c_export_header_output.empty()) {
+      publish_with_record();
+    } else {
+      std::string publication_failure;
+      if (!PublishCompilationProductsWithTextArtifact(
+              std::string(c_export_header_output), *request.c_export_header,
+              publish_with_record, publication_failure, "C export header")) {
+        result.success = false;
+        if (result.failure.empty()) result.failure = std::move(publication_failure);
+        else result.failure += "; " + publication_failure;
+      }
+    }
+    return result.success;
+  };
+  if (result.success) {
+    if (swift_overlay_output.empty()) {
+      publish_with_header();
+    } else {
+      std::string publication_failure;
+      if (!PublishCompilationProductsWithTextArtifact(std::string(swift_overlay_output),
+              *request.swift_overlay, publish_with_header, publication_failure, "Swift overlay")) {
         result.success = false;
         if (result.failure.empty()) result.failure = std::move(publication_failure);
         else result.failure += "; " + publication_failure;

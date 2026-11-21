@@ -1,0 +1,309 @@
+{
+  "schema": "objc3c.linux-native-parameter-contracts-progress.v1",
+  "status": "SOURCE_VALIDATED",
+  "date": "2026-10-29",
+  "implementation_commit": "563905363ade992c457d05a0e654cc554588c593",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-58318ce169b2-00b75dc3",
+  "compiler_patch_digest": "58318ce169b269f998dbfcb3736e1f7afcb636fc3a08fc313a0fffe70d316456",
+  "compiler_binary_sha256": "8631c059e3dc7f0664fbe5ce062e0fcce3e5992f6552ecbbe8df79fde2f3ffa1",
+  "frontend_binary_sha256": "baf292f6a2cc88530332d0a2c4ed739d7514d6dcbf640e82848a9833a4c3cc2e",
+  "frontend_source_identity_sha256": "0c12917399c16f54696fd1dd3c01603e1ef56a1ac021ebb96fc73f01f86db551",
+  "concurrency_module_version": "2.93.0",
+  "system_module_version": "2.16.0",
+  "keypath_module_version": "2.6.0",
+  "implementation_commits": [
+    "810550b45",
+    "563905363ade992c457d05a0e654cc554588c593"
+  ],
+  "source_inputs": [
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_emitter.cpp",
+      "sha256": "54468bb197c98d99be50cd00034078481a9449a3d54654fef9af911111b533fc"
+    },
+    {
+      "path": "scripts/objc3c_toolchain/qualify_native_async_packages.py",
+      "sha256": "287d797e7615e159c3adb04088f236f14dd6e7fd37e301908c130ea41bd9ac93"
+    },
+    {
+      "path": "scripts/objc3c_toolchain/run_linux_factory_batch.py",
+      "sha256": "92695beadbc7b7d53a1d55dcf50c4662f6adbc9032f643b2b42dc506d8f71fc5"
+    },
+    {
+      "path": "stdlib/module_inventory.json",
+      "sha256": "67be5af343eb86b5bc21d940851b7fa0ff5c24517eff022e42d100e95f7a78d0"
+    },
+    {
+      "path": "tests/clang_foundation/interface_emitter_test.cpp",
+      "sha256": "647d5a74b7ca2a2703c2da84ccb2be3b3cec2bf4cc63918330fc7145aa61f430"
+    },
+    {
+      "path": "tests/clang_foundation/interface_import_test.cpp",
+      "sha256": "9140a2c078b72ac2006a78a55326c3d66386c78dd0d7f858107381e2398dc3fb"
+    },
+    {
+      "path": "tests/clang_foundation/isolation_contracts_test.cpp",
+      "sha256": "4cb2d996441c99e20eb4639d583b899f9fc4e13f8d8ee17a41b8f439c8c2267b"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/app/factory-template-rejected.mm",
+      "sha256": "0fd6dc3dbea80e4bbdc132afbd06cbd9624164959456fa7e2353a97201c9fc1e"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/app/factory_package_checks.h",
+      "sha256": "3a7cb8530df1cda32029d4f80fd9a2c276cdab7c9b79fa61018e08948ad48a1f"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/declaration_attributes.h",
+      "sha256": "e5be5eabad7a703bdd864278e65af7eaf0a3e713e4407590080f5922d40ba7f3"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/module.mm",
+      "sha256": "b1edbb6723662a9dcfd8d0958a11c729ce3bf66541c72c4e017fae818052dbee"
+    },
+    {
+      "path": "toolchains/llvm/manifest.json",
+      "sha256": "0e32f77510ca05a98d395f4af828014a21faed236b705d0fa9c53fc3a7101432"
+    },
+    {
+      "path": "toolchains/llvm/patches/0004-objc3-canonical-carriers-and-function-effects.patch",
+      "sha256": "5b1ce1567faa98dc12adb91a762b620a56f73fc982458ffa02d6e51590652212"
+    }
+  ],
+  "validation": {
+    "frontend_suites": 33,
+    "focused_tooling_tests": 27,
+    "frontend_report": {
+      "path": "out/native-parameter-contracts-owned-predicates-frontends.log",
+      "sha256": "66e8a8c1efb3193d9f1ea38a4825db4007a530c6835beee5f9a9d51f2f569dc7"
+    },
+    "tooling_report": {
+      "path": "out/native-parameter-contracts-accepted-tooling-final.log",
+      "sha256": "de7649552f94df32203c6cf801ab6ed143f3e738d1836d065d1dcb40d2af023b"
+    },
+    "native_backend_unchanged": false,
+    "native_reports": [
+      {
+        "path": "out/native-parameter-contracts-owned-predicates-native-check-0.log",
+        "sha256": "fbc99bebc4ccaa5b5a3061347fe1d4215e7286dddd9d396a31a7a0f023db3a61"
+      },
+      {
+        "path": "out/native-parameter-contracts-owned-predicates-native-check-1.log",
+        "sha256": "8963af36343fb6903935ba21b171e5a202d5c0c4a062fd132c198e9cea520698"
+      },
+      {
+        "path": "out/native-parameter-contracts-owned-predicates-native-check-2.log",
+        "sha256": "7222671032e1af83061ef763055806aba7ab1e4e0041742f4b2e52eb18ebc226"
+      },
+      {
+        "path": "out/native-parameter-contracts-owned-predicates-native-check-3.log",
+        "sha256": "48bec091394271d742c7a27f442dcf5680ff21e1ff409e949f90ad071b13cf79"
+      },
+      {
+        "path": "out/native-parameter-contracts-owned-predicates-native-check-4.log",
+        "sha256": "f9858e6e9d2f540d44905b00af53c14afa384997f86b2dea8d0bcad6acc4dc0a"
+      }
+    ],
+    "native_backend_unit_tests": 238,
+    "native_backend_compiler_regressions": 412,
+    "unsupported_native_compiler_cases": 3,
+    "package_reports": [
+      {
+        "path": "out/native-validation/native-parameter-contracts-owned-predicates-packages-normal/qualification.json",
+        "sha256": "b8bab3f583f62956ade21f9ac46413b6aa86567df5c3ac72fb241a7be3717afb",
+        "mode": "normal",
+        "full_fixture": false,
+        "configurations": 8,
+        "commands": 56,
+        "development_input_lock": "9009c8b92bf7ff9c9f05afc91b7c458551c405da7c69733be5a3fc03be8401eb"
+      },
+      {
+        "path": "out/native-validation/native-parameter-contracts-owned-predicates-packages-eager/qualification.json",
+        "sha256": "c4be6e706e9fd874fb5a35c1dcbbed998725acb7b55393fe66ba85bd21f851dd",
+        "mode": "eager",
+        "full_fixture": false,
+        "configurations": 8,
+        "commands": 56,
+        "development_input_lock": "9009c8b92bf7ff9c9f05afc91b7c458551c405da7c69733be5a3fc03be8401eb"
+      },
+      {
+        "path": "out/native-validation/native-parameter-contracts-owned-predicates-packages-asan/qualification.json",
+        "sha256": "011997dd02febbf245b02b3b45559f06fef8f12338b54273f41dd5bf439a7a73",
+        "mode": "asan",
+        "full_fixture": false,
+        "configurations": 8,
+        "commands": 56,
+        "development_input_lock": "5f983474a7a7ddf86052a42805c02816e743a1596585dbcf81a052d15bfb3a82"
+      },
+      {
+        "path": "out/native-validation/native-parameter-contracts-owned-predicates-packages-tsan/qualification.json",
+        "sha256": "4068223f5d176c2bb3d27a064bd25586acd28d10239e38cb8912d0d6f18a59ad",
+        "mode": "tsan",
+        "full_fixture": false,
+        "configurations": 8,
+        "commands": 56,
+        "development_input_lock": "0e74cb29046f278dd8e932a74526eb8cce4539058678e399d5f3b56b5418f566"
+      },
+      {
+        "path": "out/native-validation/native-parameter-contracts-owned-predicates-full-packages-normal/qualification.json",
+        "sha256": "373e98959e449298efa5bf228267bc247500d8f0ebaddba232b40be1a3704093",
+        "mode": "normal",
+        "full_fixture": true,
+        "configurations": 1,
+        "commands": 7,
+        "development_input_lock": "9009c8b92bf7ff9c9f05afc91b7c458551c405da7c69733be5a3fc03be8401eb"
+      },
+      {
+        "path": "out/native-validation/native-parameter-contracts-owned-predicates-full-packages-asan/qualification.json",
+        "sha256": "231d8c7807fd4e781f14f27149acd24d352f18b76f7715bf15debea4dd25bc63",
+        "mode": "asan",
+        "full_fixture": true,
+        "configurations": 1,
+        "commands": 7,
+        "development_input_lock": "5f983474a7a7ddf86052a42805c02816e743a1596585dbcf81a052d15bfb3a82"
+      },
+      {
+        "path": "out/native-validation/native-parameter-contracts-owned-predicates-full-packages-tsan/qualification.json",
+        "sha256": "06134784fe09e0510e4dde1910df60462163357dac131764bfaa099ef3bfe73b",
+        "mode": "tsan",
+        "full_fixture": true,
+        "configurations": 1,
+        "commands": 7,
+        "development_input_lock": "0e74cb29046f278dd8e932a74526eb8cce4539058678e399d5f3b56b5418f566"
+      }
+    ],
+    "focused_package_configurations": 32,
+    "focused_package_commands": 224,
+    "full_fixture_smoke_configurations": 3,
+    "full_fixture_smoke_commands": 21,
+    "retained_failure_reports": [
+      {
+        "path": "out/native-parameter-contracts-frontends.log",
+        "sha256": "09515872379f365b5c9289c0a65fb0e09980f127f52ae8f1d1b23553a9234fc1"
+      },
+      {
+        "path": "out/native-validation/native-parameter-contracts-packages-normal/qualification.json",
+        "sha256": "5b683e1909adfa01da1ae438e0c13fd3af0ae2bc209e88ae9c7ea6c3c6bd3432"
+      },
+      {
+        "path": "out/native-validation/native-parameter-contracts-packages-eager/qualification.json",
+        "sha256": "2adef19134e222d7f68192d1ebe15af581b80e8b1c1acf1b63697858fc5f1bcd"
+      },
+      {
+        "path": "out/native-validation/native-parameter-contracts-packages-asan/qualification.json",
+        "sha256": "4349cac8601c73bcc822169f3e2c73e208edc4871a4ac3ed3628836be06bc4f7"
+      },
+      {
+        "path": "out/native-validation/native-parameter-contracts-packages-tsan/qualification.json",
+        "sha256": "ddb85331e2ecf1ec2997b72a51f3907e7173c50db188f97f32941d55358b5f56"
+      },
+      {
+        "path": "out/native-parameter-contracts-scoped-frontends.log",
+        "sha256": "789bf8baf3ecb9a1af7ebcf5ee26faf5547581629f7ca204dd1627c498fca666"
+      },
+      {
+        "path": "out/native-parameter-contracts-final-frontends.log",
+        "sha256": "6963ee5d2f9c65307b91d3ef9ab1663d27ea9a6021e7de962621852193c82acc"
+      },
+      {
+        "path": "out/native-parameter-contracts-native-check-1.log",
+        "sha256": "d1ef27f288b161b5931ebb992ab9a8a2812d3b41732de3bae6091a40a244bdf6"
+      },
+      {
+        "path": "out/native-validation/native-parameter-contracts-scoped-packages-normal/qualification.json",
+        "sha256": "361c003a624796122b3c62c43a02540fc968551f8b95d6689a8c749c46f4395b"
+      },
+      {
+        "path": "out/native-validation/native-parameter-contracts-scoped-packages-eager/qualification.json",
+        "sha256": "27c395bb066f7dc83280407444e762b6b6b1911a182245772723f5af04fb654b"
+      },
+      {
+        "path": "out/native-validation/native-parameter-contracts-scoped-packages-asan/qualification.json",
+        "sha256": "6d57fdd30ecab1a46b610b49020128ac9deceb7cb032b7b7952218f0baa024d6"
+      },
+      {
+        "path": "out/native-validation/native-parameter-contracts-scoped-packages-tsan/qualification.json",
+        "sha256": "55d926a7252d0726218068fa715c44e362baa8d140b431c84a39c3082977f782"
+      },
+      {
+        "path": "out/native-validation/native-parameter-contracts-final-packages-normal/qualification.json",
+        "sha256": "c37e103ec1780e648e1202ec041d7bab72ef3eeee0a3468fe9192434e95b02a4"
+      },
+      {
+        "path": "out/native-validation/native-parameter-contracts-final-packages-eager/qualification.json",
+        "sha256": "3cfbf848b45dd0671e7947a1e74edb759b69583158d1baa5ce8dbe8f17616718"
+      },
+      {
+        "path": "out/native-validation/native-parameter-contracts-final-packages-asan/qualification.json",
+        "sha256": "37f63b2e30cdb71df8aee08008dd34c29181783e66f92c9542d5ec156e7dff9c"
+      },
+      {
+        "path": "out/native-validation/native-parameter-contracts-final-packages-tsan/qualification.json",
+        "sha256": "0a6a93166aee14e7eb2938f45a9b88df9d0909af17ccb61a8276789f68b2f619"
+      },
+      {
+        "path": "out/native-parameter-contracts-predicate-order-frontends.log",
+        "sha256": "37546cf23700322f71dee5b3d44b9bfe80c6cb81963eec725c5c4eb240751217"
+      },
+      {
+        "path": "out/native-validation/native-parameter-contracts-predicate-order-packages-normal/qualification.json",
+        "sha256": "9ea9af4ae1d1c62a81e23d98bf07b92616806fc8c8e87d1d847f18a31d9b340f"
+      },
+      {
+        "path": "out/native-validation/native-parameter-contracts-predicate-order-packages-eager/qualification.json",
+        "sha256": "aa5c06adc81ece165aa9545f6b2fc099e4c6a50aa21031121bd4521f958c35f2"
+      },
+      {
+        "path": "out/native-validation/native-parameter-contracts-predicate-order-packages-asan/qualification.json",
+        "sha256": "efdfa3e4e3ac76488946bfd8735b6a08b7e68f98b50985fee593bf9a36123d69"
+      },
+      {
+        "path": "out/native-validation/native-parameter-contracts-predicate-order-packages-tsan/qualification.json",
+        "sha256": "c66334c492571621f187a78b989870718b3dc3bbd5cc497a58dd97bcfc69fbc9"
+      },
+      {
+        "path": "out/native-parameter-contracts-stable-predicates-frontends.log",
+        "sha256": "90d0486d403b32badaa56620b6438f5a4de7193b5492d0f86354cf88b4385895"
+      },
+      {
+        "path": "out/native-validation/native-parameter-contracts-stable-predicates-packages-normal/qualification.json",
+        "sha256": "7b20d8342e5c79c1bfe0c6aec4c00faded733ea166988701178583fbfd9b800f"
+      },
+      {
+        "path": "out/native-validation/native-parameter-contracts-stable-predicates-packages-eager/qualification.json",
+        "sha256": "102e66c9066d163a5f9a7d6acf730af8bb90478ba4d57dac671a356186984c32"
+      },
+      {
+        "path": "out/native-validation/native-parameter-contracts-stable-predicates-packages-asan/qualification.json",
+        "sha256": "7323785a2f8884cd3a625fb4ceed6f3cca69d2decd9abb9ebf5662968b367936"
+      },
+      {
+        "path": "out/native-validation/native-parameter-contracts-stable-predicates-packages-tsan/qualification.json",
+        "sha256": "2fff538628f3a17056ed951d4a17425f29435d2ca11e4d51c36ca06a859faf8e"
+      }
+    ]
+  },
+  "implemented": [
+    "Static and dynamic pass_object_size parameters preserve their typed size mode and native hidden ABI arguments across provider/consumer boundaries.",
+    "Native lifetimebound/noescape parameter metadata, signed callback argument encodings and sentinel/null-position contracts survive interface replay and source-free consumers.",
+    "Diagnose-if contracts bind typed predicates, local/template parameter identities, referenced export owners, messages, severity and warning group. Private predicate dependencies are rejected.",
+    "Returns-twice, nothrow, leaf, disabled/not-tail-called entries, nomerge/noduplicate and optnone contracts retain native attribute/type identities. Native printing converts callback indices to source numbering, omits empty optional diagnostic groups, and places parameter-dependent predicates before asm labels. Object-size overload USRs preserve size mode and dynamic/static form. Diagnostic predicates deduplicate inherited copies, rebind renamed parameters while printing, and deep-import their conditions and parents into the consumer AST.",
+    "Source-free consumers reject negative diagnostic-predicate calls, missing sentinels and taking the address of object-size entries. Existing nothrow cleanup prototypes now carry the native-attribute requirement."
+  ],
+  "scope": [
+    "The native declaration printer and object-size overload USRs changed. All 238 native unit tests and 412 compiler regressions pass against the final native inputs. Runtime sources, service binaries and GNUstep binaries are unchanged; the complete five-family source/PCH runtime matrix remains recorded at source 2.91 and was not repeated here.",
+    "Final frontend/package checks cover the current facade and fixtures. Focused packages cover C++20/C++23, ARC/MRC, O0/O2, normal/eager/ASan+UBSan/TSan after source removal and relocation. Full-fixture runs are three smoke configurations.",
+    "Native lifetime metadata preservation does not claim complete Objective-C borrowed-flow analysis. Enable-if overload identities and broader native attribute forms remain open. No SDK archive was rebuilt."
+  ],
+  "accepted_sdk_version": "2.62.0",
+  "sdk_rebuilt": false,
+  "profile_conformance_claimed": false,
+  "native_linux_aarch64_qualified": false,
+  "remaining": [
+    "Broader dependent lookup and unnamed contexts outside complete template-owned member graphs; unmodeled declaration contracts and general standard-library publication/implementations.",
+    "General indirect/union/alias and borrowed-result precision, mutable/reference/generic/lazy callable analysis, global/foreign/MRC and exceptional ownership effects.",
+    "Remaining abstract spawn/group forms, isolation/Sendable crossings and complete Strict Concurrency enforcement.",
+    "Dependent/effectful/isolated and borrowed/resource keypaths; undefined nullable nonnull/scalar/aggregate result policy and Part 8 resource-union boundary.",
+    "Remaining specified language/library/metaprogramming/foreign interop, required diagnostics and complete Core/Strict/Strict Concurrency/Strict System profiles.",
+    "Native Linux AArch64 implementation/qualification and coordinated post-2.62 SDK delivery."
+  ]
+}

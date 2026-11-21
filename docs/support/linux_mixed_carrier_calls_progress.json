@@ -1,0 +1,44 @@
+{
+  "development_only": true,
+  "source_version": "2.135",
+  "system_version": "2.61",
+  "extension_abi": 24,
+  "prepared_source_tree": "cdd8abb2967bcf6fc8677be370901745de657c99",
+  "compiler_identity_resealed": false,
+  "matched_sdk_produced": false,
+  "compiler": {
+    "discovered": 533,
+    "passed": 530,
+    "unsupported": 3,
+    "dedicated_commands": 25
+  },
+  "updated_frontend_groups": 26,
+  "publication_profiles": 2,
+  "production_decoder_exact_replays": 360,
+  "native": {
+    "configurations": 4,
+    "commands": 14,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ],
+    "ownership": "ARC",
+    "profiles": [
+      "c++20-arc-source-compile",
+      "c++20-arc-source-link",
+      "c++20-arc-source-execute",
+      "c++23-arc-pch-no-elide-pch",
+      "c++23-arc-pch-no-elide-compile",
+      "c++23-arc-pch-no-elide-link",
+      "c++23-arc-pch-no-elide-execute",
+      "c++20-arc-source-cxx-only-eh-compile",
+      "c++20-arc-source-cxx-only-eh-link",
+      "c++20-arc-source-cxx-only-eh-execute",
+      "c++23-arc-pch-cxx-only-eh-pch",
+      "c++23-arc-pch-cxx-only-eh-compile",
+      "c++23-arc-pch-cxx-only-eh-link",
+      "c++23-arc-pch-cxx-only-eh-execute"
+    ],
+    "all_passed": true
+  }
+}

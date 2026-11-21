@@ -1,0 +1,59 @@
+{
+  "schema": "objc3c.linux-keypath-record-fields-progress.v1",
+  "status": "FOCUSED_VALIDATED",
+  "source_checkpoint": "fcb83f453bbb717c11d9087799047fb001189219",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-636d000df049-00b75dc3",
+  "compiler_patch_digest": "636d000df0491cfa13231cde6802ba7bfec390d9ad619293736f842f7889ecba",
+  "keypath_module_version": "2.2.0",
+  "metadata_layout_version": 2,
+  "verification": {
+    "foundation_compile": {
+      "path": "out/keypath-fields-foundation-build.json",
+      "sha256": "ad3e461026fd0988cdbc1ffbf0f6989b0a17bb61ec9cec990ee39f09a080e0f6"
+    },
+    "native_regressions": {
+      "tests_passed": 4,
+      "log": {
+        "path": "out/keypath-fields-native-codegen.log",
+        "sha256": "61940a114e4160d744fb68a1abb759f16530b68a41ec92842066ecf4db7c18fe"
+      }
+    },
+    "facade": {
+      "suites_passed": ["keypath_native_ast"],
+      "log": {
+        "path": "out/keypath-fields-contracts-test.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "runtime": {
+      "configurations": 2,
+      "commands": 12,
+      "modes": ["C17 MRC O2 source", "C++23 ARC O0 PCH"],
+      "report": {
+        "path": "out/native-validation/keypath-fields-smoke/batch.json",
+        "sha256": "b021aaeb8f0a7ed66e644fc65afbc116d79e5b96e7d1d2994ea74034b29d1a3c"
+      }
+    },
+    "source_binary_snapshot": [
+      {
+        "path": "out/toolchains/objc3-development/stage-linux-x86_64/bin/clang-23",
+        "sha256": "226712b42fc8c8bb901a3ba3948e3d412aeb828d1326212a3df57d29d8011db5"
+      },
+      {
+        "path": "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c",
+        "sha256": "23f2b2c7a9734035f6dbe32215bc8367a6c79b1f486cb792ad6ad57b394722a6"
+      }
+    ]
+  },
+  "delivery": {
+    "accepted_sdk": "2.29.0",
+    "accepted_keypath_module": "2.1.0",
+    "new_archive_built": false
+  },
+  "remaining": [
+    "Combined compiler/frontend, normal/sanitizer and expanded source-free package qualification",
+    "Nullable writable paths and nonnull/scalar/aggregate nullable-chain results",
+    "Dependent/effectful/isolated and borrowed/resource path contracts",
+    "Full language/profile conformance and native Linux AArch64 qualification"
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "schema": "objc3c.linux-isolation-class-entry-progress.v1",
+  "status": "FOCUSED_VALIDATED",
+  "source_checkpoint": "5852e8282934dd823f7d219f1c8ac2cf407944a0",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-cdc2e4beafb9-00b75dc3",
+  "compiler_patch_digest": "cdc2e4beafb95411dd3e4458800ea63d3907836a7077a66d85099fed5f606ded",
+  "concurrency_module_version": "2.32.0",
+  "interface_schema": "2.2",
+  "verification": {
+    "foundation_compile": {
+      "path": "out/isolation-class-foundation-build.json",
+      "sha256": "43365868d5989ecfe92feaeb50b716889062aa7b989bfdf0bf1d2ba01cccf598"
+    },
+    "native_codegen": {
+      "tests_passed": 2,
+      "log": {
+        "path": "out/isolation-class-native-codegen.log",
+        "sha256": "9b1aa09b6edb3d3c998a0b8f015895fce987d283779165c7ce69b63db8fe0232"
+      }
+    },
+    "facade": {
+      "suites_passed": ["isolation_contracts"],
+      "log": {
+        "path": "out/isolation-class-contracts-test.log",
+        "sha256": "e4a765cce94b7d1697b301984986f4d01474d4865b4d8d49486873dd9a41b9f5"
+      }
+    },
+    "runtime": {
+      "configurations": 2,
+      "commands": 15,
+      "modes": ["C17 ARC O0 source provider-ARC", "C++23 MRC O2 PCH provider-MRC"],
+      "report": {
+        "path": "out/native-validation/isolation-class-smoke/batch.json",
+        "sha256": "98c1fa308e2d1fc755f5a729f5c0ab41912eee77f1f48ef5a865321a1936e090"
+      }
+    },
+    "source_binary_snapshot": [
+      {
+        "path": "out/toolchains/objc3-development/stage-linux-x86_64/bin/clang-23",
+        "sha256": "10bbc9b4ef5270283edd52e8ec96bb1fdc0e416ce263aa3ef9e979af741c8dd0"
+      },
+      {
+        "path": "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c",
+        "sha256": "72d8eecb9221e6bb372b05bf7193784132ca16732698f3c652f340661c823284"
+      }
+    ]
+  },
+  "delivery": {
+    "accepted_sdk": "2.29.0",
+    "new_archive_built": false
+  },
+  "remaining": [
+    "Combined normal/sanitizer matrices and compiler/tooling qualification after the implementation batch",
+    "Super messages, unqualified dynamic Class receivers, init-family entry and task-ABI isolated targets",
+    "Full language/profile conformance and native Linux AArch64 qualification"
+  ]
+}

@@ -1,0 +1,352 @@
+{
+  "schema": "objc3c.linux-native-feature-integration-acceptance.v1",
+  "status": "PASS",
+  "date": "2026-10-25",
+  "scope": "Linux x86-64 / GNUstep 2.2 admitted Objective-C 3.0 features and installed SDK delivery",
+  "implementation_commit": "0345215539fd3cb1962d4bb9b12b2ed0e71a6e10",
+  "distribution_runner_commit": "80c2b37c69c4cb5f6c1f7aa39bc6433ae9d722e8",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-49f322e67e0d-00b75dc3",
+  "patch_digest": "49f322e67e0db0b112dc90def10df77d9ec4c01116cae537b6bbe1cfdc6317ab",
+  "extension_abi_revision": 21,
+  "semantic_interface_schema": "2.1",
+  "physical_async_identities": [
+    "c-frame-v1",
+    "cxx-task-v1"
+  ],
+  "profile_conformance_claimed": false,
+  "native_linux_aarch64_qualified": false,
+  "sdk": {
+    "input_identity": "15678c7043952b669016da6bb671d8c1a303a3c1858865fda81a653968509968",
+    "seal_sha256": "26d7e520de88f61d6143ad9e0d7d8ebcd16f4f4a6f573cf652ce4099e15286d4",
+    "archive": "llvmorg-23.1.3-0d261d1ca552-49f322e67e0d-00b75dc3-linux-x86_64-26d7e520de88f61d.tar.zst",
+    "archive_sha256": "4a91b2d9b5e0a08eba8d8cd5b1222d107b5c6ee4bb007c36988013000dfa88bd",
+    "archive_bytes": 434700253,
+    "release_receipt": {
+      "path": "out/toolchains/linux-sdk-builds/15678c7043952b669016da6bb671d8c1a303a3c1858865fda81a653968509968/release.json",
+      "sha256": "cc91ba6d24bc132ff06df84e11107661da91290ad288687abbf54b568280f994"
+    },
+    "installed_compiler_sha256": "51d54f0b4ce264c4bc46af9bf7ad29ce9ebed3a0c04d254ee274b0879282f206",
+    "installed_frontend_sha256": "06114f8d68c94f62ca46f5feb311f3dcef16a1d38c3fb58ddcaefd9384d525eb",
+    "installed_runtime_library_sha256": "dc79d2d4926bb5705ca920110d35b239366318ab773e61dce9222ee6c7629630",
+    "activation": "out/toolchains/linux-sdk/activate.sh"
+  },
+  "verification": {
+    "foundation": {
+      "path": "out/toolchains/objc3-development/build-linux-x86_64/foundation-runs/20261025T125336.872473Z/report.json",
+      "sha256": "5379241c6b1894df0e7f4101a47d1b9b62a02ff25396d8adfbb582d3af3bfc36",
+      "status": "PASS",
+      "clang_index_query_regressions_passed": 355,
+      "objc3_regressions_passed": 352,
+      "unsupported": 3,
+      "unsupported_scope": [
+        "two Windows cases",
+        "one AArch64 layout case"
+      ],
+      "native_contract_tests_passed": {
+        "ast": 104,
+        "matchers": 5,
+        "dynamic_matchers": 41,
+        "clangd": 16
+      },
+      "compiler_editor_debugger_built": true
+    },
+    "facade_ctests_passed": 32,
+    "gnustep_runtime_integration_tests_passed": 8,
+    "installed_driver_embedding_debugger_checks_passed": 37,
+    "native_integration": {
+      "path": "out/native-validation/linux-sdk-20261025T125946433964Z/summary.json",
+      "sha256": "53cc1fb1527b160980a4877084d560fdf7e78269a0d2bd89b1e9e34c8623d95a",
+      "status": "PASS",
+      "selected_nodes": 13,
+      "runtime_count": 76
+    },
+    "installed_gates": {
+      "recursive_carriers": {
+        "status": "PASS",
+        "configurations": 8,
+        "executions": 70,
+        "commands": 333,
+        "rejections": 100
+      },
+      "async_c_abi": {
+        "status": "PASS",
+        "cases": 20,
+        "executions": 20,
+        "commands": 138
+      },
+      "stdlib": {
+        "status": "PASS",
+        "cases": 40,
+        "executions": 40,
+        "commands": 258
+      },
+      "match_results": {
+        "status": "PASS",
+        "configurations": 12,
+        "cases": 12,
+        "executions": 30,
+        "commands": 116
+      },
+      "task_coroutines": {
+        "status": "PASS",
+        "cases": 12,
+        "executions": 12,
+        "commands": 114
+      },
+      "native_async": {
+        "status": "PASS",
+        "cases": 16,
+        "executions": 16,
+        "commands": 104
+      },
+      "carrier_debugger": {
+        "status": "PASS",
+        "cases": 6,
+        "executions": 6,
+        "commands": 30
+      },
+      "optional_access": {
+        "status": "PASS",
+        "commands": 64
+      },
+      "guard_bindings": {
+        "status": "PASS",
+        "commands": 64
+      },
+      "defer_control_flow": {
+        "status": "PASS",
+        "commands": 104
+      },
+      "source_modules": {
+        "status": "PASS",
+        "builds": 14
+      },
+      "source_graph": {
+        "status": "PASS",
+        "rejections": 32,
+        "builds": 112
+      },
+      "binary_packages": {
+        "status": "PASS",
+        "cases": 16,
+        "executions": 16,
+        "rejections": 128
+      },
+      "ownership_projections": {
+        "status": "PASS",
+        "cases": 12,
+        "executions": 36,
+        "rejections": 96
+      },
+      "public_surfaces": {
+        "status": "PASS",
+        "cases": 16,
+        "executions": 80,
+        "rejections": 128
+      },
+      "api_availability": {
+        "status": "PASS",
+        "cases": 16,
+        "executions": 80,
+        "rejections": 152
+      },
+      "module_spi": {
+        "status": "PASS",
+        "cases": 16,
+        "executions": 112,
+        "rejections": 248
+      },
+      "module_names": {
+        "status": "PASS",
+        "cases": 16,
+        "executions": 96,
+        "rejections": 88
+      },
+      "structured_runtime": {
+        "status": "PASS",
+        "cases": 22,
+        "executions": 22,
+        "commands": 88
+      },
+      "native_features": {
+        "status": "PASS",
+        "cases": 168,
+        "commands": 942
+      },
+      "native_async_packages": {
+        "status": "PASS",
+        "cases": 12,
+        "executions": 36
+      },
+      "carrier_calls": {
+        "status": "PASS",
+        "executions": 9,
+        "commands": 47
+      },
+      "runtime_carrier_calls": {
+        "status": "PASS",
+        "executions": 9,
+        "commands": 53
+      },
+      "managed_throws": {
+        "status": "PASS",
+        "executions": 9,
+        "commands": 71
+      },
+      "direct_calls": {
+        "status": "PASS",
+        "executions": 9,
+        "commands": 80
+      },
+      "nested_calls": {
+        "status": "PASS",
+        "executions": 9,
+        "commands": 65
+      },
+      "captured_carriers": {
+        "status": "PASS",
+        "executions": 9,
+        "commands": 77
+      },
+      "array_carriers": {
+        "status": "PASS",
+        "executions": 9,
+        "commands": 77,
+        "rejections": 6
+      },
+      "record_carriers": {
+        "status": "PASS",
+        "executions": 17,
+        "commands": 109,
+        "rejections": 10
+      },
+      "heap_carriers": {
+        "status": "PASS",
+        "executions": 17,
+        "commands": 111,
+        "rejections": 12
+      },
+      "cxx_interfaces": {
+        "status": "PASS",
+        "executions": 12,
+        "commands": 98,
+        "rejections": 18
+      }
+    },
+    "python_tooling": {
+      "package_source_graph_binary_publication_audit_tests_passed": 153,
+      "batch_log": {
+        "path": "out/session/resumed-linux-verification-scope-tests.log",
+        "sha256": "a6abb414cef0f15bce0d0cbe702ce57d1ba616f92d927569ba0f6e649430e168"
+      },
+      "fresh_distribution_failure_cleanup_storage_tests_passed": 5,
+      "distribution_log": {
+        "path": "out/session/resumed-fresh-linux-storage-tests.log",
+        "sha256": "fc04c4ed459b92d32a3835538d313386aceee93bf4d005bf5bb81449e34239eb"
+      },
+      "scope": "Focused suites; repeated/overlapping earlier tooling batches are not summed."
+    },
+    "standalone_runtime": {
+      "normal_ctests_passed": 4,
+      "asan_ubsan_ctests_passed": 4,
+      "normal_log": {
+        "path": "out/session/resumed-linux-runtime-tests.log",
+        "sha256": "e8ffb1204641bc7a171786c157204c2ddc21f73ef5b37aeb2f1393ea7c9cb742"
+      },
+      "instrumented_log": {
+        "path": "out/session/resumed-linux-runtime-sanitized.log",
+        "sha256": "0ee3e73a5499112822bc116bb12f41aab963e9ce546a4a5e0e4a0a8eaac8d3ad"
+      }
+    },
+    "development_instrumentation": {
+      "scope": "Development compiler checkpoints and instrumented runtime services/clients; GNU libobjc loaded as shipped. These are separate runs from final archive qualification.",
+      "sanitizer_resource_root": "LLVM 23 bootstrap lib/clang/23 (external to the product SDK)",
+      "feature_matrices": {
+        "address,undefined": {
+          "path": "out/native-validation/resumed-native-features-asan/batch.json",
+          "sha256": "fdedddbc0c16047b3abf68bb2eea82d256511aee54e86a50c273ab2b20ff1a9e",
+          "status": "PASS",
+          "configurations": 168,
+          "commands": 942
+        },
+        "thread": {
+          "path": "out/native-validation/resumed-native-features-tsan/batch.json",
+          "sha256": "ad0b6b1a6b9e1bda1a4e22f8759cf242dce294a43b953edc10c86050abef1e84",
+          "status": "PASS",
+          "configurations": 168,
+          "commands": 942
+        }
+      },
+      "additional_suites": {
+        "structured": {
+          "path": "out/native-validation/resumed-structured-sanitizers/qualification.json",
+          "sha256": "8e9ae1e16ed8cc7b766894c424efc321cbae49feec023d8b0ce023712b2b81bd",
+          "status": "PASS",
+          "executions": 4,
+          "compiler_sha256": "1b89f9ff30f619aa6a9f507d4859caa7d0ec43d6666429611954080d1cc61fb5"
+        },
+        "task-coroutine": {
+          "path": "out/native-validation/resumed-task-coroutine-sanitizers/qualification.json",
+          "sha256": "8c8caf54a4f58249ce6adc5af4a3da0f7bdd2da066fefe293dc3545b83c4222f",
+          "status": "PASS",
+          "executions": 12,
+          "compiler_sha256": "e95d643d7639e73f9e10253bdeeca9eb85ff04826cd1f8ca1a5c008bde68abc9"
+        },
+        "native-async": {
+          "path": "out/native-validation/resumed-native-async-sanitizers/qualification.json",
+          "sha256": "ef532a08805d5da94d3a3d9352faeaf4178739099e5532763043b71edb618373",
+          "status": "PASS",
+          "executions": 16,
+          "compiler_sha256": "e95d643d7639e73f9e10253bdeeca9eb85ff04826cd1f8ca1a5c008bde68abc9"
+        },
+        "async-c-abi": {
+          "path": "out/native-validation/resumed-async-c-abi-sanitizers/qualification.json",
+          "sha256": "73aec6c55e362371bef473102c8e5fb3a25bfdb134b73ecaad025a62c257f87d",
+          "status": "PASS",
+          "executions": 40,
+          "compiler_sha256": "e95d643d7639e73f9e10253bdeeca9eb85ff04826cd1f8ca1a5c008bde68abc9"
+        }
+      },
+      "task_group_await_note": "Each of 12 configurations executes both task and group-await clients."
+    },
+    "fresh_distributions": {
+      "path": "out/native-validation/resumed-fresh-linux-distributions-disk/qualification.json",
+      "sha256": "30dd02f7e6863c00b7ed53ae401fef50986fdb18d0f05ce3dcbe504a597c01dd",
+      "status": "PASS",
+      "scope": "native-features",
+      "archive_sha256": "4a91b2d9b5e0a08eba8d8cd5b1222d107b5c6ee4bb007c36988013000dfa88bd",
+      "release_sha256": "cc91ba6d24bc132ff06df84e11107661da91290ad288687abbf54b568280f994",
+      "qualifier_sha256": "17b835a4f88067f470c56d8e8da4ab4832cadee23c63ee55670868ffb134edc8",
+      "distributions": [
+        {
+          "distribution": "debian13",
+          "image": "debian:13-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f",
+          "status": "PASS",
+          "ordinary_user": true,
+          "exit_code": 0,
+          "log_sha256": "0e91590f60295eb97e91de84ee4dbe4ca69cd4c1432ae3ad0074361c7e471f07",
+          "tmpfs_execution_verified": true,
+          "container_removed": true
+        },
+        {
+          "distribution": "ubuntu2604",
+          "image": "ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944",
+          "status": "PASS",
+          "ordinary_user": true,
+          "exit_code": 0,
+          "log_sha256": "4d7d1fff1ca26d695fcc4619f55dd19ece7f543e20acebbe14c351a501625fd5",
+          "tmpfs_execution_verified": true,
+          "container_removed": true
+        }
+      ],
+      "scope_note": "Archive hash admission, install/relocation/reinstall, embedding, LLDB, ordinary-user stdlib/structured/async/package consumers, five-family 168/942 matrix and selected guard/optional/recursive/debugger gates on each image. All 31 installed gates run on the build host."
+    }
+  },
+  "remaining_work": "docs/roadmap/linux_forward_development.md and linked feature boundaries; full profiles, automatic structured scope, broader ownership/async/isolation/keypath forms and native AArch64 remain open.",
+  "generated_artifact_cleanup": {
+    "status": "PASS",
+    "reclaimed_bytes": 2021458142,
+    "retained_installed_sdks": 1,
+    "retained_archives": 1
+  }
+}

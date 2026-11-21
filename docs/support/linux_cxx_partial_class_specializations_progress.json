@@ -1,0 +1,80 @@
+{
+  "schema": "objc3c.linux-cxx-partial-class-specializations-progress.v1",
+  "status": "FOCUSED_SOURCE_VALIDATED",
+  "date": "2026-10-28",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-f495013ca57e-00b75dc3",
+  "compiler_patch_digest": "f495013ca57e36bc8e02c0fe7a5345c0c0c39241ca170ce7a978113ea2747670",
+  "native_fix_checkpoint": "8faa8ab48b8dec1bf88865279ccc5cbe6d33da19",
+  "frontend_input_sha256": "0927e014cb7ce70e49bb4e0edc3f80c1df48fc995a3ef6f91962ae7a86985482",
+  "concurrency_module_version": "2.60.0",
+  "required_semantics": [
+    "objc3.cxx-class-partial-specializations.v1"
+  ],
+  "verification": {
+    "optimized_compiler_build": "PASS",
+    "native_import_tests_passed": 7,
+    "native_import_dialects": [
+      "c++20",
+      "c++23"
+    ],
+    "alias_abi_source_pch_regression": "PASS",
+    "emitter_suite": "PASS",
+    "tooling_tests_passed": 19,
+    "source_free_runtime_configurations": 16,
+    "source_free_commands": 80,
+    "transports": [
+      "source-directed",
+      "eager"
+    ],
+    "function_and_variable_lookup_rejections": 16,
+    "provider_source_removed": true,
+    "partial_selection_virtual_lifetimes_and_shared_state": true,
+    "consumer_created_instantiations": true,
+    "reports": [
+      {
+        "path": "out/partial-class-native-build.json",
+        "sha256": "ae6c3c6314a404540714691df6742b04edfb2ab80962a10332cb58a3666cc480"
+      },
+      {
+        "path": "out/partial-class-native-focused-import.log",
+        "sha256": "d930e97134d5f7988885e2fe0943a92b7c79d9ac13fbf539c5603ca5628dc69b"
+      },
+      {
+        "path": "out/partial-class-native-focused-codegen.log",
+        "sha256": "2e66855c2c780d3671852890a7de091fc1fed097acbd1c4f22fd75dea9a8091a"
+      },
+      {
+        "path": "out/partial-class-build.log",
+        "sha256": "6391515ef6b4bf5f4c21c42c496ec10e33ce55d098c1af19757b6e816b1334a7"
+      },
+      {
+        "path": "out/partial-class-emitter-test.log",
+        "sha256": "0a10013a2a85515c5957185f2da6955ac1b29dd274bd5042f58cd12c5237a640"
+      },
+      {
+        "path": "out/partial-class-tooling.log",
+        "sha256": "66e7574ab8af23289624417443c566767d74d7d94105b99af11c05920b3f87c7"
+      },
+      {
+        "path": "out/native-validation/partial-class-packages-normal/qualification.json",
+        "sha256": "74c401afc019a5b0eee38f82dbe5c20458a9d7cb99b96d0b07fe04e946ddb998"
+      },
+      {
+        "path": "out/native-validation/partial-class-packages-normal-eager/qualification.json",
+        "sha256": "502326045e3c52bcb3e28e1e22d9edb0395ebbed5c186d9f8b7c3f44affa0edc"
+      },
+      {
+        "path": "out/partial-class-docs-lint.log",
+        "sha256": "aa7054395b6c7d8204b1b19d4b9c0ea7e59af88b4c45c04c0713266235d04215"
+      }
+    ]
+  },
+  "accepted_sdk_version": "2.52.0",
+  "sdk_rebuilt": false,
+  "deferred": [
+    "Combined compiler/frontend/tooling/sanitizer validation for source 2.53 and later",
+    "Coordinated SDK delivery after the implementation batch"
+  ],
+  "profile_conformance_claimed": false,
+  "native_linux_aarch64_qualified": false
+}

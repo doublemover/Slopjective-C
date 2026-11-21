@@ -20,7 +20,7 @@
 
 #define OBJC3_CORE_CAPABILITY_ID "objc3.cap.core"
 
-/* These report compiler support for the active target and profile. A module's
+/* These report advertised compiler feature contracts for the active target/profile. A module's
  * presence does not imply that its entire normative feature set is complete. */
 typedef enum objc3_language_feature {
   OBJC3_FEATURE_DEFER,

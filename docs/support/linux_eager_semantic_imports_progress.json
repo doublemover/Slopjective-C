@@ -1,0 +1,94 @@
+{
+  "schema": "objc3c.linux-eager-semantic-imports-progress.v1",
+  "status": "FOCUSED_VALIDATED",
+  "source_checkpoint": "9c52a40eb79b21455f3b424c58365b673e241835",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-7eeb9da88f64-00b75dc3",
+  "compiler_patch_digest": "7eeb9da88f64ae751f6bd53177eef3baff1342991555b464c1514330fce23dea",
+  "concurrency_module_version": "2.16.0",
+  "required_semantics": [
+    "objc3.cxx-definitions.v1",
+    "objc3.sdk-runtime-frames.v4.92dbcdc88ab651c56c2283c23fb78c2805e228a2e14bd8699a67b6d18b9ced45"
+  ],
+  "source_inputs": {
+    "native/objc3c/src/clang_foundation/compile_session.cpp": "83e2c670691427c256885b239a2111310528a591af1eed8964ce1b616c0e87b5",
+    "native/objc3c/src/clang_foundation/interface_import.cpp": "7e42354716c1b98f377a202d30cdb458976a5cb7b939b0fa30eabf8d128dc296",
+    "native/objc3c/src/clang_foundation/interface_import.h": "0d69a46dd38bfb44870a9d8993ce0138403fbb2e2d8bfd0599c2f39f4619cdd6",
+    "native/objc3c/src/clang_foundation/runtime_interface_types.cpp": "8ac1867f3b2680d05b2d9545860b5f651a7564f4e96ea1232324c4b39cccb9c7",
+    "native/objc3c/src/clang_foundation/runtime_interface_types.h": "3aab68a5dbc379b1c443dd51d536f24ce0d577a58c9e9759f7b0e916d1f1e59a",
+    "stdlib/module_inventory.json": "8321737377463044277e0edbfd016168b5941df8803091ec43677c022907d8a6",
+    "tests/clang_foundation/interface_module_provenance_test.cpp": "5fcacc334511b9ae10942a53305e56aa9c9908b39758df43d757236a046ab0a7"
+  },
+  "source_binary_snapshot": {
+    "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c": "a14c25275910579c13076b8f2980f7bb06082586eb6657a6633476de8d7b8af4",
+    "out/toolchains/objc3-development/stage-linux-x86_64/bin/clang": "200fac2b5d498c921aae530ce546be7fff403853fe0c1675f373427ffd75a10d"
+  },
+  "inherited_compiler_progress": {
+    "path": "docs/support/linux_cxx_definitions_progress.json",
+    "sha256": "e17606969f39ffbe74eccddc8bc9e3f351e70f12b0457aa7f47b5f7c787c5d83"
+  },
+  "verification": {
+    "facade_compile_log": {
+      "path": "out/eager-runtime-compile.log",
+      "sha256": "b5c13b3a17d2e7e8bceca1c0f638f01712c9d5dc807ba026cbb576ab4899c519"
+    },
+    "regression_compile_log": {
+      "path": "out/eager-runtime-regression-compile.log",
+      "sha256": "6b44bc362e7a5f2c5cb5def9e2a8eaee61801374aa98e0c481af37f44625ad69"
+    },
+    "focused_facade_suites": [
+      {
+        "suite": "interface_module_provenance",
+        "status": "PASS",
+        "log": {
+          "path": "out/eager-runtime-provenance.log",
+          "sha256": "6344095cd6af0e2c063a24fc602295ee7c1677d66a78d47d3a9d7f46b2162ee7"
+        }
+      },
+      {
+        "suite": "interface_import",
+        "status": "PASS",
+        "log": {
+          "path": "out/eager-runtime-import.log",
+          "sha256": "3eb2212dfee29eded8dcf68602d3a5804b276c0d851dacdbb7972a851849b281"
+        }
+      }
+    ],
+    "source_free_smoke": {
+      "cases": 1,
+      "commands": 4,
+      "standard": "c++20",
+      "ownership": "arc",
+      "optimization": "O0",
+      "lookup": "eager",
+      "provider_source_removed": true,
+      "consumer_object_linked_first": true,
+      "report": {
+        "path": "out/native-validation/cxx-definitions-eager-smoke-normal/qualification.json",
+        "sha256": "2c3c9c0ad8422c5ea8c1c248665200239f168239610904a1135dd577a423905c"
+      }
+    },
+    "scope": "Full runtime fixture with eager imports, pinned runtime prelude, complete lock registry, consumer-only inline definitions and ordered dynamic initialization. Uses source compiler/frontend with accepted 2.9.0 runtime/headers; overlapping fixtures are not summed and this is not archive qualification."
+  },
+  "active_sdk": {
+    "changed": false,
+    "concurrency_module_version": "2.9.0",
+    "seal": "0fc4def2426bd3bfd62f7288d4fcb1a73bed8cd27392edf05cd80dcb0024bcc3",
+    "acceptance": {
+      "path": "docs/support/linux_cxx_class_structure_acceptance.json",
+      "sha256": "e099d1065d1e4b789fbc2348f3912b440920cae51b2b5ff2d9a99e20532f3091"
+    }
+  },
+  "deferred_validation": [
+    "Complete source facade/native compiler matrices for the combined implementation batch",
+    "C++20/23 ARC/MRC O0/O2 and ASan/UBSan/TSan source-free execution matrices",
+    "All installed SDK gates and immutable package publication/relocation",
+    "Exact-archive fresh Debian/Ubuntu checks at the next coordinated SDK cutover"
+  ],
+  "remaining_implementation": [
+    "Dependent/template bodies, captured/local-type definition expressions, defaulted comparisons and out-of-line defaulting",
+    "Unnamed nested types, namespace attributes, thread-local data and dependent lookup projections",
+    "Remaining ownership, concurrency, isolation, keypath, type/library/profile contracts and native Linux AArch64"
+  ],
+  "profile_conformance_claimed": false,
+  "scope": "Eager runtime-bearing imports parse the exact pinned runtime header before AST merging, coordinate later SDK includes and use resolver-verified complete lock identities in source lookup."
+}

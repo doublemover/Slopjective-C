@@ -1,0 +1,55 @@
+{
+  "development_only": true,
+  "source_version": "2.136",
+  "system_version": "2.62",
+  "extension_abi": 24,
+  "prepared_source_tree": "43f7904eed86bf2eb5e639497b7543126443e41e",
+  "compiler_identity_resealed": false,
+  "matched_sdk_produced": false,
+  "compiler": {
+    "dedicated_commands": 49,
+    "all_passed": true,
+    "full_consolidation": "follows the feature batch"
+  },
+  "updated_frontend_groups": 27,
+  "publication_profiles": 4,
+  "production_decoder_exact_replays": 380,
+  "runtime_patch_controls": 14,
+  "native_layout": {
+    "release_runtime": true,
+    "instrumented_runtime": true,
+    "malformed_rejection_checks_per_runtime": 51
+  },
+  "runtime_source_patch_sha256": "444a40541cbd5fd176d25650edbdfd92348ba0eaea8779d394bf9b93d0e2b387",
+  "runtime_library_sha256": "c9c154aeec5daf7f866ff697dd3ca66b083044a487ce0db2844d2f5b6de4d360",
+  "native": {
+    "configurations": 4,
+    "commands": 14,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ],
+    "ownership": [
+      "ARC",
+      "MRC"
+    ],
+    "profiles": [
+      "c++20-arc-source-compile",
+      "c++20-arc-source-link",
+      "c++20-arc-source-execute",
+      "c++23-mrc-pch-no-elide-pch",
+      "c++23-mrc-pch-no-elide-compile",
+      "c++23-mrc-pch-no-elide-link",
+      "c++23-mrc-pch-no-elide-execute",
+      "c++20-mrc-source-cxx-only-eh-compile",
+      "c++20-mrc-source-cxx-only-eh-link",
+      "c++20-mrc-source-cxx-only-eh-execute",
+      "c++23-arc-pch-cxx-only-eh-pch",
+      "c++23-arc-pch-cxx-only-eh-compile",
+      "c++23-arc-pch-cxx-only-eh-link",
+      "c++23-arc-pch-cxx-only-eh-execute"
+    ],
+    "all_passed": true
+  },
+  "additional_mrc_no_elision_debug_commands": 3
+}

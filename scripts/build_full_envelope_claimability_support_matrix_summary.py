@@ -69,6 +69,7 @@ def main() -> int:
         }
 
     support_class_counter = Counter(str(row["current_class"]) for row in contract["support_matrix"])
+    evidence_family_names = {str(family["family"]) for family in contract["evidence_families"]}
     required_surface_paths = {
         raw_path
         for row in contract["support_matrix"]

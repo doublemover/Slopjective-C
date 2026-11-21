@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .environment import ROOT
+from .environment_tool_lookup import required_workflow_tool
 
 WORKFLOW_COMMAND_EXECUTION_OWNER = "objc3c-workflow-command-execution"
 WORKFLOW_COMMAND_CWD_OWNER = "objc3c-workflow-root"
@@ -35,7 +36,10 @@ WORKFLOW_COMMAND_EXECUTION_POLICY = WorkflowCommandExecutionPolicy(
 
 
 def command_for_execution(command: Sequence[str]) -> tuple[str, ...]:
-    return tuple(str(part) for part in command)
+    arguments = tuple(str(part) for part in command)
+    if arguments and arguments[0] in ("pwsh", "npx"):
+        return (required_workflow_tool(arguments[0]), *arguments[1:])
+    return arguments
 
 
 def workflow_command_subprocess_kwargs() -> dict[str, object]:

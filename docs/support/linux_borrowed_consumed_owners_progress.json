@@ -1,0 +1,98 @@
+{
+  "schema": "objc3c.linux-borrowed-consumed-owners-progress.v1",
+  "status": "FOCUSED_VALIDATED",
+  "date": "2026-10-27",
+  "source_checkpoint": "27e5b6bc2f293a46cce37a6a0003ba5b80f73cc8",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-704f2ba7832d-00b75dc3",
+  "compiler_patch_digest": "704f2ba7832d41326eb8b490e490a21d28a9cc262aba203c7d044aab6f7b93c7",
+  "system_module_version": "2.3.0",
+  "extension_abi": 21,
+  "interface_schema": "2.2",
+  "scope": [
+    "MRC annotated object-parameter and instance-receiver consumption across direct/indirect functions, Block callbacks, messages and C++ constructors/operators",
+    "Evaluated owner identities, independent pins, overlapping borrowed-argument rejection and separate argument-evaluation/callee exception effects",
+    "MRC consumed function-type metadata through PCH and source-free imports, rejected implicit erasure/unannotated redeclarations, and no added MRC ARC retains/releases"
+  ],
+  "verification": {
+    "foundation": {
+      "path": "out/borrowed-consumption-foundation-build.json",
+      "sha256": "15768c607f3e903970315455eb3345230bffddce304a624775c53862d6340bc0"
+    },
+    "source_verification": {
+      "path": "out/borrowed-consumption-source-verification.json",
+      "sha256": "172a21854bb95f0488e0127ff9e68e50db5499702a63970c77d3061dbad81b82"
+    },
+    "native": {
+      "compiler_regressions_passed": 383,
+      "platform_cases_unsupported": 3,
+      "native_unit_tests_passed": 182,
+      "report": {
+        "path": "out/borrowed-consumption-native-batch.json",
+        "sha256": "fdb2968eddfdceaaed83acfbc98b8c87609e147860016415519fcb76369551e7"
+      },
+      "logs": [
+        {
+          "path": "out/borrowed-consumption-native-0.log",
+          "sha256": "e157b03488752be44801d206ff9759b4d874a580d552035090933f61463af454"
+        },
+        {
+          "path": "out/borrowed-consumption-native-1.log",
+          "sha256": "e185a47451d6e112643712652eea228d2d62a9eb0d861feadef65d324d7bb641"
+        },
+        {
+          "path": "out/borrowed-consumption-native-2.log",
+          "sha256": "f91cb282f931049a1461c8c00db728319895062384798f76877c74e8cab3068c"
+        },
+        {
+          "path": "out/borrowed-consumption-native-3.log",
+          "sha256": "570f0cd69c04608da82b1a5c4d81a59f1aee9ef8de8e8c3983be38c54b38a3ec"
+        },
+        {
+          "path": "out/borrowed-consumption-native-4.log",
+          "sha256": "6ecff7f3b1495145b0f3a8e0ec91b1feedbf742ab074c89dbbd499cba85114e9"
+        }
+      ]
+    },
+    "frontend": {
+      "suites_passed": 33,
+      "build": {
+        "path": "out/borrowed-consumption-all-frontend-build.log",
+        "sha256": "883bdfb8650c5973e8a2a02350c0efd90cbe1e7f2dd22ffedac60f41c7540416"
+      },
+      "log": {
+        "path": "out/borrowed-consumption-all-frontend-tests.log",
+        "sha256": "8585fa32ae5d31f11c7998fab1650d71aa50752a3b9bb9e938c2e9caa444a1db"
+      }
+    },
+    "tooling": {
+      "tests_passed": 14,
+      "log": {
+        "path": "out/borrowed-consumption-tooling-tests.log",
+        "sha256": "5de6801217fb559ffdfab6ae4f4b5f6ff3f26bdb5e0a0fdcc568ab652244a71f"
+      }
+    },
+    "binary_snapshot": [
+      {
+        "path": "out/toolchains/objc3-development/stage-linux-x86_64/bin/clang-23",
+        "sha256": "c7c5f3be9ce7597f746c9fb0493d5ff4783b48daa0ce77002c128ca699567a0f"
+      },
+      {
+        "path": "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c",
+        "sha256": "322ed637d3784c650432abc746b3e35052aaf42a7b4c6d1aa36321b083bae96f"
+      }
+    ]
+  },
+  "delivery": {
+    "accepted_sdk": "2.33.0",
+    "new_archive_built": false,
+    "combined_runtime_and_sanitizer_batch_deferred": true
+  },
+  "remaining": [
+    "Raw runtime/CF ownership effects, unknown/interprocedural owner relationships, explicit function-pointer casts and general MRC ownership counts",
+    "Consuming lexical super calls with side-effecting arguments and consuming isolation entry",
+    "Remaining ownership, async, isolation, structured runtime, key-path and language/library implementation",
+    "Combined sanitizer/runtime source batch and coordinated SDK delivery",
+    "Full profile conformance and native Linux AArch64 qualification"
+  ],
+  "profile_conformance_claimed": false
+}

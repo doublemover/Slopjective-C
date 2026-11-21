@@ -1,3 +1,4 @@
+#include "native_target_test_support.h"
 #include "clang_foundation/compile_session.h"
 #include "clang_foundation/frontend_api.h"
 #include "clang_foundation/interface_codec.h"
@@ -25,7 +26,7 @@ CompileRequest Request(const fs::path &path, BaseLanguage language,
   r.arc = arc;
   if (r.objc3)
     r.objc_runtime = "gnustep-2.2";
-  r.target_triple = "x86_64-unknown-linux-gnu";
+  r.target_triple = OBJC3_TEST_NATIVE_LINUX_TARGET;
   r.arguments = {"-std=" + standard, "-fblocks", "-Werror=objc-method-access"};
   return r;
 }
@@ -46,7 +47,9 @@ const std::vector<llvm::StringRef> semantics = {
     "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
     "objc3.native-return-ownership.v1",    "objc3.direct-dispatch.v1",
     "objc3.cxx-data-interfaces.v1",        "objc3.ownership-projection.v1",
-    "objc3.api-availability.v1",           "objc3.api-partitions.v1"};
+    "objc3.api-availability.v1",           "objc3.api-partitions.v1",
+    "objc3.cxx-namespaces.v1", "objc3.cxx-namespace-attributes.v1",
+    "objc3.cxx-definitions.v1", "objc3.cxx-friends.v3"};
 void Check(const fs::path &root, BaseLanguage language,
            const std::string &standard, bool arc) {
   const bool objc = language == BaseLanguage::ObjectiveC ||
@@ -69,8 +72,22 @@ void Check(const fs::path &root, BaseLanguage language,
     SPI(Testing) __attribute__((objc_root_class)) @interface SecretRoot
     - (int)onlySecret;
     @property(readonly) int secretProperty;
+    @property(class,readonly) int secretClassProperty;
     @end
     SPI(Testing) @protocol SecretProtocol @end
+  )";
+  const bool cpp = language == BaseLanguage::Cxx || language == BaseLanguage::ObjectiveCxx;
+  if (cpp) source += R"(
+    struct SPI(Testing) HiddenFriend { int n; friend int hidden_probe(HiddenFriend v) {return v.n;} };
+    namespace SPI(Testing) GroupSPI {
+      int secret() { return 22; }
+      struct Secret { int n; };
+    }
+    namespace ScopedSPI {
+      int visible() { return 20; }
+      SPI(Testing) int secret() { return 22; }
+      struct SPI(Testing) Secret { int n; };
+    }
   )";
   auto provider = Request(root / "provider.m", language, standard, arc, source);
   provider.emit_semantic_interface = true;
@@ -86,7 +103,7 @@ void Check(const fs::path &root, BaseLanguage language,
       artifact.sidecar_json, artifact.source_bytes, semantics);
   assert(decoded);
   for (const auto &d : decoded->declarations) {
-    if (d.qualified_name == "Secret::field" ||
+    if (d.qualified_name == "hidden_probe" || d.qualified_name == "Secret::field" ||
         d.qualified_name == "secret_choice")
       assert(d.spi_group == "Testing");
   }
@@ -103,6 +120,8 @@ void Check(const fs::path &root, BaseLanguage language,
   std::vector<std::string> expressions = {
       "secret()",      "secret_global",  "sizeof(struct Secret)",
       "secret_choice", "(SecretAlias)0", "other()"};
+  if (cpp)
+    expressions.insert(expressions.end(), {"sizeof(HiddenFriend)", "ScopedSPI::secret()", "sizeof(ScopedSPI::Secret)", "GroupSPI::secret()", "sizeof(GroupSPI::Secret)"});
   if (objc)
     expressions.insert(expressions.end(),
                        {"sizeof(SecretRoot*)", "sizeof(id<SecretProtocol>)"});
@@ -111,17 +130,25 @@ void Check(const fs::path &root, BaseLanguage language,
     assert(!Compile(client).success);
   }
   if (objc) {
-    client.source_text = "int client(id v) { return [v onlySecret]; }";
-    assert(!Compile(client).success);
+    for(const auto &expression:{std::string("[v onlySecret]"),std::string("[v secretProperty]"),std::string("[c secretClassProperty]")}) {
+      client.source_text = "int client(id v,Class c) { return "+expression+"; }";
+      assert(!Compile(client).success);
+    }
   }
   client.imported_interfaces[0].spi_groups = {"Testing"};
   client.source_text =
       "int client(void) { return secret() + secret_global + sizeof(struct "
       "Secret) + secret_choice + (SecretAlias)0; }";
   CheckResult(Compile(client));
+  if (cpp) {
+    client.source_text="int client() {return hidden_probe(HiddenFriend{42});}";
+    CheckResult(Compile(client));
+  }
   if (objc) {
     client.source_text = "int client(SecretRoot *v, id<SecretProtocol> p) { "
                          "return [v onlySecret] + v.secretProperty + !!p; }";
+    CheckResult(Compile(client));
+    client.source_text="int client(id v,Class c){return [v onlySecret]+[v secretProperty]+[c secretClassProperty];}";
     CheckResult(Compile(client));
   }
   client.source_text = "int client(void) { return other(); }";
@@ -178,6 +205,54 @@ void Check(const fs::path &root, BaseLanguage language,
         "@import SPI.Leaf;\nint client(void) { return @SPI.Leaf.secret(); }";
     assert(!Compile(client).success);
   }
+  if(objc) {
+    auto selectors=Request(root/"selectors.m",language,standard,arc,"");
+    selectors.source_directed_imports=true;selectors.interface_search_paths={root.string()};
+    InterfaceModuleRequest leaf;leaf.canonical_name="SPI.Leaf";leaf.locked_identity=artifact.identity;leaf.spi_groups={"Testing"};leaf.initially_visible=false;
+    InterfaceModuleRequest parent;parent.canonical_name="SPI.Top";parent.locked_identity=top_artifact.identity;parent.initially_visible=false;
+    selectors.module_imports={leaf,parent};
+    const std::string use="int selectors(id v,Class c){return [v onlySecret]+[v secretProperty]+[c secretClassProperty];}";
+    selectors.source_text="@import SPI.Top;\n"+use;
+    assert(!Compile(selectors).success); // A re-export does not grant its dependency's SPI.
+    selectors.source_text=use+"\n@import SPI.Leaf;";
+    assert(!Compile(selectors).success); // Later imports cannot populate earlier selector lookups.
+    selectors.source_text="@import SPI.Top;\n@import SPI.Leaf;\n@import SPI.Leaf;\n"+use;
+    CheckResult(Compile(selectors)); // Activate a direct grant even if its module was already visible.
+    selectors.module_imports[0].spi_groups.clear();
+    selectors.source_text="@import SPI.Leaf;\n"+use;
+    assert(!Compile(selectors).success);
+  }
+  if (cpp) {
+    auto scoped = Request(root / "scoped.m", language, standard, arc,
+                          "int f() { return ScopedSPI::visible(); }");
+    scoped.imported_interfaces = {input};
+    CheckResult(Compile(scoped));
+    scoped.source_text = "int f() { return ScopedSPI::secret(); }";
+    assert(!Compile(scoped).success);
+    scoped.imported_interfaces[0].spi_groups={"Testing"};
+    CheckResult(Compile(scoped));
+    scoped.source_text="int f() { return GroupSPI::secret()+sizeof(GroupSPI::Secret); }";
+    CheckResult(Compile(scoped));
+    if (objc) {
+      scoped.imported_interfaces.clear();
+      scoped.source_directed_imports=true;
+      scoped.interface_search_paths={root.string()};
+      InterfaceModuleRequest scoped_leaf;
+      scoped_leaf.canonical_name="SPI.Leaf";
+      scoped_leaf.locked_identity=artifact.identity;
+      scoped_leaf.spi_groups={"Testing"};
+      InterfaceModuleRequest scoped_parent;
+      scoped_parent.canonical_name="SPI.Top";
+      scoped_parent.locked_identity=top_artifact.identity;
+      scoped.module_imports={scoped_leaf,scoped_parent};
+      scoped.source_text="@import SPI.Top;\nint before() { return ScopedSPI::visible(); } "
+                         "\n@import SPI.Leaf;\nint after() { return ScopedSPI::secret()+GroupSPI::secret(); }";
+      CheckResult(Compile(scoped));
+      scoped.module_imports[0].spi_groups.clear();
+      scoped.source_text="@import SPI.Leaf;\nint f() { return ScopedSPI::secret(); }";
+      assert(!Compile(scoped).success);
+    }
+  }
   if (language == BaseLanguage::ObjectiveC && !arc) {
     const std::string source =
         "@import SPI.Leaf;\nint client(void) { return secret(); }";
@@ -198,7 +273,7 @@ void Check(const fs::path &root, BaseLanguage language,
     options.base.input_path = "spi-api.m";
     options.base.source = source.c_str();
     options.base.source_size = source.size();
-    options.base.target_triple = "x86_64-unknown-linux-gnu";
+    options.base.target_triple = OBJC3_TEST_NATIVE_LINUX_TARGET;
     options.base.objc_runtime = "gnustep-2.2";
     options.base.language = 2;
     options.base.objc3 = 1;

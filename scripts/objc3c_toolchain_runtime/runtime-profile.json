@@ -20,9 +20,9 @@
       "runtime_generator": "Ninja",
       "runtime_toolset": "Visual Studio 2022 v143",
       "v143_toolset_version": "14.44.35207",
-      "llvm_stage0_version": "23.1.3",
-      "llvm_stage0_commit": "0d261d1ca552c95a8f007e061c787ac7132fbcbc",
-      "cmake_version": "4.4.4",
+      "llvm_stage0_version": "23.1.5",
+      "llvm_stage0_commit": "392dfff97d29b59d77e5cac6d4b6ef2585fe7117",
+      "cmake_version": "4.4.5",
       "ninja_version": "1.13.2",
       "windows_sdk_version": "10.0.26100.0",
       "runtime_crt": "UCRT dynamic",
@@ -47,9 +47,9 @@
       "robin_map_release": "v1.4.1",
       "robin_map_commit": "bd14e6830a1474fed9d2d03f5c3b0683d818d540",
       "robin_map_source": "https://github.com/Tessil/robin-map.git",
-      "llvm_stage0_version": "23.1.3",
-      "llvm_stage0_commit": "0d261d1ca552c95a8f007e061c787ac7132fbcbc",
-      "cmake_version": "4.4.4",
+      "llvm_stage0_version": "23.1.5",
+      "llvm_stage0_commit": "392dfff97d29b59d77e5cac6d4b6ef2585fe7117",
+      "cmake_version": "4.4.5",
       "ninja_version": "1.13.2",
       "runtime_build_drivers": [
         "clang",
@@ -62,9 +62,10 @@
       "source_patches": [
         {
           "file": "scripts/objc3c_toolchain_runtime/patches/0001-linux22-owned-value-unwind.patch",
-          "sha256": "6e0cc1052be20c55eefa42db579302949a0bd2b1bed8a2428e734da9360eebeb"
+          "sha256": "d7534713014db2ad9cde7324dc5941ac0deb221ab4c51bf7d5cf44597def6311"
         }
-      ]
+      ],
+      "autorelease_pool_policy": "native-arc-only"
     },
     "macos-arm64": {
       "target_triple": "arm64-apple-macosx",
@@ -73,6 +74,39 @@
       "objc_abi_flag": "platform default",
       "blocks_provider": "apple-system",
       "foundation_required_for_runtime_fixture": false
+    },
+    "linux-aarch64": {
+      "target_triple": "aarch64-unknown-linux-gnu",
+      "runtime_family": "libobjc2",
+      "runtime_release": "2.3",
+      "runtime_commit": "e877e782fb965c4e870d2ecf6aff58dddc6290ae",
+      "objc_abi_flag": "-fobjc-runtime=gnustep-2.2",
+      "blocks_provider": "libobjc2-embedded",
+      "runtime_build_with_clang_cl": false,
+      "foundation_required_for_runtime_fixture": false,
+      "runtime_source": "https://github.com/gnustep/libobjc2.git",
+      "robin_map_release": "v1.4.1",
+      "robin_map_commit": "bd14e6830a1474fed9d2d03f5c3b0683d818d540",
+      "robin_map_source": "https://github.com/Tessil/robin-map.git",
+      "llvm_stage0_version": "23.1.5",
+      "llvm_stage0_commit": "392dfff97d29b59d77e5cac6d4b6ef2585fe7117",
+      "cmake_version": "4.4.5",
+      "ninja_version": "1.13.2",
+      "runtime_build_drivers": [
+        "clang",
+        "clang++"
+      ],
+      "runtime_linker": "ld.lld",
+      "runtime_generator": "Ninja",
+      "glibc_minimum": "2.41",
+      "libstdcxx_symbol_minimum": "GLIBCXX_3.4.33",
+      "source_patches": [
+        {
+          "file": "scripts/objc3c_toolchain_runtime/patches/0001-linux22-owned-value-unwind.patch",
+          "sha256": "d7534713014db2ad9cde7324dc5941ac0deb221ab4c51bf7d5cf44597def6311"
+        }
+      ],
+      "autorelease_pool_policy": "native-arc-only"
     }
   }
 }

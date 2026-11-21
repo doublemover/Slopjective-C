@@ -14,8 +14,10 @@ ROOT = Path(__file__).resolve().parents[2]
 
 @pytest.fixture
 def repo(tmp_path: Path) -> Path:
-    for name in ("toolchains/llvm/manifest.json", ".python-version", ".node-version",
+    for name in ("toolchains/llvm/manifest.json", "toolchains/linux-hosts.json", ".python-version", ".node-version",
                  "package.json", "pyproject.toml", "README.md", ".github/workflows/spec-quality.yml",
+                 ".github/actions/python-tools/action.yml",
+                 "scripts/objc3c_toolchain/cmake_linux.sh", "native/analysis/CMakeLists.txt", "native/fuzz/CMakeLists.txt",
                  "native/objc3c/cmake/Objc3ClangFoundation.cmake",
                  "native/objc3c/cmake/Objc3LinuxRuntime.cmake",
                  "scripts/install_objc3c_ci_llvm.ps1", "scripts/install_objc3c_ci_llvm_linux.sh",
@@ -31,14 +33,19 @@ def test_checked_references_agree(repo: Path) -> None:
 
 
 @pytest.mark.parametrize("filename,old,new", [
-    (".node-version", "26.12.0", "24.19.0"),
+    (".node-version", "26.13.0", "24.19.0"),
     (".python-version", "3.15.0", "3.13.3"),
     ("README.md", "Python 3.15.0", "Python 3.13.3"),
-    ("package.json", "npm@12.2.1", "npm@11.20.0"),
-    ("pyproject.toml", "pytest==9.1.1", "pytest==8.0.0"),
-    ("native/objc3c/cmake/Objc3ClangFoundation.cmake", "LLVM 23.1.3 EXACT", "LLVM 22.1.6 EXACT"),
+    ("package.json", "npm@12.2.2", "npm@11.20.0"),
+    ("pyproject.toml", "pytest==9.2.0", "pytest==8.0.0"),
+    ("native/objc3c/cmake/Objc3ClangFoundation.cmake", "LLVM 23.1.5 EXACT", "LLVM 22.1.6 EXACT"),
+    ("native/analysis/CMakeLists.txt", "LLVM 23.1.5 EXACT", "LLVM 23.1.3 EXACT"),
+    ("native/fuzz/CMakeLists.txt", "LLVM 23.1.5 EXACT", "LLVM 23.1.3 EXACT"),
+    ("scripts/objc3c_toolchain/cmake_linux.sh", "version=4.4.5", "version=4.4.4"),
     (".github/workflows/spec-quality.yml", "3d3c42e5aac5ba805825da76410c181273ba90b1", "v4"),
-    (".github/workflows/spec-quality.yml", 'python-version: "3.15.0"', 'python-version: "3.13.3"'),
+    (".github/actions/python-tools/action.yml", '--python 3.15.0', '--python 3.13.3'),
+    (".github/actions/python-tools/action.yml", 'uv==0.13.7', 'uv==0.13.1'),
+    (".github/actions/python-tools/action.yml", '55cc8345863c7cc4c66a329aec7e433d2d1c52a9', 'v6'),
 ])
 def test_stale_consumer_is_rejected(repo: Path, filename: str, old: str, new: str) -> None:
     path = repo / filename
@@ -83,3 +90,15 @@ def test_cpu_and_memory_limits_bound_compilers_and_linkers(monkeypatch) -> None:
     assert limits["compile_jobs"] == 2
     assert limits["link_jobs"] == 1
     assert limits["memory_bytes"] == 8 * 1024 ** 3
+
+
+def test_bootstrap_queries_do_not_load_an_activated_product_llvm(monkeypatch, tmp_path):
+    monkeypatch.setenv('LD_LIBRARY_PATH', '/another-sdk/lib')
+    monkeypatch.setenv('LD_PRELOAD', '/another-sdk/interposer.so')
+    monkeypatch.setenv('LD_AUDIT', '/another-sdk/audit.so')
+    def query(argv, **kwargs):
+        assert kwargs['env']['LD_LIBRARY_PATH'] == str(tmp_path / 'lib')
+        assert not {'LD_PRELOAD', 'LD_AUDIT'} & kwargs['env'].keys()
+        return 'matching bootstrap\n'
+    monkeypatch.setattr(host.subprocess, 'check_output', query)
+    assert host._output(['/bootstrap/bin/clang', '--version'], library_root=tmp_path) == 'matching bootstrap'

@@ -42,7 +42,7 @@ function Get-Objc3cNativeLlvmRootCandidates {
   }
 
   if (Test-Objc3cNativeHostIsWindows) {
-    $version = if ($env:OBJC3C_CI_LLVM_VERSION) { $env:OBJC3C_CI_LLVM_VERSION } else { "23.1.3" }
+    $version = if ($env:OBJC3C_CI_LLVM_VERSION) { $env:OBJC3C_CI_LLVM_VERSION } else { "23.1.5" }
     $userProfile = [System.Environment]::GetEnvironmentVariable("USERPROFILE")
     if (-not [string]::IsNullOrWhiteSpace($userProfile)) {
       $candidates += (Join-Path $userProfile ("Tools\LLVM\llvm-{0}-msvc" -f $version))

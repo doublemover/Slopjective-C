@@ -17,10 +17,11 @@ from scripts.objc3c_planning_publication_audit.paths import (
     repo_path,
 )
 from scripts.objc3c_planning_publication_audit.runner import main
-from scripts.objc3c_planning_publication_audit.shared import publisher, require_dict
-
-publication_snapshot = publisher.publication_snapshot
-render_markdown_report = publisher.render_markdown_report
+from scripts.objc3c_planning_publication_audit.shared import (
+    publication_snapshot,
+    render_markdown_report,
+    require_dict,
+)
 
 
 if __name__ == "__main__":

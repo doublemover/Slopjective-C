@@ -1,0 +1,419 @@
+{
+  "schema": "objc3.linux-analysis-failed-attempt.v1",
+  "status": "FAIL",
+  "purpose": "Frozen-source diagnostic baseline; not current-source qualification or release acceptance",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-616ca86288bb-c55ca8ee",
+  "report_sha256": "0075d41ecf54bdf66fe6f1aae1109d64aed4f82437d18fe0f53f5a58f50b3a6b",
+  "variants": 235,
+  "passed": 199,
+  "failed": 36,
+  "repair_state": "Canonical source repairs and finite TU allowances authored; matching rebuilt analysis pending",
+  "failed_units": [
+    {
+      "owner": "frontend",
+      "unit": "clang_foundation/interface_emission_identity.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 266.819026,
+      "log_sha256": "542f2fa922a23cbdcfb520378fe63bd7d5e7db71bf5352d40c371a1fcf63b946",
+      "diagnostics": [
+        "out/toolchains/objc3-development/stage-linux-x86_64-compiler-asan-ubsan/include/clang/AST/RecursiveASTVisitor.h:2764:41: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]"
+      ]
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/ASTMatchers/Dynamic/Registry.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 123.201667,
+      "log_sha256": "f95d81a3b65e838e209cb6543241187d83f490216010090b1d645223cea52c7e",
+      "diagnostics": [
+        "clang/include/clang/ASTMatchers/ASTMatchersInternal.h:1189:48: error: 't' used after it was forwarded [bugprone-use-after-move,-warnings-as-errors]"
+      ]
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/CodeGen/CodeGenFunction.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 226.499133,
+      "log_sha256": "c6f638d7d2b23711b9f6c15ee1ca41336eb806b6d9e3c9bd81dc88304145f504",
+      "diagnostics": [
+        "clang/include/clang/AST/IgnoreExpr.h:28:31: error: 'Fns' used after it was forwarded [bugprone-use-after-move,-warnings-as-errors]"
+      ]
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/AST/ASTImporter.cpp",
+      "timed_out": true,
+      "exit_code": 124,
+      "seconds": 600.332909,
+      "log_sha256": "40d344c8b651017039b2c15cf4100cd66d7473977af6d71d86ffc78b7cbbf8b4",
+      "diagnostics": []
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/Sema/SemaOverload.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 594.97085,
+      "log_sha256": "5fe4038aca1aab87a3fb5c9d95abc66c840f554faa330e0d3b52e68062e3503d",
+      "diagnostics": [
+        "clang/include/clang/AST/Expr.h:392:41: error: The left operand of '==' is a garbage value [clang-analyzer-core.UndefinedBinaryOperatorResult,-warnings-as-errors]",
+        "clang/include/clang/AST/Expr.h:395:42: error: The left operand of '>=' is a garbage value [clang-analyzer-core.UndefinedBinaryOperatorResult,-warnings-as-errors]",
+        "clang/include/clang/AST/Expr.h:396:41: error: The left operand of '>=' is a garbage value [clang-analyzer-core.UndefinedBinaryOperatorResult,-warnings-as-errors]",
+        "clang/lib/Sema/SemaOverload.cpp:2828:24: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]",
+        "clang/lib/Sema/SemaOverload.cpp:6303:23: error: Assigned value is uninitialized [clang-analyzer-core.uninitialized.Assign,-warnings-as-errors]",
+        "clang/lib/Sema/SemaOverload.cpp:6402:27: error: The left operand of '==' is a garbage value [clang-analyzer-core.UndefinedBinaryOperatorResult,-warnings-as-errors]",
+        "clang/lib/Sema/SemaOverload.cpp:11289:44: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]"
+      ]
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/Sema/SemaTemplate.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 383.435478,
+      "log_sha256": "8932acae468983a8806a5ad28e18be58746e5c8b2268ed2f352000ccfea463f7",
+      "diagnostics": [
+        "clang/lib/Sema/SemaTemplate.cpp:9950:24: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]"
+      ]
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/AST/ItaniumMangle.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 231.743119,
+      "log_sha256": "34ad6ff8b818c1651ed33f9ab76136a6a549ce0c4e5c53524614f50de17ed62a",
+      "diagnostics": [
+        "clang/lib/AST/ItaniumMangle.cpp:6452:12: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]"
+      ]
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/Sema/SemaLookup.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 253.714179,
+      "log_sha256": "63ba1b7152432d27bb1b2cec13905758b586ba365cd7739aa46d45661411cf5d",
+      "diagnostics": [
+        "clang/lib/Sema/SemaLookup.cpp:113:38: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]"
+      ]
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/Sema/SemaType.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 286.499217,
+      "log_sha256": "9dea04d0b303d1402d1cf6e8493a24cd3520488426db1082cc36a53b9a26d7e8",
+      "diagnostics": [
+        "clang/lib/Sema/SemaType.cpp:6096:15: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]",
+        "clang/lib/Sema/SemaType.cpp:9813:9: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]"
+      ]
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/Lex/Lexer.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 109.48037,
+      "log_sha256": "5f01f3dc542c1ea47aa420ca74917970cdd1f9a035c6ac2fdb53ef34b4d7b6c7",
+      "diagnostics": [
+        "clang/lib/Lex/Lexer.cpp:1283:10: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]",
+        "clang/lib/Lex/Lexer.cpp:2853:26: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]"
+      ]
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/Sema/SemaChecking.cpp",
+      "timed_out": true,
+      "exit_code": 124,
+      "seconds": 600.353928,
+      "log_sha256": "40d344c8b651017039b2c15cf4100cd66d7473977af6d71d86ffc78b7cbbf8b4",
+      "diagnostics": []
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/Sema/SemaExprObjC.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 271.232087,
+      "log_sha256": "83435c9ffdbbbfc271f2a6f6b0ba00a28dc8a8823c99a6e780be6cd53515d769",
+      "diagnostics": [
+        "clang/lib/Sema/SemaExprObjC.cpp:2747:7: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]"
+      ]
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/Sema/SemaDeclCXX.cpp",
+      "timed_out": true,
+      "exit_code": 124,
+      "seconds": 600.333657,
+      "log_sha256": "40d344c8b651017039b2c15cf4100cd66d7473977af6d71d86ffc78b7cbbf8b4",
+      "diagnostics": []
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/Sema/SemaInit.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 258.583466,
+      "log_sha256": "31524cff2f286b44424b4cb63491a816898273be10e3ee67b772540fa9d75008",
+      "diagnostics": [
+        "clang/lib/Sema/SemaInit.cpp:1372:29: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]",
+        "clang/lib/Sema/SemaInit.cpp:4467:7: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]",
+        "clang/lib/Sema/SemaInit.cpp:9150:10: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]",
+        "clang/lib/Sema/SemaInit.cpp:9185:25: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]",
+        "clang/lib/Sema/SemaInit.cpp:9188:37: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]",
+        "clang/lib/Sema/SemaInit.cpp:9198:32: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]",
+        "clang/lib/Sema/SemaInit.cpp:9214:14: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]",
+        "clang/lib/Sema/SemaInit.cpp:9248:10: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]",
+        "clang/lib/Sema/SemaInit.cpp:9278:44: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]",
+        "clang/lib/Sema/SemaInit.cpp:9288:27: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]",
+        "clang/lib/Sema/SemaInit.cpp:9316:10: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]",
+        "clang/lib/Sema/SemaInit.cpp:9323:25: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]"
+      ]
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/Sema/SemaDecl.cpp",
+      "timed_out": true,
+      "exit_code": 124,
+      "seconds": 600.308273,
+      "log_sha256": "40d344c8b651017039b2c15cf4100cd66d7473977af6d71d86ffc78b7cbbf8b4",
+      "diagnostics": []
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/CodeGen/CGExpr.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 317.274644,
+      "log_sha256": "ff403e0ce2c16435766ca3a0b0298680e62cb8c9b2bad6ce5ff6e30bf2343ec0",
+      "diagnostics": [
+        "clang/lib/CodeGen/CGExpr.cpp:4014:44: error: suspicious usage of 'sizeof(...)/sizeof(...)'; numerator is not a multiple of denominator [bugprone-sizeof-expression,-warnings-as-errors]",
+        "clang/lib/CodeGen/CGExpr.cpp:5034:20: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]",
+        "clang/lib/CodeGen/CGExpr.cpp:6577:7: error: Assigned value is uninitialized [clang-analyzer-core.uninitialized.Assign,-warnings-as-errors]"
+      ]
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/AST/TextNodeDumper.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 462.765367,
+      "log_sha256": "bf666877af2ae5e3628a4b9f13e0568d740fd1e83e28a6c18f865eb9f7049dbd",
+      "diagnostics": [
+        "clang/lib/AST/TextNodeDumper.cpp:1332:36: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]"
+      ]
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/Sema/SemaCoroutine.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 140.318071,
+      "log_sha256": "83b423cf6847c020e41276b17a0e65970b1745077c7c36a4eeb54e4e631f30cc",
+      "diagnostics": [
+        "clang/include/clang/AST/ExprCXX.h:5272:18: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]",
+        "clang/include/clang/AST/IgnoreExpr.h:28:31: error: 'Fns' used after it was forwarded [bugprone-use-after-move,-warnings-as-errors]",
+        "clang/lib/Sema/SemaCoroutine.cpp:1866:11: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]"
+      ]
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/Sema/SemaObjC3Borrowed.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 292.184641,
+      "log_sha256": "d96ff1bf0342a9e058c932091d0ce03a4a7809feb596f8176fe8939562c4de2a",
+      "diagnostics": [
+        "clang/lib/Sema/SemaObjC3Borrowed.cpp:2486:15: error: 'Targets' used after it was moved [bugprone-use-after-move,-warnings-as-errors]"
+      ]
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/CodeGen/CGExprComplex.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 216.530827,
+      "log_sha256": "05aaa3903800d10c2a135dc1744f61a048173920e8367ac65d9b70a438a0d491",
+      "diagnostics": [
+        "clang/lib/CodeGen/CGExprComplex.cpp:722:7: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]",
+        "clang/lib/CodeGen/CGExprComplex.cpp:749:7: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]"
+      ]
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/CodeGen/CGNonTrivialStruct.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 416.617386,
+      "log_sha256": "4f90fca8ff02692dc2bfa08c40203e877d8af82ad2905619e3cf86afe8b35181",
+      "diagnostics": [
+        "clang/include/clang/AST/NonTrivialTypeVisitor.h:109:68: error: 'Args' used after it was forwarded [bugprone-use-after-move,-warnings-as-errors]",
+        "clang/lib/CodeGen/CGNonTrivialStruct.cpp:499:5: error: Address of stack memory associated with local variable 'NewCGF' is still referred to by a temporary object on the stack upon returning to the caller.  This will be a dangling reference [clang-analyzer-core.StackAddressEscape,-warnings-as-errors]"
+      ]
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/Sema/SemaExprCXX.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 307.250094,
+      "log_sha256": "e6d4e90acf60a8e55d979100686bfac506fc9a14e327b9259674c1d50038ff45",
+      "diagnostics": [
+        "clang/lib/Sema/SemaExprCXX.cpp:627:7: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]",
+        "clang/lib/Sema/SemaExprCXX.cpp:1366:9: error: Access to field 'CallOperator' results in a dereference of a null pointer (loaded from variable 'LSI') [clang-analyzer-core.NullDereference,-warnings-as-errors]"
+      ]
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/AST/ExprConstant.cpp",
+      "timed_out": true,
+      "exit_code": 124,
+      "seconds": 600.332444,
+      "log_sha256": "40d344c8b651017039b2c15cf4100cd66d7473977af6d71d86ffc78b7cbbf8b4",
+      "diagnostics": []
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/AST/ParentMapContext.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 78.251055,
+      "log_sha256": "2ceb4e6faa4af97b0210e6988f810236b535bf584bcb8ba5f207dde84625faed",
+      "diagnostics": [
+        "clang/lib/AST/ParentMapContext.cpp:462:3: error: Potential memory leak [clang-analyzer-cplusplus.NewDeleteLeaks,-warnings-as-errors]"
+      ]
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/AST/ASTContext.cpp",
+      "timed_out": true,
+      "exit_code": 124,
+      "seconds": 600.358727,
+      "log_sha256": "40d344c8b651017039b2c15cf4100cd66d7473977af6d71d86ffc78b7cbbf8b4",
+      "diagnostics": []
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/Sema/SemaExpr.cpp",
+      "timed_out": true,
+      "exit_code": 124,
+      "seconds": 600.368175,
+      "log_sha256": "40d344c8b651017039b2c15cf4100cd66d7473977af6d71d86ffc78b7cbbf8b4",
+      "diagnostics": []
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/AST/DeclBase.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 266.712122,
+      "log_sha256": "e2e0cc0c07e78c739a1f07749af170ef778ca783febb4bfcbb4693b37dd1aeab",
+      "diagnostics": [
+        "clang/include/clang/AST/DeclContextInternals.h:92:7: error: Address of stack memory associated with local variable 'NewHead' returned to caller [clang-analyzer-core.StackAddressEscape,-warnings-as-errors]",
+        "clang/lib/AST/DeclBase.cpp:1644:3: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]"
+      ]
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/CodeGen/CGObjC.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 320.552365,
+      "log_sha256": "d6b7b9f5e534e854e11ab9fc0509bc6e5aa56a6e2992878950c5f5455e990541",
+      "diagnostics": [
+        "clang/lib/CodeGen/CGObjC.cpp:3379:3: error: Undefined or garbage value returned to caller [clang-analyzer-core.uninitialized.UndefReturn,-warnings-as-errors]"
+      ]
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/Serialization/ASTReaderStmt.cpp",
+      "timed_out": true,
+      "exit_code": 124,
+      "seconds": 600.343411,
+      "log_sha256": "40d344c8b651017039b2c15cf4100cd66d7473977af6d71d86ffc78b7cbbf8b4",
+      "diagnostics": []
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/Sema/SemaStmt.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 270.875413,
+      "log_sha256": "af014fef7397b94a37e1677ce44548f08da6b771f50c833aa8321e87fca40590",
+      "diagnostics": [
+        "clang/include/clang/AST/IgnoreExpr.h:28:31: error: 'Fns' used after it was forwarded [bugprone-use-after-move,-warnings-as-errors]"
+      ]
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/CodeGen/CGExprAgg.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 293.733611,
+      "log_sha256": "022b1821d674672a5faa1599379833d2d16570edbf0afb579e783e957543b7cf",
+      "diagnostics": [
+        "clang/include/clang/AST/Expr.h:5471:43: error: 'C' used after it was forwarded [bugprone-use-after-move,-warnings-as-errors]"
+      ]
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/Sema/SemaObjCProperty.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 136.658395,
+      "log_sha256": "a815c5edd668688617c65db535e66383fed4628cb5257ecb91a89336cbfcf830",
+      "diagnostics": [
+        "clang/lib/Sema/SemaObjCProperty.cpp:2118:14: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]"
+      ]
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/Serialization/ASTReader.cpp",
+      "timed_out": true,
+      "exit_code": 124,
+      "seconds": 600.417573,
+      "log_sha256": "40d344c8b651017039b2c15cf4100cd66d7473977af6d71d86ffc78b7cbbf8b4",
+      "diagnostics": []
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/AST/Expr.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 331.972486,
+      "log_sha256": "5aa96f0c1a153bc6422d29516516940285b97b9f95a0c81c07e586ace6c0b36c",
+      "diagnostics": [
+        "clang/include/clang/AST/IgnoreExpr.h:28:31: error: 'Fns' used after it was forwarded [bugprone-use-after-move,-warnings-as-errors]"
+      ]
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/Parse/ParseExprCXX.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 159.784904,
+      "log_sha256": "17af80114908a7d8c13c3c24892107940424babf98842c54b2862ac59bc0ca23",
+      "diagnostics": [
+        "clang/lib/Parse/ParseExprCXX.cpp:1470:32: error: 'Attributes' used after it was moved [bugprone-use-after-move,-warnings-as-errors]",
+        "clang/lib/Parse/ParseExprCXX.cpp:1966:5: error: Called C++ object pointer is null [clang-analyzer-core.CallAndMessage,-warnings-as-errors]"
+      ]
+    },
+    {
+      "owner": "maintained",
+      "unit": "clang/lib/Serialization/ASTWriter.cpp",
+      "timed_out": false,
+      "exit_code": 1,
+      "seconds": 455.065785,
+      "log_sha256": "02f51baaa2a486f9e6da49c05b72da39087c14ceaa796a51bbad3ff6616b519d",
+      "diagnostics": [
+        "clang/lib/Serialization/MultiOnDiskHashTable.h:170:22: error: Potential leak of memory pointed to by 'Merged' [clang-analyzer-cplusplus.NewDeleteLeaks,-warnings-as-errors]"
+      ]
+    }
+  ]
+}

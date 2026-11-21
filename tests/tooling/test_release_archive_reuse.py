@@ -8,6 +8,7 @@ import tarfile
 import pytest
 
 from scripts.objc3c_toolchain import linux_sdk, package
+from scripts.objc3c_toolchain.linux_host import native_target
 from scripts.objc3c_toolchain.install_sdk import file_hash, install
 
 
@@ -21,7 +22,7 @@ def cached_release(tmp_path, monkeypatch):
     verifier.parent.mkdir(parents=True)
     shutil.copyfile(package.__file__, verifier)
     package.normalize_permissions(foundation)
-    data = {'schema': package.SCHEMA, 'source_build_id': 'test-release',
+    data = {'schema': package.SCHEMA, 'source_build_id': 'test-release', 'target': native_target(),
             'files': package.inventory(foundation)}
     data['seal_sha256'] = package._digest(data)
     (foundation / package.MANIFEST).write_text(json.dumps(data))

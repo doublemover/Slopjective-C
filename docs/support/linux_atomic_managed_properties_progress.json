@@ -1,0 +1,51 @@
+{
+  "development_only": true,
+  "source_version": "2.143",
+  "system_version": "2.69",
+  "prepared_source_tree": "64d170c16318c7be57218184baf463cffb3c8edb",
+  "runtime_patch_sha256": "bd1274cf13e5ca5efdcc7f8fec35a0123b95815913c7373ce0bb5cb62ee40244",
+  "extension_abi": 24,
+  "compiler_identity_resealed": false,
+  "matched_sdk_produced": false,
+  "compiler": {
+    "dedicated_commands": 38,
+    "all_passed": true,
+    "last_full_sweep": "source 2.141: 539 passed, three unsupported"
+  },
+  "runtime_patch_controls": 14,
+  "publication_profiles": 3,
+  "production_decoder_exact_replays": 560,
+  "native_framework": {
+    "configurations": 5,
+    "commands": 17,
+    "all_passed": true,
+    "profiles": [
+      "C17 ARC source O0",
+      "C++20 ARC source O0",
+      "C++23 ARC PCH O2 no-elision",
+      "C++23 MRC PCH O2 no-elision",
+      "C++20 ARC source C++-only exception handling"
+    ]
+  },
+  "instrumented_runtime_and_client": {
+    "configurations": 4,
+    "commands": 12,
+    "all_passed": true,
+    "profiles": [
+      "C17 ThreadSanitizer",
+      "C++23 ThreadSanitizer",
+      "C17 ASan/UBSan",
+      "C++23 ASan/UBSan"
+    ],
+    "controls": [
+      "two-writer/two-reader atomic record snapshots",
+      "deterministic owned snapshot after replacement",
+      "strong/weak/Block field ownership",
+      "forward-declared record helper copy/move",
+      "owner destruction reenters accessor after unlock",
+      "same-slot dual copy and callback fault retry"
+    ]
+  },
+  "reader_contract": "objc3.atomic-managed-properties.v1; declaration and accessor-body admission including ordinary ARC record properties",
+  "full_current_consolidation": "follows the implementation batch"
+}

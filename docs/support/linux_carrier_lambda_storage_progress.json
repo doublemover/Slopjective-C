@@ -1,0 +1,32 @@
+{
+  "development_only": true,
+  "source_version": "2.140",
+  "system_version": "2.66",
+  "prepared_source_tree": "0a3e616d639eb5d92f0c60ff0f46b2a3c250a63b",
+  "extension_abi": 24,
+  "compiler_identity_resealed": false,
+  "matched_sdk_produced": false,
+  "compiler": {
+    "dedicated_commands": 49,
+    "all_passed": true
+  },
+  "ast_controls": 57,
+  "publication_profiles": 2,
+  "production_decoder_exact_replays": 500,
+  "native": {
+    "configurations": 3,
+    "commands": 10,
+    "all_passed": true,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ],
+    "profiles": [
+      "C++20 ARC source O0",
+      "C++23 ARC PCH O2 no-elision",
+      "C++20 ARC source C++-only exception handling"
+    ]
+  },
+  "full_current_consolidation": "follows the implementation batch",
+  "updated_frontend_groups": 31
+}

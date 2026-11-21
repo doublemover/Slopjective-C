@@ -17,7 +17,7 @@ class WorkflowToolSpec:
 
 WORKFLOW_TOOL_REGISTRY: dict[str, WorkflowToolSpec] = {
     "pwsh": WorkflowToolSpec("pwsh", ("pwsh",)),
-    "npx": WorkflowToolSpec("npx", ("npx.cmd", "npx")),
+    "npx": WorkflowToolSpec("npx", ("npx",)),
 }
 
 

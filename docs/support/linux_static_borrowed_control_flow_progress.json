@@ -1,0 +1,48 @@
+{
+  "development_only": true,
+  "source_version": "2.152",
+  "system_version": "2.78",
+  "prepared_source_tree": "5b236af9cc2255a4f8265df925cac0efdf92762a",
+  "extension_abi": 24,
+  "compiler_identity_resealed": false,
+  "matched_sdk_produced": false,
+  "compiler": {
+    "main_batch_borrowed_cases_passed": 58,
+    "final_focused_cases_passed": 3,
+    "new_source_pch_commands": 18,
+    "final_focused_commands": 54,
+    "main_batch_precedes_final_array_decay_fix": true,
+    "all_passed": true
+  },
+  "ast_controls": 64,
+  "publication_profiles": 6,
+  "adjacent_frontend_groups": 9,
+  "production_decoder_exact_replays": 720,
+  "production_decoder_families": 36,
+  "native": {
+    "configurations": 4,
+    "commands_or_operations": 24,
+    "consumers_per_provider": 2,
+    "provider_source_removed": true,
+    "all_passed": true,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ]
+  },
+  "reader_contract": "objc3.borrowed-result-proofs.v2",
+  "negative_controls": [
+    "unknown/indirect/replaceable calls",
+    "mutable or TLS bases",
+    "mutable/unknown local pointer slots",
+    "recursive return graphs",
+    "4096-work budget exhaustion",
+    "missing branch/switch/loop/goto/handler returns",
+    "GNU statement-expression and capture-initializer exits",
+    "mixed permanent and automatic/mutable array alternatives",
+    "older/missing/invented capability",
+    "retained public owner/escape obligations"
+  ],
+  "all_focused_checks_passed": true,
+  "full_current_consolidation": "full compiler and matched analysis/SDK follow remaining implementation"
+}

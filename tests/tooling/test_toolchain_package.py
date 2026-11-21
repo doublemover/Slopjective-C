@@ -1,3 +1,4 @@
+import ast
 import json
 import os
 from pathlib import Path
@@ -7,6 +8,32 @@ import pytest
 from scripts.objc3c_toolchain.package import MANIFEST, SCHEMA, _digest, inventory, normalize_permissions, verify_sdk
 
 pytestmark = pytest.mark.skipif(os.name != "posix", reason="Linux SDK filesystem seal qualification")
+
+
+@pytest.mark.parametrize('suite', ['record-carriers', 'heap-carriers', 'cpp-interfaces'])
+def test_installed_positive_and_negative_inventory_matches_release_owner(suite):
+    root = Path(__file__).resolve().parents[2]
+    producer = ast.parse((root / 'scripts/objc3c_toolchain/package.py').read_text())
+    assignment = next(node for node in ast.walk(producer) if isinstance(node, ast.Assign)
+        and any(isinstance(target, ast.Name) and target.id == 'suites' for target in node.targets))
+    contract = next(counts for _, name, counts in ast.literal_eval(assignment.value) if name == suite)
+    consumer = ast.parse((root / 'tests/clang_foundation/installed_sdk' /
+        ('qualify-' + suite + '.py')).read_text())
+    limits = {}
+    for node in ast.walk(consumer):
+        if not (isinstance(node, ast.Compare) and len(node.comparators) == 1
+                and isinstance(node.comparators[0], ast.Constant)):
+            continue
+        call = node.left
+        if not (isinstance(call, ast.Call) and isinstance(call.func, ast.Name)
+                and call.func.id == 'len' and len(call.args) == 1):
+            continue
+        item = call.args[0]
+        if (isinstance(item, ast.Subscript) and isinstance(item.value, ast.Name)
+                and item.value.id == 'report' and isinstance(item.slice, ast.Constant)):
+            limits.setdefault(item.slice.value, set()).add(node.comparators[0].value)
+    for field in ('admissions', 'rejections'):
+        assert limits.get(field) == {contract[field]}, (suite, field, limits.get(field), contract[field])
 
 
 def sealed(tmp_path):
@@ -138,12 +165,20 @@ def test_release_failure_joins_other_gates_and_preserves_their_evidence(tmp_path
                         str(tmp_path / 'qualification.json')], check=True, timeout=10)
         return {'status': 'PASS'}
 
+    def queued():
+        subprocess.run([sys.executable, '-B', '-c',
+                        'import pathlib,sys; pathlib.Path(sys.argv[1]).write_text("PASS")',
+                        str(tmp_path / 'queued.json')], check=True, timeout=10)
+        return {'status': 'PASS'}
+
     with pytest.raises(ValueError, match='import: failed source import; see import.log'):
-        _run_qualifications({'import': failed, 'calls': completed}, 2)
+        _run_qualifications({'import': failed, 'calls': completed,
+                             'queued': queued}, 2)
     assert (tmp_path / 'qualification.json').read_text() == 'PASS'
+    assert (tmp_path / 'queued.json').read_text() == 'PASS'
 
 
-@pytest.mark.parametrize('damage', ['status', 'seal', 'count', 'command'])
+@pytest.mark.parametrize('damage', ['status', 'seal', 'count', 'admissions', 'command'])
 def test_release_gate_rejects_successful_process_with_invalid_receipt(tmp_path, damage):
     from scripts.objc3c_toolchain.package import _qualify_call_suite
 
@@ -151,6 +186,7 @@ def test_release_gate_rejects_successful_process_with_invalid_receipt(tmp_path, 
     examples = sdk / 'share/objc3c/examples/native'
     examples.mkdir(parents=True)
     evidence = {'status': 'PASS', 'sdk_seal': 'sealed', 'executions': [{}],
+                'admissions': [{}],
                 'commands': [{'exit_code': 0, 'expected_exit_code': 0}]}
     if damage == 'status':
         evidence['status'] = 'FAIL'
@@ -158,6 +194,8 @@ def test_release_gate_rejects_successful_process_with_invalid_receipt(tmp_path, 
         evidence['sdk_seal'] = 'other'
     elif damage == 'count':
         evidence['executions'] = []
+    elif damage == 'admissions':
+        evidence['admissions'] = []
     else:
         evidence['commands'][0]['exit_code'] = 1
     (examples / 'qualify-probe.py').write_text(
@@ -165,4 +203,4 @@ def test_release_gate_rejects_successful_process_with_invalid_receipt(tmp_path, 
         'output = pathlib.Path(sys.argv[sys.argv.index("--output-dir") + 1])\n'
         f'(output / "qualification.json").write_text({json.dumps(evidence)!r})\n')
     with pytest.raises(ValueError, match='receipt is incomplete'):
-        _qualify_call_suite(sdk, tmp_path / 'evidence', 'sealed', 'probe', {'executions': 1})
+        _qualify_call_suite(sdk, tmp_path / 'evidence', 'sealed', 'probe', {'executions': 1, 'admissions': 1})

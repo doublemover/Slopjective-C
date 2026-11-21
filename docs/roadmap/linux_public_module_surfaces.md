@@ -21,7 +21,7 @@ the functions that use them. A signature cannot expose a type excluded from the
 policy. Imported types require their existing resolved dependency identities.
 
 Names are distinct, nonempty UTF-8 strings of at most 256 bytes, with no control
-characters or spaces. A policy contains at most 256 names. A single `"*"` requests
+characters or spaces. A policy contains at most 4,096 names. A single `"*"` requests
 the complete supported public surface and keeps normal unsupported-API
 diagnostics. An omitted native CLI selection has the same complete-surface
 behavior. Missing roots, duplicate names and a wildcard mixed with names are

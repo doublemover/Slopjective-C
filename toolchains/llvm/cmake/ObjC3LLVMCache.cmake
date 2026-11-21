@@ -5,7 +5,7 @@ set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
 set(LLVM_ENABLE_ASSERTIONS ON CACHE BOOL "" FORCE)
 set(LLVM_ENABLE_RTTI ON CACHE BOOL "" FORCE)
 set(LLVM_ENABLE_EH ON CACHE BOOL "" FORCE)
-set(LLVM_TARGETS_TO_BUILD "X86" CACHE STRING "" FORCE)
+set(LLVM_TARGETS_TO_BUILD "X86;AArch64" CACHE STRING "" FORCE)
 set(LLVM_ENABLE_PROJECTS "clang;lld;clang-tools-extra;lldb" CACHE STRING "" FORCE)
 set(LLVM_ENABLE_RUNTIMES "" CACHE STRING "" FORCE)
 set(LLVM_ENABLE_BOOTSTRAP OFF CACHE BOOL "" FORCE)
@@ -15,6 +15,15 @@ if(CMAKE_HOST_WIN32)
 endif()
 set(CMAKE_JOB_POOLS "objc3_link=1" CACHE STRING "" FORCE)
 set(CMAKE_JOB_POOL_LINK "objc3_link" CACHE STRING "" FORCE)
+
+# The staged Linux toolchain must resolve its own $ORIGIN-relative libraries
+# ahead of ambient LD_LIBRARY_PATH. GNU new dtags would emit DT_RUNPATH, whose
+# lower precedence cannot provide that fail-closed loader contract.
+if(UNIX AND NOT APPLE)
+  set(CMAKE_EXE_LINKER_FLAGS "-Wl,--disable-new-dtags -Wl,--build-id=sha1" CACHE STRING "" FORCE)
+  set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--disable-new-dtags -Wl,--build-id=sha1" CACHE STRING "" FORCE)
+  set(CMAKE_MODULE_LINKER_FLAGS "-Wl,--disable-new-dtags -Wl,--build-id=sha1" CACHE STRING "" FORCE)
+endif()
 
 # The standalone debugger has no dependency on a second Python ABI.
 set(LLDB_ENABLE_PYTHON OFF CACHE BOOL "" FORCE)

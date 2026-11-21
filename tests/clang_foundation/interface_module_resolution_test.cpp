@@ -1,7 +1,9 @@
+#include "native_target_test_support.h"
 #include "clang_foundation/compile_session.h"
 #include "clang_foundation/frontend_api.h"
 #include "clang_foundation/interface_artifact_io.h"
 
+#include <algorithm>
 #include <cassert>
 #include <cstdio>
 #include <filesystem>
@@ -36,7 +38,7 @@ CompileRequest Producer(std::string input, std::string module,
   request.source_text = std::move(source);
   request.language = BaseLanguage::ObjectiveC;
   request.objc3 = true;
-  request.arguments = {"--target=x86_64-unknown-linux-gnu"};
+  request.arguments = {"--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
   request.emit_semantic_interface = true;
   request.module_name = std::move(module);
   request.package_identity = std::move(package);
@@ -79,7 +81,7 @@ bool CompileV3Consumer(const std::filesystem::path &root,
   options.base.input_path = objective_cxx ? "consumer.mm" : "consumer.m";
   options.base.source = source.data();
   options.base.source_size = source.size();
-  options.base.target_triple = "x86_64-unknown-linux-gnu";
+  options.base.target_triple = OBJC3_TEST_NATIVE_LINUX_TARGET;
   options.base.language = objective_cxx ? 3 : 2;
   options.base.emit = 0;
   options.base.profile = 0;
@@ -105,7 +107,7 @@ bool CompileV3Consumer(const std::filesystem::path &root,
       assert(HasSha256Field(json, "resource_sha256"));
       assert(json.find("\"patch_digest\":") != std::string::npos);
       assert(json.find("ObjC3-patches=") != std::string::npos);
-      assert(json.find("\"target\":\"x86_64-unknown-linux-gnu\"") != std::string::npos);
+      assert(json.find("\"target\":\"" OBJC3_TEST_NATIVE_LINUX_TARGET "\"") != std::string::npos);
       assert(json.find("\"runtime\":\"gnustep-2.2\"") != std::string::npos);
       assert(json.find("\"name\":\"" + identity.canonical_name +
           "\",\"fingerprint\":\"" + identity.semantic_fingerprint + "\"") !=
@@ -127,6 +129,84 @@ void WriteArtifact(const InterfaceEmissionArtifact &artifact,
   const auto written = WriteSemanticInterfaceArtifact(artifact, path.string());
   assert(written.success);
 }
+void TestCompactIndexBudgets(const std::filesystem::path &root,
+                             const InterfaceEmissionArtifact &artifact,
+                             const InterfaceImportTarget &target) {
+  const auto dir = root / "budgets";
+  const auto left = dir / "left", right = dir / "right";
+  std::filesystem::create_directories(left);
+  std::filesystem::create_directories(right);
+  for (unsigned i = 0; i != 12; ++i)
+    WriteArtifact(artifact, (i % 2 ? right : left) / ("copy-" + std::to_string(i) + ".objc3i"));
+  auto spare = Compile(Producer("unrequested.m", "fixture.Unrequested", "spare", "int spare(void);"));
+  assert(spare.success && spare.interface_artifact);
+  WriteArtifact(*spare.interface_artifact, right / "spare.objc3i");
+  auto resolve = [&](const InterfaceImportTarget &policy, bool reverse = false) {
+    return ResolveInterfaceModules(reverse ? std::vector<std::string>{right.string(), left.string()}
+                                          : std::vector<std::string>{left.string(), right.string()},
+                                   {Locked(artifact.identity)}, policy);
+  };
+  auto baseline = resolve(target);
+  assert(baseline.success && baseline.artifacts.size() == 1);
+  const auto &usage = baseline.resource_usage;
+  assert(usage.candidate_pairs == 13 && usage.coalesced_duplicates == 11);
+  assert(usage.index_modules == 2 && usage.selected_modules == 1);
+  assert(usage.read_bytes > usage.selected_bytes * 6);
+  assert(usage.selected_declarations > 0);
+  assert(usage.resident_candidate_bytes == 0);
+  assert(usage.resident_candidate_declarations == 0);
+  assert(usage.peak_resident_candidate_bytes > 0 &&
+         usage.peak_resident_candidate_bytes < usage.read_bytes);
+  assert(usage.peak_resident_candidate_declarations > 0 &&
+         usage.peak_resident_candidate_declarations < usage.decoded_declarations);
+  auto reversed = resolve(target, true);
+  assert(reversed.success && reversed.artifacts.front().source_path == baseline.artifacts.front().source_path);
+  using Field = std::uint64_t InterfaceResourceLimits::*;
+  for (auto [field, exact] : std::vector<std::pair<Field, std::uint64_t>>{
+      {&InterfaceResourceLimits::read_bytes, usage.read_bytes},
+      {&InterfaceResourceLimits::scan_path_bytes, usage.scan_path_bytes},
+      {&InterfaceResourceLimits::index_string_bytes, usage.index_string_bytes},
+      {&InterfaceResourceLimits::index_modules, usage.index_modules},
+      {&InterfaceResourceLimits::decoded_declarations, usage.decoded_declarations},
+      {&InterfaceResourceLimits::selected_bytes, usage.selected_bytes},
+      {&InterfaceResourceLimits::selected_declarations, usage.selected_declarations},
+      {&InterfaceResourceLimits::selected_modules, usage.selected_modules}}) {
+    assert(exact > 0);
+    auto policy = target;
+    policy.resource_limits.*field = exact;
+    assert(resolve(policy).success && resolve(policy, true).success);
+    policy.resource_limits.*field = exact - 1;
+    auto rejected = resolve(policy);
+    assert(!rejected.success && rejected.artifacts.empty());
+    assert(std::any_of(rejected.diagnostics.begin(), rejected.diagnostics.end(),
+        [](const auto &d) { return d.code == kInterfaceResourceDiagnostic; }));
+  }
+
+  const auto selected_path = std::filesystem::path(baseline.artifacts.front().source_path);
+  std::ifstream selected_input(selected_path, std::ios::binary);
+  const std::string selected_bytes((std::istreambuf_iterator<char>(selected_input)), {});
+  selected_input.close();
+  bool mutated = false;
+  auto changed = ResolveInterfaceModulesForTesting(
+      {left.string(), right.string()}, {Locked(artifact.identity)}, target, [&] {
+        std::ofstream output(selected_path, std::ios::binary | std::ios::app);
+        output << "// deterministic post-index replacement\n";
+        assert(output.good());
+        mutated = true;
+      });
+  assert(mutated && !changed.success && changed.artifacts.empty());
+  assert(changed.resource_usage.resident_candidate_bytes == 0);
+  assert(changed.resource_usage.resident_candidate_declarations == 0);
+  assert(std::any_of(changed.diagnostics.begin(), changed.diagnostics.end(),
+      [](const auto &d) { return d.code == "O3IFC134"; }));
+  std::ofstream restore(selected_path, std::ios::binary | std::ios::trunc);
+  restore.write(selected_bytes.data(), selected_bytes.size());
+  assert(restore.good());
+  restore.close();
+  assert(resolve(target).success);
+  std::filesystem::remove_all(dir);
+}
+
 void TestCxxSourceImports(const std::filesystem::path &root) {
   auto provider =
       Producer("cpp-provider.mm", "fixture.Cxx", "pkg-cxx",
@@ -207,6 +287,7 @@ int main() {
   target.extension_abi = a_identity.extension_abi;
   target.language_revision = a_identity.language_revision;
   target.language_profile = a_identity.language_profile;
+  TestCompactIndexBudgets(root, *a.interface_artifact, target);
   auto private_request = Locked(a_identity);
   private_request.public_import = false;
   auto private_resolution = ResolveInterfaceModules({root.string()}, {private_request}, target);

@@ -65,6 +65,19 @@ objc3_service_status objc3_task_group_cancel(objc3_task_group_t *group) {
     return services::task_group_cancel(handle<services::TaskGroup>(group));
   });
 }
+objc3_service_status objc3_task_group_scope_enter(objc3_task_t *parent) {
+  return status([&] { return services::task_group_scope_enter(parent); });
+}
+objc3_task_group_t *objc3_task_group_scope_current(void) {
+  return handle<objc3_task_group_t>(
+      services::task_group_scope_current(objc3_task_current_callback()));
+}
+objc3_service_status objc3_task_group_scope_finish(
+    objc3_task_t *parent, int cancel, objc3_service_status *out_status) {
+  return status([&] {
+    return services::task_group_scope_finish(parent, cancel != 0, out_status);
+  });
+}
 objc3_service_status objc3_task_group_next(objc3_task_group_t *group,
                                            objc3_task_t **out_task) {
   if (out_task)
@@ -77,6 +90,32 @@ objc3_service_status objc3_task_group_next(objc3_task_group_t *group,
 objc3_service_status objc3_task_group_join(objc3_task_group_t *group) {
   return status([&] {
     return services::task_group_join(handle<services::TaskGroup>(group));
+  });
+}
+objc3_service_status objc3_task_group_await(objc3_task_group_t *group,
+                                           objc3_task_t *parent,
+                                           objc3_service_status *out_status) {
+  return status([&] {
+    return services::task_group_await(handle<services::TaskGroup>(group), parent,
+                                      out_status);
+  });
+}
+objc3_service_status objc3_task_group_await_next(
+    objc3_task_group_t *group, objc3_task_t *parent,
+    const objc3_async_result_type *expected_type,
+    objc3_service_status *out_status, objc3_task_t **out_task) {
+  return status([&] {
+    return services::task_group_await_next(handle<services::TaskGroup>(group),
+                                           parent, expected_type, out_status,
+                                           out_task);
+  });
+}
+objc3_service_status objc3_task_group_await_cleanup(
+    objc3_task_group_t *group, objc3_task_t *parent,
+    objc3_service_status *out_status) {
+  return status([&] {
+    return services::task_group_await_cleanup(handle<services::TaskGroup>(group),
+                                              parent, out_status);
   });
 }
 objc3_service_status objc3_actor_create(objc3_executor_t *executor,
@@ -112,6 +151,17 @@ uint64_t objc3_actor_identity(const objc3_actor_t *actor) {
 uint64_t objc3_actor_executor_identity(const objc3_actor_t *actor) {
   return services::actor_executor_identity(
       handle<const services::Actor>(actor));
+}
+objc3_service_status objc3_actor_get_executor(objc3_actor_t *actor,
+                                               objc3_executor_t **out_executor) {
+  if (!out_executor) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  *out_executor = nullptr;
+  if (!actor) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  auto *executor = objc3_executor_retain(
+      services::actor_executor(handle<services::Actor>(actor)));
+  if (!executor) return OBJC3_SERVICE_NOT_READY;
+  *out_executor = executor;
+  return OBJC3_SERVICE_OK;
 }
 objc3_service_status objc3_actor_enqueue(objc3_actor_t *actor,
                                          objc3_actor_job job, void *context,
