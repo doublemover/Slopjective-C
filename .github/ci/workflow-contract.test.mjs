@@ -203,7 +203,7 @@ for (const fault of [
     const groups = owner.jobs["instrumented-product-consumers"].strategy.matrix.group;
     if (fault === "missing partition") groups.splice(3, 1);
     if (fault === "duplicate partition") groups[3] = groups[0];
-    if (fault === "out-of-range partition") groups[3] = "asan-products-partition-8";
+    if (fault === "out-of-range partition") groups[3] = "asan-products-partition-10";
     if (fault === "obsolete single consumer")
       groups.splice(0, groups.length, "asan-products", "runtime-schedules");
     if (fault === "missing schedules") groups.pop();
@@ -288,6 +288,8 @@ for (const fault of [
   "install waits for other consumers",
   "skipped install matrix",
   "missing install outcome",
+  "missing install aggregate outcome",
+  "missing install scope",
   "optional release analysis",
 ]) {
   test(`SDK release rejects ${fault}`, () => {
@@ -320,6 +322,10 @@ for (const fault of [
     if (fault === "skipped install matrix") caller.jobs.build.with.archive_install = false;
     if (fault === "missing install outcome")
       owner.jobs.gate.needs = owner.jobs.gate.needs.filter((id) => id !== "archive-install");
+    if (fault === "missing install aggregate outcome")
+      owner.jobs.gate.steps[0].run = owner.jobs.gate.steps[0].run.replace(" INSTALL_AGGREGATE_RESULT", "");
+    if (fault === "missing install scope")
+      owner.jobs["archive-install"].strategy.matrix.scope.pop();
     if (fault === "optional release analysis")
       owner.jobs.gate.needs = owner.jobs.gate.needs.filter(
         (id) => id !== "implementation-analysis",
@@ -447,7 +453,7 @@ for (const [name, before, after] of [
     'git config --global --add safe.directory "$GITHUB_WORKSPACE"',
     "echo missing-checkout-trust",
   ],
-  ["cancelled sibling shard", "      fail-fast: false", "      fail-fast: true"],
+  ["ignored sibling failure", "      fail-fast: true", "      fail-fast: false"],
   ["unsharded verification", "verify --sharded", "verify"],
   ["unpartitioned execution", '--index "$COVERAGE_PARTITION"', ""],
   ["overwriting merged receipts", "merge-multiple: true", "merge-multiple: false"],
