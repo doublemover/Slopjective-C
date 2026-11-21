@@ -421,6 +421,17 @@ test("native workflow rejects a missing terminal dependency", () => {
   owner.jobs.gate.needs = owner.jobs.gate.needs.filter((id) => id !== "product-producer");
   assert.throws(() => validateNativeGate(yaml.dump(owner)));
 });
+for (const fault of ["missing outcome", "substituted outcome", "ignored failures"]) {
+  test(`native workflow rejects ${fault} in its outcome gate`, () => {
+    const owner = yaml.load(native);
+    const step = owner.jobs.gate.steps.find((step) => step.env?.PRODUCER_RESULT);
+    if (fault === "missing outcome")
+      step.run = step.run.replace("results=(PLAN_RESULT PRODUCER_RESULT", "results=(PLAN_RESULT");
+    if (fault === "substituted outcome") step.env.PRODUCER_RESULT = "success";
+    if (fault === "ignored failures") step["continue-on-error"] = true;
+    assert.throws(() => validateNativeGate(yaml.dump(owner)), /terminal gate/);
+  });
+}
 for (const [name, before, after] of [
   ["missing aggregate", "  gate:", "  renamed:"],
   [
