@@ -4,16 +4,16 @@ The native Linux campaign distributes its thirteen sanitizer product owners
 across eight jobs, using one exact SDK archive and one exact instrumented compiler
 producer. Runtime schedule qualification remains an independent consumer.
 
-| Partition | Product owners |
-| --- | --- |
-| 0 | Structured concurrency |
-| 1 | Native async |
-| 2 | C++ task coroutines |
-| 3 | C frame bridge and installed ownership |
-| 4 | Feature witnesses at O0, ASan/UBSan and TSan |
-| 5 | Feature witnesses at O2, ASan/UBSan and TSan |
-| 6 | Factory witnesses at O0, ASan/UBSan and TSan |
-| 7 | Factory witnesses at O2, ASan/UBSan and TSan |
+| Partition | Product owners                               |
+| --------- | -------------------------------------------- |
+| 0         | Structured concurrency                       |
+| 1         | Native async                                 |
+| 2         | C++ task coroutines                          |
+| 3         | C frame bridge and installed ownership       |
+| 4         | Feature witnesses at O0, ASan/UBSan and TSan |
+| 5         | Feature witnesses at O2, ASan/UBSan and TSan |
+| 6         | Factory witnesses at O0, ASan/UBSan and TSan |
+| 7         | Factory witnesses at O2, ASan/UBSan and TSan |
 
 Each job builds only its required runtime profiles. Only the two factory
 partitions build the instrumented frontend facade. Independent owners retain

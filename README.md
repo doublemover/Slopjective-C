@@ -2,8 +2,9 @@
 
 Slopjective-C develops a native Objective-C 3 compiler on a patched LLVM/Clang
 SDK. `objc3c` is the public compiler. It uses Clang's parser, semantic analysis,
-AST, ownership model, native CodeGen and linker driver. Linux x86-64 with the
-GNUstep 2.2 ABI and pinned libobjc2 runtime is the active distribution target.
+AST, ownership model, native CodeGen and linker driver. The Linux SDK uses the
+GNUstep 2.2 ABI and pinned libobjc2 runtime. The release workflow qualifies
+native x86-64 and AArch64 archives.
 
 ## License
 
@@ -15,8 +16,11 @@ LLVM Exceptions.
 
 ## Build and use
 
-Start with the [Linux tutorial](docs/tutorials/getting_started.md), or choose an
-installed example from the [showcase catalog](showcase/README.md).
+Start with the [Linux release and install guide](docs/releases/linux.md) or the
+[Linux tutorial](docs/tutorials/getting_started.md). The
+[showcase catalog](showcase/README.md) links installed examples.
+The [Linux release status](docs/releases/status.md) tracks the current candidate
+and remaining acceptance gates.
 
 The authoritative versions are in
 [`toolchains/llvm/manifest.json`](toolchains/llvm/manifest.json). The current
@@ -71,6 +75,10 @@ Pass the installation through `CMAKE_PREFIX_PATH`. See the
 
 ## Install a release archive
 
+The [Linux release guide](docs/releases/linux.md) lists the download location,
+required files, checksum verification, and installation commands for a
+published SDK preview.
+
 An installation needs no checkout, Node, PowerShell or development Python.
 On an apt-based Linux host, the release installer can provision its distribution
 Python, decompressor, system headers and loader dependencies:
@@ -91,11 +99,9 @@ symbolic links after extraction or relocation. Directory permissions are also
 sealed; archives and activation files support root installation followed by
 ordinary-user development, including under a restrictive installation umask.
 
-The current binary qualification baseline is Debian 13, x86-64, glibc 2.41 and
-libstdc++ with GLIBCXX_3.4.33. The shipped archive is also qualified on Ubuntu
-26.04. Other distributions require their own installed archive execution
-evidence before being declared supported. Windows, Darwin,
-other architectures and older Linux runtimes are outside this milestone.
+The release workflow checks each archive on Debian 13 and Ubuntu 26.04. The
+release manifest records the matching qualification runs and minimum glibc and
+libstdc++ symbol versions. Check the manifest for the archive you install.
 
 The installed sample combines semantic interface imports, managed objects and
 Blocks, typed errors and `defer` cleanup. It uses the bounded native migration

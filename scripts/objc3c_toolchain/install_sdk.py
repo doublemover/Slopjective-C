@@ -44,14 +44,52 @@ def admit_native_sdk(prefix: Path, data: dict) -> None:
             raise ValueError('SDK ELF member differs from the native Linux architecture: ' + name)
 
 
-def verify(prefix: Path, *, verifier: Path | None = None) -> dict:
+def verify(prefix: Path, *, verifier: Path | None = None, verifier_bytes: bytes | None = None) -> dict:
     # Loading a module through importlib writes __pycache__ unless the parent
     # happens to use -B. A verifier must never mutate the sealed installation.
     path = verifier or prefix / 'share/objc3c/verify-sdk.py'
     module = types.ModuleType('objc3_sdk_verifier')
     module.__file__ = str(path)
-    exec(compile(path.read_bytes(), str(path), 'exec'), module.__dict__)
+    exec(compile(path.read_bytes() if verifier_bytes is None else verifier_bytes, str(path), 'exec'),
+         module.__dict__)
     return module.verify_sdk(prefix)
+
+
+def existing_generation(root: Path, archive: Path, decoder_path: Path) -> tuple[Path, str, bytes] | None:
+    generations = root / 'sdks'
+    if not generations.is_dir() or generations.is_symlink():
+        return None
+    # New archives put the seal and standalone verifier before the bulk data.
+    # Read them from the hash-verified archive, never from the mutable prefix.
+    with subprocess.Popen([str(decoder_path), '-dc', str(archive)], stdout=subprocess.PIPE) as decoder:
+        try:
+            with tarfile.open(fileobj=decoder.stdout, mode='r|') as tar:
+                admission = []
+                for name, limit in (('objc3-sdk/objc3-sdk.json', 32 * 1024 * 1024),
+                                    ('objc3-sdk/share/objc3c/verify-sdk.py', 256 * 1024)):
+                    member = tar.next()
+                    if member is None or member.name != name or not member.isfile() or member.size > limit:
+                        return None
+                    with tar.extractfile(member) as source:
+                        admission.append(source.read())
+        finally:
+            decoder.terminate()
+            decoder.stdout.close()
+    seal = json.loads(admission[0])['seal_sha256']
+    if len(seal) != 64 or any(character not in '0123456789abcdef' for character in seal):
+        raise ValueError('SDK archive contains an invalid generation seal')
+    prefix = generations / seal
+    return (prefix, seal, admission[1]) if prefix.is_dir() and not prefix.is_symlink() else None
+
+
+def create_install_directory(path: Path, *, parents: bool = False) -> None:
+    try:
+        path.mkdir(parents=parents)
+    except FileExistsError:
+        if not path.is_dir() or path.is_symlink():
+            raise
+    else:
+        path.chmod(0o755)
 
 
 def activate(root: Path, prefix: Path) -> None:
@@ -66,14 +104,29 @@ fi
 # Resolve the single published pointer once. Existing shells keep this concrete
 # generation even when a later installation changes current.
 _objc3_selected=$(CDPATH= cd -P -- SDK_PATH && pwd -P) || return 1
+# Drop selected and previously activated SDK bin entries before prepending.
+_objc3_previous=${OBJC3C_SDK_ROOT:-}
+_objc3_path=$_objc3_selected/bin
+_objc3_rest=${PATH:-}
+while case $_objc3_rest in
+  *:*) _objc3_entry=${_objc3_rest%%:*}; _objc3_rest=${_objc3_rest#*:};;
+  *) _objc3_entry=$_objc3_rest; unset _objc3_rest;;
+esac
+do
+  if [ "$_objc3_entry" != "$_objc3_selected/bin" ] &&
+     { [ -z "$_objc3_previous" ] || [ "$_objc3_entry" != "$_objc3_previous/bin" ]; }; then
+    _objc3_path=$_objc3_path:$_objc3_entry
+  fi
+  [ "${_objc3_rest+x}" ] || break
+done
+export PATH="$_objc3_path"
 export OBJC3C_SDK_ROOT="$_objc3_selected"
-unset _objc3_selected
+unset _objc3_selected _objc3_previous _objc3_path _objc3_rest _objc3_entry
 export OBJC3C_CLANG_FOUNDATION_ROOT="$OBJC3C_SDK_ROOT"
 export LLVM_ROOT="$OBJC3C_SDK_ROOT"
 export OBJC3C_LLVM_ROOT="$OBJC3C_SDK_ROOT"
 export LLVM_DIR="$OBJC3C_SDK_ROOT/lib/cmake/llvm"
 export Clang_DIR="$OBJC3C_SDK_ROOT/lib/cmake/clang"
-export PATH="$OBJC3C_SDK_ROOT/bin:$PATH"
 export LD_LIBRARY_PATH="$OBJC3C_SDK_ROOT/lib"
 '''.replace('SDK_PATH', shlex.quote(str(root / 'current')))
     # Prepare the stable reader before publishing a new generation. Replacing
@@ -94,7 +147,8 @@ export LD_LIBRARY_PATH="$OBJC3C_SDK_ROOT/lib"
         pending.unlink(missing_ok=True)
         temporary.unlink(missing_ok=True)
         raise
-    # Sole commit point. No required writes or fallible cleanup follow it.
+    # The pointer replacement commits activation. The caller reports any
+    # later staging-directory cleanup error separately.
     try:
         os.replace(temporary, active)
     except BaseException:
@@ -127,50 +181,58 @@ def install(archive: Path, expected_sha256: str, root: Path) -> dict:
             if Path('/sys/fs/cgroup/memory.max').is_file() else None,
         'cpu_model': next((line.split(':', 1)[1].strip() for line in Path('/proc/cpuinfo').read_text().splitlines()
                            if line.startswith('model name')), None)}
-    root.mkdir(parents=True, exist_ok=True)
-    root.chmod(0o755)
+    create_install_directory(root, parents=True)
     cleanup_warnings = []
     with (root / '.install.lock').open('a+b') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         temporary = tempfile.TemporaryDirectory(prefix='.install-', dir=root)
         committed = False
         try:
-            destination = Path(temporary.name)
             phase_started = time.monotonic()
-            with subprocess.Popen([str(decoder_path), '-dc', str(archive)], stdout=subprocess.PIPE) as decoder:
-                try:
-                    with tarfile.open(fileobj=decoder.stdout, mode='r|') as tar:
-                        tar.extractall(destination, filter='data')
-                finally:
-                    decoder.stdout.close()
-                if decoder.wait() != 0:
-                    raise ValueError('SDK archive decompression failed')
+            existing = existing_generation(root, archive, decoder_path)
+            if existing is None:
+                destination = Path(temporary.name)
+                with subprocess.Popen([str(decoder_path), '-dc', str(archive)], stdout=subprocess.PIPE) as decoder:
+                    try:
+                        with tarfile.open(fileobj=decoder.stdout, mode='r|') as tar:
+                            tar.extractall(destination, filter='data')
+                        # Drain valid trailing padding after tar's end marker.
+                        with open(os.devnull, 'wb') as sink:
+                            shutil.copyfileobj(decoder.stdout, sink)
+                    finally:
+                        decoder.stdout.close()
+                    if decoder.wait() != 0:
+                        raise ValueError('SDK archive decompression failed')
             costs['extraction'] = time.monotonic()-phase_started
             phase_started = time.monotonic()
             if file_hash(decoder_path) != decoder_sha256:
                 raise ValueError('SDK archive decoder changed during installation')
-            if {path.name for path in destination.iterdir()} != {'objc3-sdk'}:
-                raise ValueError('SDK archive must contain exactly one objc3-sdk directory')
-            candidate = destination / 'objc3-sdk'
-            # Python's data extraction filter intentionally discards directory
-            # modes. Restore the public distribution modes before seal checks,
-            # independently of the installing user's umask.
-            for directory in (candidate, *candidate.rglob('*')):
-                if not directory.is_symlink() and directory.is_dir():
-                    directory.chmod(0o755)
-            data = verify(candidate)
-            admit_native_sdk(candidate, data)
-            prefix = root / 'sdks' / data['seal_sha256']
-            prefix.parent.mkdir(exist_ok=True)
-            prefix.parent.chmod(0o755)
-            reused = prefix.exists()
-            if prefix.exists():
-                # Cached contents, including their verifier, are inputs to
-                # verify with code admitted from the SHA-verified archive.
-                if verify(prefix, verifier=candidate / 'share/objc3c/verify-sdk.py')['seal_sha256'] != data['seal_sha256']:
+            if existing is not None:
+                prefix, seal, verifier_bytes = existing
+                data = verify(prefix, verifier_bytes=verifier_bytes)
+                if data['seal_sha256'] != seal:
                     raise ValueError('existing SDK prefix differs from the release seal')
+                admit_native_sdk(prefix, data)
+                reused = True
             else:
-                os.replace(candidate, prefix)
+                if {path.name for path in destination.iterdir()} != {'objc3-sdk'}:
+                    raise ValueError('SDK archive must contain exactly one objc3-sdk directory')
+                candidate = destination / 'objc3-sdk'
+                # The data filter discards directory modes. Restore the
+                # sealed distribution modes under any installation umask.
+                for directory in (candidate, *candidate.rglob('*')):
+                    if not directory.is_symlink() and directory.is_dir():
+                        directory.chmod(0o755)
+                data = verify(candidate)
+                admit_native_sdk(candidate, data)
+                prefix = root / 'sdks' / data['seal_sha256']
+                create_install_directory(prefix.parent)
+                reused = prefix.exists()
+                if reused:
+                    if verify(prefix, verifier=candidate / 'share/objc3c/verify-sdk.py')['seal_sha256'] != data['seal_sha256']:
+                        raise ValueError('existing SDK prefix differs from the release seal')
+                else:
+                    os.replace(candidate, prefix)
             costs['seal_verification_and_publication'] = time.monotonic()-phase_started
             phase_started = time.monotonic()
             activate(root, prefix)

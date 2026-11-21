@@ -135,11 +135,11 @@ jobs:
   analysis:
     name: Analyze fork-matched implementation (partition ${{ matrix.partition }})
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         partition: ${{ fromJSON(needs.plan.outputs.partitions) }}
     needs: [plan, foundation]
-    if: always() && needs.plan.outputs.analysis == 'true' && (needs.foundation.result == 'success' || inputs.foundation_archive_sha256 != '')
+    if: ${{ !cancelled() && needs.plan.outputs.analysis == 'true' && (needs.foundation.result == 'success' || inputs.foundation_archive_sha256 != '') }}
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container:
       image: debian:13
@@ -216,6 +216,23 @@ jobs:
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     timeout-minutes: 5
     steps:
+      - name: Require analysis outcomes before downloading evidence
+        env:
+          PLAN_RESULT: ${{ needs.plan.result }}
+          REQUIRED: ${{ needs.plan.outputs.analysis }}
+          ANALYSIS_RESULT: ${{ needs.analysis.result }}
+          FOUNDATION_RESULT: ${{ needs.foundation.result }}
+          SHARED_ARCHIVE: ${{ inputs.foundation_archive_sha256 }}
+        shell: bash
+        run: |
+          printf 'Plan: %s\nFoundation: %s\nAnalysis: %s\n' \
+            "$PLAN_RESULT" "$FOUNDATION_RESULT" "$ANALYSIS_RESULT" >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$PLAN_RESULT" != success ]] ||
+             [[ "$REQUIRED" == true && "$ANALYSIS_RESULT" != success ]] ||
+             [[ "$REQUIRED" == true && "$SHARED_ARCHIVE" == '' && "$FOUNDATION_RESULT" != success ]]; then
+            echo "::error::Implementation analysis failed (plan=$PLAN_RESULT foundation=$FOUNDATION_RESULT analysis=$ANALYSIS_RESULT)"
+            exit 1
+          fi
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.source_sha || github.sha }}
@@ -234,7 +251,6 @@ jobs:
           merge-multiple: false
           path: evidence/results
       - name: Require exact-revision complete passing analysis
-        if: always()
         env:
           ASSURANCE_OUTCOMES: >-
             {"plan":"${{ needs.plan.result }}","foundation":"${{ inputs.foundation_archive_sha256 != '' && 'success' || needs.foundation.result }}","foundation_archive":"${{ inputs.foundation_archive_sha256 || needs.foundation.outputs.archive_sha256 }}","analysis":"${{ needs.analysis.result }}"}

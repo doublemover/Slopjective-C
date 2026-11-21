@@ -1,5 +1,9 @@
 # objc3c Platform And Toolchain Support Matrix
 
+This runbook records the platform evidence model for the earlier toolchain.
+See the [Linux SDK release guide](../releases/linux.md) for the native Clang
+distribution and the support matrix of each published archive.
+
 This runbook is the operator-facing companion to the machine-readable contract
 at `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`.
 It defines what may be called supported, what remains unsupported or reserved,
@@ -9,10 +13,10 @@ Issue evidence for the post-cutover roadmap index and #8177 lives in
 `docs/issues/objc3_next_8153_8179_evidence.md`.
 
 The platform expansion epic is #8206. Linux x64 is #8228, macOS arm64 is
-#8229, the AddressSanitizer runtime package variant is #8230, and the
+\#8229, the AddressSanitizer runtime package variant is #8230, and the
 UndefinedBehaviorSanitizer runtime package variant is #8231. Deterministic
 native object emission and the hosted-runner missing-`llc` contract are #8232.
-#8206 is umbrella readiness over those source-owned rows. It may project only
+\#8206 is umbrella readiness over those source-owned rows. It may project only
 the existing `windows-x64` supported row; Linux, macOS, sanitizer, and
 missing-`llc` lanes remain unsupported, reserved, or fail-closed until their
 source evidence rows are promoted.
@@ -102,7 +106,7 @@ install, native execution, or capability-matrix promotion.
 
 ## Issue Closure Criteria
 
-#8228 can close as Linux x64 support only when `linux-x64` has checked source
+\#8228 can close as Linux x64 support only when `linux-x64` has checked source
 rows showing build, package, install, and native execution evidence, the
 support row is no longer `unsupported`, the package variant row no longer lists
 fail-closed publication blockers, and every host-promotion reviewed-source
@@ -112,13 +116,13 @@ identity, debug identity, package install identity, and runtime load/link proof.
 Generated Ubuntu hosted reports are required review inputs, but their
 `support_truth` remains false until those reviewed source rows land.
 
-#8229 can close as macOS arm64 support only under the same source-review bar for
+\#8229 can close as macOS arm64 support only under the same source-review bar for
 `darwin-arm64`, with Mach-O, DWARF/dSYM, `@rpath`/`install_name`/codesign loader
 behavior, package install, and native execution proven by checked source truth.
 Generated macOS hosted evidence, cross-compiled Mach-O artifacts, tool presence,
 or prose status updates do not promote the row.
 
-#8206 can close as a platform expansion umbrella only when the matrix row moves
+\#8206 can close as a platform expansion umbrella only when the matrix row moves
 from `internal` to an evidence-backed implemented row, #8228 and #8229 are both
 promoted by the criteria above, #8230 and #8231 remain bounded to Windows x64
 through the sanitizer runtime promotion gate, and #8232 proves coherent

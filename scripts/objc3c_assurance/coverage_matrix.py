@@ -18,7 +18,7 @@ from scripts.objc3c_toolchain.core import build_plans, verify_development
 from scripts.objc3c_toolchain.coverage_controls import qualify as coverage_controls
 from scripts.objc3c_toolchain.semantic_build_costs import snapshot
 from scripts.objc3c_toolchain.source_coverage import (
-    qualify as first_party_coverage, validate_foundation_identity)
+    partition_catalogue, qualify as first_party_coverage, validate_foundation_identity)
 from .emitter_shards import emitter_partition
 from .evidence import MAX_BYTES, SCHEMA, aggregate, artifact, junit, native_files, suite_results
 from .plan import from_checkout, selected_suites, validate
@@ -241,10 +241,12 @@ def aggregate_partitions(repo: Path, plan: dict, producer_root: Path,
     (first_party / 'suites').mkdir(parents=True)
     reports = []
     suites = {}
+    policy = json.loads((repo / 'toolchains/llvm/source-coverage.json').read_text())
     for index in range(PARTITIONS):
         root = _partition_root(partitions_root, index)
         report = json.loads((root / 'qualification.json').read_text())
         partition = report.get('partition', {})
+        expected, signature = partition_catalogue(policy, index, PARTITIONS)
         if (report.get('status') != 'PASS' or report.get('revision') != plan['revision']['tested'] or
                 report.get('source_build_id') != producer['source_build_id'] or
                 report.get('build_config_digest') != producer['build_config_digest'] or
@@ -252,7 +254,9 @@ def aggregate_partitions(repo: Path, plan: dict, producer_root: Path,
                     'sha256': producer['bundle']['sha256'],
                     'source_build_id': producer['source_build_id'],
                     'build_config_digest': producer['build_config_digest']} or
-                partition.get('index') != index or partition.get('count') != PARTITIONS):
+                partition != {'index': index, 'count': PARTITIONS, 'catalogue_sha256': signature,
+                              'selected': [list(row) for row in expected]} or report.get('policy') != policy or
+                [(row.get('component'), row.get('name')) for row in report.get('suites', [])] != expected):
             raise ValueError('coverage partition is stale, failed or substituted: '+str(index))
         reports.append(report)
         for row in report.get('suites', []):
@@ -269,13 +273,9 @@ def aggregate_partitions(repo: Path, plan: dict, producer_root: Path,
             # within every independent link graph without demanding bytewise
             # equality across different build roots.
             suites[key] = {**row, 'coverage_partition': index}
-    policy = reports[0]['policy']
     catalogue = [(component, name) for component in ('frontend', 'runtime')
                  for name in policy[component+'_tests']]
-    if (set(suites) != set(catalogue) or len(suites) != len(catalogue) or
-            any(report.get('policy') != policy or
-                report.get('partition', {}).get('catalogue_sha256') !=
-                reports[0]['partition']['catalogue_sha256'] for report in reports)):
+    if set(suites) != set(catalogue):
         raise ValueError('coverage partitions do not form the exact reviewed catalogue')
     ordered = [suites[key] for key in catalogue]
     merged = {key: value for key, value in reports[0].items()

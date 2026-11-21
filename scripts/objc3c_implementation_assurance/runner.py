@@ -187,7 +187,7 @@ def _run_locked(repo: Path, plan: dict, output: Path, partition: dict,
         qualification = qualify(repo, output / 'analysis', frontend_build=frontend_build,
             runtime_build=runtime_build, tool_build=tool_build,
             changed=[repo / path for path in plan['analysis_paths']], jobs=min(4, max(1, jobs)),
-            partition_index=partition['index'], partition_count=partition['count'])
+            partition_index=partition['index'], partition_count=partition['count'], fail_fast=True)
         if qualification.get('status') != 'PASS':
             raise ValueError('fork-matched implementation analysis did not pass')
         results = analysis_results(output)

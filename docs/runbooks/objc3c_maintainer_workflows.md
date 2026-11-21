@@ -64,6 +64,16 @@ Fresh Debian/Ubuntu archive qualification is a separate operation owned by
 receipt and requested qualification scope. Record the archive checksum, SDK
 seal, native build identity and actual checks in the acceptance receipt.
 
+For public delivery use the [Linux release owner checklist](../releases/linux.md#release-owner-checklist).
+The draft workflow accepts two successful native qualification runs for its
+checked-out revision. The release owner reviews and publishes the draft.
+
 Do not repeat SDK/archive qualification for prose-only edits. Reclaim completed
 test executables and duplicate stages through their existing owners, retain the
 active SDK/archive, and keep build products and temporary evidence ignored.
+
+For diagnostics that can discard their scratch output on exit, run
+`python -B -m scripts.objc3c_toolchain.workspace_cleanup --run COMMAND`.
+Keep evidence you want to retain in an explicit output directory. Run the same
+module without arguments for allocated sizes and a list of expired, unlocked
+scratch directories. Add `--apply` to reclaim those owned directories.

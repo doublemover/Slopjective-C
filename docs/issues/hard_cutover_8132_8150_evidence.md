@@ -2,7 +2,7 @@
 
 ## Final Objective-C 3.0 Closeout Refresh: 2026-05-19
 
-PR: https://github.com/doublemover/Slopjective-C/pull/8151
+[Pull request #8151](https://github.com/doublemover/Slopjective-C/pull/8151)
 
 Final reviewed head for hard-cutover closure:
 

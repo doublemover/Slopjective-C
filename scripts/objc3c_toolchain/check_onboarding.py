@@ -6,7 +6,7 @@ from pathlib import Path
 import re
 from urllib.parse import unquote, urlsplit
 
-from scripts.build_pages import load_contract, render_markdown_source
+from scripts.build_pages import REPOSITORY_DOCUMENTS, load_contract, render_markdown_source
 from . import cli
 
 RETIRED = re.compile(
@@ -23,7 +23,7 @@ def check(repo: Path) -> dict:
                           'docs/runbooks/objc3c_public_command_surface.md',
                           'docs/runbooks/objc3c_maintainer_workflows.md')
     paths = [repo / 'README.md', *(repo / name for name in contributor_routes),
-             *sorted((repo / 'docs/tutorials').glob('*.md')),
+             *sorted((repo / 'docs/tutorials').glob('*.md')), *sorted((repo / 'docs/releases').glob('*.md')),
              *sorted((repo / 'showcase').rglob('*')),
              *sorted((repo / 'site/src').glob('*')), repo / 'site/index.md']
     errors = []
@@ -53,12 +53,11 @@ def check(repo: Path) -> dict:
                 errors.append(f'{relative}: command appendix differs from registered CLI')
         if path.suffix != '.md':
             continue
-        base = repo / 'site' if relative == 'site/src/index.body.md' else path.parent
         for link in re.findall(r'\[[^\]]*\]\(([^\s)]+)(?:\s+[^)]*)?\)', content):
             target = urlsplit(link.strip('<>'))
             if target.scheme or target.netloc or not target.path:
                 continue
-            if not (base / unquote(target.path)).exists():
+            if not (path.parent / unquote(target.path)).exists():
                 errors.append(f'{relative}: broken navigation {link}')
     portfolio = json.loads((repo / 'showcase/portfolio.json').read_text())
     if portfolio.get('schema') != 'objc3c.linux-sdk-examples.v1':
@@ -88,8 +87,17 @@ def check(repo: Path) -> dict:
     if states['async_await'] != 'reserved' or states['actors'] != 'reserved':
         errors.append('onboarding concurrency claims need review against the language schema')
     config = load_contract(repo)
-    if config.front_matter + render_markdown_source(config.body_path) != config.output_path.read_text():
+    generated = config.output_path.read_text()
+    if config.front_matter + render_markdown_source(config.body_path) != generated:
         errors.append('site/index.md: generated output drift')
+    for link in re.findall(r'\]\(([^\s)]+)\)', generated):
+        target = urlsplit(link)
+        if not target.scheme and not target.netloc and target.path:
+            errors.append(f'site/index.md: relative link leaves the deployed index: {link}')
+        if link.startswith(REPOSITORY_DOCUMENTS):
+            path = unquote(target.path.removeprefix(urlsplit(REPOSITORY_DOCUMENTS).path))
+            if not (repo / path).exists():
+                errors.append(f'site/index.md: missing repository document: {link}')
     if errors:
         raise ValueError('\n'.join(errors))
     return {'status': 'PASS', 'entrypoints': checked, 'examples': sorted(expected),

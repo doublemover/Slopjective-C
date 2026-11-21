@@ -1,5 +1,8 @@
 # objc3c Release Channel Operations
 
+This runbook preserves the earlier channel contracts. The
+[Linux SDK release guide](../releases/linux.md) documents the current preview distribution.
+
 ## Source Policy
 
 The release-channel source of truth is

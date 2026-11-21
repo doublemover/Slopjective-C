@@ -33,15 +33,17 @@ A minimal manifest, with the fingerprint filled in, is:
   "id": "example.answers",
   "version": "1.0.0",
   "fingerprint": "FILL_WITH_THE_PRINTED_SHA256",
-  "requires": {"meta_revision": 1, "extension_abi": 24},
+  "requires": { "meta_revision": 1, "extension_abi": 24 },
   "capabilities": [],
-  "entrypoints": [{
-    "name": "Answer",
-    "kind": "macro",
-    "requires": [],
-    "declarations": [{"text": "- (int)answer;"}],
-    "implementations": [{"text": "- (int)answer { return 42; }"}]
-  }]
+  "entrypoints": [
+    {
+      "name": "Answer",
+      "kind": "macro",
+      "requires": [],
+      "declarations": [{ "text": "- (int)answer;" }],
+      "implementations": [{ "text": "- (int)answer { return 42; }" }]
+    }
+  ]
 }
 ```
 
@@ -50,10 +52,13 @@ The lock is an exact set, with no missing or unused rows:
 ```json
 {
   "contract_id": "objc3c.meta.lock.v1",
-  "packages": [{
-    "id": "example.answers", "version": "1.0.0",
-    "fingerprint": "FILL_WITH_THE_SAME_SHA256"
-  }]
+  "packages": [
+    {
+      "id": "example.answers",
+      "version": "1.0.0",
+      "fingerprint": "FILL_WITH_THE_SAME_SHA256"
+    }
+  ]
 }
 ```
 
@@ -71,8 +76,12 @@ Programs contain text, property/ivar loops, conditional branches and explicit
 requirement errors:
 
 ```json
-{"for_each":"properties", "where":{"kind":"integer", "writable":true},
- "separator":" + ", "body":[{"text":"self.${member.getter}"}]}
+{
+  "for_each": "properties",
+  "where": { "kind": "integer", "writable": true },
+  "separator": " + ",
+  "body": [{ "text": "self.${member.getter}" }]
+}
 ```
 
 `{"if":"ownership.arc","then":[...],"else":[...]}` selects a branch;

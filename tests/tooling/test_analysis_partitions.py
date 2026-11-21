@@ -20,10 +20,20 @@ def test_native_variant_partitions_cover_uneven_catalogue_once():
         with pytest.raises(ValueError):partition_spec(index,count)
 
 
+def test_partition_places_expensive_actions_first_and_balances_them():
+    rows = [{'identity': f'{index:064x}', 'file': name}
+            for index, name in enumerate(('AST.cpp', 'Parser.cpp', 'Fast.cpp', 'Short.cpp', 'Tiny.cpp'))]
+    costs = {'default': 120, 'AST.cpp': 240, 'Parser.cpp': 240}
+    shards = [partition_rows(rows, partition_spec(index, 2), seconds=costs) for index in range(2)]
+    assert [[row['file'] for row in shard] for shard in shards] == [
+        ['AST.cpp', 'Fast.cpp', 'Tiny.cpp'], ['Parser.cpp', 'Short.cpp']]
+    assert partition_rows(list(reversed(rows)), partition_spec(0, 2), seconds=costs) == shards[0]
+
+
 @pytest.mark.parametrize('fault',[None,'missing','duplicate','source','inventory','header','case','count','failed'])
 def test_relocated_partition_gate_requires_all_current_inputs_and_every_action(tmp_path,fault):
     plan,_=passing_bundle(tmp_path,periodic=True)
-    part=tmp_path/'part-1'
+    part=tmp_path/('part-0' if fault=='case' else 'part-1')
     outer_path=part/'result.json';inner_path=part/'analysis/qualification.json'
     outer=json.loads(outer_path.read_text());inner=json.loads(inner_path.read_text())
     if fault=='missing':shutil.rmtree(tmp_path/'part-0')

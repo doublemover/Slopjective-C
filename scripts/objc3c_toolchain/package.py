@@ -75,6 +75,51 @@ def _file_hash(path: Path) -> str:
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
+def _archive_sdk(prefix: Path, archive: Path, receipt: dict) -> dict:
+    from compression import zstd
+
+    seal = receipt['seal_sha256']
+    receipt_path = archive.with_suffix('.json')
+    if archive.is_file() and receipt_path.is_file():
+        cached = json.loads(receipt_path.read_text())
+        if (cached['seal_sha256'] != seal or cached['archive_bytes'] != archive.stat().st_size or
+                cached['archive_sha256'] != _file_hash(archive)):
+            raise ValueError('cached SDK archive differs from its receipt; preserving it for inspection')
+        verify_sdk(prefix, seal)
+        return {**cached, 'cache_hit': True}
+
+    # An interrupted publication can leave one member of the pair behind.
+    # Recreate it from the sealed, qualified prefix before replacing either.
+    with tempfile.TemporaryDirectory(prefix='.sdk-', dir=archive.parent) as directory:
+        pending = Path(directory) / archive.name
+        admission = {MANIFEST, 'share/objc3c/verify-sdk.py'}
+
+        def normalize(info):
+            info.uid = info.gid = 0
+            info.uname = info.gname = ''
+            info.mtime = 0
+            return info
+
+        def inventory_members(info):
+            if info.name.removeprefix('objc3-sdk/') in admission:
+                return None
+            return normalize(info)
+
+        with zstd.ZstdFile(pending, 'wb', level=3) as compressed:
+            with tarfile.open(fileobj=compressed, mode='w|', dereference=False) as tar:
+                for name in (MANIFEST, 'share/objc3c/verify-sdk.py'):
+                    tar.add(prefix / name, arcname='objc3-sdk/' + name, filter=normalize)
+                tar.add(prefix, arcname='objc3-sdk', filter=inventory_members)
+        verify_sdk(prefix, seal)
+        receipt = {**receipt, 'archive_sha256': _file_hash(pending),
+                   'archive_bytes': pending.stat().st_size}
+        pending_receipt = pending.with_suffix('.json')
+        pending_receipt.write_text(json.dumps(receipt, indent=2) + '\n')
+        os.replace(pending, archive)
+        os.replace(pending_receipt, receipt_path)
+    return {**receipt, 'cache_hit': False}
+
+
 def inventory(prefix: Path) -> dict:
     prefix = prefix.resolve()
     files = {'.': {'kind': 'directory', 'mode': stat.S_IMODE(prefix.stat().st_mode)}}
@@ -187,9 +232,8 @@ SOURCE_PACKAGE_EXAMPLES = {
 }
 
 
-def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Path) -> dict:
-    from compression import zstd
-
+def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Path, *,
+                checkpoint=None) -> dict:
     # Imports stay inside this producer so the installed verifier needs only
     # Python's standard library and never needs a source checkout.
     from .linux_host import native_linux_host
@@ -420,35 +464,14 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
         {name: partial(qualify_frozen_sdk, task) for name, task in tasks.items()}, workers)
     cache_dir.mkdir(parents=True, exist_ok=True)
     archive = cache_dir / (source['build_id'] + '-' + native_linux_host() + '-' + data['seal_sha256'][:16] + '.tar.zst')
-    if archive.exists():
-        receipt = json.loads(archive.with_suffix('.json').read_text())
-        if receipt['archive_sha256'] != _file_hash(archive):
-            raise ValueError('cached SDK archive changed; preserving it for inspection')
-        verify_sdk(prefix, receipt['seal_sha256'])
-        return {**receipt, 'cache_hit': True}
-    descriptor, temporary = tempfile.mkstemp(prefix='.sdk-', dir=cache_dir)
-    os.close(descriptor)
-    try:
-        def normalize(info):
-            info.uid = info.gid = 0
-            info.uname = info.gname = ''
-            info.mtime = 0
-            return info
-        with zstd.ZstdFile(temporary, 'wb', level=3) as compressed:
-            with tarfile.open(fileobj=compressed, mode='w|', dereference=False) as tar:
-                tar.add(prefix, arcname='objc3-sdk', filter=normalize)
-        verify_sdk(prefix, data['seal_sha256'])
-        os.replace(temporary, archive)
-    finally:
-        Path(temporary).unlink(missing_ok=True)
-    receipt = {'archive': str(archive), 'archive_sha256': _file_hash(archive),
-               'archive_bytes': archive.stat().st_size, 'seal_sha256': data['seal_sha256'],
+    receipt = {'archive': str(archive), 'seal_sha256': data['seal_sha256'],
                'source_build_id': source['build_id'], 'target': toolchain['target_triple'],
                'host': native_linux_host(),
                'qualification_parallelism': {'compiler_budget': budget,
                     'installed_gates': workers, 'graph_cases': graph_jobs, 'projection_cases': 1, 'surface_cases': 1, 'availability_cases': 1, 'spi_cases': 1, 'names_cases': 1}, **qualification}
-    archive.with_suffix('.json').write_text(json.dumps(receipt, indent=2) + '\n')
-    return {**receipt, 'cache_hit': False}
+    if checkpoint is not None:
+        checkpoint(receipt)
+    return _archive_sdk(prefix, archive, receipt)
 
 
 def main(argv=None):

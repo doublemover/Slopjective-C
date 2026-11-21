@@ -1,5 +1,8 @@
 # objc3c Release Operations
 
+This runbook records the earlier toolchain's release model. The
+[Linux SDK release guide](../releases/linux.md) owns the native compiler release procedure.
+
 ## Scope
 
 This runbook defines the checked-in release-operations surface for objc3c:

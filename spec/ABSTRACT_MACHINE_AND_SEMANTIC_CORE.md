@@ -41,7 +41,7 @@ Typed key path roots now fail closed unless they resolve to `self`, a known
 class type, or an ObjC reference compatible identifier; class root
 single component paths fail closed unless the component names a readable
 property on that root.
-Generic Objective C method declarations written as `  <T> ...` remain
+Generic Objective C method declarations written as `<T> ...` remain
 reserved in v1 and now diagnose explicitly.
 Optional member access written as `?.` now lowers through the same live
 nil short circuit path as bracketed optional sends.

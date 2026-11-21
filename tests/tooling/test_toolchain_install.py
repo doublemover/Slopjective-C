@@ -1,5 +1,6 @@
 from __future__ import annotations
 from compression import zstd
+import fcntl
 import hashlib
 import json
 from pathlib import Path
@@ -15,7 +16,7 @@ from scripts.objc3c_toolchain.install_sdk import file_hash, install
 pytestmark = pytest.mark.skipif(not shutil.which('zstd'), reason='installer needs zstd')
 
 
-def release(tmp_path: Path, compiler='compiler'):
+def release(tmp_path: Path, compiler='compiler', trailing_padding=0):
     prefix = tmp_path / 'source'
     (prefix / 'bin').mkdir(parents=True)
     (prefix / 'bin/objc3c').write_text(compiler)
@@ -32,6 +33,7 @@ def release(tmp_path: Path, compiler='compiler'):
     with zstd.ZstdFile(archive, 'wb') as stream:
         with tarfile.open(fileobj=stream, mode='w|') as tar:
             tar.add(prefix, arcname='objc3-sdk')
+        stream.write(bytes(trailing_padding))
     return archive, file_hash(archive)
 
 
@@ -48,6 +50,61 @@ def test_install_reuse_and_relocation(tmp_path):
     package.verify_sdk((moved / 'current').resolve(), first['seal_sha256'])
 
 
+def test_archive_publication_resumes_and_reuses_without_extraction(tmp_path, monkeypatch):
+    from scripts.objc3c_toolchain import install_sdk
+
+    release(tmp_path)
+    prefix = tmp_path / 'source'
+    data = package.verify_sdk(prefix)
+    archive = tmp_path / 'candidate.tar.zst'
+    receipt = {'seal_sha256': data['seal_sha256']}
+    replace = package.os.replace
+    with monkeypatch.context() as patch:
+        def interrupt(source, destination):
+            if destination == archive.with_suffix('.json'):
+                raise OSError('interrupted receipt publication')
+            replace(source, destination)
+        patch.setattr(package.os, 'replace', interrupt)
+        with pytest.raises(OSError, match='interrupted receipt'):
+            package._archive_sdk(prefix, archive, receipt)
+    assert archive.is_file() and not archive.with_suffix('.json').exists()
+    repaired = package._archive_sdk(prefix, archive, receipt)
+    assert not repaired['cache_hit']
+    assert package._archive_sdk(prefix, archive, receipt)['cache_hit']
+
+    root = tmp_path / 'installed'
+    installed = install(archive, repaired['archive_sha256'], root)
+    with monkeypatch.context() as patch:
+        patch.setattr(tarfile.TarFile, 'extractall', lambda *a, **kw: pytest.fail('re-extracted'))
+        reused = install(archive, repaired['archive_sha256'], root)
+        assert reused['cost']['prefix_reused'] and reused['prefix'] == installed['prefix']
+        (Path(reused['prefix']) / 'bin/objc3c').write_text('tampered')
+        with pytest.raises(ValueError, match='differ'):
+            install(archive, repaired['archive_sha256'], root)
+
+
+def test_explicit_reactivation_replaces_old_path_and_is_idempotent(tmp_path):
+    import subprocess
+    from scripts.objc3c_toolchain.install_sdk import activate
+
+    root = tmp_path / 'install with spaces'
+    first, second = root / 'sdks/one', root / 'sdks/two'
+    for prefix in first, second:
+        (prefix / 'bin').mkdir(parents=True)
+    activate(root, first)
+    command = '. "$1/activate.sh"; printf "ready\\n"; read go; . "$1/activate.sh"; . "$1/activate.sh"; printf "%s" "$PATH"'
+    with subprocess.Popen(['sh', '-ec', command, 'sh', str(root)], stdin=subprocess.PIPE,
+                          stdout=subprocess.PIPE, text=True) as shell:
+        assert shell.stdout.readline() == 'ready\n'
+        activate(root, second)
+        output, _ = shell.communicate('continue\n', timeout=10)
+        assert shell.returncode == 0
+    entries = output.split(':')
+    assert entries[0] == str(second / 'bin')
+    assert entries.count(str(second / 'bin')) == 1
+    assert str(first / 'bin') not in entries
+
+
 def test_bad_archive_and_tampered_prefix_preserve_activation(tmp_path):
     archive, digest = release(tmp_path)
     root = tmp_path / 'installed'
@@ -58,6 +115,47 @@ def test_bad_archive_and_tampered_prefix_preserve_activation(tmp_path):
     with pytest.raises(ValueError, match='differ'):
         install(archive, digest, root)
     assert (root / 'current').resolve() == Path(installed['prefix'])
+
+
+def test_installer_drains_decoder_after_end_of_tar(tmp_path):
+    archive, digest = release(tmp_path, trailing_padding=1024 * 1024)
+    assert install(archive, digest, tmp_path / 'installed')['status'] == 'PASS'
+
+
+def test_existing_installation_permissions_survive_install_and_lock_contention(tmp_path):
+    archive, digest = release(tmp_path)
+    root = tmp_path / 'private-install'
+    root.mkdir(mode=0o700)
+    generations = root / 'sdks'
+    generations.mkdir(mode=0o750)
+    generations.chmod(0o750)
+    with (root / '.install.lock').open('a+b') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        with pytest.raises(BlockingIOError):
+            install(archive, digest, root)
+        assert root.stat().st_mode & 0o777 == 0o700
+        assert not (root / 'current').exists()
+    installed = install(archive, digest, root)
+    assert root.stat().st_mode & 0o777 == 0o700
+    assert generations.stat().st_mode & 0o777 == 0o750
+    assert (root / 'current').resolve() == Path(installed['prefix'])
+
+
+def test_failed_verification_preserves_existing_private_root(tmp_path, monkeypatch):
+    from scripts.objc3c_toolchain import install_sdk
+
+    archive, digest = release(tmp_path)
+    root = tmp_path / 'private-install'
+    root.mkdir(mode=0o700)
+
+    def reject_sdk(*args, **kwargs):
+        raise ValueError('rejected SDK')
+
+    monkeypatch.setattr(install_sdk, 'verify', reject_sdk)
+    with pytest.raises(ValueError, match='rejected SDK'):
+        install(archive, digest, root)
+    assert root.stat().st_mode & 0o777 == 0o700
+    assert not (root / 'current').exists()
 
 
 def test_full_install_reports_postcommit_cleanup_failure_and_keeps_old_shell_pinned(tmp_path, monkeypatch):

@@ -8,10 +8,12 @@ OWNERS = ('structured', 'native-async', 'coroutines', 'c-frame-bridge',
 PARTITIONS = (
     ('structured',), ('native-async',), ('coroutines',),
     ('c-frame-bridge', 'installed-ownership'),
-    ('features-address-undefined-O0', 'features-thread-O0'),
-    ('features-address-undefined-O2', 'features-thread-O2'),
+    ('features-address-undefined-O0',),
+    ('features-address-undefined-O2',),
     ('factories-address-undefined-O0', 'factories-thread-O0'),
     ('factories-address-undefined-O2', 'factories-thread-O2'),
+    ('features-thread-O0',),
+    ('features-thread-O2',),
 )
 GROUPS = tuple('asan-products-partition-'+str(index) for index in range(len(PARTITIONS)))
 
@@ -23,7 +25,7 @@ def select(index: int | None = None) -> tuple[str, ...]:
     if index is None:
         return OWNERS
     if type(index) is not int or not 0 <= index < len(PARTITIONS):
-        raise ValueError('sanitizer product partition must be an index in 0..7')
+        raise ValueError(f'sanitizer product partition must be an index in 0..{len(PARTITIONS) - 1}')
     return PARTITIONS[index]
 
 

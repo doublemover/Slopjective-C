@@ -266,7 +266,7 @@ Recommended patterns for generic and callable APIs:
 
 Typed throws is implemented for a single payload in ObjC 3.0 v1 and lowers
 through the same private hidden error-out path used by untyped `throws`. The
-#8233 compiler contract owns the parser payload shape, AST preservation,
+\#8233 compiler contract owns the parser payload shape, AST preservation,
 textual-interface metadata, exact effect identity, direct-call and
 runtime-dispatch error paths, catch/bridge policy, `try?` optionalization, and
 fail-closed boundaries that prevent silent erasure into bare `throws`.

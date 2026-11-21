@@ -376,7 +376,7 @@ jobs:
       - name: Preserve qualified SDK archive
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}
+          name: objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             out/toolchains/sdk-cache/*.tar.zst
             out/toolchains/sdk-cache/*.tar.json
@@ -400,7 +400,7 @@ jobs:
     needs: [plan, product-producer]
     if: needs.plan.outputs.native == 'true' && needs.product-producer.result == 'success' && !inputs.diagnostic_core_only
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         include:
           - group: foundation
@@ -438,7 +438,7 @@ jobs:
           path: out/native-assurance/selection
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}
+          name: objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: /release
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -589,9 +589,9 @@ jobs:
     needs: [plan, product-producer, asan-foundation-producer]
     if: needs.plan.outputs.native == 'true' && needs.product-producer.result == 'success' && needs.asan-foundation-producer.result == 'success' && !inputs.diagnostic_core_only
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
-        group: [asan-products-partition-0, asan-products-partition-1, asan-products-partition-2, asan-products-partition-3, asan-products-partition-4, asan-products-partition-5, asan-products-partition-6, asan-products-partition-7, runtime-schedules]
+        group: [asan-products-partition-0, asan-products-partition-1, asan-products-partition-2, asan-products-partition-3, asan-products-partition-4, asan-products-partition-5, asan-products-partition-6, asan-products-partition-7, asan-products-partition-8, asan-products-partition-9, runtime-schedules]
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container:
       image: debian:13
@@ -615,7 +615,7 @@ jobs:
           path: out/native-assurance/selection
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}
+          name: objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: /release
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -803,7 +803,7 @@ jobs:
     needs: [plan, coverage-producer]
     if: needs.plan.outputs.native == 'true' && needs.coverage-producer.result == 'success' && !inputs.diagnostic_core_only
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         partition: [0, 1, 2, 3, 4, 5, 6, 7]
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
@@ -946,36 +946,83 @@ jobs:
           retention-days: 7
 
   archive-install:
-    name: Install the exact Linux SDK (${{ matrix.distribution }})
+    name: Install the exact Linux SDK (${{ matrix.distribution }}, ${{ matrix.scope }})
     needs: [plan, product-producer]
     if: inputs.archive_install && needs.plan.outputs.native == 'true'
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         distribution: ["debian:13", "ubuntu:26.04"]
-    container:
-      image: ${{ matrix.distribution }}
-      options: --security-opt seccomp=unconfined
+        scope: [smoke, package-build, package-surface, package-modules, async, isolation, features, carriers]
+        include:
+          - distribution: "debian:13"
+            receipt: debian-13
+          - distribution: "ubuntu:26.04"
+            receipt: ubuntu-26.04
+    timeout-minutes: 120
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}
-          path: /release
+          name: objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/release-download
       - name: Install, relocate, build, embed, debug and run the shipped archive
-        shell: sh
+        id: install-run
+        env:
+          DISTRIBUTION: ${{ matrix.distribution }}
+          SCOPE: ${{ matrix.scope }}
         run: |
-          archive_count=$(find /release -name '*.tar.zst' -type f | wc -l)
-          receipt_count=$(find /release -name '*.tar.json' -type f | wc -l)
-          if [ "$archive_count" -ne 1 ] || [ "$receipt_count" -ne 1 ]; then
-            echo "expected one archive and one receipt; found $archive_count and $receipt_count" >&2
-            exit 1
-          fi
-          archive=$(find /release -name '*.tar.zst' -type f)
-          receipt=$(find /release -name '*.tar.json' -type f)
-          expected_sha=$(sed -n 's/ *"archive_sha256": "\([a-f0-9]*\)".*/\1/p' "$receipt")
-          [ "${#expected_sha}" -eq 64 ] || { echo 'archive receipt has no SHA-256' >&2; exit 1; }
-          sh /release/scripts/qualify_linux_archive.sh "$archive" "$expected_sha" /opt/objc3c
+          python3 -B -m scripts.objc3c_toolchain.release_install \
+            --directory out/release-download --output out/archive-install/result.json \
+            --host "$OBJC3C_REQUESTED_HOST" --distribution "$DISTRIBUTION" --scope "$SCOPE"
+      - name: Preserve clean-install scope evidence
+        if: always() && steps.install-run.outcome != 'skipped'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: objc3c-linux-install-scope-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.receipt }}-${{ matrix.scope }}
+          path: out/archive-install/
+          if-no-files-found: error
+          retention-days: 7
+
+  archive-install-aggregate:
+    name: Require every clean-install scope (${{ matrix.distribution }})
+    needs: archive-install
+    if: inputs.archive_install
+    runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - distribution: "debian:13"
+            receipt: debian-13
+          - distribution: "ubuntu:26.04"
+            receipt: ubuntu-26.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: objc3c-linux-install-scope-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.receipt }}-*
+          path: out/archive-install/scopes
+      - name: Verify scope receipts and transcripts
+        env:
+          DISTRIBUTION: ${{ matrix.distribution }}
+        run: |
+          python3 -B -m scripts.objc3c_toolchain.release_install --aggregate \
+            --directory out/archive-install/scopes --output out/archive-install/result.json \
+            --host "$OBJC3C_REQUESTED_HOST" --distribution "$DISTRIBUTION"
+      - name: Preserve clean-install release receipt
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: objc3c-linux-install-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.receipt }}
+          path: out/archive-install/result.json
+          if-no-files-found: error
+          retention-days: 7
 
   gate:
     name: Extended Linux native assurance gate
@@ -994,10 +1041,44 @@ jobs:
         core-aggregate,
         coverage-aggregate,
         archive-install,
+        archive-install-aggregate,
       ]
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     timeout-minutes: 10
     steps:
+      - name: Require all job outcomes before downloading evidence
+        env:
+          PLAN_RESULT: ${{ needs.plan.result }}
+          PRODUCER_RESULT: ${{ needs.product-producer.result }}
+          CONSUMERS_RESULT: ${{ needs.product-consumers.result }}
+          ASAN_PRODUCER_RESULT: ${{ needs.asan-foundation-producer.result }}
+          INSTRUMENTED_CONSUMERS_RESULT: ${{ needs.instrumented-product-consumers.result }}
+          FUZZ_RESULT: ${{ needs.independent-native.result }}
+          COVERAGE_PRODUCER_RESULT: ${{ needs.coverage-producer.result }}
+          COVERAGE_PARTITIONS_RESULT: ${{ needs.coverage-partitions.result }}
+          CORE_RESULT: ${{ needs.core-aggregate.result }}
+          COVERAGE_RESULT: ${{ needs.coverage-aggregate.result }}
+          INSTALL_REQUIRED: ${{ inputs.archive_install }}
+          INSTALL_RESULT: ${{ needs.archive-install.result }}
+          INSTALL_AGGREGATE_RESULT: ${{ needs.archive-install-aggregate.result }}
+          IMPLEMENTATION_ANALYSIS_RESULT: ${{ needs.implementation-analysis.result }}
+        shell: bash
+        run: |
+          failed=0
+          results=(PLAN_RESULT PRODUCER_RESULT CONSUMERS_RESULT ASAN_PRODUCER_RESULT
+            INSTRUMENTED_CONSUMERS_RESULT FUZZ_RESULT COVERAGE_PRODUCER_RESULT
+            COVERAGE_PARTITIONS_RESULT CORE_RESULT COVERAGE_RESULT)
+          if [[ "$INSTALL_REQUIRED" == true ]]; then
+            results+=(INSTALL_RESULT INSTALL_AGGREGATE_RESULT IMPLEMENTATION_ANALYSIS_RESULT)
+          fi
+          for name in "${results[@]}"; do
+            printf '%s = %s\n' "$name" "${!name}" >> "$GITHUB_STEP_SUMMARY"
+            if [[ "${!name}" != success ]]; then
+              echo "::error::Required job outcome $name = ${!name}"
+              failed=1
+            fi
+          done
+          [[ "$failed" == 0 ]]
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
@@ -1013,36 +1094,9 @@ jobs:
           path: evidence/results
       - name: Require exact-revision complete passing results
         env:
-          PLAN_RESULT: ${{ needs.plan.result }}
-          PRODUCER_RESULT: ${{ needs.product-producer.result }}
-          CONSUMERS_RESULT: ${{ needs.product-consumers.result }}
-          ASAN_PRODUCER_RESULT: ${{ needs.asan-foundation-producer.result }}
-          INSTRUMENTED_CONSUMERS_RESULT: ${{ needs.instrumented-product-consumers.result }}
-          FUZZ_RESULT: ${{ needs.independent-native.result }}
-          COVERAGE_PRODUCER_RESULT: ${{ needs.coverage-producer.result }}
-          COVERAGE_PARTITIONS_RESULT: ${{ needs.coverage-partitions.result }}
-          CORE_RESULT: ${{ needs.core-aggregate.result }}
-          COVERAGE_RESULT: ${{ needs.coverage-aggregate.result }}
-          INSTALL_REQUIRED: ${{ inputs.archive_install }}
-          INSTALL_RESULT: ${{ needs.archive-install.result }}
-          IMPLEMENTATION_ANALYSIS_RESULT: ${{ needs.implementation-analysis.result }}
+          ASSURANCE_OUTCOMES: '{"plan":"success","native":"success"}'
         shell: bash
         run: |
-          failed=0
-          results=(PLAN_RESULT PRODUCER_RESULT CONSUMERS_RESULT ASAN_PRODUCER_RESULT
-            INSTRUMENTED_CONSUMERS_RESULT FUZZ_RESULT COVERAGE_PRODUCER_RESULT
-            COVERAGE_PARTITIONS_RESULT CORE_RESULT COVERAGE_RESULT)
-          if [[ "$INSTALL_REQUIRED" == true ]]; then
-            results+=(INSTALL_RESULT IMPLEMENTATION_ANALYSIS_RESULT)
-          fi
-          for name in "${results[@]}"; do
-            if [[ "${!name}" != success ]]; then
-              echo "Required job outcome $name = ${!name}" >&2
-              failed=1
-            fi
-          done
-          [[ "$failed" == 0 ]]
-          export ASSURANCE_OUTCOMES="{\"plan\":\"$PLAN_RESULT\",\"native\":\"success\"}"
           python3 -B scripts/objc3c_toolchain/linux_host.py --expect-host "$OBJC3C_REQUESTED_HOST" --field host
           periodic=()
           if [[ "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then

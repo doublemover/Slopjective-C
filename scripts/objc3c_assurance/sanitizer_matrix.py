@@ -1,4 +1,4 @@
-"""Merge eight exact-source product partitions into the canonical campaign."""
+"""Merge exact-source product partitions into the canonical campaign."""
 from __future__ import annotations
 
 import json

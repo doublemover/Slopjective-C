@@ -2,6 +2,11 @@
 
 Scope: issue #124. This checklist defines profile-by-profile release evidence requirements for conformance claims under `core`, `strict`, `strict-concurrency`, and `strict-system`.
 
+Checked rows record the earlier evidence program. Each published SDK requires its
+own evidence and review under its release ID. The
+[Linux release procedure](../../docs/releases/linux.md) stages preview archives
+without claiming a conformance profile.
+
 ## Evidence bundle contract
 
 Each release claim shall be backed by an evidence bundle with a stable ID:
@@ -124,14 +129,12 @@ Checklist:
 
 ## Deterministic validation hooks (`VH-D1-01`..`VH-D1-23`)
 
-Run from repository root through the public npm bridge:
+The hook IDs remain stable evidence labels. Current Linux qualification runs are
+linked in the release manifest. To claim a profile, map the required evidence
+rows below to the actual native reports for the shipped archive. Record missing
+rows and withhold the claim until their evidence and independent review exist.
 
-```powershell
-npm run objc3c -- validate-public-conformance-reporting
-npm run objc3c -- check-release-evidence
-```
-
-The hook IDs remain stable evidence labels. Their checks are grouped by surface:
+The historical checks were grouped by surface.
 
 - `VH-D1-01`..`VH-D1-04`: profile-report shape and corpus coverage.
 - `VH-D1-05`..`VH-D1-07`: runtime, ABI, and evidence-bundle schema/digest checks.

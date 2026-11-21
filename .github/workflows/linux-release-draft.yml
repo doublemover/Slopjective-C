@@ -1,0 +1,81 @@
+name: Stage Linux SDK release draft
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: New Git tag, such as v0.1.0-preview.1
+        type: string
+        required: true
+      x86_64_run:
+        description: Successful x86-64 Linux SDK release qualification run ID
+        type: string
+        required: true
+      aarch64_run:
+        description: Successful AArch64 Linux SDK release qualification run ID
+        type: string
+        required: true
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: linux-release-draft
+  cancel-in-progress: false
+jobs:
+  draft:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/python-tools
+      - name: Stage exact qualified archives and create a draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          X86_RUN: ${{ inputs.x86_64_run }}
+          ARM_RUN: ${{ inputs.aarch64_run }}
+        shell: bash
+        run: |
+          if [[ ! -f LICENSE && ! -f LICENSE.md && ! -f COPYING ]]; then
+            echo 'The project needs an approved distribution license before release staging.' >&2
+            exit 1
+          fi
+          uv run python -m scripts.objc3c_toolchain.stage_linux_release \
+            --repo "$GITHUB_REPOSITORY" --revision "$GITHUB_SHA" \
+            --tag "$RELEASE_VERSION" --x86-run "$X86_RUN" --arm-run "$ARM_RUN" \
+            --downloads out/release-downloads --output out/release-draft \
+            --publish-draft docs/releases/linux-preview-notes.md
+  rehearse:
+    name: Install exact draft downloads (${{ matrix.host }})
+    needs: draft
+    runs-on: ${{ matrix.host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
+    timeout-minutes: 35
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        host: [linux-x86_64, linux-aarch64]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Download the exact draft assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_HOST: ${{ matrix.host }}
+        run: |
+          gh release download "$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" --dir out/draft-assets \
+            --pattern "objc3-sdk-$RELEASE_VERSION-$RELEASE_HOST.tar.zst" \
+            --pattern linux-release.json --pattern SHA256SUMS \
+            --pattern install-linux.sh --pattern install-sdk.py
+      - name: Provision, install, and compile using the public entry point
+        env:
+          RELEASE_HOST: ${{ matrix.host }}
+        run: python3 -B -m scripts.objc3c_toolchain.release_install --host "$RELEASE_HOST" --directory out/draft-assets

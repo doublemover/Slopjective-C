@@ -15,13 +15,13 @@ from scripts.objc3c_assurance.sanitizer_matrix import merge
 
 
 def test_owner_partitions_are_a_complete_disjoint_union_and_use_only_needed_profiles():
-    assigned = [owner for index in range(8) for owner in select(index)]
+    assigned = [owner for index in range(len(PARTITIONS)) for owner in select(index)]
     assert len(assigned) == len(set(assigned)) == len(OWNERS) == 13
     assert set(assigned) == set(OWNERS)
     assert len(profiles(select())) == 6
-    assert [len(profiles(select(index))) for index in range(8)] == [4, 4, 4, 2, 2, 2, 2, 2]
-    assert sum(evidence_owners(select(index)) for index in range(8)) == 14
-    for bad in (-1, 8, True, '0'):
+    assert [len(profiles(part)) for part in PARTITIONS] == [4, 4, 4, 2, 1, 1, 2, 2, 1, 1]
+    assert sum(evidence_owners(part) for part in PARTITIONS) == 14
+    for bad in (-1, len(PARTITIONS), True, '0'):
         with pytest.raises(ValueError, match='partition'):
             select(bad)
 
@@ -55,10 +55,10 @@ def test_qualification_selects_exact_owners_without_building_unused_profiles(tmp
         executed.extend(name for name, _ in tasks)
         report['owners'] = [{'name': name, 'status': 'PASS'} for name, _ in tasks]
     monkeypatch.setattr(products, 'execute_owners', execute)
-    for index in range(8):
+    for index in range(len(PARTITIONS)):
         requested.clear();executed.clear()
         selected = select(index)
-        result = products.qualify(repo, sdk, sdk, facade if index >= 6 else None,
+        result = products.qualify(repo, sdk, sdk, facade if any(name.startswith('factories-') for name in selected) else None,
             resource, repo / 'out' / str(index), partition=index)
         assert result['status'] == 'PASS' and set(executed) == set(selected)
         assert requested == set(profiles(selected))
@@ -87,7 +87,7 @@ def partition_receipts(tmp_path):
                     'status': 'PASS', 'records': [record]}))
         count = evidence_owners(select(index))
         qualification = {'status': 'PASS', 'owners': [{'name': name, 'status': 'PASS'} for name in select(index)],
-            'expected_owners': list(select(index)), 'partition_index': index, 'partition_count': 8,
+            'expected_owners': list(select(index)), 'partition_index': index, 'partition_count': len(PARTITIONS),
             'owner_catalogue': list(OWNERS), 'source_inputs': {name: hashlib.sha256(b'sealed source').hexdigest() for name in SOURCE_FILES},
             'runtime_profiles': [{'sanitizer': mode, 'optimization': opt} for mode, opt in profiles(select(index))],
             'product_evidence_store': {'schema': 'objc3c.product-evidence-shared-store.v1',
@@ -114,7 +114,7 @@ def test_terminal_union_retains_each_real_replay_byte_once_without_changing_owne
     assert len(evidence.suite_results(output, 'sanitizer-products')) == 13
     campaign = output / 'sanitizer-products/campaign'
     assert len(list((campaign / 'product-evidence-blobs').iterdir())) == 1
-    assert len(json.loads((campaign / 'partition-union.json').read_text())['partitions']) == 8
+    assert len(json.loads((campaign / 'partition-union.json').read_text())['partitions']) == len(PARTITIONS)
     from scripts.objc3c_toolchain.product_evidence import blob_bytes
     for path in campaign.glob('**/product-evidence/qualification.json'):
         assert path.read_bytes() in original.values()
@@ -174,7 +174,7 @@ def test_workflow_enrolls_every_partition_and_the_existing_schedule_owner():
     line = next(line.strip() for line in consumer.splitlines() if line.strip().startswith('group: ['))
     groups = [value.strip() for value in line.removeprefix('group: [').removesuffix(']').split(',')]
     assert groups == [*GROUPS, 'runtime-schedules']
-    assert 'fail-fast: false' in consumer
+    assert 'fail-fast: true' in consumer
     core = workflow.split('  core-aggregate:', 1)[1].split('\n  coverage-aggregate:', 1)[0]
     assert 'instrumented-product-consumers' in core
     assert "needs.instrumented-product-consumers.result == 'success'" in core
