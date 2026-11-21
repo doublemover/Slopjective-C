@@ -7,75 +7,11 @@ import json
 import os
 import subprocess
 from pathlib import Path
-from types import SimpleNamespace
 
 import pytest
 
-from scripts.objc3c_toolchain import core
+from scripts.objc3c_toolchain import core, host
 from scripts.objc3c_toolchain.core import ToolchainError, prepare
-
-
-def test_windows_discovery_keeps_vs2022_when_newer_visual_studio_is_installed(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    programs = tmp_path / "Program Files"
-    vswhere = programs / "Microsoft Visual Studio/Installer/vswhere.exe"
-    vs2022 = programs / "Microsoft Visual Studio/2022/Community"
-    vs_newer = programs / "Microsoft Visual Studio/18/Community"
-    sdk = "10.0.26100.0"
-    version_file = vs2022 / "VC/Auxiliary/Build/Microsoft.VCToolsVersion.default.txt"
-    cl = vs2022 / "VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe"
-    link = cl.with_name("link.exe")
-    python = tmp_path / "python.exe"
-    cmake, ninja, launcher = (tmp_path / name for name in ("cmake.exe", "ninja.exe", "py.exe"))
-    files = [vswhere, cl, link, python, cmake, ninja, launcher,
-             programs / f"Windows Kits/10/Include/{sdk}/um/Windows.h",
-             programs / f"Windows Kits/10/Include/{sdk}/ucrt/stdio.h",
-             programs / f"Windows Kits/10/Lib/{sdk}/um/x64/kernel32.lib",
-             programs / f"Windows Kits/10/Lib/{sdk}/ucrt/x64/ucrt.lib"]
-    for path in files:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(b"fixture")
-    version_file.parent.mkdir(parents=True, exist_ok=True)
-    version_file.write_text("14.44.35207\n", encoding="utf-8")
-    vs_newer.mkdir(parents=True)
-
-    def run(command: list[str]) -> str:
-        if command[0] == str(vswhere):
-            # Model vswhere's latest selection with two installed generations.
-            return str(vs2022 if "[17.0,18.0)" in command else vs_newer)
-        if command[0] == str(launcher):
-            return str(python)
-        if command[0] == str(python):
-            return "Python 3.15.0"
-        if command[0] == str(cmake):
-            return "cmake version 4.2.0"
-        return "1.13.2"
-
-    monkeypatch.setattr(core, "os", SimpleNamespace(
-        name="nt", environ={"ProgramFiles(x86)": str(programs), "OBJC3C_TOOLCHAIN_PYTHON": str(python)}))
-    monkeypatch.setattr(core, "_run", run)
-    monkeypatch.setattr(core.shutil, "which", lambda name: str(
-        {"cmake": cmake, "ninja": ninja, "py": launcher}[name]))
-    environment = core._windows_build_environment({"build": {
-        "host_toolset": "Visual Studio 2022 v143", "windows_sdk_version": sdk,
-        "windows_crt": "MD"}})
-    assert environment["cl_path"] == str(cl.resolve())
-    assert environment["vs_installation"] == str(vs2022.resolve())
-    assert environment["msvc_toolset_version"] == "14.44.35207"
-
-
-def test_windows_discovery_reports_missing_vs2022(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    vswhere = tmp_path / "Microsoft Visual Studio/Installer/vswhere.exe"
-    vswhere.parent.mkdir(parents=True)
-    vswhere.write_bytes(b"fixture")
-    monkeypatch.setattr(core, "os", SimpleNamespace(
-        name="nt", environ={"ProgramFiles(x86)": str(tmp_path)}))
-    monkeypatch.setattr(core, "_run", lambda command: "")
-    with pytest.raises(ToolchainError, match="Visual Studio 2022 v143.*not installed"):
-        core._windows_build_environment({})
 
 
 def git(*args: str, cwd: Path | None = None) -> str:
@@ -131,9 +67,7 @@ def make_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Pa
             "generator": "Ninja",
             "configuration": "Release",
             "assertions": True, "rtti": True, "eh": True,
-            "windows_sdk_version": "synthetic-sdk",
-            "windows_crt": "MD",
-            "projects": ["clang", "lld", "clang-tools-extra"],
+                    "projects": ["clang", "lld", "clang-tools-extra"],
             "targets": ["X86"],
             "build_targets": ["clang", "FileCheck", "count", "not", "clangTooling", "clangIndex"],
             "build_target_groups": [
@@ -142,7 +76,7 @@ def make_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Pa
             ],
             "distribution_components": ["clang", "lld", "clang-libraries", "llvm-libraries"],
             "test_suite": "clang/test/ObjC3/Parser",
-            "test_binaries": ["tools/clang/unittests/AST/ObjC3TypeContractsTests.exe"],
+            "test_binaries": ["tools/clang/unittests/AST/ObjC3TypeContractsTests"],
             "include_tests": True,
             "compile_jobs": 8,
             "link_jobs": 1,
@@ -260,52 +194,52 @@ def test_development_verifier_detects_same_size_timestamp_restored_edit(
     assert tracked.read_text(encoding="utf-8") == "changed\n"
 
 
-def test_build_plan_carries_pinned_patch_and_windows_sdk_identity(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_build_plan_carries_pinned_patch_and_native_sdk_identity(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     repo, manifest, patch = make_repo(tmp_path, monkeypatch)
     source = make_development_source(repo, manifest, patch)
     sealed = core.seal_development(repo, manifest_path=manifest, source_dir=source)
-    monkeypatch.setattr(core, "_windows_build_environment", lambda _manifest: {
-        "host_toolset": "synthetic-v143",
-        "windows_sdk_version": "synthetic-sdk",
-        "cl_path": "C:/msvc/cl.exe",
-        "link_path": "C:/msvc/link.exe",
-        "cl_sha256": "compiler-hash",
+    monkeypatch.setattr(host, "linux_environment", lambda _manifest, _host: {
+        "clang_path": "/opt/llvm/bin/clang",
+        "link_path": "/opt/llvm/bin/ld.lld",
+        "clang_sha256": "compiler-hash",
+        "target_triple": "x86_64-unknown-linux-gnu",
         "ninja_version": "synthetic-ninja",
         "cmake_version": "synthetic-cmake",
-        "python_executable": "C:/Python315/python.exe",
+        "python_executable": "/opt/python/bin/python3",
         "python_version": "Python 3.15.synthetic",
         "python_sha256": "python-hash",
     })
-    plan = core.build_plan(repo, phase="configure", manifest_path=manifest, source_dir=source, host="windows-x86_64")
+    plan = core.build_plan(repo, phase="configure", manifest_path=manifest, source_dir=source, host="linux-x86_64")
     assert f"-DCLANG_OBJC3_PATCH_DIGEST={sealed['patch_digest']}" in plan["command"]
-    assert "-DCMAKE_SYSTEM_VERSION=synthetic-sdk" in plan["command"]
-    assert "-DPython3_EXECUTABLE=C:/Python315/python.exe" in plan["command"]
+    assert "-DLLVM_DEFAULT_TARGET_TRIPLE=x86_64-unknown-linux-gnu" in plan["command"]
+    assert "-DPython3_EXECUTABLE=/opt/python/bin/python3" in plan["command"]
     assert "-DCMAKE_JOB_POOLS=objc3_link=1" in plan["command"]
     assert plan["command"][plan["command"].index("-S") + 1] == (source / "llvm").as_posix()
-    assert all("\\" not in value for value in plan["command"] if value.startswith(("C:/", "-D")))
+    assert all("\\" not in value for value in plan["command"] if value.startswith(("/opt/", "-D")))
     assert plan["sdk_consumers"]["LLVM_DIR"]["sha256"] is None
     assert plan["host_environment"]["python_sha256"] == "python-hash"
     assert plan["include_roots"]["objc3_foundation_header"].endswith(
-        "/build/tools/clang/include/clang/Basic/ObjC3Foundation.h"
+        "/build-linux-x86_64/tools/clang/include/clang/Basic/ObjC3Foundation.h"
     )
     assert plan["sdk_consumers"]["build_tree_Clang_DIR"]["sha256"] is None
 
-    tests = core.build_plan(repo, phase="test", manifest_path=manifest, source_dir=source, host="windows-x86_64")
+    tests = core.build_plan(repo, phase="test", manifest_path=manifest, source_dir=source, host="linux-x86_64")
     assert tests["command"] == [
-        "C:/Python315/python.exe",
+        "/opt/python/bin/python3",
         "-B",
-        (repo / "out" / "toolchains" / "objc3-development" / "build" / "bin" / "llvm-lit.py").as_posix(),
+        (repo / "out" / "toolchains" / "objc3-development" / "build-linux-x86_64" / "bin" / "llvm-lit").as_posix(),
         "-sv", "--show-unsupported", "-j", "4",
         (source / "clang" / "test" / "ObjC3" / "Parser").as_posix(),
     ]
     assert tests["follow_up_commands"] == [[
-        (repo / "out/toolchains/objc3-development/build/tools/clang/unittests/AST/ObjC3TypeContractsTests.exe").as_posix()
+        (repo / "out/toolchains/objc3-development/build-linux-x86_64/tools/clang/unittests/AST/ObjC3TypeContractsTests").as_posix()
     ]]
-    assert tests["command_environment"] == {"PYTHONDONTWRITEBYTECODE": "1"}
+    assert tests["command_environment"] == {"PYTHONDONTWRITEBYTECODE": "1",
+                                            "LD_LIBRARY_PATH": str(repo / "out/toolchains/objc3-development/build-linux-x86_64/lib")}
 
-    staged = core.build_plan(repo, phase="stage", manifest_path=manifest, source_dir=source, host="windows-x86_64")
+    staged = core.build_plan(repo, phase="stage", manifest_path=manifest, source_dir=source, host="linux-x86_64")
     assert "install-distribution" in staged["command"]
-    build = core.build_plan(repo, phase="build", manifest_path=manifest, source_dir=source, host="windows-x86_64")
+    build = core.build_plan(repo, phase="build", manifest_path=manifest, source_dir=source, host="linux-x86_64")
     assert "clang" in build["command"]
     assert "FileCheck" in build["command"]
     assert "clangTooling" not in build["command"]

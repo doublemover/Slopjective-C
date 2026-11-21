@@ -8,6 +8,12 @@ qualification runs. The distribution matrix covers Debian 13 and Ubuntu 26.04.
 Download the archive for your architecture, the two installer files, and
 `SHA256SUMS`. Follow the [Linux install guide](https://github.com/doublemover/Slopjective-C/blob/main/docs/releases/linux.md#install-and-run).
 
+The attached source archives contain Slopjective-C, including the build
+scripts and patches, and the pinned revisions of LLVM, libobjc2, and robin-map.
+Use `linux-release.json` to identify the revisions and `SHA256SUMS` to verify
+the downloads. Report suspected vulnerabilities through
+[GitHub private vulnerability reporting](https://github.com/doublemover/Slopjective-C/security/advisories/new).
+
 Public features include `defer`, `Optional`, `Result`, and typed `throws` in
 the modes recorded in the
 [language capability catalog](https://github.com/doublemover/Slopjective-C/blob/main/schemas/objc3-language-capabilities.json).

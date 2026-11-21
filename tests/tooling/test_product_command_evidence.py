@@ -107,7 +107,9 @@ def test_actual_command_header_loader_and_binary_evidence_survives_workspace_rem
     link_row = products.report['commands'][1]
     assert str(work / 'main.o') in link_row['derived_inputs']
     assert 'blob' not in link_row['derived_inputs'][str(work / 'main.o')]
-    assert str(work / 'program') in link_row['after']['derived_artifacts']
+    linked = link_row['outputs'][str(binary)]
+    assert blob_bytes(products.output, linked) == binary.read_bytes()
+    assert linked['sha256'] == row['executable']['sha256']
     assert '-MD' in compile_row['argv'] and '-MF' in compile_row['argv']
     shutil.rmtree(work)
     assert products.finalize() == receipt
@@ -124,7 +126,8 @@ def test_real_native_replay_uses_relocated_shared_store_without_private_links(
         shutil.copytree(products.output, campaign / name / 'product-evidence')
     store = consolidate_campaign_blobs(campaign)
     assert store['deduplicated_bytes'] > 0
-    for name in ('one', 'two'): (campaign / name / 'product-evidence/blobs').unlink()
+    for name in ('one', 'two'):
+        assert not os.path.lexists(campaign / name / 'product-evidence/blobs')
     relocated = tmp_path / 'downloaded/campaign';relocated.parent.mkdir()
     campaign.rename(relocated)
     shutil.rmtree(work)

@@ -1,0 +1,3718 @@
+diff --git a/clang/test/ObjC3/AST/Inputs/carrier-expression-adversarial-pch.h b/clang/test/ObjC3/AST/Inputs/carrier-expression-adversarial-pch.h
+new file mode 100644
+index 000000000..39810c83a
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/carrier-expression-adversarial-pch.h
+@@ -0,0 +1,26 @@
++using PersistedCount = int;
++using PersistedCountOptional = __objc3_optional(PersistedCount);
++using PersistedNestedOptional = __objc3_optional(PersistedCountOptional);
++using PersistedResult = __objc3_result(PersistedCount, long);
++using PersistedNestedResult =
++    __objc3_result(PersistedResult, PersistedNestedOptional);
++
++inline PersistedNestedOptional persisted_nested_optional() {
++  return __objc3_some(PersistedCountOptional,
++                      __objc3_some(PersistedCount, 0));
++}
++inline PersistedNestedResult persisted_nested_result() {
++  return __objc3_err(PersistedResult, PersistedNestedOptional,
++                     __objc3_some(PersistedCountOptional,
++                                  __objc3_some(PersistedCount, 0)));
++}
++inline bool persisted_nested_queries() {
++  return __objc3_has_value(persisted_nested_optional()) &&
++         !__objc3_is_ok(persisted_nested_result());
++}
++
++template <class T> auto persisted_dependent_nested(T value) {
++  using Inner = __objc3_optional(T);
++  return __objc3_some(Inner, __objc3_some(T, value));
++}
++inline auto persisted_template_instance = persisted_dependent_nested(0);
+\ No newline at end of file
+diff --git a/clang/test/ObjC3/AST/Inputs/carrier-expressions-module/carrier-expressions.h b/clang/test/ObjC3/AST/Inputs/carrier-expressions-module/carrier-expressions.h
+new file mode 100644
+index 000000000..d42a03a9d
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/carrier-expressions-module/carrier-expressions.h
+@@ -0,0 +1,20 @@
++typedef __objc3_optional(int) ModuleOptional;
++typedef __objc3_result(int, long long) ModuleResult;
++extern void module_record(int);
++
++static inline int module_present_zero(void) {
++  __objc3_defer { module_record(3); }
++  ModuleOptional source = __objc3_some(int, 0);
++  ModuleOptional copy = __objc3_none(int);
++  copy = source;
++  return __objc3_has_value(copy);
++}
++
++static inline int module_zero_error(void) {
++  ModuleResult error = __objc3_err(int, long long, 0);
++  return !__objc3_is_ok(error);
++}
++
++static inline int module_void_once(void) {
++  return __objc3_is_ok(__objc3_ok(void, int, module_record(4)));
++}
+diff --git a/clang/test/ObjC3/AST/Inputs/carrier-expressions-module/module.modulemap b/clang/test/ObjC3/AST/Inputs/carrier-expressions-module/module.modulemap
+new file mode 100644
+index 000000000..c282ed871
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/carrier-expressions-module/module.modulemap
+@@ -0,0 +1,4 @@
++module CarrierExpressions {
++  header "carrier-expressions.h"
++  export *
++}
+diff --git a/clang/test/ObjC3/AST/Inputs/carrier-pointer-compatibility-pch.h b/clang/test/ObjC3/AST/Inputs/carrier-pointer-compatibility-pch.h
+new file mode 100644
+index 000000000..efdd1c05a
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/carrier-pointer-compatibility-pch.h
+@@ -0,0 +1,8 @@
++typedef int CarrierIntAlias;
++typedef __objc3_optional(int) PchOptionalInt;
++typedef __objc3_optional(CarrierIntAlias) PchOptionalAlias;
++typedef __objc3_optional(long) PchOptionalLong;
++
++typedef __objc3_result(int, short) PchIntShortResult;
++typedef __objc3_result(CarrierIntAlias, short) PchAliasShortResult;
++typedef __objc3_result(int, long) PchIntLongResult;
+diff --git a/clang/test/ObjC3/AST/Inputs/carrier-transfer-pch.h b/clang/test/ObjC3/AST/Inputs/carrier-transfer-pch.h
+new file mode 100644
+index 000000000..e6a55ed52
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/carrier-transfer-pch.h
+@@ -0,0 +1,12 @@
++struct TransferItem {
++  TransferItem(const TransferItem &);
++  TransferItem(TransferItem &&);
++  ~TransferItem();
++};
++using TransferOptional = __objc3_optional(TransferItem);
++inline void pch_copy(TransferOptional &source) {
++  TransferOptional local = __objc3_copy(source);
++}
++inline void pch_move(TransferOptional &source) {
++  TransferOptional local = __objc3_move(source);
++}
+diff --git a/clang/test/ObjC3/AST/Inputs/carrier-types-pch.h b/clang/test/ObjC3/AST/Inputs/carrier-types-pch.h
+new file mode 100644
+index 000000000..a18cb1bdd
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/carrier-types-pch.h
+@@ -0,0 +1,5 @@
++struct CarrierFailure {};
++typedef int CarrierIntAlias;
++typedef __objc3_optional(CarrierIntAlias) PchOptional;
++typedef __objc3_result(PchOptional, CarrierFailure) PchResult;
++template <class T> using PchGenericOptional = __objc3_optional(T);
+\ No newline at end of file
+diff --git a/clang/test/ObjC3/AST/Inputs/do-catch-pch.h b/clang/test/ObjC3/AST/Inputs/do-catch-pch.h
+new file mode 100644
+index 000000000..17040724a
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/do-catch-pch.h
+@@ -0,0 +1,19 @@
++struct PayloadError {};
++struct OtherPayloadError {};
++void typed_payload() __objc3_throws(PayloadError);
++
++template <class E> void dependent_do_catch() {
++  __objc3_do {
++    __objc3_throw(E{});
++  } __objc3_catch(E payload) {
++    (void)payload;
++  }
++}
++
++inline void exact_catch_roundtrip() {
++  __objc3_do {
++    __objc3_try(typed_payload());
++  } __objc3_catch(PayloadError payload) {
++    (void)payload;
++  }
++}
+diff --git a/clang/test/ObjC3/AST/Inputs/function-effect-pointer-compatibility-pch.h b/clang/test/ObjC3/AST/Inputs/function-effect-pointer-compatibility-pch.h
+new file mode 100644
+index 000000000..b798c0371
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/function-effect-pointer-compatibility-pch.h
+@@ -0,0 +1,8 @@
++typedef struct PchError { int Value; } PchError;
++typedef void PchPlain(void);
++typedef void PchThrowing(void) __objc3_throws(PchError);
++typedef PchPlain *PchPlainPointer;
++typedef PchThrowing *PchThrowingPointer;
++
++void accept_plain_pch(PchPlainPointer Callback);
++void accept_throwing_pch(PchThrowingPointer Callback);
+diff --git a/clang/test/ObjC3/AST/Inputs/function-effect-template-pch.h b/clang/test/ObjC3/AST/Inputs/function-effect-template-pch.h
+new file mode 100644
+index 000000000..b7532768c
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/function-effect-template-pch.h
+@@ -0,0 +1,8 @@
++struct Error {};
++
++template <class E>
++void pch_substituted_effect() __objc3_async __objc3_throws(const E *) {}
++
++// The explicit instantiation repeats the exact canonical effect payload.
++template void pch_substituted_effect<Error>() __objc3_async
++    __objc3_throws(const Error *);
+diff --git a/clang/test/ObjC3/AST/Inputs/function-effects-pch.h b/clang/test/ObjC3/AST/Inputs/function-effects-pch.h
+new file mode 100644
+index 000000000..124a8ca8a
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/function-effects-pch.h
+@@ -0,0 +1,2 @@
++struct E {};
++void pch_async_typed_effect() __objc3_async __objc3_throws(const E *);
+diff --git a/clang/test/ObjC3/AST/Inputs/match-pch-header.mm b/clang/test/ObjC3/AST/Inputs/match-pch-header.mm
+new file mode 100644
+index 000000000..3407dffb1
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/match-pch-header.mm
+@@ -0,0 +1,21 @@
++using MaybeInt = __objc3_optional(int);
++using IntOrWide = __objc3_result(int, long long);
++
++int pch_match(MaybeInt optional, IntOrWide result) {
++  int payload = __objc3_match (optional) {
++    case __objc3_case_some(let value) => value;
++    case __objc3_case_none => 0;
++  };
++  __objc3_match_stmt (result) {
++  case .Ok(let value): { payload += value; }
++  case .Err(let error): { payload += (int)error; }
++  }
++  return payload;
++}
++
++// PCH: ObjC3MatchExpr
++// PCH: ObjC3MatchArm
++// PCH: ObjC3MatchArm
++// PCH: ObjC3MatchStmt
++// PCH: ObjC3MatchArm
++// PCH: ObjC3MatchArm
+diff --git a/clang/test/ObjC3/AST/Inputs/optional-expressions-pch.h b/clang/test/ObjC3/AST/Inputs/optional-expressions-pch.h
+new file mode 100644
+index 000000000..cf512235d
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/optional-expressions-pch.h
+@@ -0,0 +1,16 @@
++typedef int PchCount;
++typedef __objc3_optional(PchCount) PchAliasOptional;
++typedef __objc3_optional(int) PchIntOptional;
++
++inline PchAliasOptional pch_some_alias() {
++  return __objc3_some(PchCount, 0);
++}
++inline PchIntOptional pch_some_int() {
++  return __objc3_some(int, 1);
++}
++inline PchAliasOptional pch_none_alias() {
++  return __objc3_none(PchCount);
++}
++inline bool pch_has_value() {
++  return __objc3_has_value(pch_none_alias());
++}
+diff --git a/clang/test/ObjC3/AST/Inputs/result-expressions-pch.h b/clang/test/ObjC3/AST/Inputs/result-expressions-pch.h
+new file mode 100644
+index 000000000..f0c651f30
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/result-expressions-pch.h
+@@ -0,0 +1,19 @@
++typedef int PchSuccess;
++typedef long PchFailure;
++using PchAliasResult = __objc3_result(PchSuccess, PchFailure);
++using PchCanonicalResult = __objc3_result(int, long);
++using PchVoidResult = __objc3_result(void, void);
++
++inline PchAliasResult pch_ok() {
++  return __objc3_ok(PchSuccess, PchFailure, 0);
++}
++inline PchAliasResult pch_err() {
++  return __objc3_err(PchSuccess, PchFailure, 0L);
++}
++inline bool pch_is_ok() { return __objc3_is_ok(pch_err()); }
++inline PchVoidResult pch_void_ok() {
++  return __objc3_ok(void, void, (void)0);
++}
++inline PchVoidResult pch_void_err() {
++  return __objc3_err(void, void, (void)0);
++}
+diff --git a/clang/test/ObjC3/AST/Inputs/try-throw-pch.h b/clang/test/ObjC3/AST/Inputs/try-throw-pch.h
+new file mode 100644
+index 000000000..c97dedb20
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/try-throw-pch.h
+@@ -0,0 +1,23 @@
++struct PchError {};
++int pch_typed_call() __objc3_throws(PchError);
++
++template <class F>
++inline int pch_template_propagate(F f) __objc3_throws(PchError) {
++  return __objc3_try(f());
++}
++
++inline int pch_propagate() __objc3_throws(PchError) {
++  return __objc3_try(pch_typed_call());
++}
++
++inline __objc3_optional(int) pch_optionalize() {
++  return __objc3_try_optional(pch_typed_call());
++}
++
++inline int pch_force() {
++  return __objc3_try_force(pch_typed_call());
++}
++
++inline void pch_throw(PchError error) __objc3_throws(PchError) {
++  __objc3_throw(error);
++}
+diff --git a/clang/test/ObjC3/AST/Inputs/typed-error-native-consumers-pch.h b/clang/test/ObjC3/AST/Inputs/typed-error-native-consumers-pch.h
+new file mode 100644
+index 000000000..e9e92f26f
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/typed-error-native-consumers-pch.h
+@@ -0,0 +1,23 @@
++struct PCHError {};
++int pch_typed_call() __objc3_throws(PCHError);
++int pch_nothrow_typed_call() noexcept __objc3_throws(PCHError);
++
++template <class E> int pch_dependent_try(int (*fn)() __objc3_throws(E))
++    __objc3_throws(E) {
++  return __objc3_try(fn());
++}
++
++inline int pch_all_try_kinds() __objc3_throws(PCHError) {
++  int value = __objc3_try(pch_typed_call());
++  __objc3_optional(int) optional =
++      __objc3_try_optional(pch_typed_call());
++  return value + __objc3_has_value(optional) +
++         __objc3_try_force(pch_nothrow_typed_call());
++}
++
++inline void pch_ordered_handlers() {
++  __objc3_do { __objc3_throw(PCHError{}); }
++  __objc3_catch(PCHError first) { (void)first; }
++  __objc3_catch { }
++}
++
+diff --git a/clang/test/ObjC3/AST/carrier-expression-adversarial-pch.mm b/clang/test/ObjC3/AST/carrier-expression-adversarial-pch.mm
+new file mode 100644
+index 000000000..aee3056d3
+--- /dev/null
++++ b/clang/test/ObjC3/AST/carrier-expression-adversarial-pch.mm
+@@ -0,0 +1,13 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -emit-pch -o %t.pch %S/Inputs/carrier-expression-adversarial-pch.h
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -include-pch %t.pch -ast-print %s | FileCheck %s
++
++void use_persisted_nested_carriers();
++
++// CHECK: using PersistedNestedOptional = Optional(PersistedCountOptional);
++// CHECK: using PersistedNestedResult = Result(PersistedResult, PersistedNestedOptional);
++// CHECK: Some(PersistedCountOptional, Some(PersistedCount, 0))
++// CHECK: Err(PersistedResult, PersistedNestedOptional,
++// CHECK: Some(Inner, Some(T, value))
++// CHECK: auto persisted_template_instance = persisted_dependent_nested(0);
++
++
+diff --git a/clang/test/ObjC3/AST/carrier-expression-module.m b/clang/test/ObjC3/AST/carrier-expression-module.m
+new file mode 100644
+index 000000000..12db3600e
+--- /dev/null
++++ b/clang/test/ObjC3/AST/carrier-expression-module.m
+@@ -0,0 +1,23 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fmodules -fmodule-name=CarrierExpressions -emit-module %S/Inputs/carrier-expressions-module/module.modulemap -o %t.pcm
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fmodules -fmodule-file=CarrierExpressions=%t.pcm -I %S/Inputs/carrier-expressions-module -emit-llvm -o %t.ll %s
++// RUN: FileCheck %s --check-prefix=IR < %t.ll
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fmodules -fmodule-file=CarrierExpressions=%t.pcm -I %S/Inputs/carrier-expressions-module -ast-dump-all %s | FileCheck %s --check-prefix=AST
++// RUN: not %clang_cc1 -x objective-c -std=c17 -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -fmodules -fmodule-file=CarrierExpressions=%t.pcm -I %S/Inputs/carrier-expressions-module -fsyntax-only %s 2>&1 | FileCheck %s --check-prefix=MODE
++
++@import CarrierExpressions;
++int module_roundtrip(void) {
++  return module_present_zero() && module_zero_error() && module_void_once();
++}
++
++// IR: define{{.*}} @module_roundtrip(
++// IR: define internal{{.*}} @module_present_zero(
++// IR: call void @module_record(i32{{.*}}3)
++// IR: define internal{{.*}} @module_zero_error(
++// IR: define internal{{.*}} @module_void_once(
++// IR: call void @module_record(i32{{.*}}4)
++// AST: TypedefDecl{{.*}}ModuleOptional
++// AST: TypedefDecl{{.*}}ModuleResult
++// AST: DeferStmt
++// AST: ObjC3OptionalExpr
++// AST: ObjC3ResultExpr
++// MODE: error: Slopjective-C extensions was enabled in precompiled file
+diff --git a/clang/test/ObjC3/AST/carrier-pointer-compatibility-pch.c b/clang/test/ObjC3/AST/carrier-pointer-compatibility-pch.c
+new file mode 100644
+index 000000000..13f00a7a4
+--- /dev/null
++++ b/clang/test/ObjC3/AST/carrier-pointer-compatibility-pch.c
+@@ -0,0 +1,21 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -emit-pch -o %t.pch %S/Inputs/carrier-pointer-compatibility-pch.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -Werror=incompatible-pointer-types -include-pch %t.pch -fsyntax-only -verify %s
++
++void compatible_imported_optional(PchOptionalInt *Int, PchOptionalAlias *Alias) {
++  Int = Alias;
++  Alias = Int;
++}
++
++void compatible_imported_result(PchIntShortResult *Result,
++                                PchAliasShortResult *Alias) {
++  Result = Alias;
++  Alias = Result;
++}
++
++void reject_distinct_imported_carriers(PchOptionalInt *Int,
++                                       PchOptionalLong *Long,
++                                       PchIntShortResult *ShortError,
++                                       PchIntLongResult *LongError) {
++  Int = Long; // expected-error {{incompatible pointer types}}
++  ShortError = LongError; // expected-error {{incompatible pointer types}}
++}
+diff --git a/clang/test/ObjC3/AST/carrier-transfer-pch.mm b/clang/test/ObjC3/AST/carrier-transfer-pch.mm
+new file mode 100644
+index 000000000..30bc00226
+--- /dev/null
++++ b/clang/test/ObjC3/AST/carrier-transfer-pch.mm
+@@ -0,0 +1,7 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -std=c++20 -emit-pch -o %t.pch %S/Inputs/carrier-transfer-pch.h
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -std=c++20 -include-pch %t.pch -ast-print %s | FileCheck %s
++
++void consume_transfers();
++
++// CHECK: copyValue(source)
++// CHECK: moveValue(source)
+diff --git a/clang/test/ObjC3/AST/carrier-types-pch.mm b/clang/test/ObjC3/AST/carrier-types-pch.mm
+new file mode 100644
+index 000000000..ef50cd2a7
+--- /dev/null
++++ b/clang/test/ObjC3/AST/carrier-types-pch.mm
+@@ -0,0 +1,8 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -emit-pch -o %t.pch %S/Inputs/carrier-types-pch.h
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -include-pch %t.pch -fsyntax-only -ast-dump-all %s | FileCheck %s
++
++using PchInstantiated = PchGenericOptional<const long *>;
++
++// CHECK: TypedefDecl {{.*}} PchOptional 'Optional(CarrierIntAlias)'
++// CHECK: TypedefDecl {{.*}} PchResult 'Result(PchOptional, CarrierFailure)'
++// CHECK: TypeAliasDecl {{.*}} PchInstantiated 'PchGenericOptional<const long *>':'Optional(const long *)'
+diff --git a/clang/test/ObjC3/AST/do-catch-pch.mm b/clang/test/ObjC3/AST/do-catch-pch.mm
+new file mode 100644
+index 000000000..d7df73f4a
+--- /dev/null
++++ b/clang/test/ObjC3/AST/do-catch-pch.mm
+@@ -0,0 +1,10 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -emit-pch %S/Inputs/do-catch-pch.h -o %t.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -include-pch %t.pch -fsyntax-only %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -ast-dump %S/Inputs/do-catch-pch.h | FileCheck %s
++// CHECK: ObjC3DoCatchStmt
++// CHECK: ObjC3CatchStmt
++// CHECK: VarDecl {{.*}} payload 'PayloadError'
++
++void instantiate_after_pch() {
++  dependent_do_catch<PayloadError>();
++}
+diff --git a/clang/test/ObjC3/AST/function-effect-canonical-uniquing.c b/clang/test/ObjC3/AST/function-effect-canonical-uniquing.c
+new file mode 100644
+index 000000000..be995015c
+--- /dev/null
++++ b/clang/test/ObjC3/AST/function-effect-canonical-uniquing.c
+@@ -0,0 +1,24 @@
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -std=c17 -fsyntax-only -verify %s
++// expected-no-diagnostics
++
++typedef struct Error { int value; } Error;
++typedef Error ErrorAlias;
++
++// The two spellings canonicalize to one typed-effect payload type while each
++// source declarator still forms its own non-canonical function type.
++void typed_error(void) __objc3_throws(Error);
++void typed_error_alias(void) __objc3_throws(ErrorAlias);
++
++typedef void ThrowsError(void) __objc3_throws(Error);
++typedef void ThrowsAlias(void) __objc3_throws(ErrorAlias);
++ThrowsError *typed_pointer;
++ThrowsAlias *typed_alias_pointer;
++
++// Re-declaring through a typedef alias remains compatible by canonical error
++// type identity; constructing either declaration must not collide with the
++// canonical FunctionProtoType's folding-set key.
++void redeclared(void) __objc3_throws(Error);
++void redeclared(void) __objc3_throws(ErrorAlias);
++
++// A qualified pointer payload is a separate canonical typed-error identity.
++void qualified_error(void) __objc3_throws(const Error *);
+diff --git a/clang/test/ObjC3/AST/function-effect-pointer-compatibility-pch.c b/clang/test/ObjC3/AST/function-effect-pointer-compatibility-pch.c
+new file mode 100644
+index 000000000..e802b3367
+--- /dev/null
++++ b/clang/test/ObjC3/AST/function-effect-pointer-compatibility-pch.c
+@@ -0,0 +1,14 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -emit-pch -o %t.pch %S/Inputs/function-effect-pointer-compatibility-pch.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -Werror=incompatible-function-pointer-types -include-pch %t.pch -fsyntax-only -verify %s
++// expected-note@Inputs/function-effect-pointer-compatibility-pch.h:7 {{passing argument to parameter 'Callback' here}}
++
++void effect_pch_widening(PchPlainPointer Plain,
++                         PchThrowingPointer Throwing) {
++  PchThrowingPointer Widened = Plain;
++  accept_throwing_pch(Plain);
++
++  PchPlainPointer Narrowed = Throwing; // expected-error {{incompatible function pointer types}}
++  accept_plain_pch(Throwing); // expected-error {{incompatible function pointer types}}
++  (void)Widened;
++  (void)Narrowed;
++}
+diff --git a/clang/test/ObjC3/AST/function-effect-template-pch.mm b/clang/test/ObjC3/AST/function-effect-template-pch.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/AST/function-effect-template-pch.mm
+@@ -0,0 +1,10 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -emit-pch -o %t.pch %S/Inputs/function-effect-template-pch.h
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -include-pch %t.pch -fsyntax-only -ast-dump-all %s | FileCheck %s
++
++struct OtherError {};
++void instantiate_pch_effect_from_call() {
++  pch_substituted_effect<OtherError>();
++}
++
++// CHECK: FunctionDecl {{.*}} pch_substituted_effect 'void () __objc3_async throws(const Error *)' explicit_instantiation_definition
++// CHECK: FunctionDecl {{.*}} pch_substituted_effect 'void () __objc3_async throws(const OtherError *)'
+
+diff --git a/clang/test/ObjC3/AST/function-effect-type-adjustment.c b/clang/test/ObjC3/AST/function-effect-type-adjustment.c
+new file mode 100644
+index 000000000..affa17a3c
+--- /dev/null
++++ b/clang/test/ObjC3/AST/function-effect-type-adjustment.c
+@@ -0,0 +1,32 @@
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -std=c17 -fsyntax-only -ast-dump %s | FileCheck %s
++
++typedef struct Error { int value; } Error;
++typedef void NoPrototype();
++typedef void ThrowingPrototype(void) __objc3_throws(Error);
++typedef ThrowingPrototype *ThrowingPointer;
++typedef NoPrototype *NoPrototypePointer;
++
++// Parameter adjustment must retain function effects through function decay and
++// nested pointer declarations.
++void parameter_decay(ThrowingPrototype callback);
++void nested_parameter(ThrowingPointer *callback);
++
++NoPrototype *no_prototype;
++NoPrototypePointer *nested_no_prototype;
++ThrowingPrototype *throwing_prototype;
++ThrowingPointer *nested_throwing;
++
++void composite_types(int choose) {
++  ThrowingPrototype *forward = choose ? no_prototype : throwing_prototype;
++  ThrowingPrototype *reverse = choose ? throwing_prototype : no_prototype;
++  ThrowingPointer *nested = choose ? nested_no_prototype : nested_throwing;
++  (void)forward;
++  (void)reverse;
++  (void)nested;
++}
++
++// CHECK: ParmVarDecl {{.*}} callback 'ThrowingPrototype *'
++// CHECK: ParmVarDecl {{.*}} callback 'ThrowingPointer *'
++// CHECK: ConditionalOperator {{.*}} 'ThrowingPrototype *'
++// CHECK: ConditionalOperator {{.*}} 'ThrowingPrototype *'
++// CHECK: ConditionalOperator {{.*}} 'ThrowingPointer *'
+diff --git a/clang/test/ObjC3/AST/function-effects-invalid.m b/clang/test/ObjC3/AST/function-effects-invalid.m
+new file mode 100644
+index 000000000..ddb8fd233
+--- /dev/null
++++ b/clang/test/ObjC3/AST/function-effects-invalid.m
+@@ -0,0 +1,9 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -fsyntax-only -verify=invalid %s
++
++struct Error {};
++struct Other {};
++
++void duplicate_async() __objc3_async __objc3_async; // invalid-error {{duplicate ObjC3 function effect '__objc3_async'}}
++void duplicate_throws() __objc3_throws(Error) __objc3_throws(Other); // invalid-error {{duplicate ObjC3 function effect 'throws'}}
++void empty_throws() __objc3_throws(); // invalid-error {{'throws' requires exactly one type payload in parentheses}}
++void multiple_throws() __objc3_throws(Error, Other); // invalid-error {{'throws' payload must be exactly one type}}
+diff --git a/clang/test/ObjC3/AST/function-effects-pch.m b/clang/test/ObjC3/AST/function-effects-pch.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/AST/function-effects-pch.m
+@@ -0,0 +1,6 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -emit-pch -o %t.pch %S/Inputs/function-effects-pch.h
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -include-pch %t.pch -fsyntax-only -ast-dump-all %s | FileCheck %s
++
++void use_pch_effect();
++
++// CHECK: pch_async_typed_effect 'void () __objc3_async throws(const E *)'
+
+diff --git a/clang/test/ObjC3/AST/function-effects.m b/clang/test/ObjC3/AST/function-effects.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/AST/function-effects.m
+@@ -0,0 +1,28 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -fsyntax-only -ast-dump %s | FileCheck %s
++
++struct Error {};
++struct Other {};
++
++void internal_async() __objc3_async;
++void internal_typed_throw() __objc3_throws(Error);
++void internal_qualified_pointer_throw() __objc3_throws(const Error *);
++void internal_async_typed() __objc3_async __objc3_throws(Error);
++void internal_reordered_typed() __objc3_throws(Error) __objc3_async;
++template <typename E> void substituted_throw() __objc3_throws(E) {}
++// An explicit instantiation names the same callable effect type.
++template void substituted_throw<Error>() __objc3_throws(Error);
++void instantiate_from_call() { __objc3_try_force(substituted_throw<Other>()); }
++
++// Unprefixed spellings remain ordinary identifiers and macro names.
++int async;
++int throws;
++#define throws_macro(x) (x)
++int preserved_macro = throws_macro(0);
++
++// CHECK: internal_async 'void () __objc3_async'
++// CHECK: internal_typed_throw 'void () throws(Error)'
++// CHECK: internal_qualified_pointer_throw 'void () throws(const Error *)'
++// CHECK: internal_async_typed 'void () __objc3_async throws(Error)'
++// CHECK: internal_reordered_typed 'void () __objc3_async throws(Error)'
++// CHECK: substituted_throw 'void () throws(Error)'
++// CHECK: substituted_throw 'void () throws(Other)'
+
+diff --git a/clang/test/ObjC3/AST/match-dependent-transform.mm b/clang/test/ObjC3/AST/match-dependent-transform.mm
+new file mode 100644
+index 000000000..05bc9c365
+--- /dev/null
++++ b/clang/test/ObjC3/AST/match-dependent-transform.mm
+@@ -0,0 +1,21 @@
++// MATCH-PACKET: transform after substitution must rerun type-directed coverage.
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fsyntax-only -verify %s
++// expected-no-diagnostics
++
++template <class T> int match_bool(T value) {
++  return __objc3_match (value) {
++  case true => 1;
++  case false => 0;
++  };
++}
++int instantiate_bool(bool value) { return match_bool(value); }
++
++template <class T> int match_optional(__objc3_optional(T) value) {
++  return __objc3_match (value) {
++  case __objc3_case_some(let element) => 1;
++  case __objc3_case_none => 0;
++  };
++}
++int instantiate_optional(__objc3_optional(int) value) {
++  return match_optional(value);
++}
+diff --git a/clang/test/ObjC3/AST/match-node-order.mm b/clang/test/ObjC3/AST/match-node-order.mm
+new file mode 100644
+index 000000000..10634128c
+--- /dev/null
++++ b/clang/test/ObjC3/AST/match-node-order.mm
+@@ -0,0 +1,26 @@
++// MATCH-PACKET: AST traversal preserves source-order arms and case bindings.
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -ast-dump %s | FileCheck %s
++// CHECK: ObjC3ResultType
++// CHECK: ObjC3OptionalType
++// CHECK: ObjC3MatchStmt
++// CHECK: ObjC3MatchArm
++// CHECK: VarDecl {{.*}} value
++// CHECK: ObjC3MatchArm
++// CHECK: VarDecl {{.*}} error
++// CHECK: ObjC3MatchStmt
++// CHECK: ObjC3MatchArm
++// CHECK: VarDecl {{.*}} element
++// CHECK: ObjC3MatchArm
++
++using R = __objc3_result(int, long long);
++using O = __objc3_optional(int);
++void f(R r, O o) {
++  __objc3_match_stmt (r) {
++  case .Ok(let value): { (void)value; }
++  case .Err(let error): { (void)error; }
++  }
++  __objc3_match_stmt (o) {
++  case __objc3_case_some(let element): { (void)element; }
++  case __objc3_case_none: { }
++  }
++}
+diff --git a/clang/test/ObjC3/AST/match-pch-roundtrip.mm b/clang/test/ObjC3/AST/match-pch-roundtrip.mm
+new file mode 100644
+index 000000000..dc39ac0e6
+--- /dev/null
++++ b/clang/test/ObjC3/AST/match-pch-roundtrip.mm
+@@ -0,0 +1,6 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -emit-pch -o %t.pch %S/Inputs/match-pch-header.mm
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -include-pch %t.pch -ast-dump-all %s | FileCheck --check-prefix=PCH %S/Inputs/match-pch-header.mm
++
++int consume_pch_match(MaybeInt optional, IntOrWide result) {
++  return pch_match(optional, result);
++}
+diff --git a/clang/test/ObjC3/AST/method-effects.m b/clang/test/ObjC3/AST/method-effects.m
+new file mode 100644
+index 000000000..042f49f8e
+--- /dev/null
++++ b/clang/test/ObjC3/AST/method-effects.m
+@@ -0,0 +1,18 @@
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -ast-print %s | FileCheck %s --check-prefix=PRINT
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -ast-dump %s | FileCheck %s --check-prefix=DUMP
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -ast-dump=json %s | FileCheck %s --check-prefix=JSON
++@protocol Error @end
++typedef id<Error> E;
++@interface MethodEffects
++- (int)plain;
++- (int)checked __objc3_throws(E);
+++ (void)combined:(int)value __objc3_async __objc3_throws;
++- (int)first:(int)value __objc3_throws:(int)other;
++@end
++// PRINT: - (int)checked throws(E);
++// PRINT: + (void)combined:(int)value __objc3_async_frame throws;
++// PRINT: - (int)first:(int)value __objc3_throws:(int)other;
++// DUMP: ObjCMethodDecl{{.*}} checked 'int' 'int (void) throws(E)'
++// DUMP: ObjCMethodDecl{{.*}} combined: 'void' 'void (int) __objc3_async_frame throws'
++// JSON: "objc3CallableType":
++// JSON: "qualType": "int (void) throws(E)"
+diff --git a/clang/test/ObjC3/AST/optional-expressions-pch.mm b/clang/test/ObjC3/AST/optional-expressions-pch.mm
+new file mode 100644
+index 000000000..e117bccfb
+--- /dev/null
++++ b/clang/test/ObjC3/AST/optional-expressions-pch.mm
+@@ -0,0 +1,15 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -emit-pch -o %t.pch %S/Inputs/optional-expressions-pch.h
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -include-pch %t.pch -ast-print %s | FileCheck %s
++
++void consume_pch_optional();
++
++// Verify the PCH retains each expression kind and the source spelling of the
++// explicit payload type, including aliases that canonicalize to one carrier.
++// CHECK: typedef Optional(PchCount) PchAliasOptional;
++// CHECK-NEXT: typedef Optional(int) PchIntOptional;
++// CHECK: Some(PchCount, 0)
++// CHECK: Some(int, 1)
++// CHECK: None(PchCount)
++// CHECK: hasValue(pch_none_alias())
++
++
+diff --git a/clang/test/ObjC3/AST/result-expressions-pch.mm b/clang/test/ObjC3/AST/result-expressions-pch.mm
+new file mode 100644
+index 000000000..ae03be451
+--- /dev/null
++++ b/clang/test/ObjC3/AST/result-expressions-pch.mm
+@@ -0,0 +1,14 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -emit-pch -o %t.pch %S/Inputs/result-expressions-pch.h
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -include-pch %t.pch -ast-print %s | FileCheck %s
++
++void consume_pch_result();
++
++// CHECK: using PchAliasResult = Result(PchSuccess, PchFailure);
++// CHECK: using PchCanonicalResult = Result(int, long);
++// CHECK: Ok(PchSuccess, PchFailure, 0)
++// CHECK: Err(PchSuccess, PchFailure, 0L)
++// CHECK: isOk(pch_err())
++// CHECK: Ok(void, void, (void)0)
++// CHECK: Err(void, void, (void)0)
++
++
+diff --git a/clang/test/ObjC3/AST/try-throw-pch.mm b/clang/test/ObjC3/AST/try-throw-pch.mm
+new file mode 100644
+index 000000000..4c0263a52
+--- /dev/null
++++ b/clang/test/ObjC3/AST/try-throw-pch.mm
+@@ -0,0 +1,17 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -emit-pch -o %t.pch %S/Inputs/try-throw-pch.h
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -include-pch %t.pch -ast-print %s | FileCheck %s
++
++void consume_try_throw_pch();
++
++int pch_template_use() __objc3_throws(PchError) {
++  return __objc3_try(pch_template_propagate(pch_typed_call));
++}
++
++// Verify the PCH restores all three typed-try kinds and ObjC3 throw separately
++// from native C++ exception statements.
++// CHECK: inline int pch_propagate() throws(PchError)
++// CHECK: tryValue(pch_typed_call())
++// CHECK: tryOptional(pch_typed_call())
++// CHECK: tryForce(pch_typed_call())
++// CHECK: throwError(error);
++// CHECK: pch_template_propagate
+diff --git a/clang/test/ObjC3/AST/typed-error-native-consumers-pch.mm b/clang/test/ObjC3/AST/typed-error-native-consumers-pch.mm
+new file mode 100644
+index 000000000..537b1abdd
+--- /dev/null
++++ b/clang/test/ObjC3/AST/typed-error-native-consumers-pch.mm
+@@ -0,0 +1,17 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -emit-pch %S/Inputs/typed-error-native-consumers-pch.h -o %t.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -include-pch %t.pch -fsyntax-only %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -ast-dump %S/Inputs/typed-error-native-consumers-pch.h | FileCheck %s
++// CHECK: ObjC3TryExpr{{.*}} operation=propagate
++// CHECK: ObjC3TryExpr{{.*}} operation=propagate
++// CHECK: ObjC3TryExpr{{.*}} operation=optionalize
++// CHECK: ObjC3TryExpr{{.*}} operation=force
++// CHECK: ObjC3DoCatchStmt
++// CHECK: ObjC3CatchStmt
++// CHECK: VarDecl {{.*}} first 'PCHError'
++// CHECK: ObjC3CatchStmt
++
++void instantiate_after_pch() {
++  int (*fn)() __objc3_throws(PCHError) = pch_typed_call;
++  (void)__objc3_try_force(pch_dependent_try<PCHError>(fn));
++  pch_ordered_handlers();
++}
+diff --git a/clang/test/ObjC3/AST/typed-error-native-consumers.mm b/clang/test/ObjC3/AST/typed-error-native-consumers.mm
+new file mode 100644
+index 000000000..806d7622b
+--- /dev/null
++++ b/clang/test/ObjC3/AST/typed-error-native-consumers.mm
+@@ -0,0 +1,36 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -ast-dump %s | FileCheck %s --check-prefix=AST
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -ast-print %s | FileCheck %s --check-prefix=PRINT
++
++struct Error {};
++int typed_call() __objc3_throws(Error);
++int native_nothrow_typed_call() noexcept __objc3_throws(Error);
++
++int exercise_try_kinds() __objc3_throws(Error) {
++  int direct = __objc3_try(typed_call());
++  __objc3_optional(int) optional = __objc3_try_optional(typed_call());
++  int forced = __objc3_try_force(typed_call());
++  return direct + __objc3_has_value(optional) + forced;
++}
++
++void exercise_handler_tree() {
++  __objc3_do {
++    __objc3_throw(Error{});
++  } __objc3_catch(Error error) {
++    (void)error;
++  } __objc3_catch {
++  }
++}
++
++// AST: ObjC3TryExpr{{.*}} operation=propagate
++// AST: ObjC3TryExpr{{.*}} operation=optionalize
++// AST: ObjC3TryExpr{{.*}} operation=force
++// AST: ObjC3DoCatchStmt{{.*}} catch_clauses=2
++// AST: ObjC3CatchStmt{{.*}} catch_type= 'Error'
++// AST: VarDecl {{.*}} error 'Error'
++// AST: ObjC3CatchStmt{{.*}} catch_all
++// PRINT: tryValue(typed_call())
++// PRINT: tryOptional(typed_call())
++// PRINT: tryForce(typed_call())
++// PRINT: catch(Error error)
++// PRINT: catch {
++
+diff --git a/clang/test/ObjC3/Parser/Inputs/objc3-type-constructors.h b/clang/test/ObjC3/Parser/Inputs/objc3-type-constructors.h
+new file mode 100644
+index 000000000..c64e0415a
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/Inputs/objc3-type-constructors.h
+@@ -0,0 +1,3 @@
++typedef int HeaderScalar;
++typedef __objc3_optional(HeaderScalar) HeaderOptional;
++typedef __objc3_result(void, HeaderScalar) HeaderResult;
+diff --git a/clang/test/ObjC3/Parser/Inputs/objc3-type-consumer.mm b/clang/test/ObjC3/Parser/Inputs/objc3-type-consumer.mm
+new file mode 100644
+index 000000000..dd2a58a72
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/Inputs/objc3-type-consumer.mm
+@@ -0,0 +1,1 @@
++HeaderOptional get_header_optional(HeaderResult value);
+diff --git a/clang/test/ObjC3/Parser/type-constructors.m b/clang/test/ObjC3/Parser/type-constructors.m
+new file mode 100644
+index 000000000..92c094204
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/type-constructors.m
+@@ -0,0 +1,49 @@
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fsyntax-only %s
++
++@interface Payload
++@end
++
++@interface Optional<__covariant ElementType>
++@end
++
++@interface Result<__covariant SuccessType, __covariant ErrorType>
++@end
++
++Optional<Payload *> *ordinaryOptionalGeneric;
++Result<Payload *, Payload *> *ordinaryResultGeneric;
++
++typedef int optional;
++typedef int result;
++optional legacyOptionalWord;
++result legacyResultWord;
++
++// The C-compatible declaration and Objective-C method-specifier paths use the
++// same extension type grammar without requiring C++.
++typedef __objc3_optional(int) ObjC3OptionalInt;
++typedef __objc3_result(int, void) ObjC3ResultInt;
++struct ObjC3CarrierMembers {
++  ObjC3OptionalInt optionalField;
++  ObjC3ResultInt resultField;
++};
++ObjC3OptionalInt c_compatible_result(ObjC3ResultInt input);
++void c_compatible_local(void) {
++  ObjC3OptionalInt local;
++  (void)local;
++}
++
++#define optional(x) (x)
++#define result(x) (x)
++int lowercase_macro_names_remain_macros(void) {
++  return optional(1) + result(2);
++}
++
++@interface SelectorNames
++- (id)optional:(id)value result:(id)error;
++- (id)Optional:(id)value Result:(id)error;
++- (ObjC3OptionalInt)optionalCarrier;
++- (void)consumeResult:(ObjC3ResultInt)value;
++@end
++
++id send_legacy_selectors(SelectorNames *object, id value, id error) {
++  return [object optional:value result:error];
++}
+diff --git a/clang/test/ObjC3/Parser/type-constructors.mm b/clang/test/ObjC3/Parser/type-constructors.mm
+new file mode 100644
+index 000000000..81b2af170
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/type-constructors.mm
+@@ -0,0 +1,54 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -ast-dump %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -ast-print %s | FileCheck %s --check-prefix=PRINT
++
++template <class T> struct Optional {};
++template <class T, class E> struct Result {};
++
++typedef int Scalar;
++typedef __objc3_optional(Scalar) OptionalScalar;
++typedef __objc3_result(Scalar, const char *) ResultScalar;
++
++// The child is canonicalized for carrier identity while typedef spelling stays
++// available through TypeSourceInfo.
++__objc3_optional(Scalar) canonical_optional(void);
++__objc3_optional(int) canonical_optional(void);
++__objc3_result(Scalar, const char *) canonical_result(void);
++__objc3_result(int, const char *) canonical_result(void);
++
++// `void` is valid source payload syntax on either Result arm and Optional's
++// tag-only form; payload-shape decisions belong to Sema, not the parser.
++typedef __objc3_optional(void) OptionalVoid;
++typedef __objc3_result(void, int) ResultVoidSuccess;
++typedef __objc3_result(int, void) ResultVoidError;
++typedef __objc3_result(void, void) ResultVoidBoth;
++
++// A pointer is a materialized payload shape in this parser slice. Function and
++// array abstract declarators are covered only by the grammar/recovery fixture;
++// their carrier admission awaits the Sema shape policy.
++typedef __objc3_optional(int *) OptionalPointer;
++typedef __objc3_result(__objc3_optional(int),
++                       __objc3_result(void, OptionalScalar)) NestedCarriers;
++
++template <class T> using OptionalT = __objc3_optional(T);
++template <class E> using VoidSuccessResult = __objc3_result(void, E);
++OptionalT<int> dependent_template_use;
++VoidSuccessResult<int> dependent_result_use;
++
++// The constructor spellings are distinct from ordinary C++ class templates.
++Optional<int> ordinaryOptional;
++Result<int, long> ordinaryResult;
++
++// Ordinary macros remain preprocessing macros. A replacement that expands to
++// the reserved implementation spelling is parsed as the extension type.
++#define OPTIONAL_TYPE __objc3_optional
++#define RESULT_TYPE __objc3_result
++#define OptionalCall(x) (x)
++#define ResultCall(x) (x)
++typedef OPTIONAL_TYPE(int) MacroOptional;
++typedef RESULT_TYPE(void, int) MacroResult;
++int macro_names_remain_macros = OptionalCall(1) + ResultCall(2);
++
++// CHECK: ObjC3OptionalType
++// CHECK: ObjC3ResultType
++// PRINT: Optional(
++// PRINT: Result(
+diff --git a/clang/test/ObjC3/Parser/type-contexts.mm b/clang/test/ObjC3/Parser/type-contexts.mm
+new file mode 100644
+index 000000000..ef50d1a5b
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/type-contexts.mm
+@@ -0,0 +1,40 @@
++// RUN: %clang -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only %s
++
++// Direct textual inclusion complements the PCH round-trip fixture.
++#include "Inputs/objc3-type-constructors.h"
++#include <typeinfo>
++
++#define O3_OPTIONAL __objc3_optional
++#define O3_RESULT __objc3_result
++
++// A macro may deliberately expand to the reserved constructor spelling; the
++// preprocessor runs normally before the parser makes the type decision.
++typedef O3_RESULT(O3_OPTIONAL(HeaderScalar), int) MacroNestedCarrier;
++
++struct CxxMemberContext {
++  __objc3_optional(int) field;
++  __objc3_result(int, void) resultField;
++};
++
++void cxxLocalAndTypeIdContexts() {
++  __objc3_optional(int) local;
++  __objc3_result(int, void) resultLocal;
++  (void)sizeof(__objc3_optional(int));
++  (void)sizeof(__objc3_result(int, void));
++  auto *castTarget = static_cast<__objc3_optional(int) *>(nullptr);
++  (void)castTarget;
++  (void)typeid(__objc3_result(int, void));
++  (void)local;
++  (void)resultLocal;
++}
++
++// Parse the same declarations through Objective-C's dedicated method type
++// grammar, including macro aliases and nested constructors in selector types.
++@interface ObjCMethodTypeContexts
++- (__objc3_optional(int))optionalValue;
++- (void)consumeResult:(__objc3_result(int, void))value;
++- (MacroNestedCarrier)consumeNested:(O3_RESULT(O3_OPTIONAL(int), void))value;
++@end
++
++// The C-compatible declaration and typedef path is exercised in a pure
++// Objective-C translation unit by type-constructors.m.
+diff --git a/clang/test/ObjC3/Parser/type-declarator-grammar.mm b/clang/test/ObjC3/Parser/type-declarator-grammar.mm
+new file mode 100644
+index 000000000..c275b045c
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/type-declarator-grammar.mm
+@@ -0,0 +1,14 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -verify %s
++
++// These deliberately incomplete constructors reach the parser's closing-
++// delimiter check after ParseTypeName has parsed the nested abstract
++// declarators. They test grammar/recovery only: they do not construct carrier
++// types or claim that function/array payloads are admitted by Sema.
++typedef __objc3_optional(int (*)(double, int) MissingFunctionClose;
++// expected-error@-1 {{expected ')'}}
++// expected-note@-2 {{to match this '('}}
++typedef __objc3_result(int[4], int MissingArrayClose;
++// expected-error@-1 {{expected ')'}}
++// expected-note@-2 {{to match this '('}}
++
++typedef __objc3_optional(int) RecoveredAfterDeclaratorError;
+diff --git a/clang/test/ObjC3/Parser/type-pch.mm b/clang/test/ObjC3/Parser/type-pch.mm
+new file mode 100644
+index 000000000..3d9068845
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/type-pch.mm
+@@ -0,0 +1,5 @@
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fobjc-version=3 -emit-pch -o %t %S/Inputs/objc3-type-constructors.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -include-pch %t -ast-print %S/Inputs/objc3-type-consumer.mm | FileCheck %s
++
++// CHECK: Optional(
++// CHECK: Result(
+diff --git a/clang/test/ObjC3/Parser/type-recovery.mm b/clang/test/ObjC3/Parser/type-recovery.mm
+new file mode 100644
+index 000000000..a5c7b2fb5
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/type-recovery.mm
+@@ -0,0 +1,11 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -verify %s
++
++typedef __objc3_optional int MissingOpen; // expected-error {{expected}}
++typedef __objc3_result(int) MissingComma; // expected-error {{expected}}
++typedef __objc3_optional() MissingPayload; // expected-error {{expected}}
++
++typedef __objc3_optional(int) RecoveredOptional;
++typedef __objc3_result(void, int) RecoveredResult;
++
++RecoveredOptional recovered_optional;
++RecoveredResult recovered_result;
+diff --git a/clang/test/ObjC3/AST/Inputs/carrier-heap-pch.h b/clang/test/ObjC3/AST/Inputs/carrier-heap-pch.h
+new file mode 100644
+index 000000000..8a4112677
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/carrier-heap-pch.h
+@@ -0,0 +1,17 @@
++typedef __objc3_optional(id) Strong;
++typedef __objc3_optional(id __weak) Weak;
++struct HeapRecord { int marker; Strong value; Weak weak; Strong values[2]; };
++__attribute__((objc_root_class))
++@interface HeapBox { Class isa;
++@public
++  Strong _value;
++  Weak _weak;
++  struct HeapRecord _record;
++  Strong _values[2];
++  id __weak _nativeWeak;
++}
++@property(nonatomic) Strong value;
++@property(nonatomic) Weak weak;
++@property(nonatomic) struct HeapRecord record;
++- (struct HeapRecord)echo:(struct HeapRecord)record;
++@end
+diff --git a/clang/test/ObjC3/AST/carrier-heap-pch.mm b/clang/test/ObjC3/AST/carrier-heap-pch.mm
+new file mode 100644
+index 000000000..16e387dff
+--- /dev/null
++++ b/clang/test/ObjC3/AST/carrier-heap-pch.mm
+@@ -0,0 +1,10 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++ -std=c++20 -fcxx-exceptions -emit-pch -o %t.pch %S/Inputs/carrier-heap-pch.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++ -std=c++20 -fcxx-exceptions -include-pch %t.pch -emit-llvm -o - %s | FileCheck %s
++// REQUIRES: x86-registered-target
++extern "C" int (^pch_shared(HeapBox *box))(void) {
++  __block struct HeapRecord value = box.record;
++  return ^int { return value.marker; };
++}
++// CHECK-LABEL: define{{.*}} ptr @pch_shared
++// CHECK: objc_msg_lookup_sender
++// CHECK: @_Block_object_dispose
+diff --git a/clang/test/ObjC3/AST/carrier-heap-print.m b/clang/test/ObjC3/AST/carrier-heap-print.m
+new file mode 100644
+index 000000000..7d286fe5a
+--- /dev/null
++++ b/clang/test/ObjC3/AST/carrier-heap-print.m
+@@ -0,0 +1,10 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c -ast-print %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c -ast-print %s > %t.m
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c -fsyntax-only -Werror %t.m
++#include "Inputs/carrier-heap-pch.h"
++// CHECK: @public
++// CHECK: Strong _value;
++// CHECK: Weak _weak;
++// CHECK: struct HeapRecord _record;
++// CHECK: Strong _values[2];
++// CHECK: __weak id _nativeWeak;
+diff --git a/clang/test/ObjC3/AST/carrier-property-match.mm b/clang/test/ObjC3/AST/carrier-property-match.mm
+new file mode 100644
+index 000000000..b6f0d18c7
+--- /dev/null
++++ b/clang/test/ObjC3/AST/carrier-property-match.mm
+@@ -0,0 +1,21 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++ -std=c++20 -fcxx-exceptions -emit-llvm -o %t.ll -verify %s
++// expected-no-diagnostics
++#include "Inputs/carrier-heap-pch.h"
++template<class T> int property_match(T box) {
++  int result = __objc3_match(box.value) {
++    case __objc3_case_some(let object) => object ? 1 : 0;
++    case __objc3_case_none => 0;
++  };
++  __objc3_match_stmt(box.weak) {
++    case __objc3_case_some(let object): { result += object ? 1 : 0; }
++    case __objc3_case_none: { }
++  }
++  return result;
++}
++int instantiate(HeapBox *box) { return property_match(box); }
++int concrete(HeapBox *box) {
++  return __objc3_match(box.value) {
++    case __objc3_case_some(let object) => 1;
++    case __objc3_case_none => 0;
++  };
++}
+diff --git a/clang/test/ObjC3/AST/public-carriers-print.mm b/clang/test/ObjC3/AST/public-carriers-print.mm
+new file mode 100644
+index 000000000..dd929173c
+--- /dev/null
++++ b/clang/test/ObjC3/AST/public-carriers-print.mm
+@@ -0,0 +1,16 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -ast-print %S/../Parser/public-carriers.mm -o %t
++// RUN: FileCheck %s < %t
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fsyntax-only %t
++// CHECK: typedef Optional(int) Maybe;
++// CHECK: typedef Result(int, long) Outcome;
++// CHECK: Optional(int) value = input ? Some(int, input) : None(int);
++// CHECK: copyValue(value)
++// CHECK: moveValue(copied)
++// CHECK: match (moved)
++// CHECK: case .Some(let payload)
++// CHECK: case .None
++// CHECK: match (outcome)
++// CHECK: case .Ok(let success)
++// CHECK: case .Err(let error)
++// CHECK: hasValue(value)
++// CHECK: isOk(outcome)
+diff --git a/clang/test/ObjC3/Parser/public-carriers-disabled.c b/clang/test/ObjC3/Parser/public-carriers-disabled.c
+new file mode 100644
+index 000000000..99dae3605
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/public-carriers-disabled.c
+@@ -0,0 +1,10 @@
++// RUN: %clang_cc1 -fsyntax-only -verify -x c -std=c17 %s
++// RUN: %clang_cc1 -fsyntax-only -verify -x c++ -std=c++20 %s
++// expected-no-diagnostics
++int Optional(int x) { return x; }
++int Result(int x, int y) { return x+y; }
++int Some(int x) { return x; }
++int None(int x) { return x; }
++int match(int x) { return x; }
++int hasValue(int x) { return x; }
++int ordinary(void) { return Optional(Some(3)) + Result(None(2),match(hasValue(1))); }
+diff --git a/clang/test/ObjC3/Parser/public-carriers.mm b/clang/test/ObjC3/Parser/public-carriers.mm
+new file mode 100644
+index 000000000..e9dd218f4
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/public-carriers.mm
+@@ -0,0 +1,50 @@
++// RUN: %clang_cc1 -fsyntax-only -verify -x objective-c -std=c17 -fobjc-version=3 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 %s
++// RUN: %clang_cc1 -fsyntax-only -verify -x objective-c++ -std=c++20 -fobjc-version=3 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 %s
++// RUN: %clang_cc1 -fsyntax-only -verify -x objective-c++ -std=c++23 -fobjc-version=3 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 %s
++// expected-no-diagnostics
++typedef Optional(int) Maybe;
++typedef Result(int, long) Outcome;
++typedef Optional(Outcome) Nested;
++int public_value(int input) {
++  Optional(int) value = input ? Some(int, input) : None(int);
++  Outcome outcome = input ? Ok(int, long, input) : Err(int, long, 2L);
++#ifdef __cplusplus
++  Maybe copied = copyValue(value);
++  Maybe moved = moveValue(copied);
++#else
++  Maybe moved = value;
++#endif
++  match(moved) {
++    case .Some(let payload): { input += payload; }
++    case .None: { input = 0; }
++  }
++  return match(outcome) {
++    case .Ok(let success) => success;
++    case .Err(let error) => (int)error;
++  } + hasValue(value) + isOk(outcome);
++}
++struct Names { int Some; int Optional; int match; };
++int ordinary_names(int input) {
++  int tryValue = input;
++  int tryOptional = input + 1;
++  int tryForce = input + 2;
++  return tryValue + tryOptional + tryForce;
++}
++#ifdef __cplusplus
++namespace Native {
++template<class T> struct Optional { T value; };
++int Some(int value);
++}
++int contextual(int input) {
++  Native::Optional<int> value = {input};
++  return Native::Some(value.value);
++}
++#endif
++
++int conditions(Maybe value, Outcome result) {
++  if (hasValue(value)) {
++    if ((isOk(result))) return 1;
++  }
++  while (hasValue(value)) { value = None(int); }
++  return !(hasValue(value)) && !(isOk(result));
++}
+diff --git a/clang/test/ObjC3/Parser/public-errors.mm b/clang/test/ObjC3/Parser/public-errors.mm
+new file mode 100644
+index 000000000..7fd0378d9
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/public-errors.mm
+@@ -0,0 +1,17 @@
++// RUN: %clang_cc1 -fsyntax-only -verify -x objective-c -std=c17 -fobjc-version=3 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 %s
++// RUN: %clang_cc1 -fsyntax-only -verify -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 %s
++// expected-no-diagnostics
++int checked(int value) throws(int) { if (value < 0) throwError(value); return value; }
++int forward(int value) throws(int) { return tryValue(checked(value)); }
++int recover(int value) {
++  int answer = 0;
++  handle { answer = tryValue(forward(value)); }
++  catch(int error) { answer = -error; }
++  Optional(int) maybe = tryOptional(checked(value));
++  return answer + hasValue(maybe);
++}
++#ifdef __cplusplus
++int native_unwind() {
++  try { throw 7; } catch (int value) { return value; }
++}
++#endif
+diff --git a/clang/test/ObjC3/AST/public-errors-pch.mm b/clang/test/ObjC3/AST/public-errors-pch.mm
+new file mode 100644
+index 000000000..8ef12431f
+--- /dev/null
++++ b/clang/test/ObjC3/AST/public-errors-pch.mm
+@@ -0,0 +1,12 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -emit-pch %S/../Parser/public-errors.mm -o %t.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -include-pch %t.pch -fsyntax-only %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -ast-print %S/../Parser/public-errors.mm -o %t.mm
++// RUN: FileCheck %s < %t.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fsyntax-only %t.mm
++// CHECK: int checked(int value) throws(int)
++// CHECK: throwError(value);
++// CHECK: return tryValue(checked(value));
++// CHECK: handle
++// CHECK: catch(int error)
++// CHECK: tryOptional(checked(value))
++int public_pch_entry() { return recover(-7); }
+diff --git a/clang/test/ObjC3/AST/native-async-pch.mm b/clang/test/ObjC3/AST/native-async-pch.mm
+new file mode 100644
+index 000000000..d2f7e566c
+--- /dev/null
++++ b/clang/test/ObjC3/AST/native-async-pch.mm
+@@ -0,0 +1,17 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -emit-pch -o %t %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -DBUILD_CONSUMER -include-pch %t -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#ifndef BUILD_CONSUMER
++#include "../CodeGen/Inputs/native-async-task.h"
++inline int persistent(int value) __objc3_async { return value; }
++inline id persistent_object(id value) __objc3_async { return value; }
++#else
++static_assert(__is_same(decltype(persistent(3)), objc3::task<int>));
++// CHECK: define{{.*}} void @_Z8consumerv(
++// CHECK: llvm.coro.id
++// CHECK: {{call|invoke}} void @_Z10persistenti(
++int consumer() __objc3_async { return __objc3_await persistent(3); }
++static_assert(__is_same(decltype(persistent_object((id)0)), objc3::task<id>));
++id object_consumer(id value) __objc3_async {
++  return __objc3_await persistent_object(value);
++}
++#endif
+diff --git a/clang/test/ObjC3/Parser/native-async-return.mm b/clang/test/ObjC3/Parser/native-async-return.mm
+new file mode 100644
+index 000000000..9c8b9fd6c
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/native-async-return.mm
+@@ -0,0 +1,22 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++#include "../CodeGen/Inputs/native-async-task.h"
++struct Explicit { explicit operator int() const; }; // expected-note {{explicit conversion function is not a candidate}}
++int explicit_conversion(Explicit value) __objc3_async {
++  return value; // expected-error {{no viable conversion}}
++}
++int missing_value() __objc3_async {
++  return; // expected-error {{native async task lowering requires}}
++}
++void unexpected_value() __objc3_async {
++  return 1; // expected-error {{native async task lowering requires}}
++}
++
++int defer_return() __objc3_async {
++  defer { return 1; } // expected-error {{cannot return from a defer statement}}
++  return 2;
++}
++int cleanup_dependency() __objc3_async;
++int defer_suspend() __objc3_async {
++  defer { __objc3_await cleanup_dependency(); } // expected-error {{cannot suspend from a defer statement}}
++  return 2;
++}
+diff --git a/clang/test/ObjC3/Parser/native-await-context.mm b/clang/test/ObjC3/Parser/native-await-context.mm
+new file mode 100644
+index 000000000..399627006
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/native-await-context.mm
+@@ -0,0 +1,24 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++#include "../CodeGen/Inputs/native-async-task.h"
++int regular() {
++  __objc3_await 1; // expected-error {{native await requires an async Objective-C or Objective-C++20/23 function context}}
++  return 0;
++}
++
++struct Worker {
++  int value(int) const __objc3_async;
++  int operator()(int) const __objc3_async;
++};
++int conditions(Worker &worker) __objc3_async {
++  using Member = int (Worker::*)(int) const __objc3_async;
++  Member member = &Worker::value;
++  // Tentative condition parsing must leave the reserved unary spelling intact.
++  if (__objc3_await (worker.*member)(2) != 42 || __objc3_await worker(3) != 43)
++    return 0;
++  while (__objc3_await worker.value(0)) break;
++  for (; __objc3_await (worker.*member)(0);) break;
++  switch (__objc3_await worker.value(2)) { case 2: break; }
++  __objc3_await (worker.*member)(2);
++  return 42;
++}
+diff --git a/clang/test/ObjC3/AST/task-result-type-traits.mm b/clang/test/ObjC3/AST/task-result-type-traits.mm
+new file mode 100644
+index 000000000..362fc86d1
+--- /dev/null
++++ b/clang/test/ObjC3/AST/task-result-type-traits.mm
+@@ -0,0 +1,19 @@
++// RUN: %clang_cc1 -std=c++20 -fblocks -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -std=c++23 -fblocks -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++// expected-no-diagnostics
++@class Object;
++@protocol Protocol
++@end
++using Block = int (^)(int);
++using VariadicBlock = int (^)(int, ...);
++struct Incomplete;
++struct Convertible { operator id(); };
++template<class T> constexpr bool object = __objc3_is_object_pointer(T);
++template<class T> constexpr bool block = __objc3_is_block_pointer(T);
++static_assert(object<id> && object<Class> && object<Object *>);
++static_assert(object<id<Protocol>> && object<Object *const>);
++static_assert(!object<Block> && !object<void *> && !object<Convertible>);
++static_assert(!object<Incomplete> && !object<decltype(nullptr)>);
++static_assert(block<Block> && block<VariadicBlock> && block<Block const>);
++static_assert(!block<id> && !block<void *> && !block<int (*)(int)>);
++static_assert(!block<Incomplete> && !block<Convertible> && !block<int>);
+diff --git a/clang/test/ObjC3/AST/native-async-checked-pch.mm b/clang/test/ObjC3/AST/native-async-checked-pch.mm
+new file mode 100644
+index 000000000..9c680a775
+--- /dev/null
++++ b/clang/test/ObjC3/AST/native-async-checked-pch.mm
+@@ -0,0 +1,28 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -emit-pch -o %t %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -DBUILD_CONSUMER -include-pch %t -emit-llvm -o - %s | FileCheck %s
++#ifndef BUILD_CONSUMER
++#include "../CodeGen/Inputs/native-async-task.h"
++@protocol Error @end
++@protocol PCHError <Error> @end
++inline int checked_persistent(id<PCHError> error)
++    __objc3_async __objc3_throws(id<PCHError>) {
++  if (error) __objc3_throw(error);
++  return 42;
++}
++inline int checked_forward(id<PCHError> error)
++    __objc3_async __objc3_throws(id<PCHError>) {
++  return __objc3_try(__objc3_await checked_persistent(error));
++}
++template<class T> int checked_template(T error)
++    __objc3_async __objc3_throws(id<PCHError>) {
++  return __objc3_try(__objc3_await checked_forward(error));
++}
++#else
++// CHECK: __objc3_async_checked
++// CHECK: __objc3_task_error_create
++int checked_consumer(id<PCHError> error) __objc3_async {
++  __objc3_do {
++    return __objc3_try(__objc3_await checked_template(error));
++  } __objc3_catch(id<PCHError>) { return 96; }
++}
++#endif
+diff --git a/clang/test/ObjC3/AST/native-async-cxx-pch.mm b/clang/test/ObjC3/AST/native-async-cxx-pch.mm
+new file mode 100644
+index 000000000..a0729465d
+--- /dev/null
++++ b/clang/test/ObjC3/AST/native-async-cxx-pch.mm
+@@ -0,0 +1,22 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -emit-pch -o %t %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -include-pch %t -emit-llvm -o /dev/null -verify %s
++// expected-no-diagnostics
++#ifndef NATIVE_CXX_PCH
++#define NATIVE_CXX_PCH
++#include "../CodeGen/Inputs/native-async-task.h"
++@protocol Error @end
++struct Worker {
++  int checked(bool fail, id<Error> error) const __objc3_async __objc3_throws(id<Error>) {
++    if (fail) __objc3_throw(error);
++    return 42;
++  }
++  template <class T> T echo(T value) const __objc3_async { return value; }
++  int operator()(int value) const __objc3_async { return value; }
++};
++using Member = int (Worker::*)(bool, id<Error>) const __objc3_async __objc3_throws(id<Error>);
++#else
++int invoke(Worker &w, Member member, id<Error> error) __objc3_async __objc3_throws(id<Error>) {
++  int result = __objc3_try(__objc3_await (w.*member)(false, error));
++  return result + __objc3_await w.echo(42) + __objc3_await w(7);
++}
++#endif
+diff --git a/clang/test/ObjC3/AST/native-async-value-pch.mm b/clang/test/ObjC3/AST/native-async-value-pch.mm
+new file mode 100644
+index 000000000..bccba16ec
+--- /dev/null
++++ b/clang/test/ObjC3/AST/native-async-value-pch.mm
+@@ -0,0 +1,22 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -emit-pch -o %t %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -include-pch %t -emit-llvm -o /dev/null -verify %s
++// expected-no-diagnostics
++#ifndef NATIVE_VALUE_PCH
++#define NATIVE_VALUE_PCH
++#include "../CodeGen/Inputs/native-async-task.h"
++@protocol Error @end
++struct Value { int number; Value() = delete; Value(int); Value(const Value &); ~Value(); };
++Value produce(bool) __objc3_async __objc3_throws(id<Error>);
++template<class T> T relay(bool fail) __objc3_async __objc3_throws(id<Error>) {
++  return __objc3_try(__objc3_await produce(fail));
++}
++inline int optional(bool fail) __objc3_async {
++  auto value = __objc3_try_optional(__objc3_await produce(fail));
++  return __objc3_has_value(value);
++}
++#else
++template Value relay<Value>(bool) __objc3_async __objc3_throws(id<Error>);
++Value invoke(bool fail) __objc3_async __objc3_throws(id<Error>) {
++  return __objc3_try(__objc3_await relay<Value>(fail));
++}
++#endif
+diff --git a/clang/test/ObjC3/AST/native-async-objc-method-pch.mm b/clang/test/ObjC3/AST/native-async-objc-method-pch.mm
+new file mode 100644
+index 000000000..da98f4ca5
+--- /dev/null
++++ b/clang/test/ObjC3/AST/native-async-objc-method-pch.mm
+@@ -0,0 +1,23 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -emit-pch -o %t %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -include-pch %t -emit-llvm -o /dev/null -verify %s
++// expected-no-diagnostics
++#ifndef METHOD_PCH
++#define METHOD_PCH
++#include "../CodeGen/Inputs/native-async-task.h"
++@protocol Error @end
++__attribute__((objc_root_class))
++@interface Worker <Error>
++- (int)value:(int)n __objc3_async __objc3_throws(id<Error>);
++@end
++inline int method_leaf(int n) __objc3_async { return n; }
++@implementation Worker
++- (int)value:(int)n __objc3_async __objc3_throws(id<Error>) {
++  if (n < 0) __objc3_throw((id<Error>)self);
++  return __objc3_await method_leaf(n);
++}
++@end
++#else
++int invoke(Worker *worker) __objc3_async __objc3_throws(id<Error>) {
++  return __objc3_try(__objc3_await [worker value:42]);
++}
++#endif
+diff --git a/clang/test/ObjC3/AST/native-async-block-pch.mm b/clang/test/ObjC3/AST/native-async-block-pch.mm
+new file mode 100644
+index 000000000..be658a600
+--- /dev/null
++++ b/clang/test/ObjC3/AST/native-async-block-pch.mm
+@@ -0,0 +1,27 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -emit-pch -o %t %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -include-pch %t -emit-llvm -o /dev/null -verify %s
++// expected-no-diagnostics
++#ifndef BLOCK_PCH
++#define BLOCK_PCH
++#include "../CodeGen/Inputs/native-async-task.h"
++@protocol Error @end
++using CheckedBlock = int (^)(id<Error>) __objc3_async __objc3_throws(id<Error>);
++inline int block_leaf(int n) __objc3_async { return n; }
++inline void body_in_pch(int bias) {
++  auto block = ^int(int delta) __objc3_async {
++    return bias + __objc3_await block_leaf(delta);
++  };
++  (void)block(2);
++  auto checked = ^int(id<Error> error) __objc3_async __objc3_throws(id<Error>) {
++    if (error) __objc3_throw(error);
++    return __objc3_await block_leaf(bias);
++  };
++  CheckedBlock same = checked;
++  (void)same;
++}
++#else
++int invoke(CheckedBlock block, id<Error> error) __objc3_async __objc3_throws(id<Error>) {
++  return __objc3_try(__objc3_await block(error));
++}
++void instantiate() { body_in_pch(40); }
++#endif
+diff --git a/clang/test/ObjC3/Parser/Inputs/guard-pch-consumer.mm b/clang/test/ObjC3/Parser/Inputs/guard-pch-consumer.mm
+new file mode 100644
+index 000000000..80604db66
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/Inputs/guard-pch-consumer.mm
+@@ -0,0 +1,7 @@
++// expected-no-diagnostics
++int pch_condition_consumer(GuardMaybe source) {
++  OBJC3_PCH_REQUIRE OBJC3_PCH_BIND first = source,
++      second = Some(int, first) else { return 0; }
++  return pch_guard(source, true) + pch_if_binding(source) +
++         pch_dependent_conditions(source) + first + second;
++}
+diff --git a/clang/test/ObjC3/Parser/Inputs/guard-pch.h b/clang/test/ObjC3/Parser/Inputs/guard-pch.h
+new file mode 100644
+index 000000000..d2fad4ad8
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/Inputs/guard-pch.h
+@@ -0,0 +1,33 @@
++#ifndef OBJC3_NATIVE_GUARD_PCH_H
++#define OBJC3_NATIVE_GUARD_PCH_H
++
++typedef Optional(int) GuardMaybe;
++
++inline int pch_guard(GuardMaybe source, bool flag) {
++  guard let first = source, second = Some(int, first),
++        flag, var third = Some(int, second) else { return 0; }
++  third += first;
++  return first + second + third;
++}
++
++inline int pch_if_binding(GuardMaybe source) {
++  if var first = source, second = Some(int, first) {
++    first += second;
++    return first;
++  } else {
++    return 0;
++  }
++}
++
++template <class T> int pch_dependent_conditions(T source) {
++  guard let first = source, second = source else { return 0; }
++  if let third = source, fourth = source {
++    return first + second + third + fourth;
++  }
++  return first + second;
++}
++
++#define OBJC3_PCH_REQUIRE guard
++#define OBJC3_PCH_BIND let
++
++#endif
+diff --git a/clang/test/ObjC3/Parser/guard-c-mode.m b/clang/test/ObjC3/Parser/guard-c-mode.m
+new file mode 100644
+index 000000000..ab4d2dba4
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/guard-c-mode.m
+@@ -0,0 +1,26 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c23 -fobjc-version=3 -fsyntax-only -verify %s
++// expected-no-diagnostics
++
++typedef Optional(int) Maybe;
++typedef __typeof__(hasValue(None(int))) Bool;
++Maybe make(int);
++void use(int);
++
++void native_c_conditions(Maybe source, Bool flag) {
++  guard let first = source, second = make(first),
++        flag, var third = make(second), fourth = make(third) else {
++    return;
++  }
++  third += fourth;
++  use(first + second + third + fourth);
++  if let local = make(first), dependent = make(local) {
++    use(local + dependent);
++  } else {
++    use(first);
++  }
++  if var local = make(second), dependent = make(local) {
++    local += dependent;
++    use(local);
++  }
++}
+diff --git a/clang/test/ObjC3/Parser/guard-conditions.mm b/clang/test/ObjC3/Parser/guard-conditions.mm
+new file mode 100644
+index 000000000..8bbe5bc89
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/guard-conditions.mm
+@@ -0,0 +1,57 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -ast-dump %s | FileCheck %s --check-prefix=AST
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -ast-print %s > %t.mm
++// RUN: FileCheck %s --check-prefix=PRINT < %t.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only %t.mm
++// expected-no-diagnostics
++
++typedef Optional(int) Maybe;
++Maybe next_value(int);
++bool check(int);
++void use(int);
++
++void ordered_bindings(Maybe source) {
++  guard let first = source, second = next_value(first),
++        check(second), var third = next_value(second), fourth = next_value(third)
++  else { return; }
++  third += first;
++  fourth += second;
++  use(first + second + third + fourth);
++}
++
++void assignment_after_boolean(Maybe source, bool flag) {
++  // A Boolean ends binding continuation. Assigning to the ordinary bool flag
++  // is a Boolean condition, rather than an attempt to bind a bool payload.
++  guard let value = source, check(value), (flag = check(value)) else { return; }
++  use(value);
++}
++
++void if_lists(Maybe source) {
++  if let first = source, second = next_value(first) {
++    use(first + second);
++  } else {
++    use(0);
++  }
++  if var first = source, second = next_value(first) {
++    first += second;
++    second += first;
++    use(first + second);
++  }
++}
++
++// AST-LABEL: FunctionDecl {{.*}} ordered_bindings
++// AST: ObjC3GuardStmt
++// AST: ObjC3BindingCondition
++// AST: ObjC3BindingCondition
++// AST: CallExpr
++// AST: ObjC3BindingCondition
++// AST: ObjC3BindingCondition
++// AST-LABEL: FunctionDecl {{.*}} assignment_after_boolean
++// AST: ObjC3GuardStmt
++// AST: BinaryOperator {{.*}} '='
++// AST-LABEL: FunctionDecl {{.*}} if_lists
++// AST: ObjC3IfBindingStmt
++// AST: ObjC3IfBindingStmt
++// PRINT: guard let first = source, let second = next_value(first), check(second), var third = next_value(second), var fourth = next_value(third) else
++// PRINT: if let first = source, second = next_value(first)
++// PRINT: if var first = source, second = next_value(first)
+diff --git a/clang/test/ObjC3/Parser/guard-contextual.mm b/clang/test/ObjC3/Parser/guard-contextual.mm
+new file mode 100644
+index 000000000..cfbce1951
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/guard-contextual.mm
+@@ -0,0 +1,69 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -ast-dump %s | FileCheck %s
++// expected-no-diagnostics
++
++bool guard(bool value) { return value; }
++bool let(bool value) { return value; }
++bool var(bool value) { return value; }
++struct Names { int guard, let, var; };
++
++int ordinary_identifiers(bool value) {
++  int let = 1;
++  int var = 2;
++  if (guard(value)) {
++    Names object = {let, var, 3};
++    if (object.guard)
++      goto guard;
++    goto let;
++  }
++guard:
++  if (value) goto var;
++let:
++  return let;
++var:
++  return var;
++}
++
++void contextual_boolean_names(bool value) {
++  guard let(value), var(value), guard(value) else { return; }
++}
++
++void contextual_bare_names(bool let, bool var) {
++  guard let, var else { return; }
++}
++
++#define guard(value) (value)
++#define let(value) (value)
++#define var(value) (value)
++bool ordinary_function_macros(bool value) {
++  return guard(let(var(value)));
++}
++#undef guard
++#undef let
++#undef var
++
++#define REQUIRE guard
++#define BIND let
++#define NAMED(name) name
++#define SOURCE(value) Some(int, value)
++int expanded_binding_heads(int input) {
++  REQUIRE BIND NAMED(first) = SOURCE(input), second = SOURCE(first) else {
++    return 0;
++  }
++  if BIND third = SOURCE(second), fourth = SOURCE(third) {
++    return first + second + third + fourth;
++  }
++  return 0;
++}
++
++// CHECK-LABEL: FunctionDecl {{.*}} ordinary_identifiers
++// CHECK-NOT: ObjC3GuardStmt
++// CHECK-LABEL: FunctionDecl {{.*}} contextual_boolean_names
++// CHECK: ObjC3GuardStmt
++// CHECK-LABEL: FunctionDecl {{.*}} contextual_bare_names
++// CHECK: ObjC3GuardStmt
++// CHECK-LABEL: FunctionDecl {{.*}} ordinary_function_macros
++// CHECK-NOT: ObjC3GuardStmt
++// CHECK-LABEL: FunctionDecl {{.*}} expanded_binding_heads
++// CHECK: ObjC3GuardStmt
++// CHECK: ObjC3IfBindingStmt
+diff --git a/clang/test/ObjC3/Parser/guard-disabled.mm b/clang/test/ObjC3/Parser/guard-disabled.mm
+new file mode 100644
+index 000000000..126a5bea5
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/guard-disabled.mm
+@@ -0,0 +1,17 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fsyntax-only -verify %s
++// expected-no-diagnostics
++
++bool guard(bool value) { return value; }
++bool let(bool value) { return value; }
++bool var(bool value) { return value; }
++void ordinary_names(bool value) {
++  bool local = guard(let(var(value)));
++  if (local) goto guard;
++guard:
++  local = true;
++}
++
++#define guard(value) (value)
++#define let(value) (value)
++#define var(value) (value)
++bool macro_names(bool value) { return guard(let(var(value))); }
+diff --git a/clang/test/ObjC3/Parser/guard-lookahead.mm b/clang/test/ObjC3/Parser/guard-lookahead.mm
+new file mode 100644
+index 000000000..1af590702
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/guard-lookahead.mm
+@@ -0,0 +1,48 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -verify %s
++// expected-no-diagnostics
++
++template <class T, class U> bool predicate(T value, U other) {
++  return value == other;
++}
++struct Truth {
++  bool value;
++  bool get() const { return value; }
++};
++struct Obj;
++@interface Receiver
++- (bool)check:(int)value other:(int)other;
++@end
++
++void nested_delimiters(Receiver *receiver, bool flag) {
++  guard ([&] {
++    if (flag) { return true; } else { return false; }
++  }()), predicate<int, int>(1, 1), Truth{flag}.get(),
++  [receiver check:1 other:2] else { return; }
++
++  guard ({ bool local = flag; if (!flag) local = true; local; }) else {
++    return;
++  }
++  guard []() -> bool {
++    int values[2] = {1, 2};
++    return values[0] < values[1];
++  }() else { return; }
++}
++
++bool guard(bool);
++void ordinary_calls_stop_at_semicolon(bool flag) {
++  guard([&] { if (flag) return true; else return false; }());
++  if (flag) {
++    guard(flag);
++  } else {
++    guard(false);
++  }
++}
++
++// Template commas and a braced initializer are parsed by the ordinary
++// expression parser after lookahead identifies the outer else.
++void bound_template_expressions() {
++  guard let value = Some(int, predicate<int, int>(1, 1)),
++        another = Some(int, Truth{true}.get()) else { return; }
++  (void)value;
++  (void)another;
++}
+diff --git a/clang/test/ObjC3/Parser/guard-pch.mm b/clang/test/ObjC3/Parser/guard-pch.mm
+new file mode 100644
+index 000000000..56f6492fe
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/guard-pch.mm
+@@ -0,0 +1,22 @@
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fobjc-version=3 -emit-pch -o %t.pch %S/Inputs/guard-pch.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -include-pch %t.pch -fsyntax-only -verify %S/Inputs/guard-pch-consumer.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -include-pch %t.pch -ast-dump-all %S/Inputs/guard-pch-consumer.mm | FileCheck %s --check-prefix=AST
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -include-pch %t.pch -ast-print %S/Inputs/guard-pch-consumer.mm > %t.mm
++// RUN: FileCheck %s --check-prefix=PRINT < %t.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only %t.mm
++
++// AST-LABEL: FunctionDecl {{.*}} pch_guard
++// AST: ObjC3GuardStmt {{.*}} conditions=4
++// AST-LABEL: FunctionDecl {{.*}} pch_if_binding
++// AST: ObjC3IfBindingStmt {{.*}} conditions=2
++// AST-LABEL: FunctionTemplateDecl {{.*}} pch_dependent_conditions
++// AST: ObjC3GuardStmt {{.*}} conditions=2
++// AST: ObjC3IfBindingStmt {{.*}} conditions=2
++// AST: FunctionDecl {{.*}} pch_dependent_conditions
++// AST: ObjC3GuardStmt {{.*}} conditions=2
++// AST: ObjC3IfBindingStmt {{.*}} conditions=2
++// AST-LABEL: FunctionDecl {{.*}} pch_condition_consumer
++// AST: ObjC3GuardStmt {{.*}} conditions=2
++// PRINT: guard let first = source, let second = Some(int, first), flag, var third = Some(int, second) else
++// PRINT: if var first = source, second = Some(int, first)
++// PRINT: if let third = source, fourth = source
+diff --git a/clang/test/ObjC3/Parser/guard-recovery.mm b/clang/test/ObjC3/Parser/guard-recovery.mm
+new file mode 100644
+index 000000000..442e604ec
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/guard-recovery.mm
+@@ -0,0 +1,91 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -verify %s
++
++typedef Optional(int) Maybe;
++void use(int);
++
++void missing_else(Maybe source) {
++  guard let rejected = source { // expected-error {{expected 'else' after guard conditions}}
++    return;
++  }
++  use(rejected); // expected-error {{use of undeclared identifier 'rejected'}}
++  use(1);
++}
++
++void boolean_missing_else(bool flag) {
++  guard true { return; } // expected-error {{expected 'else' after guard conditions}}
++  guard !flag; // expected-error {{expected 'else' after guard conditions}}
++  use(1);
++}
++
++void missing_guard_compound(Maybe source) {
++  guard let rejected = source else use(0); // expected-error {{expected a compound statement after guard 'else'}}
++  use(rejected); // expected-error {{use of undeclared identifier 'rejected'}}
++  use(1);
++}
++
++void missing_if_compound(Maybe source) {
++  if let rejected = source use(0); // expected-error {{expected ',' or '{' after condition}} expected-error {{expected a compound statement after if binding conditions}}
++  use(rejected); // expected-error {{use of undeclared identifier 'rejected'}}
++  use(1);
++}
++
++void missing_then_before_else(Maybe source) {
++  if let rejected = source else { // expected-error {{expected a compound statement after if binding conditions}}
++    use(0);
++  }
++  use(rejected); // expected-error {{use of undeclared identifier 'rejected'}}
++}
++
++void missing_if_else_compound(Maybe source) {
++  if let value = source { use(value); }
++  else use(0); // expected-error {{expected a compound statement after if binding 'else'}}
++  use(1);
++}
++
++void missing_equal(Maybe source) {
++  guard let rejected source else { return; } // expected-error {{expected '='}}
++  if let rejected source { use(0); } // expected-error {{expected '='}}
++  use(1);
++}
++
++void missing_source(Maybe source) {
++  guard let rejected = else { return; } // expected-error {{expected expression}}
++  if let rejected = { use(0); } // expected-error {{expected expression}}
++  use(1);
++}
++
++void empty_lists() {
++  guard else { return; } // expected-error {{expected a condition in guard statement}}
++  guard true, else { return; } // expected-error {{expected a condition in guard statement}}
++  guard true, , true else { return; } // expected-error {{expected a condition in guard statement}}
++  if let { use(0); } // expected-error {{expected an optional binding of the form 'identifier = expression'}}
++  use(1);
++}
++
++void repeated_if_heads(Maybe source) {
++  if let first = source, let second = source { // expected-error {{a binding list has only one 'let' or 'var' introducer}}
++    use(first + second);
++  }
++  if var first = source, var second = source { // expected-error {{a binding list has only one 'let' or 'var' introducer}}
++    use(first + second);
++  }
++  if let first = source, 42 { // expected-error {{condition must have Bool type}}
++    use(first);
++  }
++  use(1);
++}
++
++void missing_separator(Maybe source) {
++  guard let first = source let second = source else { return; } // expected-error {{expected ',' or 'else' after condition}}
++  if let first = source second = source { use(0); } // expected-error {{expected ',' or '{' after condition}}
++  use(1);
++}
++
++void preserve_enclosing_compound(Maybe source) {
++  if let rejected = // expected-error@+1 {{expected expression}} expected-error@+1 {{expected a compound statement after if binding conditions}}
++}
++
++void following_function_remains_parseable(Maybe source) {
++  guard let accepted = source else { return; }
++  use(accepted);
++}
+diff --git a/clang/test/ObjC3/Parser/guard-scopes.mm b/clang/test/ObjC3/Parser/guard-scopes.mm
+new file mode 100644
+index 000000000..02fe20813
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/guard-scopes.mm
+@@ -0,0 +1,62 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -verify %s
++
++typedef Optional(int) Maybe;
++void use(int);
++
++void scope_after_success(Maybe source) {
++  guard let persistent = source else { return; }
++  use(persistent);
++  {
++    guard var inner = Some(int, persistent) else { return; }
++    inner += persistent;
++    use(inner);
++  }
++  use(inner); // expected-error {{use of undeclared identifier 'inner'}}
++}
++
++void guard_failure_has_outer_lookup(Maybe source) {
++  int failure_value = 4;
++  {
++    guard let failure_value = source else {
++      // The newly bound failure_value is not in this branch. Assignment is
++      // valid because lookup reaches the mutable outer declaration instead.
++      failure_value += 1;
++      return;
++    }
++    use(failure_value);
++  }
++}
++
++void unavailable_in_guard_failure(Maybe source) {
++  guard let only_in_success = source else {
++    use(only_in_success); // expected-error {{use of undeclared identifier 'only_in_success'}}
++    return;
++  }
++}
++
++void if_binding_scope(Maybe source) {
++  int outer = 7;
++  if let outer = source, later = Some(int, outer) {
++    use(outer + later);
++  } else {
++    outer += 1;
++  }
++  outer += 1;
++  if let only_in_success = source { use(only_in_success); }
++  else { use(only_in_success); } // expected-error {{use of undeclared identifier 'only_in_success'}}
++  use(only_in_success); // expected-error {{use of undeclared identifier 'only_in_success'}}
++}
++
++void boolean_resets_bare_binding(Maybe source) {
++  Maybe assignment = None(int);
++  guard let first = source, true, assignment = Some(int, first) // expected-error {{condition must have Bool type}}
++  else { return; }
++}
++
++void explicit_head_restarts_binding(Maybe source) {
++  guard let first = source, true, var second = Some(int, first),
++        third = Some(int, second) else { return; }
++  second += first;
++  third += second;
++  use(first + second + third);
++}
+diff --git a/clang/test/ObjC3/Parser/guard-template.mm b/clang/test/ObjC3/Parser/guard-template.mm
+new file mode 100644
+index 000000000..34da6ee82
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/guard-template.mm
+@@ -0,0 +1,63 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -ast-dump %s | FileCheck %s
++// expected-no-diagnostics
++
++template <class T> bool accepts(T value) { return value != 0; }
++
++template <class T> int dependent_guard(T source) {
++  guard let first = source, second = source, accepts(first),
++        var third = source, fourth = source else { return 0; }
++  third += first;
++  fourth += second;
++  if let local = source, next = source {
++    return local + next + third + fourth;
++  } else {
++    return first + second;
++  }
++}
++
++template <class T> int dependent_if(T source) {
++  if var first = source, second = source {
++    first += second;
++    auto capture = [first] { return first; };
++    return capture();
++  }
++  return 0;
++}
++
++template <class T> int binding_used_in_later_lambda(T source) {
++  guard let first = source,
++        second = Some(int, [&] { return first; }()) else { return 0; }
++  return second;
++}
++
++template <class T> struct Holder {
++  int run(T source) {
++    guard let first = source else { return 0; }
++    if var second = source, third = source {
++      second += first + third;
++      return second;
++    }
++    return first;
++  }
++};
++
++template int dependent_guard<Optional(int)>(Optional(int));
++template int dependent_if<Optional(int)>(Optional(int));
++template int binding_used_in_later_lambda<Optional(int)>(Optional(int));
++template struct Holder<Optional(int)>;
++
++// CHECK-LABEL: FunctionTemplateDecl {{.*}} dependent_guard
++// CHECK: ObjC3GuardStmt {{.*}} conditions=5
++// CHECK: ObjC3IfBindingStmt {{.*}} conditions=2
++// CHECK: FunctionDecl {{.*}} dependent_guard
++// CHECK: ObjC3GuardStmt {{.*}} conditions=5
++// CHECK: ObjC3IfBindingStmt {{.*}} conditions=2
++// CHECK-LABEL: FunctionTemplateDecl {{.*}} dependent_if
++// CHECK: ObjC3IfBindingStmt {{.*}} conditions=2
++// CHECK: FunctionDecl {{.*}} dependent_if
++// CHECK: ObjC3IfBindingStmt {{.*}} conditions=2
++// CHECK-LABEL: FunctionTemplateDecl {{.*}} binding_used_in_later_lambda
++// CHECK: ObjC3GuardStmt {{.*}} conditions=2
++// CHECK: FunctionDecl {{.*}} binding_used_in_later_lambda
++// CHECK: ObjC3GuardStmt {{.*}} conditions=2
+diff --git a/clang/test/ObjC3/AST/Inputs/condition-module/conditions.h b/clang/test/ObjC3/AST/Inputs/condition-module/conditions.h
+new file mode 100644
+index 000000000..d3dacc3b0
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/condition-module/conditions.h
+@@ -0,0 +1,21 @@
++#ifndef OBJC3_CONDITION_MODULE_H
++#define OBJC3_CONDITION_MODULE_H
++
++typedef Optional(int) ModuleMaybe;
++
++static inline int imported_guard(ModuleMaybe source, bool enabled) {
++  guard let first = source, enabled,
++        var second = Some(int, first + 1) else { return -1; }
++  second += first;
++  return second;
++}
++
++static inline int imported_if(ModuleMaybe source) {
++  if let first = source, second = Some(int, first + 1) {
++    return first + second;
++  } else {
++    return 0;
++  }
++}
++
++#endif
+diff --git a/clang/test/ObjC3/AST/Inputs/condition-module/module.modulemap b/clang/test/ObjC3/AST/Inputs/condition-module/module.modulemap
+new file mode 100644
+index 000000000..741c605cb
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/condition-module/module.modulemap
+@@ -0,0 +1,4 @@
++module ConditionBindings {
++  header "conditions.h"
++  export *
++}
+diff --git a/clang/test/ObjC3/AST/condition-json.mm b/clang/test/ObjC3/AST/condition-json.mm
+new file mode 100644
+index 000000000..54640f276
+--- /dev/null
++++ b/clang/test/ObjC3/AST/condition-json.mm
+@@ -0,0 +1,62 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -ast-dump=json %s | FileCheck %s
++
++using Maybe = __objc3_optional(int);
++int condition_json(Maybe source, bool enabled) {
++  guard let first = source, enabled else { return -1; }
++  if var second = source, second > first {
++    second += first;
++    return second;
++  } else {
++    return first;
++  }
++}
++
++// CHECK: "kind": "ObjC3GuardStmt"
++// CHECK: "numConditions": 2
++// CHECK: "bindingScope": "continuation"
++// CHECK: "elseLoc": {
++// CHECK: "kind": "ObjC3BindingCondition"
++// CHECK: "bindingKind": "let"
++// CHECK: "bindingDecl": {
++// CHECK: "name": "first"
++// CHECK: "snapshotDecl": {
++// CHECK: "keywordLoc": {
++// CHECK: "equalLoc": {
++// CHECK: "kind": "VarDecl"
++// CHECK: "isImplicit": true
++// CHECK: "kind": "DeclRefExpr"
++// CHECK: "name": "source"
++// CHECK: "kind": "VarDecl"
++// CHECK: "name": "first"
++// CHECK: "kind": "ObjC3IfBindingStmt"
++// CHECK: "numConditions": 2
++// CHECK: "bindingScope": "then"
++// CHECK: "hasElse": true
++// CHECK: "elseLoc": {
++// CHECK: "kind": "ObjC3BindingCondition"
++// CHECK: "bindingKind": "var"
++// CHECK: "bindingDecl": {
++// CHECK: "name": "second"
++// CHECK: "snapshotDecl": {
++// CHECK: "keywordLoc": {
++// CHECK: "equalLoc": {
++// CHECK: "kind": "VarDecl"
++// CHECK: "isImplicit": true
++// CHECK: "kind": "DeclRefExpr"
++// CHECK: "name": "source"
++// CHECK: "kind": "VarDecl"
++// CHECK: "name": "second"
++
++int if_without_else(Maybe source) {
++  if let value = source { return value; }
++  return 0;
++}
++
++// CHECK: "name": "if_without_else"
++// CHECK: "kind": "ObjC3IfBindingStmt"
++// CHECK: "numConditions": 1
++// CHECK: "bindingScope": "then"
++// CHECK-NOT: "hasElse"
++// CHECK-NOT: "elseLoc"
++// CHECK: "kind": "ObjC3BindingCondition"
++
+diff --git a/clang/test/ObjC3/AST/condition-module.mm b/clang/test/ObjC3/AST/condition-module.mm
+new file mode 100644
+index 000000000..9bb0bc170
+--- /dev/null
++++ b/clang/test/ObjC3/AST/condition-module.mm
+@@ -0,0 +1,34 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fmodules -fmodule-name=ConditionBindings -emit-module %S/Inputs/condition-module/module.modulemap -o %t.pcm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fmodules -fmodule-file=ConditionBindings=%t.pcm -I %S/Inputs/condition-module -ast-dump-all %s | FileCheck %s --check-prefix=AST
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fmodules -fmodule-file=ConditionBindings=%t.pcm -I %S/Inputs/condition-module -emit-llvm -o - %s | FileCheck %s --check-prefix=IR
++
++@import ConditionBindings;
++
++int module_condition_consumer(int value, bool enabled) {
++  return imported_guard(Some(int, value), enabled) +
++         imported_if(Some(int, value));
++}
++
++// AST-LABEL: FunctionDecl {{.*}} imported_guard
++// AST: ObjC3GuardStmt {{.*}} conditions=3
++// AST: ObjC3BindingCondition {{.*}} let
++// AST: VarDecl {{.*}} first 'const int'
++// AST: ObjC3BindingCondition {{.*}} var
++// AST: VarDecl {{.*}} second 'int'
++// AST: DeclRefExpr {{.*}} Var {{.*}} 'second' 'int'
++// AST: DeclRefExpr {{.*}} Var {{.*}} 'first' 'const int'
++// AST-LABEL: FunctionDecl {{.*}} imported_if
++// AST: ObjC3IfBindingStmt {{.*}} conditions=2
++// AST: ObjC3BindingCondition {{.*}} let
++// AST: VarDecl {{.*}} first 'const int'
++// AST: ObjC3BindingCondition {{.*}} let
++// AST: VarDecl {{.*}} second 'const int'
++
++// IR-LABEL: define{{.*}}module_condition_consumer
++// IR: call{{.*}}imported_guard
++// IR: call{{.*}}imported_if
++// IR-LABEL: define internal{{.*}}imported_guard
++// IR: objc3.guard.conditions:
++// IR-LABEL: define internal{{.*}}imported_if
++// IR: objc3.if.conditions:
++
+diff --git a/clang/test/ObjC3/AST/native-expression-json.mm b/clang/test/ObjC3/AST/native-expression-json.mm
+new file mode 100644
+index 000000000..eafa8e821
+--- /dev/null
++++ b/clang/test/ObjC3/AST/native-expression-json.mm
+@@ -0,0 +1,100 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -ast-dump=json %s | FileCheck %s
++
++using Count = int;
++using Failure = long;
++using Maybe = __objc3_optional(Count);
++using Outcome = __objc3_result(Count, Failure);
++
++void carriers(Maybe source) {
++  Maybe present = __objc3_some(Count, 7);
++  Maybe absent = __objc3_none(Count);
++  bool available = __objc3_has_value(source);
++  Outcome success = __objc3_ok(Count, Failure, 9);
++  Outcome failure = __objc3_err(Count, Failure, 4L);
++  bool accepted = __objc3_is_ok(success);
++  Maybe copied = __objc3_copy(source);
++  Maybe moved = __objc3_move(source);
++}
++
++// CHECK: "kind": "ObjC3OptionalExpr"
++// CHECK: "operation": "some"
++// CHECK: "carrierType": {
++// CHECK: "kind": "ObjC3OptionalExpr"
++// CHECK: "operation": "none"
++// CHECK: "kind": "ObjC3OptionalExpr"
++// CHECK: "operation": "hasValue"
++// CHECK: "kind": "ObjC3ResultExpr"
++// CHECK: "operation": "ok"
++// CHECK: "carrierType": {
++// CHECK: "kind": "ObjC3ResultExpr"
++// CHECK: "operation": "err"
++// CHECK: "kind": "ObjC3ResultExpr"
++// CHECK: "operation": "isOk"
++// CHECK: "kind": "ObjC3CarrierTransferExpr"
++// CHECK: "operation": "copy"
++// CHECK: "carrierType": {
++// CHECK: "kind": "ObjC3CarrierTransferExpr"
++// CHECK: "operation": "move"
++
++struct Error {};
++int throwing() __objc3_throws(Error);
++int propagate() __objc3_throws(Error) { return __objc3_try(throwing()); }
++Maybe optionalize() { return __objc3_try_optional(throwing()); }
++int force() { return __objc3_try_force(throwing()); }
++
++// CHECK: "name": "throwing"
++// CHECK: "objc3Effects": {
++// CHECK: "throws": "typed"
++// CHECK: "errorType": {
++// CHECK: "qualType": "Error"
++// CHECK: "kind": "ObjC3TryExpr"
++// CHECK: "operation": "propagate"
++// CHECK: "kind": "ObjC3TryExpr"
++// CHECK: "operation": "optionalize"
++// CHECK: "kind": "ObjC3TryExpr"
++// CHECK: "operation": "force"
++
++void handled() {
++  __objc3_do {
++    __objc3_throw(Error{});
++  } __objc3_catch(Error error) {
++    (void)error;
++  } __objc3_catch {
++  }
++}
++
++// CHECK: "kind": "ObjC3DoCatchStmt"
++// CHECK: "numCatchClauses": 2
++// CHECK: "kind": "ObjC3ThrowStmt"
++// CHECK: "typedErrorTransfer": true
++// CHECK: "kind": "ObjC3CatchStmt"
++// CHECK: "catchType": {
++// CHECK: "qualType": "Error"
++// CHECK: "bindingDecl": {
++// CHECK: "name": "error"
++// CHECK: "kind": "ObjC3CatchStmt"
++// CHECK: "isCatchAll": true
++
++int choose(Maybe source) {
++  return __objc3_match(source) {
++    case .Some(let value) where value > 0 => value;
++    case .Some(let value) => -value;
++    case .None => 0;
++  };
++}
++
++// CHECK: "kind": "ObjC3MatchExpr"
++// CHECK: "numArms": 3
++// CHECK: "kind": "ObjC3MatchArm"
++// CHECK: "patternKind": "some"
++// CHECK: "hasGuard": true
++// CHECK: "hasExpressionBody": true
++// CHECK: "bindingDecl": {
++// CHECK: "name": "value"
++// CHECK: "bindingKind": "let"
++// CHECK: "patternCarrierType": {
++// CHECK: "kind": "ObjC3MatchArm"
++// CHECK: "patternKind": "some"
++// CHECK: "kind": "ObjC3MatchArm"
++// CHECK: "patternKind": "none"
++
+diff --git a/clang/test/ObjC3/AST/Inputs/carrier-recursive-cxx-pch.h b/clang/test/ObjC3/AST/Inputs/carrier-recursive-cxx-pch.h
+new file mode 100644
+index 000000000..9f84d2d73
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/carrier-recursive-cxx-pch.h
+@@ -0,0 +1,15 @@
++struct RecursiveItem {
++  explicit RecursiveItem(int);
++  RecursiveItem(const RecursiveItem &);
++  RecursiveItem(RecursiveItem &&);
++  ~RecursiveItem();
++};
++using RecursiveInner = __objc3_optional(RecursiveItem);
++using RecursiveOuter = __objc3_optional(RecursiveInner);
++template <class T> void copy_recursive_from_pch(const T &source) {
++  T value = __objc3_copy(source);
++}
++inline void construct_recursive_from_pch() {
++  RecursiveOuter value = __objc3_some(
++      RecursiveInner, __objc3_some(RecursiveItem, RecursiveItem(1)));
++}
+diff --git a/clang/test/ObjC3/AST/carrier-recursive-cxx-pch.mm b/clang/test/ObjC3/AST/carrier-recursive-cxx-pch.mm
+new file mode 100644
+index 000000000..f48397312
+--- /dev/null
++++ b/clang/test/ObjC3/AST/carrier-recursive-cxx-pch.mm
+@@ -0,0 +1,16 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -std=c++20 -fexceptions -fcxx-exceptions -emit-pch -o %t.pch %S/Inputs/carrier-recursive-cxx-pch.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -std=c++20 -fexceptions -fcxx-exceptions -include-pch %t.pch -emit-llvm -o - %s | FileCheck %s
++
++template void copy_recursive_from_pch<RecursiveOuter>(const RecursiveOuter &);
++void use_recursive_pch() { construct_recursive_from_pch(); }
++
++// CHECK-LABEL: define{{.*}} @_Z23copy_recursive_from_pch
++// CHECK: load i8
++// CHECK: load i8
++// CHECK: invoke void @_ZN13RecursiveItemC1ERKS_
++// CHECK: call void @_ZN13RecursiveItemD1Ev
++// CHECK-LABEL: define{{.*}} @_Z28construct_recursive_from_pchv
++// CHECK: invoke void @_ZN13RecursiveItemC1Ei
++// CHECK: store i8 1
++// CHECK: store i8 1
++// CHECK: call void @_ZN13RecursiveItemD1Ev
+diff --git a/clang/test/ObjC3/AST/Inputs/resource-ownership.h b/clang/test/ObjC3/AST/Inputs/resource-ownership.h
+new file mode 100644
+index 000000000..19a5c8736
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/resource-ownership.h
+@@ -0,0 +1,38 @@
++#ifndef OBJC3_RESOURCE_OWNERSHIP_PCH_H
++#define OBJC3_RESOURCE_OWNERSHIP_PCH_H
++#ifdef __cplusplus
++extern "C" {
++#endif
++void close_resource(int) __attribute__((nothrow));
++void close_resource_address(int *) __attribute__((nothrow));
++static inline int resource_pch_value(int input) {
++  int value __attribute__((objc_resource(close=close_resource, invalid=-1))) = input;
++  return value;
++}
++static inline void resource_pch_address(int input) {
++  int value __attribute__((objc_resource(invalid=0, close=close_resource_address))) = input;
++}
++#ifdef __cplusplus
++}
++#endif
++static inline int resource_pch_transfer(int input) {
++  @resource(close_resource, invalid: -1) int value = input;
++  reset(value, input + 1);
++  int result = take(value);
++  discard(value);
++  return result;
++}
++static inline void cleanup_pch_value(int input) {
++  @cleanup(close_resource) int value = input;
++  value = input + 1;
++}
++static inline void cleanup_pch_address(int input) {
++  int value __attribute__((cleanup(close_resource_address))) = input;
++}
++#ifdef __cplusplus
++template<int Value> int resource_template_transfer() {
++  @resource(close_resource, invalid: -1) int value = Value;
++  return take(value);
++}
++#endif
++#endif
+diff --git a/clang/test/ObjC3/AST/resource-ownership-pch.m b/clang/test/ObjC3/AST/resource-ownership-pch.m
+new file mode 100644
+index 000000000..76b07c5d6
+--- /dev/null
++++ b/clang/test/ObjC3/AST/resource-ownership-pch.m
+@@ -0,0 +1,29 @@
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch -o %t.c.pch %S/Inputs/resource-ownership.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t.c.pch -emit-llvm -o - %s | FileCheck %s --check-prefix=IR
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t.c.pch -ast-print %s | FileCheck %s --check-prefix=PRINT
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch -o %t.cxx.pch %S/Inputs/resource-ownership.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t.cxx.pch -emit-llvm -o - %s | FileCheck %s --check-prefix=IR
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t.cxx.pch -ast-print %s | FileCheck %s --check-prefix=PRINT
++int resource_consumer(int input) {
++  cleanup_pch_value(input);
++  cleanup_pch_address(input);
++  resource_pch_address(input);
++  (void)resource_pch_transfer(input);
++#ifdef __cplusplus
++  (void)resource_template_transfer<7>();
++#endif
++  return resource_pch_value(input);
++}
++// IR: call void @close_resource_address(ptr
++// IR: store i32 0
++// IR: call void @close_resource(i32
++// IR: store i32 -1
++// PRINT: __attribute__((objc_resource(close=close_resource, invalid=-1)))
++// PRINT: __attribute__((objc_resource(close=close_resource_address, invalid=0)))
++
++// PRINT: reset(value, input + 1)
++// PRINT: take(value)
++// PRINT: discard(value)
++
++// PRINT: __attribute__((cleanup(close_resource)))
++// PRINT: __attribute__((cleanup(close_resource_address)))
+diff --git a/clang/test/ObjC3/Parser/Inputs/optional-coalescing-pch-consumer.mm b/clang/test/ObjC3/Parser/Inputs/optional-coalescing-pch-consumer.mm
+new file mode 100644
+index 000000000..362fd7e57
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/Inputs/optional-coalescing-pch-consumer.mm
+@@ -0,0 +1,6 @@
++// expected-no-diagnostics
++int pch_coalescing_consumer(CoalescingMaybe source) {
++  return pch_coalesce(source, None(int)) +
++         pch_dependent_coalesce(source, 43) +
++         (source OBJC3_PCH_COALESCE 44);
++}
+diff --git a/clang/test/ObjC3/Parser/Inputs/optional-coalescing-pch.h b/clang/test/ObjC3/Parser/Inputs/optional-coalescing-pch.h
+new file mode 100644
+index 000000000..e85c435fb
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/Inputs/optional-coalescing-pch.h
+@@ -0,0 +1,11 @@
++#ifndef OBJC3_OPTIONAL_COALESCING_PCH_H
++#define OBJC3_OPTIONAL_COALESCING_PCH_H
++typedef Optional(int) CoalescingMaybe;
++inline int pch_coalesce(CoalescingMaybe source, CoalescingMaybe other) {
++  return source ?? other ?? 42;
++}
++template <class T, class U> auto pch_dependent_coalesce(T source, U other) {
++  return source ?? other;
++}
++#define OBJC3_PCH_COALESCE ??
++#endif
+diff --git a/clang/test/ObjC3/Parser/optional-coalescing-lex.m b/clang/test/ObjC3/Parser/optional-coalescing-lex.m
+new file mode 100644
+index 000000000..51ce64cc5
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/optional-coalescing-lex.m
+@@ -0,0 +1,17 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -ftrigraphs -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c23 -fobjc-version=3 -fsyntax-only -verify %s
++// expected-no-diagnostics
++
++// No whitespace is needed between the real punctuator and parentheses. The
++// ObjC3 operator takes priority over the inherited ??( trigraph spelling.
++int lexical_precedence(Optional(int) source) { return source??(4); }
++int escaped_newline(Optional(int) source) { return source ?\
++? (5); }
++
++// Token pasting produces the same punctuator as a source token.
++#define JOIN_IMPL(left, right) left ## right
++#define JOIN(left, right) JOIN_IMPL(left, right)
++int pasted_operator(Optional(int) source) { return source JOIN(?, ?) 7; }
++
++// Ordinary question marks retain their normal conditional meaning.
++int ordinary_ternary(int source) { return source ? 1 : 2; }
+diff --git a/clang/test/ObjC3/Parser/optional-coalescing-pch.mm b/clang/test/ObjC3/Parser/optional-coalescing-pch.mm
+new file mode 100644
+index 000000000..a742d3b6a
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/optional-coalescing-pch.mm
+@@ -0,0 +1,15 @@
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fobjc-version=3 -emit-pch -o %t.pch %S/Inputs/optional-coalescing-pch.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -include-pch %t.pch -fsyntax-only -verify %S/Inputs/optional-coalescing-pch-consumer.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -include-pch %t.pch -ast-print %S/Inputs/optional-coalescing-pch-consumer.mm > %t.mm
++// RUN: FileCheck %s --check-prefix=PRINT < %t.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only %t.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -include-pch %t.pch -emit-llvm -o - %S/Inputs/optional-coalescing-pch-consumer.mm | FileCheck %s --check-prefix=IR
++
++// PRINT: return (source ?? (other ?? 42));
++// PRINT: return (source ?? other);
++// IR-LABEL: define{{.*}} @_Z23pch_coalescing_consumer
++// IR: phi i32
++// IR-LABEL: define{{.*}} @_Z12pch_coalesce
++// IR: phi i32
++// IR-LABEL: define{{.*}} @_Z22pch_dependent_coalesce
++// IR: phi i32
+diff --git a/clang/test/ObjC3/Parser/optional-coalescing.mm b/clang/test/ObjC3/Parser/optional-coalescing.mm
+new file mode 100644
+index 000000000..cf950053a
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/optional-coalescing.mm
+@@ -0,0 +1,41 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -ast-print %s > %t.mm
++// RUN: FileCheck %s --check-prefix=PRINT < %t.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only %t.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -ast-dump=json %s | FileCheck %s --check-prefix=JSON
++// expected-no-diagnostics
++
++typedef Optional(int) Maybe;
++int fallback();
++int chain(Maybe source, Maybe other) {
++  return source ?? other ?? fallback();
++}
++
++int precedence(Maybe source) {
++  return source ?? fallback() || fallback() ? 3 : 4;
++}
++
++#define OTHERWISE ??
++int macro_punctuator(Maybe source) { return source OTHERWISE fallback(); }
++
++int standard_conditionals(bool condition, int first, int second) {
++  return condition ? first : second;
++}
++
++template <class T, class U> auto dependent(T source, U other) {
++  return source ?? other;
++}
++int instantiate_dependent(Maybe source) { return dependent(source, 1); }
++
++static_assert(__is_same(decltype(None(int) ?? 3.5), double));
++static_assert(__is_same(decltype(None(int) ?? None(int)), Maybe));
++static_assert(__is_same(decltype(None(Maybe) ?? Some(int, 2)), Maybe));
++
++// PRINT: return (source ?? (other ?? fallback()));
++// PRINT: return (source ?? fallback() || fallback()) ? 3 : 4;
++// PRINT: return (source ?? fallback());
++// JSON: "kind": "ObjC3CoalesceExpr"
++// JSON: "operation": "nilCoalescing"
++// JSON: "operatorLoc": {
++// JSON: "hasSemanticForm": true
+diff --git a/clang/test/ObjC3/Parser/resource-attribute.m b/clang/test/ObjC3/Parser/resource-attribute.m
+new file mode 100644
+index 000000000..5eb8d547d
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/resource-attribute.m
+@@ -0,0 +1,27 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++void close_handle(int);
++void close_address(int *);
++void valid(void) {
++  int first __attribute__((objc_resource(close=close_handle, invalid=-1))) = 7;
++  int second __attribute__((objc_resource(invalid=0, close=close_address))) = 8;
++}
++void missing_invalid(void) {
++  int value __attribute__((objc_resource(close=close_handle))) = 1; // expected-error {{requires both 'close=F' and 'invalid=X'}}
++}
++void missing_close(void) {
++  int value __attribute__((objc_resource(invalid=0))) = 1; // expected-error {{requires both 'close=F' and 'invalid=X'}}
++}
++void duplicate(void) {
++  int value __attribute__((objc_resource(close=close_handle, close=close_handle, invalid=0))) = 1; // expected-error {{unknown or duplicate objc_resource argument 'close'}}
++}
++void unknown(void) {
++  int value __attribute__((objc_resource(close=close_handle, sentinel=0))) = 1; // expected-error {{unknown or duplicate objc_resource argument 'sentinel'}}
++}
++void positional(void) {
++  int value __attribute__((objc_resource(close_handle, 0))) = 1; // expected-error {{expected '='}}
++}
++void trailing(void) {
++  int value __attribute__((objc_resource(close=close_handle, invalid=0,))) = 1; // expected-error {{expected objc_resource argument after ','}}
++}
+diff --git a/clang/test/ObjC3/AST/Inputs/carrier-source-records-pch.h b/clang/test/ObjC3/AST/Inputs/carrier-source-records-pch.h
+new file mode 100644
+index 000000000..c3ab21f61
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/carrier-source-records-pch.h
+@@ -0,0 +1,15 @@
++struct PCHLeaf {
++  explicit PCHLeaf(int);
++  PCHLeaf(const PCHLeaf &);
++  PCHLeaf(PCHLeaf &&) noexcept;
++  ~PCHLeaf();
++};
++using PCHField = __objc3_optional(__objc3_optional(PCHLeaf));
++struct PCHOwner {
++  PCHField field;
++  PCHOwner() : field(__objc3_none(__objc3_optional(PCHLeaf))) {}
++};
++template <class T> void copy_record_pch(const T &source) { T copied(source); }
++template <class T> void move_record_pch(T &source) {
++  T moved(static_cast<T &&>(source));
++}
+diff --git a/clang/test/ObjC3/AST/Inputs/native-c-async-frame-pch.h b/clang/test/ObjC3/AST/Inputs/native-c-async-frame-pch.h
+new file mode 100644
+index 000000000..85a58b333
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/native-c-async-frame-pch.h
+@@ -0,0 +1,6 @@
++#include "../../CodeGen/Inputs/native-c-async-frame.h"
++
++int pch_fetch(int) __objc3_async __asm__("pch_frame_int");
++void pch_empty(void) __objc3_async __asm__("pch_frame_void");
++typedef int (*PCHAsyncInt)(int) __objc3_async;
++extern PCHAsyncInt pch_selected;
+diff --git a/clang/test/ObjC3/AST/carrier-source-records-pch.mm b/clang/test/ObjC3/AST/carrier-source-records-pch.mm
+new file mode 100644
+index 000000000..9d3561f91
+--- /dev/null
++++ b/clang/test/ObjC3/AST/carrier-source-records-pch.mm
+@@ -0,0 +1,12 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -emit-pch -o %t.pch %S/Inputs/carrier-source-records-pch.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -include-pch %t.pch -emit-llvm -o - %s | FileCheck %s
++
++static_assert(!__is_trivially_copyable(PCHOwner));
++static_assert(!__is_assignable(PCHOwner &, const PCHOwner &));
++static_assert(__is_nothrow_constructible(PCHOwner, PCHOwner &&));
++template void copy_record_pch<PCHOwner>(const PCHOwner &);
++template void move_record_pch<PCHOwner>(PCHOwner &);
++
++// CHECK: invoke void @_ZN7PCHLeafC1ERKS_
++// CHECK: call void @_ZN7PCHLeafD1Ev
++// CHECK: call void @_ZN7PCHLeafC1EOS_
+diff --git a/clang/test/ObjC3/AST/native-c-async-frame-pch.m b/clang/test/ObjC3/AST/native-c-async-frame-pch.m
+new file mode 100644
+index 000000000..7b6ada9b7
+--- /dev/null
++++ b/clang/test/ObjC3/AST/native-c-async-frame-pch.m
+@@ -0,0 +1,19 @@
++// RUN: %clang_cc1 -x objective-c-header -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch -o %t.pch %S/Inputs/native-c-async-frame-pch.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t.pch -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch -o %t.arc.pch %S/Inputs/native-c-async-frame-pch.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t.arc.pch -emit-llvm -o - %s | FileCheck %s
++
++_Static_assert(__builtin_types_compatible_p(__typeof__(&pch_fetch), PCHAsyncInt),
++               "PCH preserves the logical async function type");
++_Static_assert(sizeof(pch_fetch(0)) == sizeof(objc3_async_frame),
++               "PCH preserves the physical C frame mapping");
++
++// CHECK-LABEL: define{{.*}} void @direct(
++// CHECK: call void @{{.*}}pch_frame_int{{.*}}(ptr{{.*}}sret(%struct.objc3_async_frame)
++objc3_async_frame direct(int value) { return pch_fetch(value); }
++// CHECK-LABEL: define{{.*}} void @indirect(
++// CHECK: call void %{{.*}}(ptr{{.*}}sret(%struct.objc3_async_frame)
++objc3_async_frame indirect(int value) { return pch_selected(value); }
++// CHECK-LABEL: define{{.*}} void @empty(
++// CHECK: call void @{{.*}}pch_frame_void{{.*}}(ptr{{.*}}sret(%struct.objc3_async_frame)
++objc3_async_frame empty(void) { return pch_empty(); }
+diff --git a/clang/test/ObjC3/Parser/Inputs/optional-access-pch-consumer.mm b/clang/test/ObjC3/Parser/Inputs/optional-access-pch-consumer.mm
+new file mode 100644
+index 000000000..6958e7565
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/Inputs/optional-access-pch-consumer.mm
+@@ -0,0 +1,5 @@
++// expected-no-diagnostics
++id consume_access_pch(AccessReceiver *receiver) {
++  return access_from_pch(receiver) ?? dependent_access_from_pch(receiver) ??
++         parenthesized_access_from_pch(receiver);
++}
+diff --git a/clang/test/ObjC3/Parser/Inputs/optional-access-pch.h b/clang/test/ObjC3/Parser/Inputs/optional-access-pch.h
+new file mode 100644
+index 000000000..87911d138
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/Inputs/optional-access-pch.h
+@@ -0,0 +1,16 @@
++#ifndef OBJC3_OPTIONAL_ACCESS_PCH_H
++#define OBJC3_OPTIONAL_ACCESS_PCH_H
++@interface AccessReceiver
++@property(readonly) AccessReceiver *next;
++- (id)take:(int)value;
++@end
++inline id access_from_pch(AccessReceiver *receiver) {
++  return receiver?.next ?? [receiver? take:42];
++}
++template<class T> auto dependent_access_from_pch(T receiver) {
++  return [receiver? take:43];
++}
++template<class T> auto parenthesized_access_from_pch(T receiver) {
++  return (receiver)?.next ?? [(receiver)? take:44];
++}
++#endif
+diff --git a/clang/test/ObjC3/Parser/optional-access-pch.mm b/clang/test/ObjC3/Parser/optional-access-pch.mm
+new file mode 100644
+index 000000000..be9c077e5
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/optional-access-pch.mm
+@@ -0,0 +1,11 @@
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fobjc-version=3 -emit-pch -o %t.pch %S/Inputs/optional-access-pch.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -include-pch %t.pch -fsyntax-only -verify %S/Inputs/optional-access-pch-consumer.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -include-pch %t.pch -ast-print %S/Inputs/optional-access-pch-consumer.mm > %t.mm
++// RUN: FileCheck %s --check-prefix=PRINT < %t.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only %t.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -include-pch %t.pch -emit-llvm -o - %S/Inputs/optional-access-pch-consumer.mm | FileCheck %s --check-prefix=IR
++// PRINT: (receiver)?.next
++// PRINT: [(receiver)? take:42]
++// PRINT: [(receiver)? take:43]
++// IR: br i1
++// IR: phi ptr
+diff --git a/clang/test/ObjC3/Parser/optional-access.mm b/clang/test/ObjC3/Parser/optional-access.mm
+new file mode 100644
+index 000000000..b9d2008b1
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/optional-access.mm
+@@ -0,0 +1,65 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -ast-print %s > %t.mm
++// RUN: FileCheck %s --check-prefix=PRINT < %t.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fsyntax-only %t.mm
++// expected-no-diagnostics
++
++@interface Receiver
++@property(readonly) Receiver * _Nonnull next;
++@property(readonly) void (^ _Nonnull callback)(void);
++- (id _Nonnull)take:(id)value other:(id)other;
++- (void)record:(int)value;
++@end
++Receiver *source();
++id argument();
++
++id native_chain(Receiver * _Nullable receiver) {
++  id first = receiver?.next?.next;
++  id result = [source()? take:argument() other:argument()];
++  [receiver? record:3];
++  (void)receiver?.callback;
++  return result ?? first;
++}
++
++id ordinary_conditionals(bool condition, Receiver *first, Receiver *second) {
++  id result = [condition ? first : second take:argument() other:argument()];
++  result = [first ? first : second next];
++  result = [first ? first : (Receiver *)0 next];
++  return [(first ? first : second)? take:result other:argument()];
++}
++
++id parenthesized_receivers(Receiver *receiver) {
++  id result = (receiver)?.next;
++  result = ((receiver))?.next;
++  result = (argument(), receiver)?.next;
++  (void)(receiver)?.callback;
++  return [(receiver)? take:result other:argument()];
++}
++
++template<class T> auto dependent_member(T source) { return source?.next; }
++template<class T> auto dependent_parenthesized(T source) {
++  return (source)?.next;
++}
++template<class T> auto dependent_message(T source) {
++  return [source? take:argument() other:argument()];
++}
++void instantiate(Receiver *receiver) {
++  (void)dependent_member(receiver);
++  (void)dependent_parenthesized(receiver);
++  (void)dependent_message(receiver);
++}
++
++#define OPTIONAL_MEMBER ?.
++#define OPTIONAL_SEND ?
++id macro_punctuation(Receiver *receiver) {
++  return [receiver OPTIONAL_SEND take:receiver OPTIONAL_MEMBER next other:argument()];
++}
++id escaped_optional_member(Receiver *receiver) {
++  return receiver ?\
++.next;
++}
++
++// PRINT: (receiver)?.next)?.next
++// PRINT: [(source())? take:argument() other:argument()]
++// PRINT: [(receiver)? record:3]
+diff --git a/clang/test/ObjC3/Parser/resource-operations.m b/clang/test/ObjC3/Parser/resource-operations.m
+new file mode 100644
+index 000000000..ad5d10456
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/resource-operations.m
+@@ -0,0 +1,30 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -ast-print -verify %s | FileCheck %s
++void close_handle(int);
++void ordinary_names(void) {
++  int take = 1, reset = 2, discard = 3;
++  (void)take; (void)reset; (void)discard;
++}
++void public_ownership(void) {
++  @resource(close_handle, invalid: -1) int handle = 1;
++  reset(handle, 2);
++  int owner = take((handle));
++  discard(handle);
++  close_handle(owner);
++}
++// CHECK: reset(handle, 2)
++// CHECK: take(handle)
++// CHECK: discard(handle)
++void invalid_ownership(int plain) {
++  (void)take(plain); // expected-error {{resource operation requires a direct reference}}
++  reset(plain, 2); // expected-error {{resource operation requires a direct reference}}
++  discard(plain); // expected-error {{resource operation requires a direct reference}}
++}
++void malformed_ownership(void) {
++  @resource(close_handle, invalid: 0) int handle = 0;
++  reset(handle); // expected-error {{expected ','}}
++  discard(handle, 1); // expected-error {{expected ')'}} expected-note {{to match this '('}}
++  reset(handle, ); // expected-error {{expected expression}}
++  discard(handle);
++}
+diff --git a/clang/test/ObjC3/AST/Inputs/resource-type-contracts.h b/clang/test/ObjC3/AST/Inputs/resource-type-contracts.h
+new file mode 100644
+index 000000000..fd21712a9
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/resource-type-contracts.h
+@@ -0,0 +1,19 @@
++#ifndef OBJC3_RESOURCE_TYPES_PCH_H
++#define OBJC3_RESOURCE_TYPES_PCH_H
++#ifdef __cplusplus
++extern "C" {
++#endif
++void close_type_handle(int) __attribute__((nothrow));
++void wrong_type_close(int) __attribute__((nothrow));
++#ifdef __cplusplus
++}
++#endif
++@requires_cleanup(close_type_handle) @resource_family(PCHHandles) @invalid(-1)
++typedef int PCHHandle;
++@requires_cleanup(wrong_type_close) @resource_family(PCHOther) @invalid(-1)
++typedef int OtherPCHHandle;
++typedef PCHHandle PCHAlias;
++static inline void pch_resource_owner(int input) {
++  @resource(close_type_handle, invalid: -1) PCHAlias value = input;
++}
++#endif
+diff --git a/clang/test/ObjC3/AST/resource-type-contracts-pch-errors.m b/clang/test/ObjC3/AST/resource-type-contracts-pch-errors.m
+new file mode 100644
+index 000000000..8c1cb8553
+--- /dev/null
++++ b/clang/test/ObjC3/AST/resource-type-contracts-pch-errors.m
+@@ -0,0 +1,9 @@
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -emit-pch -o %t.pch %S/Inputs/resource-type-contracts.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -include-pch %t.pch -fsyntax-only -verify %s
++void imported_family(void) {
++  PCHAlias value = 3;
++  wrong_type_close(value); // expected-error {{not associated with its type contract or family}}
++}
++void imported_requirement(void) {
++  PCHAlias value = 3; // expected-error {{may leave its scope without cleanup}}
++}
+diff --git a/clang/test/ObjC3/AST/resource-type-contracts-pch.m b/clang/test/ObjC3/AST/resource-type-contracts-pch.m
+new file mode 100644
+index 000000000..f4092791a
+--- /dev/null
++++ b/clang/test/ObjC3/AST/resource-type-contracts-pch.m
+@@ -0,0 +1,11 @@
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -emit-pch -o %t.c.pch %S/Inputs/resource-type-contracts.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -include-pch %t.c.pch -emit-llvm -o - -verify %s | FileCheck %s --check-prefix=IR
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -emit-pch -o %t.cxx.pch %S/Inputs/resource-type-contracts.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -include-pch %t.cxx.pch -fsyntax-only -verify %s
++// expected-no-diagnostics
++void pch_contract_consumer(void) {
++  pch_resource_owner(3);
++  PCHAlias value = 4;
++  close_type_handle(value);
++}
++// IR: call void @close_type_handle(i32
+diff --git a/clang/test/ObjC3/AST/Inputs/lifetime-control.h b/clang/test/ObjC3/AST/Inputs/lifetime-control.h
+new file mode 100644
+index 000000000..271a2919a
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/lifetime-control.h
+@@ -0,0 +1,9 @@
++static inline void pch_lifetime(id owner) {
++  keepAlive(owner);
++  withLifetime(owner) { keepAlive(owner); }
++}
++#ifdef __cplusplus
++template<class T> void pch_lifetime_template(T value) {
++  withLifetime(value) { keepAlive(value); }
++}
++#endif
+diff --git a/clang/test/ObjC3/AST/lifetime-control-pch.m b/clang/test/ObjC3/AST/lifetime-control-pch.m
+new file mode 100644
+index 000000000..78b7345e1
+--- /dev/null
++++ b/clang/test/ObjC3/AST/lifetime-control-pch.m
+@@ -0,0 +1,11 @@
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch -o %t.c.pch %S/Inputs/lifetime-control.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t.c.pch -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch -o %t.cxx.pch %S/Inputs/lifetime-control.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t.cxx.pch -emit-llvm -o /dev/null -verify %s
++// expected-no-diagnostics
++void pch_consumer(id owner) {
++  pch_lifetime(owner);
++#ifdef __cplusplus
++  pch_lifetime_template(owner);
++#endif
++}
+diff --git a/clang/test/ObjC3/AST/Inputs/typed-keypaths.h b/clang/test/ObjC3/AST/Inputs/typed-keypaths.h
+new file mode 100644
+index 000000000..aecc4599f
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/typed-keypaths.h
+@@ -0,0 +1,38 @@
++#include "../../Inputs/keypath-abi.h"
++__attribute__((objc_root_class))
++@interface ImportedPathNode
++@property(nonatomic) int count;
++@property(nonatomic, readonly) int identity;
++@end
++typedef struct ImportedPathPair { long first, second; } ImportedPathPair;
++@interface ImportedPathNode (Record)
++@property(nonatomic) ImportedPathPair pair;
++@end
++static inline WritableKeyPath<ImportedPathNode *, long> importedFieldPath(void) {
++  return @keypath(ImportedPathNode, pair.first);
++}
++static inline WritableKeyPath<ImportedPathNode *, int> importedPath(void) {
++  return @keypath(ImportedPathNode, count);
++}
++static inline int importedGet(ImportedPathNode * _Nonnull root) {
++  return KeyPathGet(importedPath(), root);
++}
++
++typedef struct ImportedPathBits { unsigned value:3; signed small:5; } ImportedPathBits;
++@interface ImportedPathNode (Bits)
++@property(nonatomic) ImportedPathBits bits;
++@end
++static inline WritableKeyPath<ImportedPathNode *, unsigned> importedBitsPath(void) {
++  return @keypath(ImportedPathNode, bits.value);
++}
++#ifdef __cplusplus
++struct ImportedLeft { int left; };
++struct ImportedRight { long right; };
++struct ImportedDerived : ImportedLeft, ImportedRight { int tail; };
++@interface ImportedPathNode (Inherited)
++@property(nonatomic) ImportedDerived inherited;
++@end
++static inline WritableKeyPath<ImportedPathNode *, long> importedInheritedPath(void) {
++  return @keypath(ImportedPathNode, inherited.right);
++}
++#endif
+diff --git a/clang/test/ObjC3/AST/typed-keypaths-pch.m b/clang/test/ObjC3/AST/typed-keypaths-pch.m
+new file mode 100644
+index 000000000..e37cb4c91
+--- /dev/null
++++ b/clang/test/ObjC3/AST/typed-keypaths-pch.m
+@@ -0,0 +1,15 @@
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch -o %t.pch %S/Inputs/typed-keypaths.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t.pch -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch -o %t.cxx.pch %S/Inputs/typed-keypaths.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t.cxx.pch -emit-llvm -o /dev/null -verify %s
++// expected-no-diagnostics
++int consumer(ImportedPathNode * _Nonnull root) {
++  WritableKeyPath<ImportedPathNode *, int> kp = importedPath();
++  KeyPathSet(kp, root, 42);
++  KeyPathSet(importedFieldPath(), root, 41L);
++  KeyPathSet(importedBitsPath(), root, 10U);
++#ifdef __cplusplus
++  KeyPathSet(importedInheritedPath(), root, 42L);
++#endif
++  return KeyPathGet(kp, root) + importedGet(root);
++}
+diff --git a/clang/test/ObjC3/AST/typed-keypaths-print.m b/clang/test/ObjC3/AST/typed-keypaths-print.m
+new file mode 100644
+index 000000000..09ae331a9
+--- /dev/null
++++ b/clang/test/ObjC3/AST/typed-keypaths-print.m
+@@ -0,0 +1,6 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %S/Inputs/typed-keypaths.h | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %S/Inputs/typed-keypaths.h > %t.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only %t.m
++// CHECK: WritableKeyPath<ImportedPathNode * _Nonnull, int> importedPath
++// CHECK: @keypath(ImportedPathNode * _Nonnull, count)
++// CHECK: KeyPathGet(importedPath(), root)
+diff --git a/clang/test/ObjC3/AST/Inputs/typed-keypath-signature.h b/clang/test/ObjC3/AST/Inputs/typed-keypath-signature.h
+new file mode 100644
+index 000000000..46e01ecc5
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/typed-keypath-signature.h
+@@ -0,0 +1,13 @@
++__attribute__((objc_root_class))
++@interface SignaturePathRoot
++@property(nonatomic) int count;
++@end
++typedef KeyPath<SignaturePathRoot *, int> SignatureReadPath;
++typedef WritableKeyPath<SignaturePathRoot *, int> SignatureWritePath;
++static inline SignatureReadPath signature_narrow(SignatureWritePath source) {
++  return source;
++}
++static inline int signature_apply(SignatureReadPath path,
++                                   SignaturePathRoot * _Nonnull root) {
++  return KeyPathGet(path, root);
++}
+diff --git a/clang/test/ObjC3/AST/native-c-async-entry-print.mm b/clang/test/ObjC3/AST/native-c-async-entry-print.mm
+new file mode 100644
+index 000000000..e17fd7dc9
+--- /dev/null
++++ b/clang/test/ObjC3/AST/native-c-async-entry-print.mm
+@@ -0,0 +1,16 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -ast-print %s | FileCheck %s --check-prefix=PRINT
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -ast-dump=json %s | FileCheck %s --check-prefix=JSON
++#include "../CodeGen/Inputs/native-c-async-frame.h"
++// PRINT: int frame_function(int) __objc3_async_frame;
++int frame_function(int) __objc3_async_frame;
++// PRINT: int task_function(int) __objc3_async;
++int task_function(int) __objc3_async;
++// PRINT: typedef int (*FrameCallback)(int) __objc3_async_frame;
++typedef int (*FrameCallback)(int) __objc3_async_frame;
++// PRINT: - (int)value:(int)value __objc3_async_frame;
++__attribute__((objc_root_class))
++@interface EntryPrint
++- (int)value:(int)value __objc3_async_frame;
++@end
++// JSON: "asyncABI": "c-frame-v1"
++// JSON: "asyncABI": "cxx-task-v1"
+diff --git a/clang/test/ObjC3/AST/typed-keypath-signature-pch.m b/clang/test/ObjC3/AST/typed-keypath-signature-pch.m
+new file mode 100644
+index 000000000..053e26d3c
+--- /dev/null
++++ b/clang/test/ObjC3/AST/typed-keypath-signature-pch.m
+@@ -0,0 +1,14 @@
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch -o %t.pch %S/Inputs/typed-keypath-signature.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t.pch -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch -o %t.cxx.pch %S/Inputs/typed-keypath-signature.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t.cxx.pch -emit-llvm -o /dev/null -verify %s
++// expected-no-diagnostics
++#include "../Inputs/keypath-abi.h"
++SignatureReadPath signature_literal(void) {
++  return @keypath(SignaturePathRoot, count);
++}
++int signature_consumer(SignaturePathRoot * _Nonnull root) {
++  SignatureWritePath source = @keypath(SignaturePathRoot, count);
++  SignatureReadPath read = source;
++  return signature_apply(signature_narrow(source), root) + KeyPathGet(read, root);
++}
+diff --git a/clang/test/ObjC3/Parser/resource-contextual-empty-call.m b/clang/test/ObjC3/Parser/resource-contextual-empty-call.m
+new file mode 100644
+index 000000000..ae9e8e6da
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/resource-contextual-empty-call.m
+@@ -0,0 +1,25 @@
++// RUN: %clang_cc1 -std=c17 -fobjc-version=3 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -verify %s
++// expected-no-diagnostics
++
++void take(void);
++void reset(void);
++void discard(void);
++void ordinary_calls(void) {
++  take();
++  reset();
++  discard();
++}
++
++#ifdef __cplusplus
++template <class T> struct Pointer {
++  T *release();
++  void reset(T *);
++  void assign(Pointer &other) { reset(other.release()); }
++  void clear() { reset(nullptr); }
++};
++void member_calls(Pointer<int> &value, Pointer<int> &other) {
++  value.assign(other);
++  value.clear();
++}
++#endif
+diff --git a/clang/test/ObjC3/Parser/borrowed-eof-recovery.c b/clang/test/ObjC3/Parser/borrowed-eof-recovery.c
+new file mode 100644
+index 000000000..d3f640832
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/borrowed-eof-recovery.c
+@@ -0,0 +1,6 @@
++// RUN: not %clang_cc1 -x c -fsyntax-only %s 2>&1 | FileCheck %s
++// RUN: not %clang_cc1 -x objective-c -fobjc-version=3 -fsyntax-only %s 2>&1 | FileCheck %s
++// CHECK: error:
++
++// Qualifier recognition must not request lookahead after the lexer reaches EOF.
++int broken( {
+diff --git a/clang/test/ObjC3/AST/cxx-group-scope-pch.mm b/clang/test/ObjC3/AST/cxx-group-scope-pch.mm
+new file mode 100644
+index 000000000..cc10f8802
+--- /dev/null
++++ b/clang/test/ObjC3/AST/cxx-group-scope-pch.mm
+@@ -0,0 +1,16 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -emit-pch -x objective-c++-header %s -o %t.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -include-pch %t.pch -emit-llvm -o - %s | FileCheck %s
++#ifndef CXX_GROUP_SCOPE_PCH
++#define CXX_GROUP_SCOPE_PCH
++#include "../CodeGen/Inputs/native-async-task.h"
++objc3::task<int> inherited_scope(int) __attribute__((objc_task_group));
++template<class T> objc3::task<T> template_scope(T value)
++    __attribute__((objc_task_group)) { co_return value; }
++#else
++objc3::task<int> inherited_scope(int value) { co_return value; }
++auto instantiate = template_scope(42);
++// CHECK-LABEL: define{{.*}} @_Z15inherited_scopei
++// CHECK: call{{.*}} @{{.*}}__objc3_group_initial_suspend
++// CHECK: define{{.*}}template_scope
++// CHECK: call{{.*}} @{{.*}}__objc3_group_initial_suspend
++#endif
+diff --git a/clang/test/ObjC3/AST/cxx-frame-values-pch.mm b/clang/test/ObjC3/AST/cxx-frame-values-pch.mm
+new file mode 100644
+index 000000000..8bc10af82
+--- /dev/null
++++ b/clang/test/ObjC3/AST/cxx-frame-values-pch.mm
+@@ -0,0 +1,27 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -emit-pch -x objective-c++-header %s -o %t.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -include-pch %t.pch -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#ifndef CXX_FRAME_VALUES_PCH
++#define CXX_FRAME_VALUES_PCH
++#include "../CodeGen/Inputs/native-c-async-frame.h"
++struct Operations;
++template<class T> const Operations *__objc3_async_frame_value_ops() noexcept {
++  return nullptr;
++}
++template<class T> void __objc3_async_frame_capture(void *, void *) {}
++struct Value {
++  Value(const Value &);
++  Value(Value &&);
++  ~Value();
++};
++inline Value roundtrip(Value value) __objc3_async_frame { return value; }
++template<class T> T dependent(T value) __objc3_async_frame { return value; }
++#else
++objc3_async_frame build(Value value) { return roundtrip(static_cast<Value &&>(value)); }
++objc3_async_frame instantiate(Value value) { return dependent(static_cast<Value &&>(value)); }
++// CHECK: define{{.*}}roundtrip
++// CHECK: call{{.*}}__objc3_async_frame_value_ops
++// CHECK: {{call|invoke}}{{.*}}__objc3_async_frame_capture
++// CHECK: define{{.*}}dependent
++// CHECK: call{{.*}}__objc3_async_frame_value_ops
++// CHECK: {{call|invoke}}{{.*}}__objc3_async_frame_capture
++#endif
+diff --git a/clang/test/ObjC3/AST/cxx-frame-private-pch.mm b/clang/test/ObjC3/AST/cxx-frame-private-pch.mm
+new file mode 100644
+index 000000000..72f394f48
+--- /dev/null
++++ b/clang/test/ObjC3/AST/cxx-frame-private-pch.mm
+@@ -0,0 +1,22 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -emit-pch -x objective-c++-header %s -o %t.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -include-pch %t.pch -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#ifndef CXX_FRAME_PRIVATE_PCH
++#define CXX_FRAME_PRIVATE_PCH
++#include "../CodeGen/Inputs/native-c-async-frame.h"
++template<class T> const void *__objc3_async_frame_value_ops() noexcept { return nullptr; }
++template<class T> const void *__objc3_async_frame_result_type() noexcept { return nullptr; }
++template<class T> void __objc3_async_frame_capture(void *, void *) {}
++namespace {
++struct Value { Value(); Value(const Value &); ~Value() noexcept; };
++enum class Code { answer = 42 };
++}
++inline Value private_value(Value value) __objc3_async_frame { return value; }
++inline Code private_code() __objc3_async_frame { return Code::answer; }
++#else
++objc3_async_frame use() { Value value; return private_value(value); }
++objc3_async_frame use_enum() { return private_code(); }
++// CHECK-DAG: define{{.*}}private_value
++// CHECK-DAG: call{{.*}}__objc3_async_frame_result_type
++// CHECK-DAG: define{{.*}}private_code
++// CHECK-DAG: call{{.*}}__objc3_async_frame_result_type
++#endif
+diff --git a/clang/test/ObjC3/AST/native-isolation-source.m b/clang/test/ObjC3/AST/native-isolation-source.m
+new file mode 100644
+index 000000000..d60cb8890
+--- /dev/null
++++ b/clang/test/ObjC3/AST/native-isolation-source.m
+@@ -0,0 +1,32 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %s > %t.m
++// RUN: FileCheck %s < %t.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o /dev/null %t.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -ast-print %s > %t.mm
++// RUN: FileCheck %s < %t.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o /dev/null %t.mm
++#include "../CodeGen/Inputs/native-c-async-frame.h"
++@protocol Sendable @end
++__attribute__((objc_root_class)) @interface SourceRoot <Sendable>
++- (int)read __attribute__((nothrow, objc_executor(main)));
+++ (int)classRead __attribute__((nothrow, objc_executor(main)));
++@end
++int isolated_value(int) __attribute__((nothrow, objc_executor(main)));
++int native_value(int) __objc3_async_frame;
++inline int published_function(int value) __objc3_async_frame {
++  return __objc3_await isolated_value(value);
++}
++inline int published_frame(int value) __objc3_async_frame {
++  return __objc3_await native_value(value);
++}
++inline int published_message(SourceRoot *object) __objc3_async_frame {
++  return __objc3_await [object read];
++}
++inline int published_class(void) __objc3_async_frame {
++  return __objc3_await [SourceRoot classRead];
++}
++// CHECK-NOT: __objc3_isolation_entry_
++// CHECK: return __objc3_await isolated_value(value)
++// CHECK: return __objc3_await native_value(value)
++// CHECK: return __objc3_await [object read]
++// CHECK: return __objc3_await [SourceRoot classRead]
++// CHECK-NOT: __objc3_isolation_entry_
+diff --git a/clang/test/ObjC3/AST/native-task-source.mm b/clang/test/ObjC3/AST/native-task-source.mm
+new file mode 100644
+index 000000000..83f21ae71
+--- /dev/null
++++ b/clang/test/ObjC3/AST/native-task-source.mm
+@@ -0,0 +1,11 @@
++// RUN: %clang_cc1 -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -ast-print -ast-dump-filter published_task %s | sed '1d' > %t.mm
++// RUN: FileCheck %s < %t.mm
++// RUN: %clang_cc1 -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -DREPARSE -include %s -fsyntax-only %t.mm
++#include "../CodeGen/Inputs/native-async-task.h"
++int original_task(int) __objc3_async;
++#ifndef REPARSE
++inline int published_task(int value) __objc3_async {
++  return __objc3_await original_task(value);
++}
++#endif
++// CHECK: co_return __objc3_await original_task(value)
+diff --git a/clang/test/ObjC3/AST/retained-callable-print.mm b/clang/test/ObjC3/AST/retained-callable-print.mm
+new file mode 100644
+index 000000000..e2c26db2f
+--- /dev/null
++++ b/clang/test/ObjC3/AST/retained-callable-print.mm
+@@ -0,0 +1,19 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %s > %t.mrc.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %t.mrc.mm > %t.mrc.again.mm
++// RUN: %python -B -c "from pathlib import Path; assert Path('%t.mrc.mm').read_bytes() == Path('%t.mrc.again.mm').read_bytes()"
++// RUN: FileCheck %s < %t.mrc.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -ast-print %s > %t.arc.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -ast-print %t.arc.mm > %t.arc.again.mm
++// RUN: %python -B -c "from pathlib import Path; assert Path('%t.arc.mm').read_bytes() == Path('%t.arc.again.mm').read_bytes()"
++// RUN: FileCheck %s < %t.arc.mm
++typedef id (*RetainedFactory)(void) __attribute__((ns_returns_retained));
++using RetainedAlias = id (__attribute__((ns_returns_retained)) *)(void);
++typedef RetainedFactory (*NestedFactory)(void);
++// Attributed function types must not gain another pair of parentheses every
++// time their canonical declaration is printed and reparsed.
++// CHECK: typedef id (__attribute__((ns_returns_retained)) *RetainedFactory)();
++// CHECK: using RetainedAlias = id (__attribute__((ns_returns_retained)) *)();
++// CHECK: typedef RetainedFactory (*NestedFactory)();
++typedef id (__attribute__((ns_returns_retained)) *(*HigherFactory)(void))(void);
++struct FactoryOwner {};
++using RetainedMember = id (__attribute__((ns_returns_retained)) FactoryOwner::*)(void);
+diff --git a/clang/test/ObjC3/AST/Inputs/typed-keypath-subscripts-empty.m b/clang/test/ObjC3/AST/Inputs/typed-keypath-subscripts-empty.m
+new file mode 100644
+index 000000000..16af07a25
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/typed-keypath-subscripts-empty.m
+@@ -0,0 +1,1 @@
++// Empty consumer of the indexed key-path PCH.
+diff --git a/clang/test/ObjC3/AST/Inputs/typed-keypath-subscripts.h b/clang/test/ObjC3/AST/Inputs/typed-keypath-subscripts.h
+new file mode 100644
+index 000000000..09e9ff2e5
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/typed-keypath-subscripts.h
+@@ -0,0 +1,5 @@
++#include "../../Sema/Inputs/typed-keypath-subscripts.h"
++int indexed_body(IndexNode *_Nonnull root,WritableKeyPath<IndexNode*,int> path) {
++  int value=(root[path]=7);value+=root[path]++;value+=++root[path];
++  value+=(root[path]+=2);return value+root[@keypath(IndexNode,count)];
++}
+diff --git a/clang/test/ObjC3/AST/typed-keypath-subscripts-print.m b/clang/test/ObjC3/AST/typed-keypath-subscripts-print.m
+new file mode 100644
+index 000000000..53626e5df
+--- /dev/null
++++ b/clang/test/ObjC3/AST/typed-keypath-subscripts-print.m
+@@ -0,0 +1,35 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %S/Inputs/typed-keypath-subscripts.h > %t-c17-False.m
++// RUN: FileCheck %s < %t-c17-False.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c17-False.ll %t-c17-False.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch -x objective-c-header %S/Inputs/typed-keypath-subscripts.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c17-False.pch -ast-print %S/Inputs/typed-keypath-subscripts-empty.m > %t-c17-False-pch.m
++// RUN: FileCheck %s < %t-c17-False-pch.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c17-False-pch.ll %t-c17-False-pch.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -ast-print %S/Inputs/typed-keypath-subscripts.h > %t-c17-True.m
++// RUN: FileCheck %s < %t-c17-True.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o %t-c17-True.ll %t-c17-True.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch -x objective-c-header %S/Inputs/typed-keypath-subscripts.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t-c17-True.pch -ast-print %S/Inputs/typed-keypath-subscripts-empty.m > %t-c17-True-pch.m
++// RUN: FileCheck %s < %t-c17-True-pch.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o %t-c17-True-pch.ll %t-c17-True-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %S/Inputs/typed-keypath-subscripts.h > %t-c++23-False.m
++// RUN: FileCheck %s < %t-c++23-False.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++23-False.ll %t-c++23-False.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch -x objective-c++-header %S/Inputs/typed-keypath-subscripts.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++23-False.pch -ast-print %S/Inputs/typed-keypath-subscripts-empty.m > %t-c++23-False-pch.m
++// RUN: FileCheck %s < %t-c++23-False-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++23-False-pch.ll %t-c++23-False-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -ast-print %S/Inputs/typed-keypath-subscripts.h > %t-c++23-True.m
++// RUN: FileCheck %s < %t-c++23-True.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o %t-c++23-True.ll %t-c++23-True.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch -x objective-c++-header %S/Inputs/typed-keypath-subscripts.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t-c++23-True.pch -ast-print %S/Inputs/typed-keypath-subscripts-empty.m > %t-c++23-True-pch.m
++// RUN: FileCheck %s < %t-c++23-True-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o %t-c++23-True-pch.ll %t-c++23-True-pch.m
++// CHECK: int indexed_body(
++// CHECK: int value = (root[path] = 7);
++// CHECK: value += root[path]++;
++// CHECK: value += ++root[path];
++// CHECK: value += (root[path] += 2);
++// CHECK: root[@keypath(IndexNode * _Nonnull, count)]
++// CHECK-NOT: __objc3_keypath_
+diff --git a/clang/test/ObjC3/AST/Inputs/generic-lambda-empty.mm b/clang/test/ObjC3/AST/Inputs/generic-lambda-empty.mm
+new file mode 100644
+index 000000000..f8a4c3d5c
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/generic-lambda-empty.mm
+@@ -0,0 +1,1 @@
++// Empty consumer of the generic lambda declaration PCH.
+diff --git a/clang/test/ObjC3/AST/Inputs/generic-lambda-print.h b/clang/test/ObjC3/AST/Inputs/generic-lambda-print.h
+new file mode 100644
+index 000000000..369f464cf
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/generic-lambda-print.h
+@@ -0,0 +1,11 @@
++inline int generic_print(int n) {
++  auto sum=[]<class... T>(T... values){return (0+...+values);};
++  auto defaults=[]<class T=int>(T value=42){return value;};
++  auto immediate=[](auto value) consteval {return value+2;};
++  int (*callback)(int)=[](auto value){return value+2;};
++#if __cplusplus>202002L
++  auto stateless=[](auto value) static {return value+2;};
++  n=stateless(n);
++#endif
++  return sum(n,2)+sum()+defaults.template operator()<>()+immediate(40)+callback(n);
++}
+diff --git a/clang/test/ObjC3/AST/generic-lambda-print.mm b/clang/test/ObjC3/AST/generic-lambda-print.mm
+new file mode 100644
+index 000000000..2dfd16c82
+--- /dev/null
++++ b/clang/test/ObjC3/AST/generic-lambda-print.mm
+@@ -0,0 +1,16 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %S/Inputs/generic-lambda-print.h > %t-c++20.mm
++// RUN: FileCheck %s --check-prefixes=CHECK < %t-c++20.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++20.ll %t-c++20.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -x objective-c++-header -emit-pch %S/Inputs/generic-lambda-print.h -o %t-c++20.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++20.pch -ast-print %S/Inputs/generic-lambda-empty.mm > %t-c++20-pch.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++20-pch.ll %t-c++20-pch.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %S/Inputs/generic-lambda-print.h > %t-c++23.mm
++// RUN: FileCheck %s --check-prefixes=CHECK,STATIC < %t-c++23.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++23.ll %t-c++23.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -x objective-c++-header -emit-pch %S/Inputs/generic-lambda-print.h -o %t-c++23.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++23.pch -ast-print %S/Inputs/generic-lambda-empty.mm > %t-c++23-pch.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++23-pch.ll %t-c++23-pch.mm
++// CHECK: []<class ...T>(T ...values)
++// CHECK: []<class T = int>(T value = 42)
++// CHECK: consteval
++// STATIC: static
+diff --git a/clang/test/ObjC3/AST/Inputs/generic-lambda-contracts.h b/clang/test/ObjC3/AST/Inputs/generic-lambda-contracts.h
+new file mode 100644
+index 000000000..55142b3d2
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/generic-lambda-contracts.h
+@@ -0,0 +1,19 @@
++struct GenericConfigBase { int bias; };
++struct GenericConfig : GenericConfigBase { int values[2]; double scale; };
++union GenericChoice { int left; int right; };
++inline constexpr int generic_contracts() {
++  auto checked=[]<class T>(T value) noexcept(noexcept(value+2))
++      requires requires(T item) { item+2; } {return value+2;};
++  auto head=[]<class T> requires (sizeof(T)>0) (T value) {return value+2;};
++  auto structural=[]<GenericConfig C>() {
++    return C.bias+C.values[0]+C.values[1]+int(C.scale);
++  };
++  auto floating=[]<double D>() {return int(D);};
++  auto choice=[]<GenericChoice C>() {return C.right;};
++  static_assert(noexcept(checked(40)));
++  return checked(40)+head(40)+
++      structural.template operator()<GenericConfig{{2},{20,18},2.0}>()+
++      floating.template operator()<42.0>()+
++      choice.template operator()<GenericChoice{.right=42}>();
++}
++static_assert(generic_contracts()==210);
+diff --git a/clang/test/ObjC3/AST/generic-lambda-contracts.mm b/clang/test/ObjC3/AST/generic-lambda-contracts.mm
+new file mode 100644
+index 000000000..c6b90daed
+--- /dev/null
++++ b/clang/test/ObjC3/AST/generic-lambda-contracts.mm
+@@ -0,0 +1,14 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %S/Inputs/generic-lambda-contracts.h > %t-c++20.mm
++// RUN: FileCheck %s --check-prefixes=CHECK < %t-c++20.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++20.ll %t-c++20.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -x objective-c++-header -emit-pch %S/Inputs/generic-lambda-contracts.h -o %t-c++20.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++20.pch -ast-print %S/Inputs/generic-lambda-empty.mm > %t-c++20-pch.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++20-pch.ll %t-c++20-pch.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %S/Inputs/generic-lambda-contracts.h > %t-c++23.mm
++// RUN: FileCheck %s --check-prefixes=CHECK < %t-c++23.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++23.ll %t-c++23.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -x objective-c++-header -emit-pch %S/Inputs/generic-lambda-contracts.h -o %t-c++23.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++23.pch -ast-print %S/Inputs/generic-lambda-empty.mm > %t-c++23-pch.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++23-pch.ll %t-c++23-pch.mm
++// CHECK: noexcept(noexcept(value + 2)) requires requires (T item)
++// CHECK: []<class T> requires (sizeof(T) > 0)(T value)
+diff --git a/clang/test/ObjC3/AST/Inputs/public-concepts.h b/clang/test/ObjC3/AST/Inputs/public-concepts.h
+new file mode 100644
+index 000000000..056bb6e48
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/public-concepts.h
+@@ -0,0 +1,9 @@
++namespace Predicates {
++template<class T> concept Addable [[clang::annotate("objc3.concept-owner:addable")]] = requires(T n){n+2;};
++template<class T> concept Wide [[clang::annotate("objc3.concept-owner:wide")]] = Addable<T> && (sizeof(T)>=sizeof(int));
++template<int N> concept Positive [[clang::annotate("objc3.concept-owner:positive")]] = N>0;
++}
++inline constexpr int concept_print() {
++  auto apply=[]<Predicates::Wide T>(T n){return n+2;};return apply(40);
++}
++static_assert(Predicates::Positive<2> && !Predicates::Positive<-1> && concept_print()==42);
+diff --git a/clang/test/ObjC3/AST/public-concepts.mm b/clang/test/ObjC3/AST/public-concepts.mm
+new file mode 100644
+index 000000000..d08f329cd
+--- /dev/null
++++ b/clang/test/ObjC3/AST/public-concepts.mm
+@@ -0,0 +1,17 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %S/Inputs/public-concepts.h > %t-c++20.mm
++// RUN: FileCheck %s --check-prefixes=CHECK < %t-c++20.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++20.ll %t-c++20.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -x objective-c++-header -emit-pch %S/Inputs/public-concepts.h -o %t-c++20.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++20.pch -ast-print %S/Inputs/generic-lambda-empty.mm > %t-c++20-pch.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++20-pch.ll %t-c++20-pch.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %S/Inputs/public-concepts.h > %t-c++23.mm
++// RUN: FileCheck %s --check-prefixes=CHECK < %t-c++23.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++23.ll %t-c++23.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -x objective-c++-header -emit-pch %S/Inputs/public-concepts.h -o %t-c++23.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++23.pch -ast-print %S/Inputs/generic-lambda-empty.mm > %t-c++23-pch.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++23-pch.ll %t-c++23-pch.mm
++// CHECK: concept Addable {{.*}}objc3.concept-owner:addable
++// CHECK: concept Wide {{.*}}objc3.concept-owner:wide
++// CHECK: ::Predicates::Addable<T>
++// CHECK: concept Positive {{.*}} = N > 0;
++// CHECK: []<::Predicates::Wide T>(T n)
+diff --git a/clang/test/ObjC3/AST/Inputs/public-function-templates.h b/clang/test/ObjC3/AST/Inputs/public-function-templates.h
+new file mode 100644
+index 000000000..e889beb36
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/public-function-templates.h
+@@ -0,0 +1,5 @@
++template<class T> __attribute__((abi_tag("owner"))) constexpr T add(T n){return n+2;}
++template<int N> __attribute__((abi_tag("owner"))) int count(){static int visits=0;return N+visits++;}
++template<class... T> __attribute__((abi_tag("owner"))) constexpr int sum(T... n){return (0+...+n);}
++static_assert(add(40)==42 && sum(20,22)==42);
++int use(){return add(40)+count<40>();}
+diff --git a/clang/test/ObjC3/AST/public-function-templates.mm b/clang/test/ObjC3/AST/public-function-templates.mm
+new file mode 100644
+index 000000000..d96c20185
+--- /dev/null
++++ b/clang/test/ObjC3/AST/public-function-templates.mm
+@@ -0,0 +1,15 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %S/Inputs/public-function-templates.h > %t-c++20.mm
++// RUN: FileCheck %s --check-prefixes=CHECK < %t-c++20.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++20.ll %t-c++20.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -x objective-c++-header -emit-pch %S/Inputs/public-function-templates.h -o %t-c++20.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++20.pch -ast-print %S/Inputs/generic-lambda-empty.mm > %t-c++20-pch.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++20-pch.ll %t-c++20-pch.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %S/Inputs/public-function-templates.h > %t-c++23.mm
++// RUN: FileCheck %s --check-prefixes=CHECK < %t-c++23.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++23.ll %t-c++23.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -x objective-c++-header -emit-pch %S/Inputs/public-function-templates.h -o %t-c++23.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++23.pch -ast-print %S/Inputs/generic-lambda-empty.mm > %t-c++23-pch.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++23-pch.ll %t-c++23-pch.mm
++// CHECK: template <class T> __attribute__((abi_tag("owner"))) constexpr T add(T n)
++// CHECK: template <int N> __attribute__((abi_tag("owner"))) int count()
++// CHECK: template <class ...T> __attribute__((abi_tag("owner"))) constexpr int sum(T ...n)
+diff --git a/clang/test/ObjC3/Parser/native-lambda-effects.mm b/clang/test/ObjC3/Parser/native-lambda-effects.mm
+new file mode 100644
+index 000000000..040059ae3
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/native-lambda-effects.mm
+@@ -0,0 +1,16 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -fsyntax-only -verify=common,cxx20 %s
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++23 -fsyntax-only -verify=common %s
++struct Error {};
++int use(Error error) __objc3_throws(Error) {
++  auto generic=[]<class E>(E value)->int __objc3_throws(E) {
++    __objc3_throw(value);
++  };
++  auto constant=[] __objc3_throws(Error) {return 42;}; // cxx20-warning {{lambda without a parameter clause is a C++23 extension}}
++  return __objc3_try(generic(error))+__objc3_try(constant());
++}
++int rejected(Error error) {
++  auto plain=[](Error value)->int {
++    __objc3_throw(value); // common-error {{an ObjC3 throw requires a throwing function}}
++  };
++  return plain(error);
++}
+diff --git a/clang/test/ObjC3/AST/native-dependent-await-spelling.mm b/clang/test/ObjC3/AST/native-dependent-await-spelling.mm
+new file mode 100644
+index 000000000..8b74e6f6d
+--- /dev/null
++++ b/clang/test/ObjC3/AST/native-dependent-await-spelling.mm
+@@ -0,0 +1,30 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -ast-print %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -emit-pch %s -o %t-c++20.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -include-pch %t-c++20.pch -ast-print -x objective-c++ /dev/null | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -ast-print %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -emit-pch %s -o %t-c++23.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -include-pch %t-c++23.pch -ast-print -x objective-c++ /dev/null | FileCheck %s
++#include "../CodeGen/Inputs/native-async-task.h"
++template<class Work> objc3::task<int> ordinary_dependent(Work work) {
++  co_await work;co_return 42;
++}
++template<class Work> int native_dependent(Work work) __objc3_async_frame {
++  return __objc3_await work();
++}
++// CHECK-LABEL: ordinary_dependent(Work work)
++// CHECK: co_await work;
++// CHECK-NOT: __objc3_await
++// CHECK-LABEL: native_dependent(Work work)
++// CHECK: __objc3_await work()
++
++template<class Work> int native_task_dependent(Work work) __objc3_async {
++  return __objc3_await work();
++}
++#define TASK_NATIVE_AWAIT __objc3_await
++template<int Bias> int native_task_value_spelling(int value) __objc3_async {
++  return TASK_NATIVE_AWAIT (value+Bias);
++}
++// CHECK-LABEL: native_task_dependent(Work work)
++// CHECK: __objc3_await work()
++// CHECK-LABEL: native_task_value_spelling(int value)
++// CHECK: __objc3_await (value + Bias)
+diff --git a/clang/test/ObjC3/AST/Inputs/native-diagnostic-attributes.h b/clang/test/ObjC3/AST/Inputs/native-diagnostic-attributes.h
+new file mode 100644
+index 000000000..960d387ba
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/native-diagnostic-attributes.h
+@@ -0,0 +1,17 @@
++#ifndef NATIVE_DIAGNOSTIC_ATTRIBUTES_H
++#define NATIVE_DIAGNOSTIC_ATTRIBUTES_H
++typedef __SIZE_TYPE__ DiagnosticSize;
++extern const int TagExact __attribute__((type_tag_for_datatype(example,int)));
++extern const int TagLayout __attribute__((type_tag_for_datatype(example,int,layout_compatible)));
++extern const int TagNull __attribute__((type_tag_for_datatype(example,int,must_be_null)));
++extern const int TagBoth __attribute__((type_tag_for_datatype(example,int,layout_compatible,must_be_null)));
++void *reordered_copy(const void *source,DiagnosticSize size,void *destination)
++    __attribute__((diagnose_as_builtin(__builtin_memcpy,3,1,2)));
++#ifdef __cplusplus
++template<class T> struct DiagnosticTags {
++  static const int tag __attribute__((type_tag_for_datatype(example,T,layout_compatible)));
++  static void *copy(const void *source,DiagnosticSize size,void *destination)
++      __attribute__((diagnose_as_builtin(__builtin_memcpy,3,1,2)));
++};
++#endif
++#endif
+diff --git a/clang/test/ObjC3/AST/native-diagnostic-attributes.m b/clang/test/ObjC3/AST/native-diagnostic-attributes.m
+new file mode 100644
+index 000000000..23c28a31d
+--- /dev/null
++++ b/clang/test/ObjC3/AST/native-diagnostic-attributes.m
+@@ -0,0 +1,48 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %s > %t-c17-False.m
++// RUN: FileCheck %s < %t-c17-False.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only %t-c17-False.m
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch %S/Inputs/native-diagnostic-attributes.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c17-False.pch -ast-print %s > %t-c17-False-pch.m
++// RUN: FileCheck %s < %t-c17-False-pch.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only %t-c17-False-pch.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -ast-print %s > %t-c17-True.m
++// RUN: FileCheck %s < %t-c17-True.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only %t-c17-True.m
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch %S/Inputs/native-diagnostic-attributes.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t-c17-True.pch -ast-print %s > %t-c17-True-pch.m
++// RUN: FileCheck %s < %t-c17-True-pch.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only %t-c17-True-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %s > %t-c++20-False.m
++// RUN: FileCheck %s < %t-c++20-False.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only %t-c++20-False.m
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch %S/Inputs/native-diagnostic-attributes.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++20-False.pch -ast-print %s > %t-c++20-False-pch.m
++// RUN: FileCheck %s < %t-c++20-False-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only %t-c++20-False-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -ast-print %s > %t-c++20-True.m
++// RUN: FileCheck %s < %t-c++20-True.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only %t-c++20-True.m
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch %S/Inputs/native-diagnostic-attributes.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t-c++20-True.pch -ast-print %s > %t-c++20-True-pch.m
++// RUN: FileCheck %s < %t-c++20-True-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only %t-c++20-True-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %s > %t-c++23-False.m
++// RUN: FileCheck %s < %t-c++23-False.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only %t-c++23-False.m
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch %S/Inputs/native-diagnostic-attributes.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++23-False.pch -ast-print %s > %t-c++23-False-pch.m
++// RUN: FileCheck %s < %t-c++23-False-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only %t-c++23-False-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -ast-print %s > %t-c++23-True.m
++// RUN: FileCheck %s < %t-c++23-True.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only %t-c++23-True.m
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch %S/Inputs/native-diagnostic-attributes.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t-c++23-True.pch -ast-print %s > %t-c++23-True-pch.m
++// RUN: FileCheck %s < %t-c++23-True-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only %t-c++23-True-pch.m
++#include "Inputs/native-diagnostic-attributes.h"
++// CHECK: type_tag_for_datatype(example, int)))
++// CHECK: type_tag_for_datatype(example, int, layout_compatible)))
++// CHECK: type_tag_for_datatype(example, int, must_be_null)))
++// CHECK: type_tag_for_datatype(example, int, layout_compatible, must_be_null)))
++// CHECK: diagnose_as_builtin(__builtin_memcpy, 3, 1, 2)))
+diff --git a/clang/test/ObjC3/AST/Inputs/native-effectful-block-spelling.h b/clang/test/ObjC3/AST/Inputs/native-effectful-block-spelling.h
+new file mode 100644
+index 000000000..c8f5ed780
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/native-effectful-block-spelling.h
+@@ -0,0 +1,20 @@
++#ifndef OBJC3_EFFECTFUL_BLOCK_SPELLING_H
++#define OBJC3_EFFECTFUL_BLOCK_SPELLING_H
++#include "../../CodeGen/Inputs/native-c-async-frame.h"
++typedef void (^SpelledFrame)(void) __objc3_async_frame;
++SpelledFrame zero_frame=^void(void) __objc3_async_frame {};
++typedef const void *SpelledCFRef;
++typedef void (^SpelledConsumed)(__attribute__((cf_consumed)) SpelledCFRef,
++                                __attribute__((ns_consumed)) id);
++SpelledConsumed owned_parameters=^void(__attribute__((cf_consumed)) SpelledCFRef foreign,
++                                      __attribute__((ns_consumed)) id object) {
++  (void)foreign;(void)object;
++};
++typedef void (^SpelledNoescape)(void (^ __attribute__((noescape)) callback)(void));
++SpelledNoescape noescape_parameter=^void(void (^ __attribute__((noescape)) callback)(void)) {
++  callback();
++};
++#ifdef __cplusplus
++void (^zero_noexcept)(void) noexcept=^void(void) noexcept {};
++#endif
++#endif
+diff --git a/clang/test/ObjC3/AST/native-effectful-block-spelling.m b/clang/test/ObjC3/AST/native-effectful-block-spelling.m
+new file mode 100644
+index 000000000..27159c533
+--- /dev/null
++++ b/clang/test/ObjC3/AST/native-effectful-block-spelling.m
+@@ -0,0 +1,46 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %s > %t-c17-False.m
++// RUN: FileCheck %s < %t-c17-False.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only %t-c17-False.m
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch %S/Inputs/native-effectful-block-spelling.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c17-False.pch -ast-print %s > %t-c17-False-pch.m
++// RUN: FileCheck %s < %t-c17-False-pch.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only %t-c17-False-pch.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -ast-print %s > %t-c17-True.m
++// RUN: FileCheck %s < %t-c17-True.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only %t-c17-True.m
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch %S/Inputs/native-effectful-block-spelling.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t-c17-True.pch -ast-print %s > %t-c17-True-pch.m
++// RUN: FileCheck %s < %t-c17-True-pch.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only %t-c17-True-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %s > %t-c++20-False.m
++// RUN: FileCheck %s < %t-c++20-False.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only %t-c++20-False.m
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch %S/Inputs/native-effectful-block-spelling.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++20-False.pch -ast-print %s > %t-c++20-False-pch.m
++// RUN: FileCheck %s < %t-c++20-False-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only %t-c++20-False-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -ast-print %s > %t-c++20-True.m
++// RUN: FileCheck %s < %t-c++20-True.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only %t-c++20-True.m
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch %S/Inputs/native-effectful-block-spelling.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t-c++20-True.pch -ast-print %s > %t-c++20-True-pch.m
++// RUN: FileCheck %s < %t-c++20-True-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only %t-c++20-True-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %s > %t-c++23-False.m
++// RUN: FileCheck %s < %t-c++23-False.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only %t-c++23-False.m
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch %S/Inputs/native-effectful-block-spelling.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++23-False.pch -ast-print %s > %t-c++23-False-pch.m
++// RUN: FileCheck %s < %t-c++23-False-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only %t-c++23-False-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -ast-print %s > %t-c++23-True.m
++// RUN: FileCheck %s < %t-c++23-True.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only %t-c++23-True.m
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch %S/Inputs/native-effectful-block-spelling.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t-c++23-True.pch -ast-print %s > %t-c++23-True-pch.m
++// RUN: FileCheck %s < %t-c++23-True-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only %t-c++23-True-pch.m
++#include "Inputs/native-effectful-block-spelling.h"
++// CHECK: ^void(void) __objc3_async_frame
++// CHECK: owned_parameters = ^void({{.*}}cf_consumed{{.*}}ns_consumed{{.*}})
++// CHECK: noescape_parameter = ^void({{.*}}noescape{{.*}})
+diff --git a/clang/test/ObjC3/Parse/property-behavior-reservation.m b/clang/test/ObjC3/Parse/property-behavior-reservation.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Parse/property-behavior-reservation.m
+@@ -0,0 +1,14 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -x objective-c -std=c17 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fobjc3-profile=strict-system -x objective-c++ -std=c++23 -fsyntax-only -verify %s
++
++typedef int behavior;
++
++@protocol Properties
++@property behavior ordinary;
++@property int behavior;
++@property(getter=behavior) int ordinaryGetter;
++@property behavior { storage { int ignored; } }; // expected-error {{property behavior blocks are reserved for a future Objective-C revision}} expected-note {{apply a behavior with the objc_property_behavior attribute}}
++@property (nonatomic, behavior { validate {} }, readonly) int reservedAttribute; // expected-error {{property behavior blocks are reserved}} expected-note {{objc_property_behavior attribute}}
++@property int reservedSuffix behavior { get {} set {} }; // expected-error {{property behavior blocks are reserved}} expected-note {{objc_property_behavior attribute}}
++@property int after;
++@end

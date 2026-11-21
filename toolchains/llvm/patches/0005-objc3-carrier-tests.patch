@@ -1,0 +1,21 @@
+diff --git a/clang/test/ObjC3/Analysis/optional-access-unsupported.m b/clang/test/ObjC3/Analysis/optional-access-unsupported.m
+new file mode 100644
+index 000000000..ea733c2f0
+--- /dev/null
++++ b/clang/test/ObjC3/Analysis/optional-access-unsupported.m
+@@ -0,0 +1,15 @@
++// RUN: %clang_analyze_cc1 -x objective-c -std=c17 -fobjc-version=3 -analyzer-checker=core -verify %s
++
++@interface Receiver
++@property(readonly) id next;
++- (id)take;
++@end
++id optional_member(Receiver *receiver) {
++  return receiver?.next; // expected-error {{ObjC3 optional operators have no qualified static-analysis model}}
++}
++id optional_message(Receiver *receiver) {
++  return [receiver? take]; // expected-error {{ObjC3 optional operators have no qualified static-analysis model}}
++}
++id coalescing(id receiver, id fallback) {
++  return receiver ?? fallback; // expected-error {{ObjC3 optional operators have no qualified static-analysis model}}
++}

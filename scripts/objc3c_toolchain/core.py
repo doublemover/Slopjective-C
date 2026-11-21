@@ -7,7 +7,6 @@ import json
 import os
 import shutil
 import subprocess
-import sys
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -267,81 +266,6 @@ def verify_development(repo: Path, *, manifest_path: Path | None = None,
     return recorded
 
 
-def _windows_build_environment(manifest: dict[str, Any]) -> dict[str, Any]:
-    if os.name != "nt":
-        raise ToolchainError("the pinned foundation preset currently targets Windows x86-64 only")
-    program_files_x86 = Path(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)"))
-    vswhere = program_files_x86 / "Microsoft Visual Studio" / "Installer" / "vswhere.exe"
-    if not vswhere.is_file():
-        raise ToolchainError(f"Visual Studio discovery tool is missing: {vswhere}")
-    # A newer Visual Studio installation must not silently replace the
-    # manifest's VS 2022/v143 toolchain or invalidate an existing Ninja graph.
-    installation = _run([str(vswhere), "-latest", "-version", "[17.0,18.0)",
-                            "-products", "*", "-requires",
-                            "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", "-property", "installationPath"])
-    if not installation:
-        raise ToolchainError("Visual Studio 2022 v143 with the x64 C++ toolset is not installed")
-    vs_install = Path(installation)
-    if not vs_install.is_dir():
-        raise ToolchainError("Visual Studio 2022 v143 with the x64 C++ toolset is not installed")
-    version_file = vs_install / "VC" / "Auxiliary" / "Build" / "Microsoft.VCToolsVersion.default.txt"
-    try:
-        toolset_version = version_file.read_text(encoding="utf-8").strip()
-    except OSError as exc:
-        raise ToolchainError(f"cannot read MSVC toolset version: {exc}") from exc
-    toolset = vs_install / "VC" / "Tools" / "MSVC" / toolset_version
-    cl = toolset / "bin" / "Hostx64" / "x64" / "cl.exe"
-    link = toolset / "bin" / "Hostx64" / "x64" / "link.exe"
-    if not cl.is_file() or not link.is_file():
-        raise ToolchainError(f"MSVC v143 x64 compiler/linker are missing under {toolset}")
-    sdk = manifest["build"]["windows_sdk_version"]
-    kits = program_files_x86 / "Windows Kits" / "10"
-    sdk_include = kits / "Include" / sdk
-    sdk_lib = kits / "Lib" / sdk
-    if not sdk_include.is_dir() or not sdk_lib.is_dir():
-        raise ToolchainError(f"pinned Windows SDK {sdk} is not installed under {kits}")
-    cmake = shutil.which("cmake")
-    ninja = shutil.which("ninja")
-    if not cmake or not ninja:
-        raise ToolchainError("CMake and Ninja must be available on PATH")
-    cmake_path = Path(cmake).resolve()
-    ninja_path = Path(ninja).resolve()
-    python_executable = Path(os.environ.get("OBJC3C_TOOLCHAIN_PYTHON", sys.executable)).resolve()
-    python_version = _run([str(python_executable), "--version"])
-    required_python = manifest.get("host_tools", {}).get("python", "3.15.0")
-    if python_version != f"Python {required_python}":
-        raise ToolchainError(f"Python {required_python} is required for the LLVM build, found {python_version}")
-    sdk_inputs = {}
-    for name, path in {
-        "windows_header": sdk_include / "um" / "Windows.h",
-        "ucrt_header": sdk_include / "ucrt" / "stdio.h",
-        "kernel32_import_library": sdk_lib / "um" / "x64" / "kernel32.lib",
-        "ucrt_import_library": sdk_lib / "ucrt" / "x64" / "ucrt.lib",
-    }.items():
-        if not path.is_file():
-            raise ToolchainError(f"required Windows SDK file is missing: {path}")
-        sdk_inputs[name] = {"path": str(path.resolve()), "sha256": _sha256(path)}
-    return {
-        "host_toolset": manifest["build"]["host_toolset"],
-        "vs_installation": str(vs_install.resolve()),
-        "msvc_toolset_version": toolset_version,
-        "cl_path": str(cl.resolve()),
-        "cl_sha256": _sha256(cl),
-        "link_path": str(link.resolve()),
-        "windows_sdk_version": sdk,
-        "windows_sdk_root": str(kits.resolve()),
-        "windows_sdk_input_hashes": sdk_inputs,
-        "crt": manifest["build"]["windows_crt"],
-        "cmake_path": str(cmake_path),
-        "cmake_version": _run([str(cmake_path), "--version"]).splitlines()[0],
-        "ninja_path": str(ninja_path),
-        "ninja_version": _run([str(ninja_path), "--version"]),
-        "python_executable": str(python_executable),
-        "python_version": python_version,
-        "python_sha256": _sha256(python_executable),
-    }
-
-
 def build_plans(repo: Path, *, manifest_path: Path | None = None,
                 source_dir: Path | None = None, host: str | None = None,
                 instrumentation_profile: str | None = None) -> dict[str, dict[str, Any]]:
@@ -351,18 +275,16 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
     source = (source_dir or repo / "out" / "toolchains" / "objc3-development" / "src").resolve()
     sealed = verify_development(repo, manifest_path=manifest_path, source_dir=source)
     manifest, _ = _load_manifest(manifest_path)
+    from .host import linux_environment
     from .linux_host import HOSTS, native_linux_host
-    host = host or ("windows-x86_64" if os.name == "nt" else native_linux_host())
-    if host == "windows-x86_64":
-        environment = _windows_build_environment(manifest)
-    elif host in HOSTS:
-        from .host import linux_environment
-        try:
-            environment = linux_environment(manifest, host)
-        except (ValueError, OSError, subprocess.SubprocessError) as exc:
-            raise ToolchainError(str(exc)) from exc
-    else:
-        raise ToolchainError(f"unsupported foundation host: {host}")
+
+    host = host or native_linux_host()
+    if host not in HOSTS:
+        raise ToolchainError(f"unsupported Linux foundation host: {host}")
+    try:
+        environment = linux_environment(manifest, host)
+    except (ValueError, OSError, subprocess.SubprocessError) as exc:
+        raise ToolchainError(str(exc)) from exc
     build = manifest["build"]
     profile = None
     if instrumentation_profile is not None:
@@ -375,7 +297,7 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
         sealed = {**sealed, 'build_id': profile['source_build_id'],
                   'build_config_digest': profile['build_config_digest'],
                   'configuration_inputs': profile['configuration_inputs']}
-    output_suffix = "" if host == "windows-x86_64" else "-" + host
+    output_suffix = "-" + host
     if profile:
         output_suffix += "-"+profile["name"]
     build_dir = repo / "out" / "toolchains" / "objc3-development" / ("build" + output_suffix)
@@ -384,7 +306,7 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
     llvm_source = (source / "llvm").as_posix()
     build_path = build_dir.as_posix()
     stage_path = stage_dir.as_posix()
-    cl_path = Path(environment.get("cl_path", environment.get("clang_path", ""))).as_posix()
+    clang_path = Path(environment["clang_path"]).as_posix()
     link_path = Path(environment["link_path"]).as_posix()
     cmake_cache = (repo / "toolchains" / "llvm" / "cmake" / "ObjC3LLVMCache.cmake").as_posix()
     configuration_trace = build_dir / "foundation-configuration-trace.jsonl"
@@ -395,13 +317,10 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
     configure = [
         "cmake", *trace_options, "-S", llvm_source, "-B", build_path, "-G", "Ninja",
         "-C", cmake_cache,
-        f"-DCMAKE_C_COMPILER={cl_path}",
-        f"-DCMAKE_CXX_COMPILER={Path(environment.get('clangxx_path', cl_path)).as_posix()}",
+        f"-DCMAKE_C_COMPILER={clang_path}",
+        f"-DCMAKE_CXX_COMPILER={Path(environment.get('clangxx_path', clang_path)).as_posix()}",
         f"-DCMAKE_LINKER={link_path}",
-        f"-DCMAKE_SYSTEM_VERSION={build['windows_sdk_version']}",
         f"-DPython3_EXECUTABLE={Path(environment['python_executable']).as_posix()}",
-        "-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDLL",
-        f"-DLLVM_USE_CRT_RELEASE={build['windows_crt']}",
         f"-DLLVM_ENABLE_PROJECTS={';'.join(build['projects'])}",
         f"-DLLVM_TARGETS_TO_BUILD={';'.join(build['targets'])}",
         f"-DLLVM_DISTRIBUTION_COMPONENTS={';'.join(build['distribution_components'])}",
@@ -415,16 +334,13 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
         "-DCMAKE_JOB_POOL_LINK=objc3_link",
     ]
     jobs = environment.get("resource_limits", build)
-    if host in HOSTS:
-        configure = [argument for argument in configure if not argument.startswith((
-            "-DCMAKE_SYSTEM_VERSION=", "-DCMAKE_MSVC_RUNTIME_LIBRARY=", "-DLLVM_USE_CRT_RELEASE="))]
-        configure += ["-DLLVM_USE_LINKER=lld", "-DLLVM_ENABLE_LLD=OFF",
-                      f"-DLLVM_DEFAULT_TARGET_TRIPLE={environment['target_triple']}",
-                      f"-DLLVM_PARALLEL_COMPILE_JOBS={jobs['compile_jobs']}",
-                      f"-DLLVM_PARALLEL_LINK_JOBS={jobs['link_jobs']}"]
-        if environment.get("ccache_path"):
-            configure += [f"-DCMAKE_C_COMPILER_LAUNCHER={environment['ccache_path']}",
-                          f"-DCMAKE_CXX_COMPILER_LAUNCHER={environment['ccache_path']}"]
+    configure += ["-DLLVM_USE_LINKER=lld", "-DLLVM_ENABLE_LLD=OFF",
+                  f"-DLLVM_DEFAULT_TARGET_TRIPLE={environment['target_triple']}",
+                  f"-DLLVM_PARALLEL_COMPILE_JOBS={jobs['compile_jobs']}",
+                  f"-DLLVM_PARALLEL_LINK_JOBS={jobs['link_jobs']}"]
+    if environment.get("ccache_path"):
+        configure += [f"-DCMAKE_C_COMPILER_LAUNCHER={environment['ccache_path']}",
+                      f"-DCMAKE_CXX_COMPILER_LAUNCHER={environment['ccache_path']}"]
     if profile:
         configure += [f'-D{key}={value}' for key, value in profile['cmake'].items()]
     target_groups = build.get("build_target_groups")
@@ -439,7 +355,7 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
         for group in target_groups
     ]
     build_cmd = group_commands[0]
-    test_runner = (build_dir / "bin" / ("llvm-lit.py" if host == "windows-x86_64" else "llvm-lit")).as_posix()
+    test_runner = (build_dir / "bin" / "llvm-lit").as_posix()
     test_path = (source / build["test_suite"]).as_posix()
     test_cmd = [environment["python_executable"], "-B", test_runner, "-sv", "--show-unsupported", "-j",
                 str(min(jobs["compile_jobs"], 4)), test_path]
@@ -458,8 +374,6 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
     if not isinstance(test_binaries, list):
         raise ToolchainError("test_binaries must be a list of relative paths")
     for relative in test_binaries:
-        if host in HOSTS and relative.endswith(".exe"):
-            relative = relative[:-4]
         if not isinstance(relative, str) or not relative:
             raise ToolchainError("test binary paths must be nonempty strings")
         executable = (build_dir / relative).resolve()
@@ -521,10 +435,10 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
             # unchanged. Linux test binaries must resolve their matching
             # build-tree LLVM/Clang DSOs even when the caller has an unrelated
             # bootstrap or SDK in LD_LIBRARY_PATH.
-            identity_payload["command_environment"] = {"PYTHONDONTWRITEBYTECODE": "1"}
-            if host in HOSTS:
-                identity_payload["command_environment"]["LD_LIBRARY_PATH"] = (
-                    build_dir / "lib").as_posix()
+            identity_payload["command_environment"] = {
+                "PYTHONDONTWRITEBYTECODE": "1",
+                "LD_LIBRARY_PATH": (build_dir / "lib").as_posix(),
+            }
         identity_payload["identity"] = hashlib.sha256(
             json.dumps(identity_payload, sort_keys=True, separators=(",", ":")).encode()
         ).hexdigest()

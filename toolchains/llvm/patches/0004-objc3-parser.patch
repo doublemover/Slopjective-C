@@ -1,0 +1,2268 @@
+diff --git a/clang/include/clang/Parse/Parser.h b/clang/include/clang/Parse/Parser.h
+index 892715a6d..5b4a3dc8a 100644
+--- a/clang/include/clang/Parse/Parser.h
++++ b/clang/include/clang/Parse/Parser.h
+@@ -29,6 +29,8 @@
+ #include <stack>
+ 
+ namespace clang {
++namespace objc3 { struct MatchPatternInfo; }
++
+ class PragmaHandler;
+ class Scope;
+ class BalancedDelimiterTracker;
+@@ -2420,6 +2422,14 @@ private:
+   /// opt-message:
+   ///   'message' '=' <string>
+   /// \endverbatim
++  void ParseObjC3ResourceAttribute(IdentifierInfo &AttrName,
++                                   SourceLocation AttrNameLoc,
++                                   ParsedAttributes &Attrs,
++                                   SourceLocation *EndLoc,
++                                   IdentifierInfo *ScopeName,
++                                   SourceLocation ScopeLoc,
++                                   ParsedAttr::Form Form);
++
+   void ParseAvailabilityAttribute(IdentifierInfo &Availability,
+                                   SourceLocation AvailabilityLoc,
+                                   ParsedAttributes &attrs,
+@@ -2759,6 +2769,14 @@ private:
+   void ParseFunctionDeclarator(Declarator &D, ParsedAttributes &FirstArgAttrs,
+                                BalancedDelimiterTracker &Tracker,
+                                bool IsAmbiguous, bool RequiresArg = false);
++  void ParseObjC3FunctionEffects(bool &Async, bool &AsyncFrame,
++                                 unsigned &ThrowsKind,
++                                 ParsedType &ErrorType,
++                                 TypeSourceInfo *&ErrorTypeInfo,
++                                 SourceLocation &EffectsLoc,
++                                 SourceLocation &AsyncLoc,
++                                 SourceLocation &ThrowsLoc,
++                                 SourceRange &PayloadRange);
+   void InitCXXThisScopeForDeclaratorIfRelevant(
+       const Declarator &D, const DeclSpec &DS,
+       std::optional<Sema::CXXThisScopeRAII> &ThisScope);
+@@ -5434,6 +5452,10 @@ private:
+   /// This is managed by the \c InMessageExpressionRAIIObject class, and
+   /// should not be set directly.
+   bool InMessageExpression;
++  bool ObjC3ParsingMessageReceiver = false;
++  unsigned ObjC3ReceiverParenDepth = 0;
++  unsigned ObjC3ReceiverBracketDepth = 0;
++  unsigned ObjC3ReceiverBraceDepth = 0;
+ 
+   /// True if we are within an Objective-C container while parsing C-like decls.
+   ///
+@@ -5541,7 +5563,8 @@ private:
+   /// \endverbatim
+   ///
+   Decl *ParseObjCAtInterfaceDeclaration(SourceLocation AtLoc,
+-                                        ParsedAttributes &prefixAttrs);
++                                        ParsedAttributes &prefixAttrs,
++                                        bool IsObjC3Actor = false);
+ 
+   /// Class to handle popping type parameters when leaving the scope.
+   class ObjCTypeParamListScope;
+@@ -7614,6 +7637,37 @@ public:
+   ///         unlabeled-statement
+   /// \endverbatim
+   StmtResult ParseDeferStatement(SourceLocation *TrailingElseLoc);
++  ExprResult ParseObjC3OptionalExpression();
++  bool isObjC3OptionalSendIndicatorAhead(Expr *Receiver);
++  StmtResult ParseObjC3MatchStatement();
++  ExprResult ParseObjC3MatchExpression();
++  bool ParseObjC3MatchPattern(objc3::MatchPatternInfo &Pattern);
++
++  ExprResult ParseObjC3TryExpression();
++  StmtResult ParseObjC3ThrowStatement();
++  StmtResult ParseObjC3DoCatchStatement();
++  ExprResult ParseObjC3CarrierTransferExpression();
++  ExprResult ParseObjC3ResourceExpression();
++  bool isObjC3ResourceAttributeAhead();
++  bool ParseObjC3ScopeCleanupPrefix(ParsedAttributes &Attrs);
++
++  bool isObjC3GuardStatementAhead();
++  bool isObjC3IfBindingStatementAhead();
++  void RecoverObjC3Condition();
++  bool ParseObjC3ConditionList(SmallVectorImpl<Stmt *> &Conditions, bool GuardMode);
++  StmtResult ParseObjC3GuardStatement();
++  StmtResult ParseObjC3IfBindingStatement();
++  ExprResult ParseObjC3ResultExpression();
++  bool isObjC3QualifiedNameAhead();
++  ExprResult ParseObjC3QualifiedNameExpression(SourceLocation AtLoc);
++  TypeResult ParseObjC3QualifiedTypeName(SourceLocation &EndLoc);
++  bool isObjC3QualifiedTypeNameAhead();
++  StmtResult ParseObjC3DeferStatement();
++  StmtResult ParseObjC3LifetimeStatement();
++  TypeResult ParseObjC3TypeConstructor(SourceLocation &EndLoc);
++  TypeResult ParseObjC3KeyPathType(SourceLocation &EndLoc);
++  ExprResult ParseObjC3KeyPathLiteral(SourceLocation AtLoc);
++  ExprResult ParseObjC3KeyPathApplication();
+ 
+   /// ParseExpansionStatement - Parse a C++26 expansion
+   /// statement ('template for').
+diff --git a/clang/lib/Parse/CMakeLists.txt b/clang/lib/Parse/CMakeLists.txt
+index 8dd120f52..01c123394 100644
+--- a/clang/lib/Parse/CMakeLists.txt
++++ b/clang/lib/Parse/CMakeLists.txt
+@@ -18,6 +18,12 @@ add_clang_library(clangParse
+   ParseHLSLRootSignature.cpp
+   ParseInit.cpp
+   ParseObjc.cpp
++  ParseObjC3.cpp
++  ParseObjC3KeyPath.cpp
++  ParseObjC3Conditions.cpp
++  ParseObjC3QualifiedName.cpp
++  ParseObjC3Type.cpp
++  ParseObjC3Match.cpp
+   ParseOpenMP.cpp
+   ParsePragma.cpp
+   ParseStmt.cpp
+diff --git a/clang/lib/Parse/ParseDecl.cpp b/clang/lib/Parse/ParseDecl.cpp
+--- a/clang/lib/Parse/ParseDecl.cpp
++++ b/clang/lib/Parse/ParseDecl.cpp
+@@ -10,6 +10,7 @@
+ //
+ //===----------------------------------------------------------------------===//
+ 
++#include "clang/Basic/ObjC3Syntax.h"
+ #include "clang/AST/ASTContext.h"
+ #include "clang/AST/DeclTemplate.h"
+ #include "clang/AST/PrettyDeclStackTrace.h"
+@@ -38,6 +39,36 @@
+ 
+ using namespace clang;
+ 
++namespace {
++bool isObjC3BorrowedToken(const LangOptions &Lang, const Token &Current) {
++  return Lang.ObjC3 && Current.is(tok::identifier) &&
++         Current.getIdentifierInfo()->isStr("borrowed");
++}
++bool isObjC3BorrowedQualifier(const LangOptions &Lang, const Token &Current,
++                              const Token &Next) {
++  if (!Lang.ObjC3 || Current.isNot(tok::identifier) ||
++      !Current.getIdentifierInfo()->isStr("borrowed"))
++    return false;
++  // The word remains a general identifier, including borrowed(x), borrowed++,
++  // member selection, labels and declarations naming a variable borrowed.
++  if (Next.is(tok::identifier) || Next.is(tok::annot_typename) ||
++      Next.is(tok::at) || Next.is(tok::coloncolon))
++    return true;
++  switch (Next.getKind()) {
++  case tok::kw_void: case tok::kw_char: case tok::kw_short: case tok::kw_int:
++  case tok::kw_long: case tok::kw_float: case tok::kw_double: case tok::kw_bool:
++  case tok::kw_signed: case tok::kw_unsigned: case tok::kw_const:
++  case tok::kw_volatile: case tok::kw_restrict: case tok::kw_struct:
++  case tok::kw_union: case tok::kw_enum: case tok::kw_typeof:
++  case tok::kw_typeof_unqual: case tok::kw_decltype: case tok::kw__Atomic:
++  case tok::kw___kindof: case tok::kw___attribute:
++    return true;
++  default:
++    return false;
++  }
++}
++} // namespace
++
+ //===----------------------------------------------------------------------===//
+ // C99 6.7: Declarations.
+ //===----------------------------------------------------------------------===//
+@@ -502,6 +533,14 @@
+   if (ChangeKWThisToIdent && Tok.is(tok::kw_this))
+     Tok.setKind(tok::identifier);
+ 
++  // The native new family is an enum identifier, including in Objective-C++.
++  // Reclassify only this known attribute operand; ordinary new expressions and
++  // arguments of unrelated attributes retain their C++ keyword grammar.
++  if (Tok.is(tok::kw_new) &&
++      ParsedAttr::getParsedKind(AttrName, ScopeName, Form.getSyntax()) ==
++          ParsedAttr::AT_ObjCMethodFamily)
++    Tok.setKind(tok::identifier);
++
+   ArgsVector ArgExprs;
+   if (Tok.is(tok::identifier)) {
+     // If this attribute wants an 'identifier' argument, make it so.
+@@ -645,7 +684,87 @@
+   ParsedAttr::Kind AttrKind =
+       ParsedAttr::getParsedKind(AttrName, ScopeName, Form.getSyntax());
+ 
+-  if (AttrKind == ParsedAttr::AT_Availability) {
++  if (AttrKind == ParsedAttr::AT_ObjCExecutor) {
++    BalancedDelimiterTracker Parens(*this, tok::l_paren);
++    if (Parens.consumeOpen()) return;
++    SourceLocation ValueLoc = Tok.getLocation();
++    std::string Identity;
++    if (Tok.is(tok::identifier) &&
++        (Tok.getIdentifierInfo()->isStr("main") ||
++         Tok.getIdentifierInfo()->isStr("global"))) {
++      Identity = Tok.getIdentifierInfo()->getName().str();
++      ConsumeToken();
++    } else if (Tok.is(tok::identifier) &&
++               Tok.getIdentifierInfo()->isStr("named")) {
++      ConsumeToken();
++      BalancedDelimiterTracker Named(*this, tok::l_paren);
++      if (Named.expectAndConsume()) { Parens.skipToEnd(); return; }
++      ExprResult Name = ParseStringLiteralExpression();
++      if (Name.isInvalid() || Named.consumeClose()) {
++        Parens.skipToEnd(); return;
++      }
++      const auto *Literal = dyn_cast<StringLiteral>(Name.get());
++      if (!Literal || !Literal->isOrdinary() || Literal->getLength() == 0 ||
++          Literal->getString().contains('\0')) {
++        Diag(ValueLoc, PP.getDiagnostics().getCustomDiagID(
++            DiagnosticsEngine::Error,
++            "named executor requires a nonempty ordinary string without null bytes"));
++        Parens.skipToEnd(); return;
++      }
++      Identity = "named:" + Literal->getString().str();
++    } else {
++      Diag(Tok, PP.getDiagnostics().getCustomDiagID(
++          DiagnosticsEngine::Error,
++          "expected main, global or named(\"identity\") in objc_executor"));
++      Parens.skipToEnd(); return;
++    }
++    if (Parens.consumeClose()) return;
++    auto *Value = StringLiteral::Create(
++        Actions.Context, Identity, StringLiteralKind::Ordinary, false,
++        Actions.Context.getStringLiteralArrayType(Actions.Context.CharTy,
++                                                  Identity.size() + 1),
++        {ValueLoc});
++    ArgsUnion Argument = Value;
++    Attrs.addNew(AttrName, SourceRange(AttrNameLoc, Parens.getCloseLocation()),
++                 AttributeScopeInfo(ScopeName, ScopeLoc), &Argument, 1, Form);
++    if (EndLoc) *EndLoc = Parens.getCloseLocation();
++    return;
++  }
++
++  if (AttrKind == ParsedAttr::AT_ObjCReturnsBorrowed) {
++    BalancedDelimiterTracker Parens(*this, tok::l_paren);
++    if (Parens.consumeOpen())
++      return;
++    if (Tok.isNot(tok::identifier) ||
++        !Tok.getIdentifierInfo()->isStr("owner_index")) {
++      Diag(Tok, PP.getDiagnostics().getCustomDiagID(
++                    DiagnosticsEngine::Error,
++                    "expected 'owner_index=N' in objc_returns_borrowed"));
++      Parens.skipToEnd();
++      return;
++    }
++    ConsumeToken();
++    if (ExpectAndConsume(tok::equal)) {
++      Parens.skipToEnd();
++      return;
++    }
++    EnterExpressionEvaluationContext ConstantContext(
++        Actions, Sema::ExpressionEvaluationContext::ConstantEvaluated);
++    ExprResult Index = ParseAssignmentExpression();
++    if (Index.isInvalid() || Parens.consumeClose())
++      return;
++    if (EndLoc)
++      *EndLoc = Parens.getCloseLocation();
++    ArgsUnion Argument = Index.get();
++    Attrs.addNew(AttrName, SourceRange(AttrNameLoc, Parens.getCloseLocation()),
++                 AttributeScopeInfo(ScopeName, ScopeLoc), &Argument, 1, Form);
++    return;
++  }
++  if (AttrKind == ParsedAttr::AT_ObjCResource) {
++    ParseObjC3ResourceAttribute(*AttrName, AttrNameLoc, Attrs, EndLoc,
++                                ScopeName, ScopeLoc, Form);
++    return;
++  } else if (AttrKind == ParsedAttr::AT_Availability) {
+     ParseAvailabilityAttribute(*AttrName, AttrNameLoc, Attrs, EndLoc, ScopeName,
+                                ScopeLoc, Form);
+     return;
+@@ -1243,6 +1362,80 @@
+   return VersionTuple(Major, Minor, Subminor);
+ }
+ 
++void Parser::ParseObjC3ResourceAttribute(
++    IdentifierInfo &AttrName, SourceLocation AttrNameLoc,
++    ParsedAttributes &Attrs, SourceLocation *EndLoc, IdentifierInfo *ScopeName,
++    SourceLocation ScopeLoc, ParsedAttr::Form Form) {
++  BalancedDelimiterTracker Parens(*this, tok::l_paren);
++  if (Parens.consumeOpen())
++    return;
++
++  ExprResult Close, Invalid;
++  bool Malformed = false;
++  while (Tok.isNot(tok::r_paren) && Tok.isNot(tok::eof)) {
++    if (Tok.isNot(tok::identifier)) {
++      Diag(Tok, PP.getDiagnostics().getCustomDiagID(
++                    DiagnosticsEngine::Error,
++                    "expected 'close=F' or 'invalid=X' in objc_resource"));
++      Malformed = true;
++      break;
++    }
++    StringRef Key = Tok.getIdentifierInfo()->getName();
++    SourceLocation KeyLoc = ConsumeToken();
++    if (ExpectAndConsume(tok::equal)) {
++      Malformed = true;
++      break;
++    }
++    EnterExpressionEvaluationContext ConstantContext(
++        Actions, Sema::ExpressionEvaluationContext::ConstantEvaluated, nullptr,
++        Sema::ExpressionEvaluationContextRecord::ExpressionKind::EK_AttrArgument);
++    ExprResult Value = ParseAssignmentExpression();
++    if (Value.isInvalid()) {
++      Malformed = true;
++      break;
++    }
++    ExprResult *Destination = Key == "close" ? &Close
++                              : Key == "invalid" ? &Invalid
++                                                 : nullptr;
++    if (!Destination || Destination->isUsable()) {
++      Diag(KeyLoc, PP.getDiagnostics().getCustomDiagID(
++                       DiagnosticsEngine::Error,
++                       "unknown or duplicate objc_resource argument '%0'"))
++          << Key;
++      Malformed = true;
++      break;
++    }
++    *Destination = Value;
++    if (Tok.isNot(tok::comma))
++      break;
++    ConsumeToken();
++    if (Tok.is(tok::r_paren)) {
++      Diag(Tok, PP.getDiagnostics().getCustomDiagID(
++                    DiagnosticsEngine::Error,
++                    "expected objc_resource argument after ','"));
++      Malformed = true;
++      break;
++    }
++  }
++  if (Malformed) {
++    Parens.skipToEnd();
++    return;
++  }
++  if (Parens.consumeClose())
++    return;
++  if (EndLoc)
++    *EndLoc = Parens.getCloseLocation();
++  if (!Close.isUsable() || !Invalid.isUsable()) {
++    Diag(AttrNameLoc, PP.getDiagnostics().getCustomDiagID(
++                          DiagnosticsEngine::Error,
++                          "objc_resource requires both 'close=F' and 'invalid=X'"));
++    return;
++  }
++  ArgsUnion Arguments[] = {Close.get(), Invalid.get()};
++  Attrs.addNew(&AttrName, SourceRange(AttrNameLoc, Parens.getCloseLocation()),
++               AttributeScopeInfo(ScopeName, ScopeLoc), Arguments, 2, Form);
++}
++
+ void Parser::ParseAvailabilityAttribute(
+     IdentifierInfo &Availability, SourceLocation AvailabilityLoc,
+     ParsedAttributes &attrs, SourceLocation *endLoc, IdentifierInfo *ScopeName,
+@@ -3445,6 +3638,28 @@
+         (TemplateInfo.Kind == ParsedTemplateKind::ExplicitInstantiation ||
+          TemplateInfo.Kind == ParsedTemplateKind::ExplicitSpecialization);
+ 
++
++    // ObjC3's @Module.Path.Type is a type-name only when the complete
++    // qualified-name token shape is present. Native @-declarations and
++    // Objective-C expressions remain on their existing paths.
++    if (getLangOpts().ObjC3 && Tok.is(tok::at) && !DS.hasTypeSpecifier() &&
++        GetLookAheadToken(1).is(tok::identifier) &&
++        GetLookAheadToken(2).is(tok::period) &&
++        GetLookAheadToken(3).is(tok::identifier)) {
++      SourceLocation QualifiedEnd;
++      TypeResult Qualified = ParseObjC3QualifiedTypeName(QualifiedEnd);
++      if (!Qualified.isUsable()) {
++        DS.SetTypeSpecError();
++        goto DoneWithDeclSpec;
++      }
++      isInvalid = DS.SetTypeSpecType(DeclSpec::TST_typename, Loc, PrevSpec,
++                                     DiagID, Qualified, Policy);
++      DS.SetRangeEnd(QualifiedEnd);
++      if (isInvalid)
++        break;
++      continue;
++    }
++
+     switch (Tok.getKind()) {
+     default:
+       if (Tok.isRegularKeywordAttribute())
+@@ -3775,12 +3990,40 @@
+     case tok::kw_decltype:
+     case tok::identifier:
+     ParseIdentifier: {
++      if (!DS.hasTypeSpecifier() &&
++          isObjC3BorrowedToken(getLangOpts(), Tok) &&
++          isObjC3BorrowedQualifier(getLangOpts(), Tok, NextToken())) {
++        if (DS.getObjC3BorrowedLoc().isValid())
++          Diag(Tok, PP.getDiagnostics().getCustomDiagID(
++                        DiagnosticsEngine::Error,
++                        "duplicate borrowed type qualifier"));
++        DS.setObjC3BorrowedLoc(ConsumeToken());
++        DS.SetRangeEnd(PrevTokLocation);
++        continue;
++      }
+       // This identifier can only be a typedef name if we haven't already seen
+       // a type-specifier.  Without this check we misparse:
+       //  typedef int X; struct Y { short X; };  as 'short int'.
+       if (DS.hasTypeSpecifier())
+         goto DoneWithDeclSpec;
+ 
++      if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
++          isObjC3TypeSyntax(Tok.getIdentifierInfo()->getName(),
++                            NextToken().is(tok::l_paren))) {
++        SourceLocation EndLoc;
++        TypeResult Carrier = ParseObjC3TypeConstructor(EndLoc);
++        if (!Carrier.isUsable()) {
++          DS.SetTypeSpecError();
++          goto DoneWithDeclSpec;
++        }
++        isInvalid = DS.SetTypeSpecType(DeclSpec::TST_typename, Loc, PrevSpec,
++                                      DiagID, Carrier, Policy);
++        DS.SetRangeEnd(EndLoc);
++        if (isInvalid)
++          break;
++        continue;
++      }
++
+       // If the token is an identifier named "__declspec" and Microsoft
+       // extensions are not enabled, it is likely that there will be cascading
+       // parse errors if this really is a __declspec attribute. Attempt to
+@@ -5643,6 +5886,13 @@
+ }
+ 
+ bool Parser::isTypeSpecifierQualifier(const Token &Tok) {
++  if (isObjC3BorrowedToken(getLangOpts(), Tok) &&
++      isObjC3BorrowedQualifier(getLangOpts(), Tok, NextToken()))
++    return true;
++  if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
++      isObjC3TypeSyntax(Tok.getIdentifierInfo()->getName(),
++                            NextToken().is(tok::l_paren)))
++    return true;
+   switch (Tok.getKind()) {
+   default: return false;
+ 
+@@ -5826,6 +6076,16 @@
+ bool Parser::isDeclarationSpecifier(
+     ImplicitTypenameContext AllowImplicitTypename,
+     bool DisambiguatingWithExpression) {
++  if (isObjC3BorrowedToken(getLangOpts(), Tok) &&
++      isObjC3BorrowedQualifier(getLangOpts(), Tok, NextToken()))
++    return true;
++  if (getLangOpts().ObjC3 && Tok.is(tok::at) &&
++      isObjC3QualifiedTypeNameAhead())
++    return true;
++  if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
++      isObjC3TypeSyntax(Tok.getIdentifierInfo()->getName(),
++                            NextToken().is(tok::l_paren)))
++    return true;
+   switch (Tok.getKind()) {
+   default: return false;
+ 
+@@ -6827,7 +7087,13 @@
+       DiagnoseIdentifier = NextToken().isOneOf(tok::comma, tok::semi);
+     else if ((D.getContext() == DeclaratorContext::TrailingReturn ||
+               D.getContext() == DeclaratorContext::TrailingReturnVar) &&
+-             !isCXX11VirtSpecifier(Tok))
++             !isCXX11VirtSpecifier(Tok) &&
++             !(getLangOpts().ObjC3 &&
++               (Tok.getIdentifierInfo()->isStr("__objc3_async") ||
++                Tok.getIdentifierInfo()->isStr("__objc3_async_frame") ||
++                Tok.getIdentifierInfo()->isStr("async") ||
++                Tok.getIdentifierInfo()->isStr("__objc3_throws") ||
++                Tok.getIdentifierInfo()->isStr("throws"))))
+       DiagnoseIdentifier = NextToken().isOneOf(
+           tok::comma, tok::semi, tok::equal, tok::l_brace, tok::kw_try);
+     if (DiagnoseIdentifier) {
+@@ -7305,6 +7571,15 @@
+   SmallVector<SourceRange, 2> DynamicExceptionRanges;
+   ExprResult NoexceptExpr;
+   CachedTokens *ExceptionSpecTokens = nullptr;
++  bool ObjC3Async = false;
++  bool ObjC3AsyncFrame = false;
++  unsigned ObjC3ThrowsKind = 0;
++  ParsedType ObjC3ErrorType;
++  TypeSourceInfo *ObjC3ErrorTypeInfo = nullptr;
++  SourceLocation ObjC3EffectsLoc;
++  SourceLocation ObjC3AsyncLoc;
++  SourceLocation ObjC3ThrowsLoc;
++  SourceRange ObjC3ThrowsPayloadRange;
+   ParsedAttributes FnAttrs(AttrFactory);
+   TypeResult TrailingReturnType;
+   SourceLocation TrailingReturnTypeLoc;
+@@ -7431,11 +7706,29 @@
+         TrailingReturnTypeLoc = Range.getBegin();
+         EndLoc = Range.getEnd();
+       }
++
+     } else {
+       MaybeParseCXX11Attributes(FnAttrs);
+     }
+   }
+ 
++  // Parse ObjC3 effect suffixes after the ordinary
++  // function declarator suffix. They remain identifiers in all other
++  // contexts, preserving existing async/throws names and macros.
++  ParseObjC3FunctionEffects(ObjC3Async, ObjC3AsyncFrame,
++                            ObjC3ThrowsKind, ObjC3ErrorType,
++                            ObjC3ErrorTypeInfo, ObjC3EffectsLoc,
++                            ObjC3AsyncLoc, ObjC3ThrowsLoc,
++                            ObjC3ThrowsPayloadRange);
++  if (ObjC3EffectsLoc.isValid()) {
++    // The reserved clauses are part of a prototype function type. In C,
++    // `f()` normally preserves the historical no-prototype meaning; once an
++    // effect clause is present, represent the zero-parameter signature as a
++    // prototype so its effect identity and TypeLoc data are not discarded.
++    HasProto = true;
++    EndLoc = PrevTokLocation;
++  }
++
+   // Collect non-parameter declarations from the prototype if this is a function
+   // declaration. They will be moved into the scope of the function. Only do
+   // this in C and not C++, where the decls will continue to live in the
+@@ -7470,10 +7763,101 @@
+                     NoexceptExpr.isUsable() ? NoexceptExpr.get() : nullptr,
+                     ExceptionSpecTokens, DeclsInPrototype, StartLoc,
+                     LocalEndLoc, D, TrailingReturnType, TrailingReturnTypeLoc,
+-                    &DS),
++                    &DS, ObjC3Async, ObjC3ThrowsKind, ObjC3ErrorType,
++                    ObjC3ErrorTypeInfo,
++                    ObjC3EffectsLoc, ObjC3AsyncLoc, ObjC3ThrowsLoc,
++                    ObjC3ThrowsPayloadRange, ObjC3AsyncFrame),
+                 std::move(FnAttrs), EndLoc);
+ }
+ 
++void Parser::ParseObjC3FunctionEffects(
++    bool &Async, bool &AsyncFrame, unsigned &ThrowsKind, ParsedType &ErrorType,
++    TypeSourceInfo *&ErrorTypeInfo,
++    SourceLocation &EffectsLoc, SourceLocation &AsyncLoc,
++    SourceLocation &ThrowsLoc, SourceRange &PayloadRange) {
++  if (!getLangOpts().ObjC3)
++    return;
++  bool SawAsync = false;
++  bool SawThrows = false;
++  while (Tok.is(tok::identifier) && Tok.getIdentifierInfo() &&
++         (Tok.getIdentifierInfo()->isStr("__objc3_async") ||
++          Tok.getIdentifierInfo()->isStr("__objc3_async_frame") ||
++          Tok.getIdentifierInfo()->isStr("async") ||
++          (Tok.getIdentifierInfo()->isStr("__objc3_throws") ||
++           Tok.getIdentifierInfo()->isStr("throws")))) {
++    const bool IsFrame = Tok.getIdentifierInfo()->isStr("__objc3_async_frame") ||
++                         Tok.getIdentifierInfo()->isStr("async");
++    const bool IsAsync = IsFrame || Tok.getIdentifierInfo()->isStr("__objc3_async");
++    SourceLocation EffectLoc = Tok.getLocation();
++    ConsumeToken();
++    if (EffectsLoc.isInvalid())
++      EffectsLoc = EffectLoc;
++
++    if (IsAsync) {
++      if (SawAsync) {
++        Diag(EffectLoc, diag::err_objc3_duplicate_function_effect)
++            << "__objc3_async";
++        continue;
++      }
++      SawAsync = true;
++      Async = true;
++      AsyncFrame = IsFrame || !getLangOpts().CPlusPlus;
++      AsyncLoc = EffectLoc;
++      continue;
++    }
++
++    if (SawThrows) {
++      Diag(EffectLoc, diag::err_objc3_duplicate_function_effect)
++          << "throws";
++      // Consume the duplicate's optional balanced payload for recovery.
++      if (Tok.is(tok::l_paren)) {
++        ConsumeParen();
++        SkipUntil(tok::r_paren, StopAtSemi | StopBeforeMatch);
++        if (Tok.is(tok::r_paren))
++          ConsumeParen();
++      }
++      continue;
++    }
++    SawThrows = true;
++    ThrowsLoc = EffectLoc;
++
++    if (!Tok.is(tok::l_paren)) {
++      // Bare throws uses the native object error contract in suffix position.
++      ThrowsKind = 1; // ObjC3ThrowsKind::Untyped
++      continue;
++    }
++
++    BalancedDelimiterTracker Payload(*this, tok::l_paren);
++    Payload.consumeOpen();
++    if (Tok.is(tok::r_paren)) {
++      Diag(EffectLoc, diag::err_objc3_throws_requires_payload);
++      Payload.consumeClose();
++      continue;
++    }
++
++    TypeResult ParsedErrorType = ParseTypeName(&PayloadRange);
++    if (ParsedErrorType.isInvalid()) {
++      Diag(EffectLoc, diag::err_objc3_invalid_throws_payload);
++      Payload.skipToEnd();
++      continue;
++    }
++    if (Tok.is(tok::comma)) {
++      Diag(Tok, diag::err_objc3_invalid_throws_payload);
++      Payload.skipToEnd();
++      continue;
++    }
++    if (!Tok.is(tok::r_paren)) {
++      Diag(Tok, diag::err_objc3_unterminated_throws_payload);
++      Payload.skipToEnd();
++      continue;
++    }
++    Payload.consumeClose();
++    ThrowsKind = 2; // ObjC3ThrowsKind::Typed
++    ErrorType = ParsedErrorType.get();
++    Actions.GetTypeFromParser(ErrorType, &ErrorTypeInfo);
++  }
++}
++
+ bool Parser::ParseRefQualifier(bool &RefQualifierIsLValueRef,
+                                SourceLocation &RefQualifierLoc) {
+   if (Tok.isOneOf(tok::amp, tok::ampamp)) {
+
+diff --git a/clang/lib/Parse/ParseObjC3Match.cpp b/clang/lib/Parse/ParseObjC3Match.cpp
+new file mode 100644
+index 000000000..6a84c44ec
+--- /dev/null
++++ b/clang/lib/Parse/ParseObjC3Match.cpp
+@@ -0,0 +1,393 @@
++#include "clang/AST/ObjC3MatchSemantic.h"
++#include "clang/Basic/DiagnosticParse.h"
++#include "clang/Basic/ObjC3Syntax.h"
++#include "clang/Parse/Parser.h"
++#include "clang/Parse/RAIIObjectsForParser.h"
++#include "clang/Sema/Scope.h"
++#include "llvm/ADT/SmallVector.h"
++
++using namespace clang;
++
++bool Parser::ParseObjC3MatchPattern(objc3::MatchPatternInfo &Pattern) {
++  Pattern.Location = Tok.getLocation();
++  auto IsWord = [&](StringRef Word) {
++    return Tok.is(tok::identifier) && Tok.getIdentifierInfo() &&
++           Tok.getIdentifierInfo()->isStr(Word);
++  };
++  auto ParseName = [&](bool Mutable) -> bool {
++    if (!Tok.is(tok::identifier) || !Tok.getIdentifierInfo()) {
++      Diag(Tok, diag::err_expected) << tok::identifier;
++      return false;
++    }
++    Pattern.BindingName = Tok.getIdentifierInfo();
++    Pattern.BindingLocation = Tok.getLocation();
++    Pattern.MutableBinding = Mutable;
++    ConsumeAnyToken();
++    return true;
++  };
++
++  if (Tok.is(tok::kw_true) || Tok.is(tok::kw_false)) {
++    Pattern.Kind = Tok.is(tok::kw_true) ? objc3::MatchPatternKind::BooleanTrue
++                                        : objc3::MatchPatternKind::BooleanFalse;
++    ConsumeAnyToken();
++    return true;
++  }
++  if (IsWord("_")) {
++    Pattern.Kind = objc3::MatchPatternKind::Wildcard;
++    ConsumeAnyToken();
++    return true;
++  }
++  if (IsWord("let") || IsWord("var")) {
++    bool Mutable = IsWord("var");
++    Pattern.Kind = objc3::MatchPatternKind::Binding;
++    ConsumeAnyToken();
++    return ParseName(Mutable);
++  }
++  // Public Optional arms use the same dot-case convention as Result arms.
++  // Recognize these spellings only while parsing a match pattern.
++  bool PublicOptional = false;
++  if (Tok.is(tok::period) && NextToken().is(tok::identifier) &&
++      (NextToken().getIdentifierInfo()->isStr("Some") ||
++       NextToken().getIdentifierInfo()->isStr("None"))) {
++    ConsumeToken();
++    PublicOptional = true;
++  }
++  if ((IsWord("__objc3_case_none") || (PublicOptional && IsWord("None")))) {
++    Pattern.Kind = objc3::MatchPatternKind::OptionalNone;
++    ConsumeAnyToken();
++    return true;
++  }
++  if ((IsWord("__objc3_case_some") || (PublicOptional && IsWord("Some")))) {
++    Pattern.Kind = objc3::MatchPatternKind::OptionalSome;
++    ConsumeAnyToken();
++    if (Tok.isNot(tok::l_paren)) {
++      Diag(Tok, diag::err_objc3_match_binding_required);
++      return false;
++    }
++    ConsumeAnyToken();
++    if (IsWord("move")) {
++      Pattern.Kind = objc3::MatchPatternKind::MoveBinding;
++      ConsumeAnyToken();
++      if (IsWord("let") || IsWord("var"))
++        ConsumeAnyToken();
++      if (!ParseName(/*Mutable=*/false))
++        return false;
++      if (Tok.isNot(tok::r_paren)) {
++        Diag(Tok, diag::err_expected) << tok::r_paren;
++        return false;
++      }
++      ConsumeAnyToken();
++      return true;
++    }
++    if (IsWord("_")) {
++      ConsumeAnyToken();
++      if (Tok.isNot(tok::r_paren)) {
++        Diag(Tok, diag::err_expected) << tok::r_paren;
++        return false;
++      }
++      ConsumeAnyToken();
++      return true;
++    }
++    if (!IsWord("let") && !IsWord("var")) {
++      Diag(Tok, diag::err_objc3_match_binding_required);
++      return false;
++    }
++    bool Mutable = IsWord("var");
++    ConsumeAnyToken();
++    if (!ParseName(Mutable))
++      return false;
++    if (Tok.isNot(tok::r_paren)) {
++      Diag(Tok, diag::err_expected) << tok::r_paren;
++      return false;
++    }
++    ConsumeAnyToken();
++    return true;
++  }
++  if (IsWord("move")) {
++    Pattern.Kind = objc3::MatchPatternKind::MoveBinding;
++    ConsumeAnyToken();
++    if (IsWord("let") || IsWord("var"))
++      ConsumeAnyToken();
++    return ParseName(/*Mutable=*/false);
++  }
++  if (IsWord("is")) {
++    Pattern.Kind = objc3::MatchPatternKind::TypeTest;
++    ConsumeAnyToken();
++    TypeResult Refined = ParseTypeName();
++    return !Refined.isInvalid();
++  }
++  if (Tok.is(tok::period)) {
++    ConsumeAnyToken();
++    if (!Tok.is(tok::identifier) || !Tok.getIdentifierInfo()) {
++      Diag(Tok, diag::err_expected) << tok::identifier;
++      return false;
++    }
++    IdentifierInfo *CaseName = Tok.getIdentifierInfo();
++    bool IsOK = CaseName->isStr("Ok");
++    bool IsErr = CaseName->isStr("Err");
++    if (!IsOK && !IsErr) {
++      Diag(Tok, diag::err_objc3_match_invalid_pattern);
++      return false;
++    }
++    Pattern.Kind = IsOK ? objc3::MatchPatternKind::ResultOK
++                        : objc3::MatchPatternKind::ResultErr;
++    ConsumeAnyToken();
++    if (Tok.isNot(tok::l_paren)) {
++      Diag(Tok, diag::err_expected) << tok::l_paren;
++      return false;
++    }
++    ConsumeAnyToken();
++    if (IsWord("_")) {
++      ConsumeAnyToken();
++    } else if (IsWord("move")) {
++      Pattern.Kind = objc3::MatchPatternKind::MoveBinding;
++      ConsumeAnyToken();
++      ParseName(/*Mutable=*/false);
++    } else {
++      if (!IsWord("let") && !IsWord("var")) {
++        Diag(Tok, diag::err_objc3_match_binding_required);
++        return false;
++      }
++      bool Mutable = IsWord("var");
++      ConsumeAnyToken();
++      if (!ParseName(Mutable))
++        return false;
++    }
++    if (Tok.isNot(tok::r_paren)) {
++      Diag(Tok, diag::err_expected) << tok::r_paren;
++      return false;
++    }
++    ConsumeAnyToken();
++    return true;
++  }
++
++  if (Tok.is(tok::numeric_constant) ||
++      ((Tok.is(tok::minus) || Tok.is(tok::plus)) &&
++       NextToken().is(tok::numeric_constant)))
++    Pattern.Kind = objc3::MatchPatternKind::IntegerLiteral;
++  else if (Tok.is(tok::char_constant))
++    Pattern.Kind = objc3::MatchPatternKind::CharacterLiteral;
++  else if (Tok.is(tok::kw_nullptr) || Tok.is(tok::kw___null) ||
++           Tok.is(tok::l_paren))
++    Pattern.Kind = objc3::MatchPatternKind::NilLiteral;
++  else if (Tok.is(tok::at) || Tok.is(tok::string_literal))
++    Pattern.Kind = objc3::MatchPatternKind::StringLiteral;
++  else {
++    Diag(Tok, diag::err_objc3_match_invalid_pattern);
++    return false;
++  }
++  // A match head ends at `=>`; its '=' must not start an assignment.
++  ExprResult Value = ParseConditionalExpression();
++  if (Value.isInvalid())
++    return false;
++  Pattern.PatternValue = Value.get();
++  return true;
++}
++
++ExprResult Parser::ParseObjC3MatchExpression() {
++  SourceLocation KeywordLoc = ConsumeAnyToken();
++  BalancedDelimiterTracker Parens(*this, tok::l_paren);
++  if (Parens.expectAndConsume(diag::err_expected_lparen_after, "match",
++                              tok::r_paren))
++    return ExprError();
++  ExprResult Scrutinee = ParseExpression();
++  if (Scrutinee.isUsable())
++    Scrutinee = Actions.CheckPlaceholderExpr(Scrutinee.get());
++  if (Scrutinee.isInvalid() || Parens.consumeClose())
++    return ExprError();
++  if (Tok.isNot(tok::l_brace)) {
++    Diag(Tok, diag::err_expected) << tok::l_brace;
++    return ExprError();
++  }
++  SourceLocation LBraceLoc = ConsumeAnyToken();
++  if (Tok.is(tok::r_brace)) {
++    Diag(Tok, diag::err_expected) << tok::kw_case;
++    ConsumeAnyToken();
++    return ExprError();
++  }
++  llvm::SmallVector<ObjC3MatchArm *, 8> Arms;
++
++  while (Tok.isNot(tok::r_brace) && Tok.isNot(tok::eof)) {
++    bool IsDefault = Tok.is(tok::kw_default);
++    if (!IsDefault && Tok.isNot(tok::kw_case)) {
++      Diag(Tok, diag::err_expected) << tok::kw_case;
++      SkipUntil(tok::kw_case, tok::kw_default, tok::r_brace, StopBeforeMatch);
++      continue;
++    }
++    SourceLocation CaseLoc = Tok.getLocation();
++    ConsumeAnyToken();
++    ParseScope CaseScope(this, Scope::DeclScope | Scope::CompoundStmtScope);
++    objc3::MatchPatternInfo Pattern;
++    Pattern.Kind = IsDefault ? objc3::MatchPatternKind::Default
++                             : objc3::MatchPatternKind::Wildcard;
++    Pattern.Location = Tok.getLocation();
++    if (!IsDefault && !ParseObjC3MatchPattern(Pattern)) {
++      SkipUntil(tok::semi, StopAtSemi);
++      if (Tok.is(tok::semi))
++        ConsumeAnyToken();
++      continue;
++    }
++    objc3::MatchCaseState State = Actions.ActOnObjC3MatchBeginCase(
++        getCurScope(), Scrutinee.get(), Pattern, /*ExpressionForm=*/true);
++    if (!State.IsValid) {
++      SkipUntil(tok::kw_case, tok::kw_default, tok::r_brace, StopBeforeMatch);
++      continue;
++    }
++    ExprResult Guard;
++    SourceLocation GuardLoc;
++    if (Tok.is(tok::identifier) && Tok.getIdentifierInfo() &&
++        Tok.getIdentifierInfo()->isStr("where")) {
++      GuardLoc = ConsumeAnyToken();
++      if (Tok.is(tok::semi) || Tok.is(tok::equal)) {
++        Diag(Tok, diag::err_objc3_match_malformed_guard);
++        SkipUntil(tok::semi, StopAtSemi);
++        if (Tok.is(tok::semi))
++          ConsumeAnyToken();
++        continue;
++      }
++      Guard = ParseConditionalExpression();
++      if (Guard.isInvalid()) {
++        Diag(Tok, diag::err_objc3_match_malformed_guard);
++        SkipUntil(tok::semi, StopAtSemi);
++        if (Tok.is(tok::semi))
++          ConsumeAnyToken();
++        continue;
++      }
++    }
++    if (Tok.isNot(tok::equal)) {
++      Diag(Tok, diag::err_objc3_match_form_delimiter) << true;
++      SkipUntil(tok::semi, StopAtSemi);
++      if (Tok.is(tok::semi))
++        ConsumeAnyToken();
++      continue;
++    }
++    ConsumeAnyToken();
++    if (Tok.isNot(tok::greater)) {
++      Diag(Tok, diag::err_expected) << tok::greater;
++      SkipUntil(tok::semi, StopAtSemi);
++      if (Tok.is(tok::semi))
++        ConsumeAnyToken();
++      continue;
++    }
++    SourceLocation DelimiterLoc = ConsumeAnyToken();
++    ExprResult Body = ParseAssignmentExpression();
++    if (Body.isInvalid()) {
++      SkipUntil(tok::semi, StopAtSemi);
++      if (Tok.is(tok::semi))
++        ConsumeAnyToken();
++      continue;
++    }
++    if (Tok.isNot(tok::semi)) {
++      Diag(Tok, diag::err_expected) << tok::semi;
++      SkipUntil(tok::semi, StopAtSemi);
++      if (Tok.is(tok::semi))
++        ConsumeAnyToken();
++      continue;
++    }
++    ConsumeAnyToken();
++    if (ObjC3MatchArm *Arm = Actions.ActOnObjC3MatchFinishCase(
++            State, Guard.get(), Body.get(), CaseLoc, Pattern.Location, GuardLoc,
++            DelimiterLoc))
++      Arms.push_back(Arm);
++  }
++  if (Tok.isNot(tok::r_brace)) {
++    Diag(Tok, diag::err_expected) << tok::r_brace;
++    return ExprError();
++  }
++  SourceLocation RBraceLoc = ConsumeAnyToken();
++  return Actions.ActOnObjC3MatchExpr(
++      Scrutinee.get(), Arms, KeywordLoc, Parens.getOpenLocation(),
++      Parens.getCloseLocation(), LBraceLoc, RBraceLoc);
++}
++
++StmtResult Parser::ParseObjC3MatchStatement() {
++  SourceLocation KeywordLoc = ConsumeAnyToken();
++  BalancedDelimiterTracker Parens(*this, tok::l_paren);
++  if (Parens.expectAndConsume(diag::err_expected_lparen_after, "match",
++                              tok::r_paren))
++    return StmtError();
++  ExprResult Scrutinee = ParseExpression();
++  if (Scrutinee.isUsable())
++    Scrutinee = Actions.CheckPlaceholderExpr(Scrutinee.get());
++  if (Scrutinee.isInvalid() || Parens.consumeClose())
++    return StmtError();
++  if (Tok.isNot(tok::l_brace)) {
++    Diag(Tok, diag::err_expected) << tok::l_brace;
++    return StmtError();
++  }
++  SourceLocation LBraceLoc = ConsumeAnyToken();
++  if (Tok.is(tok::r_brace)) {
++    Diag(Tok, diag::err_expected) << tok::kw_case;
++    ConsumeAnyToken();
++    return StmtError();
++  }
++  llvm::SmallVector<ObjC3MatchArm *, 8> Arms;
++  while (Tok.isNot(tok::r_brace) && Tok.isNot(tok::eof)) {
++    bool IsDefault = Tok.is(tok::kw_default);
++    if (!IsDefault && Tok.isNot(tok::kw_case)) {
++      Diag(Tok, diag::err_expected) << tok::kw_case;
++      SkipUntil(tok::kw_case, tok::kw_default, tok::r_brace, StopBeforeMatch);
++      continue;
++    }
++    SourceLocation CaseLoc = Tok.getLocation();
++    ConsumeAnyToken();
++    ParseScope CaseScope(this, Scope::DeclScope | Scope::CompoundStmtScope);
++    objc3::MatchPatternInfo Pattern;
++    Pattern.Kind = IsDefault ? objc3::MatchPatternKind::Default
++                             : objc3::MatchPatternKind::Wildcard;
++    Pattern.Location = Tok.getLocation();
++    if (!IsDefault && !ParseObjC3MatchPattern(Pattern)) {
++      SkipUntil(tok::kw_case, tok::kw_default, tok::r_brace, StopBeforeMatch);
++      continue;
++    }
++    objc3::MatchCaseState State = Actions.ActOnObjC3MatchBeginCase(
++        getCurScope(), Scrutinee.get(), Pattern, /*ExpressionForm=*/false);
++    if (!State.IsValid) {
++      SkipUntil(tok::kw_case, tok::kw_default, tok::r_brace, StopBeforeMatch);
++      continue;
++    }
++    ExprResult Guard;
++    SourceLocation GuardLoc;
++    if (Tok.is(tok::identifier) && Tok.getIdentifierInfo() &&
++        Tok.getIdentifierInfo()->isStr("where")) {
++      GuardLoc = ConsumeAnyToken();
++      if (Tok.is(tok::colon) || Tok.is(tok::r_brace)) {
++        Diag(Tok, diag::err_objc3_match_malformed_guard);
++        SkipUntil(tok::kw_case, tok::kw_default, tok::r_brace, StopBeforeMatch);
++        continue;
++      }
++      Guard = ParseAssignmentExpression();
++      if (Guard.isInvalid()) {
++        Diag(Tok, diag::err_objc3_match_malformed_guard);
++        SkipUntil(tok::kw_case, tok::kw_default, tok::r_brace, StopBeforeMatch);
++        continue;
++      }
++    }
++    if (Tok.isNot(tok::colon)) {
++      Diag(Tok, diag::err_objc3_match_form_delimiter) << false;
++      SkipUntil(tok::kw_case, tok::kw_default, tok::r_brace, StopBeforeMatch);
++      continue;
++    }
++    SourceLocation ColonLoc = ConsumeAnyToken();
++    if (Tok.isNot(tok::l_brace)) {
++      Diag(Tok, diag::err_expected) << tok::l_brace;
++      SkipUntil(tok::kw_case, tok::kw_default, tok::r_brace, StopBeforeMatch);
++      continue;
++    }
++    StmtResult Body = ParseCompoundStatement();
++    if (Body.isInvalid())
++      continue;
++    if (ObjC3MatchArm *Arm = Actions.ActOnObjC3MatchFinishCase(
++            State, Guard.get(), Body.get(), CaseLoc, Pattern.Location, GuardLoc,
++            ColonLoc))
++      Arms.push_back(Arm);
++  }
++  if (Tok.isNot(tok::r_brace)) {
++    Diag(Tok, diag::err_expected) << tok::r_brace;
++    return StmtError();
++  }
++  SourceLocation RBraceLoc = ConsumeAnyToken();
++  return Actions.ActOnObjC3MatchStmt(
++      Scrutinee.get(), Arms, KeywordLoc, Parens.getOpenLocation(),
++      Parens.getCloseLocation(), LBraceLoc, RBraceLoc);
++}
+diff --git a/clang/lib/Parse/ParseObjC3QualifiedName.cpp b/clang/lib/Parse/ParseObjC3QualifiedName.cpp
+new file mode 100644
+index 000000000..84cca4e57
+--- /dev/null
++++ b/clang/lib/Parse/ParseObjC3QualifiedName.cpp
+@@ -0,0 +1,121 @@
++//===--- ParseObjC3QualifiedName.cpp - ObjC3 qualified names -------------===//
++//
++// Staged Clang extension source. This file is added to clangParse's CMake
++// source list after Parser.h and the shared insertion hooks are merged.
++//
++//===----------------------------------------------------------------------===//
++
++#include "clang/AST/ASTContext.h"
++#include "clang/Basic/DiagnosticParse.h"
++
++#include "clang/Basic/TokenKinds.h"
++#include "clang/Parse/Parser.h"
++#include "clang/Sema/Sema.h"
++#include "llvm/ADT/SmallVector.h"
++
++using namespace clang;
++
++namespace {
++struct QualifiedNameTokens {
++  SmallVector<IdentifierInfo *, 8> Components;
++  SmallVector<SourceLocation, 8> Locations;
++  SmallVector<SourceLocation, 8> Dots;
++};
++
++QualifiedNameTokens collectQualifiedName(Parser &P, const Token &Start) {
++  QualifiedNameTokens Result;
++  if (!Start.is(tok::identifier) || !Start.getIdentifierInfo())
++    return Result;
++
++  Result.Components.push_back(Start.getIdentifierInfo());
++  Result.Locations.push_back(Start.getLocation());
++  unsigned Offset = 1;
++  while (P.GetLookAheadToken(Offset).is(tok::period) &&
++         P.GetLookAheadToken(Offset + 1).is(tok::identifier) &&
++         P.GetLookAheadToken(Offset + 1).getIdentifierInfo()) {
++    Result.Dots.push_back(P.GetLookAheadToken(Offset).getLocation());
++    Result.Components.push_back(
++        P.GetLookAheadToken(Offset + 1).getIdentifierInfo());
++    Result.Locations.push_back(P.GetLookAheadToken(Offset + 1).getLocation());
++    Offset += 2;
++  }
++  return Result;
++}
++
++} // namespace
++
++bool Parser::isObjC3QualifiedNameAhead() {
++  if (!getLangOpts().ObjC3 || !Tok.is(tok::identifier) ||
++      !Tok.getIdentifierInfo())
++    return false;
++  return NextToken().is(tok::period) &&
++         GetLookAheadToken(2).is(tok::identifier);
++}
++
++bool Parser::isObjC3QualifiedTypeNameAhead() {
++  if (!getLangOpts().ObjC3 || !Tok.is(tok::at) ||
++      !GetLookAheadToken(1).is(tok::identifier) ||
++      !GetLookAheadToken(2).is(tok::period) ||
++      !GetLookAheadToken(3).is(tok::identifier))
++    return false;
++
++  SmallVector<IdentifierInfo *, 8> Components;
++  unsigned Offset = 1;
++  Components.push_back(GetLookAheadToken(Offset).getIdentifierInfo());
++  Offset += 2;
++  while (GetLookAheadToken(Offset - 1).is(tok::period) &&
++         GetLookAheadToken(Offset).is(tok::identifier)) {
++    Components.push_back(GetLookAheadToken(Offset).getIdentifierInfo());
++    Offset += 2;
++  }
++  return Actions.IsObjC3QualifiedTypeName(Components);
++}
++
++ExprResult Parser::ParseObjC3QualifiedNameExpression(SourceLocation AtLoc) {
++  QualifiedNameTokens Name = collectQualifiedName(*this, Tok);
++  if (Name.Components.size() < 2)
++    return ExprError(Diag(AtLoc, diag::err_unexpected_at));
++
++  unsigned ConsumedComponents = Name.Components.size();
++  ExprResult Result = Actions.ActOnObjC3QualifiedNameExpr(
++      AtLoc, Name.Components, Name.Locations, ConsumedComponents);
++  if (ConsumedComponents == 0 ||
++      ConsumedComponents > Name.Components.size())
++    ConsumedComponents = Name.Components.size();
++  for (unsigned I = 0; I != ConsumedComponents; ++I) {
++    assert(Tok.is(tok::identifier));
++    ConsumeToken();
++    if (I + 1 != ConsumedComponents) {
++      assert(Tok.is(tok::period));
++      ConsumeToken();
++    }
++  }
++  return ParsePostfixExpressionSuffix(Result);
++}
++
++TypeResult Parser::ParseObjC3QualifiedTypeName(SourceLocation &EndLoc) {
++  assert(getLangOpts().ObjC3 && Tok.is(tok::at));
++  SourceLocation AtLoc = ConsumeToken();
++  QualifiedNameTokens Name = collectQualifiedName(*this, Tok);
++  if (Name.Components.size() < 2) {
++    EndLoc = AtLoc;
++    return TypeError();
++  }
++
++  unsigned ConsumedComponents = Name.Components.size();
++  TypeResult Result = Actions.ActOnObjC3QualifiedTypeName(
++      AtLoc, Name.Components, Name.Locations, ConsumedComponents);
++  if (ConsumedComponents == 0 ||
++      ConsumedComponents > Name.Components.size())
++    ConsumedComponents = Name.Components.size();
++  EndLoc = Name.Locations[ConsumedComponents - 1];
++  for (unsigned I = 0; I != ConsumedComponents; ++I) {
++    assert(Tok.is(tok::identifier));
++    ConsumeToken();
++    if (I + 1 != ConsumedComponents) {
++      assert(Tok.is(tok::period));
++      ConsumeToken();
++    }
++  }
++  return Result;
++}
+diff --git a/clang/lib/Parse/ParseObjC3Type.cpp b/clang/lib/Parse/ParseObjC3Type.cpp
+new file mode 100644
+index 000000000..cba165426
+--- /dev/null
++++ b/clang/lib/Parse/ParseObjC3Type.cpp
+@@ -0,0 +1,78 @@
++//===--- ParseObjC3Type.cpp - ObjC3 carrier type parser ------------------===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// See https://llvm.org/LICENSE.txt for license information.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++
++#include "clang/Basic/ObjC3Syntax.h"
++#include "clang/Parse/Parser.h"
++#include "clang/Parse/RAIIObjectsForParser.h"
++#include "clang/Sema/Sema.h"
++
++using namespace clang;
++
++/// Parse one of the reserved ObjC3 value-carrier type constructors.
++///
++/// The individual payloads are complete Clang type-names. In particular, do
++/// not replace ParseTypeName with a specifier-only parse: pointer, function,
++/// array, and nested carrier declarators belong to the payload's native type.
++/// The Sema action constructs the canonical QualType and the custom TypeLoc
++/// nodes while retaining the ParsedType's child TypeSourceInfo.
++TypeResult Parser::ParseObjC3TypeConstructor(SourceLocation &EndLoc) {
++  if (Tok.getIdentifierInfo()->isStr("KeyPath") ||
++      Tok.getIdentifierInfo()->isStr("WritableKeyPath"))
++    return ParseObjC3KeyPathType(EndLoc);
++  EndLoc = SourceLocation();
++  assert(getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
++         Tok.getIdentifierInfo() &&
++         isObjC3TypeSyntax(Tok.getIdentifierInfo()->getName(),
++                           NextToken().is(tok::l_paren)) &&
++         "Not an ObjC3 carrier type constructor!");
++
++  const bool IsOptional =
++      classifyObjC3Syntax(Tok.getIdentifierInfo()->getName()) ==
++      ObjC3Syntax::OptionalType;
++  const char *Name = Tok.getIdentifierInfo()->getNameStart();
++  SourceLocation KeywordLoc = ConsumeToken();
++  BalancedDelimiterTracker Parens(*this, tok::l_paren);
++  if (Parens.expectAndConsume(diag::err_expected_lparen_after, Name,
++                              tok::r_paren))
++    return TypeError();
++
++  TypeResult FirstType = ParseTypeName();
++  if (FirstType.isInvalid()) {
++    Parens.skipToEnd();
++    return TypeError();
++  }
++
++  if (IsOptional) {
++    if (Parens.consumeClose())
++      return TypeError();
++    EndLoc = Parens.getCloseLocation();
++    return Actions.ActOnObjC3OptionalType(KeywordLoc, Parens.getOpenLocation(),
++                                          FirstType.get(),
++                                          Parens.getCloseLocation());
++  }
++
++  if (Tok.isNot(tok::comma)) {
++    Diag(Tok, diag::err_expected) << tok::comma;
++    Parens.skipToEnd();
++    return TypeError();
++  }
++
++  SourceLocation CommaLoc = ConsumeToken();
++  TypeResult SecondType = ParseTypeName();
++  if (SecondType.isInvalid()) {
++    Parens.skipToEnd();
++    return TypeError();
++  }
++
++  if (Parens.consumeClose())
++    return TypeError();
++  EndLoc = Parens.getCloseLocation();
++  return Actions.ActOnObjC3ResultType(
++      KeywordLoc, Parens.getOpenLocation(), FirstType.get(), CommaLoc,
++      SecondType.get(), Parens.getCloseLocation());
++}
+diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
+--- a/clang/lib/Parse/ParseObjc.cpp
++++ b/clang/lib/Parse/ParseObjc.cpp
+@@ -11,6 +11,8 @@
+ //===----------------------------------------------------------------------===//
+ 
+ #include "clang/AST/ASTContext.h"
++#include "clang/AST/Attr.h"
++#include "clang/AST/ObjC3Isolation.h"
+ #include "clang/AST/ExprObjC.h"
+ #include "clang/AST/ODRDiagsEmitter.h"
+ #include "clang/AST/PrettyDeclStackTrace.h"
+@@ -23,8 +25,10 @@
+ #include "clang/Sema/Scope.h"
+ #include "clang/Sema/SemaCodeCompletion.h"
+ #include "clang/Sema/SemaObjC.h"
++#include "clang/Sema/ObjC3Metaprogramming.h"
+ #include "llvm/ADT/STLForwardCompat.h"
+ #include "llvm/ADT/SmallVector.h"
++#include "llvm/Support/SaveAndRestore.h"
+ 
+ using namespace clang;
+ 
+@@ -44,6 +48,14 @@
+ Parser::ParseObjCAtDirectives(ParsedAttributes &DeclAttrs,
+                               ParsedAttributes &DeclSpecAttrs) {
+   DeclAttrs.takeAllPrependingFrom(DeclSpecAttrs);
++
++  if (isObjC3ResourceAttributeAhead()) {
++    if (ParseObjC3ScopeCleanupPrefix(DeclAttrs))
++      return nullptr;
++    SourceLocation DeclEnd;
++    return ParseDeclaration(DeclaratorContext::File, DeclEnd, DeclSpecAttrs,
++                            DeclAttrs);
++  }
+ 
+   SourceLocation AtLoc = ConsumeToken(); // the "@"
+ 
+@@ -88,7 +100,8 @@
+     SingleDecl = ParseObjCPropertyDynamic(AtLoc);
+     break;
+   case tok::objc_import:
+-    if (getLangOpts().Modules || getLangOpts().DebuggerSupport) {
++    if (getLangOpts().Modules || getLangOpts().DebuggerSupport ||
++        getLangOpts().ObjC3) {
+       Sema::ModuleImportState IS = Sema::ModuleImportState::NotACXX20Module;
+       SingleDecl = ParseModuleImport(AtLoc, IS);
+       break;
+@@ -189,8 +202,9 @@
+ }
+ 
+ Decl *Parser::ParseObjCAtInterfaceDeclaration(SourceLocation AtLoc,
+-                                              ParsedAttributes &attrs) {
+-  assert(Tok.isObjCAtKeyword(tok::objc_interface) &&
++                                              ParsedAttributes &attrs,
++                                              bool IsObjC3Actor) {
++  assert((IsObjC3Actor || Tok.isObjCAtKeyword(tok::objc_interface)) &&
+          "ParseObjCAtInterfaceDeclaration(): Expected @interface");
+   CheckNestedObjCContexts(AtLoc);
+   ConsumeToken(); // the "interface" identifier
+@@ -222,6 +236,12 @@
+     typeParameterList = parseObjCTypeParamListOrProtocolRefs(
+         typeParamScope, LAngleLoc, ProtocolIdents, EndProtoLoc);
+ 
++  if (IsObjC3Actor && Tok.is(tok::l_paren)) {
++    Diag(Tok, PP.getDiagnostics().getCustomDiagID(
++        DiagnosticsEngine::Error, "actor class declaration cannot declare a category"));
++    SkipUntil(tok::at, StopAtSemi | StopBeforeMatch);
++    return nullptr;
++  }
+   if (Tok.is(tok::l_paren) &&
+       !isKnownToBeTypeSpecifier(GetLookAheadToken(1))) { // we have a category.
+ 
+@@ -340,6 +360,11 @@
+       SourceRange(typeArgsLAngleLoc, typeArgsRAngleLoc), protocols.data(),
+       protocols.size(), protocolLocs.data(), EndProtoLoc, attrs, &SkipBody);
+ 
++  if (IsObjC3Actor && ClsType)
++    ClsType->addAttr(ObjC3ActorAttr::CreateImplicit(Actions.Context, AtLoc));
++
++  if (Tok.isNot(tok::l_brace))
++    injectObjC3MetaIvars(Actions,PP,ClsType,Tok,true);
+   if (Tok.is(tok::l_brace))
+     ParseObjCClassInstanceVariables(ClsType, tok::objc_protected, AtLoc);
+ 
+@@ -347,6 +372,16 @@
+ 
+   if (SkipBody.CheckSameAsPrevious) {
+     auto *PreviousDef = cast<ObjCInterfaceDecl>(SkipBody.Previous);
++    if (isObjC3Actor(ClsType) != isObjC3Actor(PreviousDef) ||
++        !haveSameObjC3Isolation(ClsType, PreviousDef) ||
++        ClsType->hasAttr<ObjCUnsafeSendableAttr>() !=
++            PreviousDef->hasAttr<ObjCUnsafeSendableAttr>()) {
++      Diag(nameLoc, PP.getDiagnostics().getCustomDiagID(
++          DiagnosticsEngine::Error,
++          "actor, executor or Sendable metadata does not match the previous definition"));
++      ClsType->setInvalidDecl();
++      return ClsType;
++    }
+     if (Actions.ActOnDuplicateODRHashDefinition(ClsType, PreviousDef)) {
+       ClsType->mergeDuplicateDefinitionWithCommon(PreviousDef->getDefinition());
+     } else {
+@@ -558,6 +593,22 @@
+   }
+ }
+ 
++static bool RejectObjC3PropertyBehaviorBlock(Parser &P) {
++  const Token &Tok = P.getCurToken();
++  if (!P.getLangOpts().ObjC3 || !Tok.is(tok::identifier) ||
++      !Tok.getIdentifierInfo()->isStr("behavior") ||
++      P.NextToken().isNot(tok::l_brace))
++    return false;
++
++  SourceLocation BehaviorLoc = P.ConsumeToken();
++  P.Diag(BehaviorLoc, diag::err_objc3_reserved_behavior_block);
++  P.Diag(BehaviorLoc, diag::note_objc3_apply_property_behavior_attribute);
++  BalancedDelimiterTracker Block(P, tok::l_brace);
++  if (!Block.consumeOpen())
++    Block.skipToEnd();
++  return true;
++}
++
+ void Parser::ParseObjCInterfaceDeclList(tok::ObjCKeywordKind contextKey,
+                                         Decl *CDecl) {
+   SmallVector<Decl *, 32> allMethods;
+@@ -565,6 +616,7 @@
+   tok::ObjCKeywordKind MethodImplKind = tok::objc_not_keyword;
+ 
+   SourceRange AtEnd;
++  injectObjC3MetaMembers(Actions,PP,dyn_cast_or_null<ObjCContainerDecl>(CDecl),Tok);
+ 
+   while (true) {
+     // If this is a method prototype, parse it.
+@@ -697,6 +749,10 @@
+         LParenLoc = Tok.getLocation();
+         ParseObjCPropertyAttribute(OCDS);
+       }
++      if (RejectObjC3PropertyBehaviorBlock(*this)) {
++        TryConsumeToken(tok::semi);
++        break;
++      }
+ 
+       bool addedToDeclSpec = false;
+       auto ObjCPropertyCallback = [&](ParsingFieldDeclarator &FD) -> Decl * {
+@@ -744,7 +800,10 @@
+       ParsingDeclSpec DS(*this);
+       ParseStructDeclaration(DS, ObjCPropertyCallback);
+ 
+-      ExpectAndConsume(tok::semi, diag::err_expected_semi_decl_list);
++      if (RejectObjC3PropertyBehaviorBlock(*this))
++        TryConsumeToken(tok::semi);
++      else
++        ExpectAndConsume(tok::semi, diag::err_expected_semi_decl_list);
+       break;
+     }
+   }
+@@ -792,6 +851,11 @@
+   T.consumeOpen();
+ 
+   while (true) {
++    if (RejectObjC3PropertyBehaviorBlock(*this)) {
++      if (!TryConsumeToken(tok::comma))
++        break;
++      continue;
++    }
+     if (Tok.is(tok::code_completion)) {
+       cutOffParsing();
+       Actions.CodeCompletion().CodeCompleteObjCPropertyFlags(getCurScope(), DS);
+@@ -1206,8 +1270,31 @@
+     return nullptr;
+   }
+ 
++  auto ParseMethodEffects = [&]() {
++    if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
++        Tok.getIdentifierInfo()->isStr("nonreentrant") &&
++        isObjC3Actor(getObjC3ContainingInterface(Actions.ObjC().getObjCDeclContext()))) {
++      Diag(Tok, PP.getDiagnostics().getCustomDiagID(
++          DiagnosticsEngine::Error, "explicit actor nonreentrancy is deferred in v1"));
++      ConsumeToken();
++    }
++    bool Async = false;
++    bool AsyncFrame = false;
++    unsigned Throws = 0;
++    ParsedType ErrorType;
++    TypeSourceInfo *ErrorInfo = nullptr;
++    SourceLocation EffectsLoc, AsyncLoc, ThrowsLoc;
++    SourceRange PayloadRange;
++    ParseObjC3FunctionEffects(Async, AsyncFrame, Throws, ErrorType, ErrorInfo, EffectsLoc,
++                             AsyncLoc, ThrowsLoc, PayloadRange);
++    return ObjC3FunctionEffectInfo{
++        Async, static_cast<ObjC3ThrowsKind>(Throws),
++        ErrorType ? Actions.GetTypeFromParser(ErrorType) : QualType(), AsyncFrame};
++  };
++
+   SmallVector<DeclaratorChunk::ParamInfo, 8> CParamInfo;
+   if (Tok.isNot(tok::colon)) {
++    auto Effects = ParseMethodEffects();
+     // If attributes exist after the method, parse them.
+     MaybeParseAttributes(PAKM_CXX11 | (getLangOpts().ObjC ? PAKM_GNU : 0),
+                          methodAttrs);
+@@ -1216,7 +1303,7 @@
+     Decl *Result = Actions.ObjC().ActOnMethodDeclaration(
+         getCurScope(), mLoc, Tok.getLocation(), mType, DSRet, ReturnType,
+         selLoc, Sel, nullptr, CParamInfo.data(), CParamInfo.size(), methodAttrs,
+-        MethodImplKind, false, MethodDefinition);
++        MethodImplKind, false, MethodDefinition, Effects);
+     PD.complete(Result);
+     return Result;
+   }
+@@ -1279,6 +1366,19 @@
+           /*AtParameterName=*/false, ReturnType, KeyIdents);
+       return nullptr;
+     }
++
++    // Effect spellings terminate the selector only in suffix position.
++    // A selector component with the same identifier followed by ':' is native.
++    if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
++        (Tok.getIdentifierInfo()->isStr("__objc3_async") ||
++         Tok.getIdentifierInfo()->isStr("__objc3_async_frame") ||
++         Tok.getIdentifierInfo()->isStr("async") ||
++         (Tok.getIdentifierInfo()->isStr("nonreentrant") &&
++          isObjC3Actor(getObjC3ContainingInterface(Actions.ObjC().getObjCDeclContext()))) ||
++         (Tok.getIdentifierInfo()->isStr("__objc3_throws") ||
++           Tok.getIdentifierInfo()->isStr("throws"))) &&
++        NextToken().isNot(tok::colon))
++      break;
+ 
+     // Check for another keyword selector.
+     SelIdent = ParseObjCSelectorPiece(selLoc);
+@@ -1335,6 +1435,8 @@
+     ObjCParamInfo.push_back(Param);
+   }
+ 
++  auto Effects = ParseMethodEffects();
++
+   // FIXME: Add support for optional parameter list...
+   // If attributes exist after the method, parse them.
+   MaybeParseAttributes(PAKM_CXX11 | (getLangOpts().ObjC ? PAKM_GNU : 0),
+@@ -1348,7 +1450,7 @@
+   Decl *Result = Actions.ObjC().ActOnMethodDeclaration(
+       getCurScope(), mLoc, Tok.getLocation(), mType, DSRet, ReturnType, KeyLocs,
+       Sel, ObjCParamInfo.data(), CParamInfo.data(), CParamInfo.size(),
+-      methodAttrs, MethodImplKind, isVariadic, MethodDefinition);
++      methodAttrs, MethodImplKind, isVariadic, MethodDefinition, Effects);
+ 
+   PD.complete(Result);
+   return Result;
+@@ -1705,8 +1807,16 @@
+ 
+   BalancedDelimiterTracker T(*this, tok::l_brace);
+   T.consumeOpen();
++  bool MetaIvarsInjected=false;
++  auto MoreIvars=[&] {
++    if(Tok.is(tok::r_brace) && !MetaIvarsInjected) {
++      MetaIvarsInjected=true;
++      injectObjC3MetaIvars(Actions,PP,dyn_cast_or_null<ObjCInterfaceDecl>(interfaceDecl),Tok,false);
++    }
++    return Tok.isNot(tok::r_brace) && !isEofOrEom();
++  };
+   // While we still have something to read, read the instance variables.
+-  while (Tok.isNot(tok::r_brace) && !isEofOrEom()) {
++  while (MoreIvars()) {
+     // Each iteration of this loop reads one objc-instance-variable-decl.
+ 
+     // Check for extraneous top-level semicolon.
+@@ -1996,6 +2106,7 @@
+ 
+   {
+     ObjCImplParsingDataRAII ObjCImplParsing(*this, ObjCImpDecl);
++    injectObjC3MetaMembers(Actions,PP,ObjCImpDecl,Tok);
+     while (!ObjCImplParsing.isFinished() && !isEofOrEom()) {
+       ParsedAttributes DeclAttrs(AttrFactory);
+       MaybeParseCXX11Attributes(DeclAttrs);
+@@ -2515,6 +2626,11 @@
+ }
+ 
+ ExprResult Parser::ParseObjCAtExpression(SourceLocation AtLoc) {
++  if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
++      Tok.getIdentifierInfo()->isStr("keypath"))
++    return ParsePostfixExpressionSuffix(ParseObjC3KeyPathLiteral(AtLoc));
++  if (getLangOpts().ObjC3 && isObjC3QualifiedNameAhead())
++    return ParseObjC3QualifiedNameExpression(AtLoc);
+   switch (Tok.getKind()) {
+   case tok::code_completion:
+     cutOffParsing();
+@@ -2732,6 +2848,13 @@
+   }
+ 
+   InMessageExpressionRAIIObject InMessage(*this, true);
++  llvm::SaveAndRestore<bool> ReceiverMode(ObjC3ParsingMessageReceiver, true);
++  llvm::SaveAndRestore<unsigned> ReceiverParens(ObjC3ReceiverParenDepth,
++                                                ParenCount);
++  llvm::SaveAndRestore<unsigned> ReceiverBrackets(ObjC3ReceiverBracketDepth,
++                                                  BracketCount);
++  llvm::SaveAndRestore<unsigned> ReceiverBraces(ObjC3ReceiverBraceDepth,
++                                                BraceCount);
+ 
+   if (getLangOpts().CPlusPlus) {
+     // We completely separate the C and C++ cases because C++ requires
+@@ -2822,6 +2945,16 @@
+                                        ParsedType ReceiverType,
+                                        Expr *ReceiverExpr) {
+   InMessageExpressionRAIIObject InMessage(*this, true);
++  llvm::SaveAndRestore<bool> ReceiverMode(ObjC3ParsingMessageReceiver, false);
++  SourceLocation OptionalLoc;
++  if (getLangOpts().ObjC3 && Tok.is(tok::question)) {
++    OptionalLoc = ConsumeToken();
++    if (!ReceiverExpr) {
++      Diag(OptionalLoc, diag::err_objc3_optional_send_instance);
++      SkipUntil(tok::r_square, StopAtSemi);
++      return ExprError();
++    }
++  }
+ 
+   if (Tok.is(tok::code_completion)) {
+     cutOffParsing();
+@@ -2978,8 +3111,72 @@
+     return Actions.ObjC().ActOnClassMessage(getCurScope(), ReceiverType, Sel,
+                                             LBracLoc, KeyLocs, RBracLoc,
+                                             KeyExprs);
++  if (OptionalLoc.isValid())
++    return Actions.ActOnObjC3OptionalMessageExpr(
++        getCurScope(), ReceiverExpr, Sel, LBracLoc, KeyLocs, RBracLoc, KeyExprs,
++        OptionalLoc);
+   return Actions.ObjC().ActOnInstanceMessage(
+       getCurScope(), ReceiverExpr, Sel, LBracLoc, KeyLocs, RBracLoc, KeyExprs);
++}
++
++bool Parser::isObjC3OptionalSendIndicatorAhead(Expr *Receiver) {
++  if (!getLangOpts().ObjC3 || !ObjC3ParsingMessageReceiver ||
++      !Tok.is(tok::question) || ParenCount != ObjC3ReceiverParenDepth ||
++      BracketCount != ObjC3ReceiverBracketDepth ||
++      BraceCount != ObjC3ReceiverBraceDepth || !Receiver)
++    return false;
++  // A scalar condition belongs to the inherited conditional receiver syntax.
++  // Parentheses, subscripts, nested sends and lambda bodies likewise keep
++  // their ordinary '?' grammar through the delimiter-depth checks above.
++  if (NextToken().is(tok::r_square))
++    return true; // Diagnose a missing selector in the message-body parser.
++  if (NextToken().isAnnotation() ||
++      (!NextToken().getIdentifierInfo() && NextToken().isNot(tok::colon)))
++    return false;
++  unsigned Start = NextToken().is(tok::colon) ? 2 : 3;
++  if (GetLookAheadToken(2).is(tok::r_square))
++    return true;
++  if (!Receiver->isTypeDependent() &&
++      !Receiver->getType()->isObjCObjectPointerType())
++    return false;
++  if (!NextToken().is(tok::colon) && GetLookAheadToken(2).isNot(tok::colon))
++    return false;
++
++  // Preserve ordinary unparenthesized conditional receivers such as
++  // [object ? first : second description]. An optional keyword send permits
++  // only further keyword pieces after each argument, never a trailing unary
++  // selector. Delimiter balancing hides selector-like tokens in arguments.
++  SmallVector<tok::TokenKind, 8> Delimiters;
++  bool PreviousOperand = false;
++  for (unsigned I = Start;; ++I) {
++    const Token Look = GetLookAheadToken(I);
++    if (Look.isOneOf(tok::eof, tok::annot_repl_input_end) ||
++        (Look.is(tok::semi) && Delimiters.empty()))
++      return false;
++    if (Delimiters.empty()) {
++      if (Look.is(tok::r_square))
++        return true;
++      if (Look.is(tok::identifier) && PreviousOperand &&
++          GetLookAheadToken(I + 1).isNot(tok::colon))
++        return false;
++      PreviousOperand = Look.is(tok::identifier) || Look.isLiteral() ||
++                        Look.isOneOf(tok::kw_true, tok::kw_false, tok::kw_nullptr);
++    }
++    switch (Look.getKind()) {
++    case tok::l_paren: Delimiters.push_back(tok::r_paren); break;
++    case tok::l_square: Delimiters.push_back(tok::r_square); break;
++    case tok::l_brace: Delimiters.push_back(tok::r_brace); break;
++    case tok::r_paren:
++    case tok::r_square:
++    case tok::r_brace:
++      if (Delimiters.empty() || Delimiters.pop_back_val() != Look.getKind())
++        return false;
++      if (Delimiters.empty())
++        PreviousOperand = false;
++      break;
++    default: break;
++    }
++  }
+ }
+ 
+ ExprResult Parser::ParseObjCStringLiteral(SourceLocation AtLoc) {
+diff --git a/clang/lib/Parse/ParseTentative.cpp b/clang/lib/Parse/ParseTentative.cpp
+--- a/clang/lib/Parse/ParseTentative.cpp
++++ b/clang/lib/Parse/ParseTentative.cpp
+@@ -11,6 +11,8 @@
+ //
+ //===----------------------------------------------------------------------===//
+ 
++#include "clang/AST/ObjC3Async.h"
++#include "clang/Basic/ObjC3Syntax.h"
+ #include "clang/Parse/Parser.h"
+ #include "clang/Parse/RAIIObjectsForParser.h"
+ #include "clang/Sema/ParsedTemplate.h"
+@@ -1022,6 +1024,24 @@
+ Parser::isCXXDeclarationSpecifier(ImplicitTypenameContext AllowImplicitTypename,
+                                   Parser::TPResult BracedCastResult,
+                                   bool *InvalidAsDeclSpec) {
++  if (getLangOpts().ObjC3 && Tok.is(tok::at))
++    return isObjC3QualifiedTypeNameAhead() ? TPResult::True : TPResult::False;
++  const auto *AwaitSignature = getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
++      Tok.getIdentifierInfo()->isStr("await")
++      ? getObjC3CallableFunctionType(Decl::castFromDeclContext(Actions.CurContext))
++      : nullptr;
++  // Preserve contextual expressions during C++ condition/type-id speculation.
++  if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
++      Tok.getIdentifierInfo() &&
++      (Tok.getIdentifierInfo()->isStr("__objc3_await") ||
++       (AwaitSignature && AwaitSignature->getObjC3FunctionEffects().Async) ||
++       (NextToken().is(tok::l_paren) &&
++        isObjC3ExpressionSyntax(Tok.getIdentifierInfo()->getName()))))
++    return TPResult::False;
++  if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
++      isObjC3TypeSyntax(Tok.getIdentifierInfo()->getName(),
++                            NextToken().is(tok::l_paren)))
++    return TPResult::True;
+   auto IsPlaceholderSpecifier = [&](TemplateIdAnnotation *TemplateId,
+                                     int Lookahead) {
+     // We have a placeholder-constraint (we check for 'auto' or 'decltype' to
+@@ -1889,6 +1909,25 @@
+       ConsumeParen();
+       if (!SkipUntil(tok::r_paren, StopAtSemi))
+         return TPResult::Error;
++    }
++  }
++
++  // Match the reserved effects consumed by the real function declarator.
++  // Tentative parsing must also recognize them in nested function-pointer
++  // parameters, without changing ordinary async/throws name classification.
++  while (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
++         (Tok.getIdentifierInfo()->isStr("__objc3_async") ||
++          Tok.getIdentifierInfo()->isStr("__objc3_async_frame") ||
++         Tok.getIdentifierInfo()->isStr("async") ||
++          (Tok.getIdentifierInfo()->isStr("__objc3_throws") ||
++           Tok.getIdentifierInfo()->isStr("throws")))) {
++    bool IsThrows = (Tok.getIdentifierInfo()->isStr("__objc3_throws") ||
++           Tok.getIdentifierInfo()->isStr("throws"));
++    ConsumeToken();
++    if (IsThrows && Tok.is(tok::l_paren)) {
++      ConsumeParen();
++      if (!SkipUntil(tok::r_paren, StopAtSemi))
++        return TPResult::Error;
+     }
+   }
+ 
+
+diff --git a/clang/lib/Parse/Parser.cpp b/clang/lib/Parse/Parser.cpp
+--- a/clang/lib/Parse/Parser.cpp
++++ b/clang/lib/Parse/Parser.cpp
+@@ -10,6 +10,9 @@
+ //
+ //===----------------------------------------------------------------------===//
+ 
++#include "clang/Sema/ExternalSemaSource.h"
++#include "llvm/ADT/SmallString.h"
++
+ #include "clang/Parse/Parser.h"
+ #include "clang/AST/ASTConsumer.h"
+ #include "clang/AST/ASTContext.h"
+@@ -855,7 +858,20 @@
+     SingleDecl = Actions.ActOnFileScopeAsmDecl(Result.get(), StartLoc, EndLoc);
+     break;
+   }
++  case tok::identifier:
++    if (getLangOpts().ObjC3 && Tok.getIdentifierInfo()->isStr("actor") &&
++        (NextToken().is(tok::kw_class) ||
++         (NextToken().is(tok::identifier) &&
++          NextToken().getIdentifierInfo()->isStr("class")))) {
++      SourceLocation ActorLoc = ConsumeToken();
++      Attrs.takeAllPrependingFrom(DeclSpecAttrs);
++      return Actions.ConvertDeclToDeclGroup(
++          ParseObjCAtInterfaceDeclaration(ActorLoc, Attrs, true));
++    }
++    goto dont_know;
+   case tok::at:
++    if (getLangOpts().ObjC3 && isObjC3QualifiedTypeNameAhead())
++      goto dont_know;
+     return ParseObjCAtDirectives(Attrs, DeclSpecAttrs);
+   case tok::minus:
+   case tok::plus:
+@@ -2506,6 +2522,29 @@
+     break;
+   }
+ 
++  // ObjC3 source imports are registry-backed and position-sensitive. Let a
++  // non-claiming extension source fall through to native @import; once a
++  // registry claims the canonical name, do not silently change loaders.
++  if (!SeenError && Tok.is(tok::semi) && IsObjCAtImport && getLangOpts().ObjC3 && !HeaderUnit && !IsPartition &&
++      !Path.empty()) {
++    llvm::SmallString<128> CanonicalName;
++    for (const IdentifierLoc &Component : Path) {
++      if (!CanonicalName.empty())
++        CanonicalName.push_back('.');
++      CanonicalName += Component.getIdentifierInfo()->getName();
++    }
++    if (ExternalSemaSource *Source = Actions.getExternalSource()) {
++      auto Result = Source->HandleObjC3SourceImport(CanonicalName, ImportLoc);
++      if (Result != ObjC3SourceImportResult::NotHandled) {
++        // Complete native admission (including include guards) before lexing
++        // a following textual dependency. Consuming the semicolon can process
++        // that include before the next parser callback.
++        ConsumeToken();
++        return nullptr;
++      }
++    }
++  }
++
+   bool LexedSemi = false;
+   if (getLangOpts().CPlusPlusModules)
+     LexedSemi =
+@@ -2520,13 +2559,21 @@
+   if (SeenError)
+     return nullptr;
+ 
++  // The ObjC3 registry can service imports independently of Clang modules.
++  // An unclaimed Objective-C import retains the ordinary modules gate.
++  if (IsObjCAtImport && !getLangOpts().Modules &&
++      !getLangOpts().DebuggerSupport) {
++    Diag(AtLoc, diag::err_atimport);
++    return nullptr;
++  }
++
+   DeclResult Import;
+   if (HeaderUnit)
+     Import =
+         Actions.ActOnModuleImport(StartLoc, ExportLoc, ImportLoc, HeaderUnit);
+   else if (!Path.empty())
+     Import = Actions.ActOnModuleImport(StartLoc, ExportLoc, ImportLoc, Path,
+-                                       IsPartition);
++                                       IsPartition, IsObjCAtImport);
+   if (Import.isInvalid())
+     return nullptr;
+ 
+
+diff --git a/clang/lib/Parse/ParseObjC3Conditions.cpp b/clang/lib/Parse/ParseObjC3Conditions.cpp
+new file mode 100644
+index 000000000..f82d72d23
+--- /dev/null
++++ b/clang/lib/Parse/ParseObjC3Conditions.cpp
+@@ -0,0 +1,288 @@
++//===--- ParseObjC3Conditions.cpp - Native optional-binding statements ------===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++
++#include "clang/Basic/DiagnosticParse.h"
++#include "clang/Parse/Parser.h"
++#include "clang/Parse/RAIIObjectsForParser.h"
++#include "clang/Sema/Scope.h"
++#include "clang/Sema/SemaCodeCompletion.h"
++#include "llvm/ADT/SmallVector.h"
++
++using namespace clang;
++
++namespace {
++bool isWord(const Token &Token, StringRef Word) {
++  return Token.is(tok::identifier) && Token.getIdentifierInfo() &&
++         Token.getIdentifierInfo()->isStr(Word);
++}
++
++bool isBindingHead(const Token &Token) {
++  return isWord(Token, "let") || isWord(Token, "var");
++}
++
++bool isConditionBoundary(const Token &Token) {
++  return Token.isOneOf(tok::kw_else, tok::l_brace, tok::r_brace, tok::semi,
++                       tok::eof);
++}
++} // namespace
++
++bool Parser::isObjC3GuardStatementAhead() {
++  if (!getLangOpts().ObjC3 || !isWord(Tok, "guard") ||
++      NextToken().is(tok::colon))
++    return false;
++
++  // No ordinary expression or declaration begins "guard let name". Recognize
++  // this head even without '=' or 'else', so malformed bindings get their own
++  // diagnostics. A variable named let/var, a call, and a label remain ordinary.
++  if (isBindingHead(NextToken()) &&
++      GetLookAheadToken(2).is(tok::identifier))
++    return true;
++  // These starts cannot continue an ordinary use of the identifier guard.
++  // Keeping them contextual also diagnoses a missing mandatory else without
++  // reinterpreting a call or a declaration whose type is named guard.
++  if (NextToken().isOneOf(tok::kw_true, tok::kw_false, tok::exclaim))
++    return true;
++
++  // Boolean guards have no dedicated leading punctuation. Commit only when
++  // there is an else at condition-list depth. Nested lambdas, statement
++  // expressions, Objective-C messages, and braced initializers can all contain
++  // semicolons or else tokens; match delimiters in order, rather than counting
++  // each delimiter kind independently. This lookahead never consumes tokens.
++  SmallVector<tok::TokenKind, 8> Delimiters;
++  for (unsigned I = 1;; ++I) {
++    const Token &Look = GetLookAheadToken(I);
++    if (Look.isOneOf(tok::eof, tok::annot_repl_input_end))
++      return false;
++    if (Delimiters.empty()) {
++      if (Look.is(tok::kw_else))
++        return true;
++      if (Look.isOneOf(tok::semi, tok::r_brace))
++        return false;
++    }
++    switch (Look.getKind()) {
++    case tok::l_paren:
++      Delimiters.push_back(tok::r_paren);
++      break;
++    case tok::l_square:
++      Delimiters.push_back(tok::r_square);
++      break;
++    case tok::l_brace:
++      Delimiters.push_back(tok::r_brace);
++      break;
++    case tok::r_paren:
++    case tok::r_square:
++    case tok::r_brace:
++      if (Delimiters.empty() || Delimiters.pop_back_val() != Look.getKind())
++        return false;
++      break;
++    default:
++      break;
++    }
++  }
++}
++
++bool Parser::isObjC3IfBindingStatementAhead() {
++  return getLangOpts().ObjC3 && Tok.is(tok::kw_if) &&
++         isBindingHead(NextToken());
++}
++
++void Parser::RecoverObjC3Condition() {
++  // Leave structural tokens for the statement parser. SkipUntil balances
++  // nested expressions and preserves the containing compound's closing brace.
++  const tok::TokenKind Stops[] = {tok::comma, tok::kw_else, tok::l_brace,
++                                  tok::r_brace};
++  SkipUntil(Stops, StopAtSemi | StopBeforeMatch);
++}
++
++bool Parser::ParseObjC3ConditionList(SmallVectorImpl<Stmt *> &Conditions,
++                                      bool GuardMode) {
++  bool Invalid = false;
++  bool InBindingList = false;
++  bool Mutable = false;
++  bool SeenBindingHead = false;
++  for (;;) {
++    const SourceLocation Begin = Tok.getLocation();
++    if (Tok.is(tok::code_completion)) {
++      cutOffParsing();
++      Actions.CodeCompletion().CodeCompleteOrdinaryName(
++          getCurScope(), SemaCodeCompletion::PCC_Expression);
++      return false;
++    }
++    if (isConditionBoundary(Tok) || Tok.is(tok::comma)) {
++      Diag(Tok, GuardMode ? diag::err_objc3_guard_expected_condition
++                          : diag::err_objc3_expected_binding);
++      Invalid = true;
++      if (Tok.isNot(tok::comma))
++        return false;
++      ConsumeToken();
++      InBindingList = false;
++      continue;
++    }
++
++    // In a guard, let/var is contextual only before a binding name. In an
++    // if-binding statement the first head has already selected this grammar.
++    // A Boolean condition ends the preceding binding list, so a later bare
++    // assignment is an expression until another explicit let/var head appears.
++    bool ExplicitHead = isBindingHead(Tok) &&
++                        ((!GuardMode && !SeenBindingHead) ||
++                         NextToken().is(tok::identifier));
++    bool ContinuedBinding = InBindingList && Tok.is(tok::identifier) &&
++                            NextToken().is(tok::equal);
++    if (ExplicitHead || ContinuedBinding) {
++      if (ExplicitHead) {
++        if (!GuardMode && SeenBindingHead) {
++          Diag(Tok, diag::err_objc3_if_binding_repeated_head);
++          Invalid = true;
++        }
++        Mutable = isWord(Tok, "var");
++        SeenBindingHead = true;
++        ConsumeToken();
++      }
++      InBindingList = true;
++      if (Tok.isNot(tok::identifier)) {
++        Diag(Tok, diag::err_objc3_expected_binding);
++        Invalid = true;
++        RecoverObjC3Condition();
++      } else {
++        IdentifierInfo *Name = Tok.getIdentifierInfo();
++        SourceLocation NameLoc = ConsumeToken();
++        if (Tok.isNot(tok::equal)) {
++          Diag(Tok, diag::err_expected) << tok::equal;
++          Invalid = true;
++          RecoverObjC3Condition();
++        } else {
++          SourceLocation EqualLoc = ConsumeToken();
++          ExprResult Source;
++          if (isConditionBoundary(Tok) || Tok.is(tok::comma)) {
++            Diag(Tok, diag::err_expected_expression);
++            Source = ExprError();
++          } else {
++            Source = ParseAssignmentExpression();
++          }
++          if (Source.isInvalid()) {
++            Invalid = true;
++            RecoverObjC3Condition();
++          } else {
++            StmtResult Binding = Actions.ActOnObjC3BindingCondition(
++                getCurScope(), Name, NameLoc, Mutable, Begin, EqualLoc,
++                Source.get());
++            if (Binding.isInvalid())
++              Invalid = true;
++            else
++              Conditions.push_back(Binding.get());
++          }
++        }
++      }
++    } else if (GuardMode || SeenBindingHead) {
++      InBindingList = false;
++      ExprResult Value = ParseAssignmentExpression();
++      if (Value.isInvalid()) {
++        Invalid = true;
++        RecoverObjC3Condition();
++      } else {
++        ExprResult Condition = Actions.ActOnObjC3BooleanCondition(
++            getCurScope(), Value.get(), Begin);
++        if (Condition.isInvalid())
++          Invalid = true;
++        else
++          Conditions.push_back(Condition.get());
++      }
++    } else {
++      Diag(Tok, diag::err_objc3_expected_binding);
++      Invalid = true;
++      RecoverObjC3Condition();
++    }
++
++    if (Tok.isNot(tok::comma) && !isConditionBoundary(Tok)) {
++      Diag(Tok, diag::err_objc3_condition_expected_separator) << GuardMode;
++      Invalid = true;
++      RecoverObjC3Condition();
++    }
++    if (Tok.isNot(tok::comma))
++      return !Invalid && !Conditions.empty();
++    ConsumeToken();
++  }
++}
++
++StmtResult Parser::ParseObjC3GuardStatement() {
++  assert(isWord(Tok, "guard") && "not a guard statement");
++  SourceLocation KeywordLoc = ConsumeToken();
++  SmallVector<Stmt *, 4> Conditions;
++
++  // Each successful binding enters lookup before the next initializer. Exit
++  // this temporary scope before parsing failure, then Sema installs the same
++  // declarations in the source parent after the entire guard is accepted.
++  ParseScope Bindings(this, Scope::DeclScope | Scope::CompoundStmtScope);
++  bool Invalid = !ParseObjC3ConditionList(Conditions, /*GuardMode=*/true);
++  Bindings.Exit();
++
++  SourceLocation ElseLoc;
++  if (Tok.is(tok::kw_else)) {
++    ElseLoc = ConsumeToken();
++  } else {
++    Diag(Tok, diag::err_objc3_guard_expected_else);
++    Invalid = true;
++    // A missing else immediately before a compound is recoverable without
++    // losing the following source siblings or leaking any success binding.
++    if (Tok.isNot(tok::l_brace))
++      return StmtError();
++  }
++
++  if (Tok.isNot(tok::l_brace)) {
++    Diag(Tok, diag::err_objc3_condition_expected_compound) << 0;
++    if (!Tok.isOneOf(tok::r_brace, tok::eof, tok::kw_else)) {
++      ParseScope Recovery(this, Scope::DeclScope);
++      (void)ParseStatement();
++    }
++    return StmtError();
++  }
++  StmtResult ElseBody = ParseCompoundStatement();
++  if (Invalid || ElseBody.isInvalid())
++    return StmtError();
++  return Actions.ActOnObjC3GuardStmt(getCurScope(), Conditions, ElseBody.get(),
++                                     KeywordLoc, ElseLoc);
++}
++
++StmtResult Parser::ParseObjC3IfBindingStatement() {
++  assert(Tok.is(tok::kw_if) && "not an if binding statement");
++  SourceLocation IfLoc = ConsumeToken();
++  SmallVector<Stmt *, 4> Conditions;
++  ParseScope Bindings(this, Scope::DeclScope | Scope::ControlScope);
++  bool Invalid = !ParseObjC3ConditionList(Conditions, /*GuardMode=*/false);
++  StmtResult Then;
++  if (Tok.is(tok::l_brace)) {
++    Then = ParseCompoundStatement();
++  } else {
++    Diag(Tok, diag::err_objc3_condition_expected_compound) << 1;
++    Invalid = true;
++    if (!Tok.isOneOf(tok::kw_else, tok::r_brace, tok::eof)) {
++      ParseScope Recovery(this, Scope::DeclScope);
++      (void)ParseStatement();
++    }
++  }
++  Bindings.Exit();
++
++  SourceLocation ElseLoc;
++  StmtResult ElseBody;
++  if (Tok.is(tok::kw_else)) {
++    ElseLoc = ConsumeToken();
++    if (Tok.is(tok::l_brace)) {
++      ElseBody = ParseCompoundStatement();
++    } else {
++      Diag(Tok, diag::err_objc3_condition_expected_compound) << 2;
++      Invalid = true;
++      if (!Tok.isOneOf(tok::kw_else, tok::r_brace, tok::eof)) {
++        ParseScope Recovery(this, Scope::DeclScope);
++        (void)ParseStatement();
++      }
++    }
++  }
++  if (Invalid || Then.isInvalid() || ElseBody.isInvalid())
++    return StmtError();
++  return Actions.ActOnObjC3IfBindingStmt(Conditions, Then.get(), ElseBody.get(),
++                                         IfLoc, ElseLoc);
++}
+diff --git a/clang/lib/Parse/ParseObjC3KeyPath.cpp b/clang/lib/Parse/ParseObjC3KeyPath.cpp
+new file mode 100644
+index 000000000..0b4821350
+--- /dev/null
++++ b/clang/lib/Parse/ParseObjC3KeyPath.cpp
+@@ -0,0 +1,113 @@
++//===--- ParseObjC3KeyPath.cpp - Native typed key paths --------------------===//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++
++#include "clang/Parse/Parser.h"
++#include "clang/Parse/RAIIObjectsForParser.h"
++#include "clang/Sema/Sema.h"
++
++using namespace clang;
++
++TypeResult Parser::ParseObjC3KeyPathType(SourceLocation &EndLoc) {
++  const bool Writable = Tok.getIdentifierInfo()->isStr("WritableKeyPath");
++  SourceLocation KeywordLoc = ConsumeToken();
++  if (Tok.isNot(tok::less)) {
++    Diag(Tok, diag::err_expected) << tok::less;
++    return TypeError();
++  }
++  SourceLocation LAngleLoc = ConsumeToken();
++  GreaterThanIsOperatorScope GreaterThan(GreaterThanIsOperator, false);
++  TypeResult Root = ParseTypeName();
++  if (Root.isInvalid())
++    return TypeError();
++  SourceLocation CommaLoc = Tok.getLocation();
++  if (ExpectAndConsume(tok::comma))
++    return TypeError();
++  TypeResult Value = ParseTypeName();
++  if (Value.isInvalid() ||
++      ParseGreaterThanInTemplateList(LAngleLoc, EndLoc,
++                                    /*ConsumeLastToken=*/true,
++                                    /*ObjCGenericList=*/true))
++    return TypeError();
++  return Actions.ActOnObjC3KeyPathType(Writable, Root.get(), Value.get(),
++                                       KeywordLoc, LAngleLoc, CommaLoc, EndLoc);
++}
++
++ExprResult Parser::ParseObjC3KeyPathLiteral(SourceLocation AtLoc) {
++  ConsumeToken(); // keypath
++  BalancedDelimiterTracker Parens(*this, tok::l_paren);
++  if (Parens.expectAndConsume(diag::err_expected_lparen_after, "@keypath"))
++    return ExprError();
++
++  ParsedType Root;
++  const bool SelfRoot = Tok.is(tok::identifier) &&
++                        Tok.getIdentifierInfo()->isStr("self");
++  if (SelfRoot) {
++    ConsumeToken();
++  } else {
++    TypeResult Type = ParseTypeName();
++    if (Type.isInvalid()) {
++      Parens.skipToEnd();
++      return ExprError();
++    }
++    Root = Type.get();
++  }
++  if (ExpectAndConsume(tok::comma)) {
++    Parens.skipToEnd();
++    return ExprError();
++  }
++
++  SmallVector<IdentifierInfo *, 4> Members;
++  SmallVector<SourceLocation, 4> MemberLocs;
++  do {
++    if (!Members.empty())
++      ConsumeToken(); // period
++    if (Tok.isNot(tok::identifier)) {
++      Diag(Tok, diag::err_expected) << tok::identifier;
++      Parens.skipToEnd();
++      return ExprError();
++    }
++    Members.push_back(Tok.getIdentifierInfo());
++    MemberLocs.push_back(ConsumeToken());
++  } while (Tok.is(tok::period));
++  if (Parens.consumeClose())
++    return ExprError();
++  return Actions.ActOnObjC3KeyPathLiteral(
++      Root, SelfRoot, Members, MemberLocs, AtLoc, Parens.getCloseLocation());
++}
++
++ExprResult Parser::ParseObjC3KeyPathApplication() {
++  IdentifierInfo *Operation = Tok.getIdentifierInfo();
++  SourceLocation KeywordLoc = ConsumeToken();
++  const unsigned Kind = Operation->isStr("KeyPathGet") ? 0
++                      : Operation->isStr("KeyPathSet") ? 1
++                      : Operation->isStr("KeyPathMetadata") ? 2
++                      : Operation->isStr("KeyPathAsReadOnly") ? 3 : 4;
++  BalancedDelimiterTracker Parens(*this, tok::l_paren);
++  if (Parens.expectAndConsume(diag::err_expected_lparen_after,
++                              Operation->getNameStart()))
++    return ExprError();
++  SmallVector<Expr *, 3> Args;
++  const unsigned Count = Kind == 0 ? 2 : Kind == 1 ? 3 : 1;
++  if (getLangOpts().CPlusPlus) {
++    if (Tok.isNot(tok::r_paren) && ParseExpressionList(Args)) {
++      Parens.skipToEnd();
++      return ExprError();
++    }
++  } else for (unsigned I = 0; I < Count; ++I) {
++    if (I && ExpectAndConsume(tok::comma)) {
++      Parens.skipToEnd();
++      return ExprError();
++    }
++    ExprResult Arg = ParseAssignmentExpression();
++    if (Arg.isInvalid()) {
++      Parens.skipToEnd();
++      return ExprError();
++    }
++    Args.push_back(Arg.get());
++  }
++  if (Parens.consumeClose())
++    return ExprError();
++  return Actions.ActOnObjC3KeyPathApplication(
++      Kind, Args, KeywordLoc, Parens.getCloseLocation());
++}
+diff --git a/clang/lib/Parse/ParseExprCXX.cpp b/clang/lib/Parse/ParseExprCXX.cpp
+--- a/clang/lib/Parse/ParseExprCXX.cpp
++++ b/clang/lib/Parse/ParseExprCXX.cpp
+@@ -482,6 +482,15 @@
+       continue;
+     }
+ 
++    // These unqualified Objective-C 3 type constructors are language syntax,
++    // including inside a class partial specialization's template arguments.
++    // Do not turn them into assumed C++ template names while looking for a
++    // nested-name-specifier; the type-id parser owns their operand list.
++    if (getLangOpts().ObjC3 && SS.isEmpty() && !ObjectType &&
++        Next.is(tok::less) &&
++        (II.isStr("KeyPath") || II.isStr("WritableKeyPath")))
++      break;
++
+     CheckForTemplateAndDigraph(Next, ObjectType, EnteringContext, II, SS);
+ 
+     // nested-name-specifier:
+@@ -1345,7 +1354,13 @@
+                   tok::kw___constant, tok::kw___generic, tok::kw_groupshared,
+                   tok::kw_requires, tok::kw_noexcept) ||
+       Tok.isRegularKeywordAttribute() ||
+-      (Tok.is(tok::l_square) && NextToken().is(tok::l_square));
++      (Tok.is(tok::l_square) && NextToken().is(tok::l_square)) ||
++      (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
++       (Tok.getIdentifierInfo()->isStr("__objc3_async") ||
++        Tok.getIdentifierInfo()->isStr("__objc3_async_frame") ||
++         Tok.getIdentifierInfo()->isStr("async") ||
++        Tok.getIdentifierInfo()->isStr("__objc3_throws") ||
++        Tok.getIdentifierInfo()->isStr("throws")));
+ 
+   if (HasSpecifiers && !HasParentheses && !getLangOpts().CPlusPlus23) {
+     // It's common to forget that one needs '()' before 'mutable', an
+@@ -1426,6 +1441,17 @@
+         DeclEndLoc = Range.getEnd();
+     }
+ 
++    bool ObjC3Async=false, ObjC3AsyncFrame=false;
++    unsigned ObjC3ThrowsKind=0;
++    ParsedType ObjC3ErrorType;
++    TypeSourceInfo *ObjC3ErrorTypeInfo=nullptr;
++    SourceLocation ObjC3EffectsLoc,ObjC3AsyncLoc,ObjC3ThrowsLoc;
++    SourceRange ObjC3ThrowsPayloadRange;
++    ParseObjC3FunctionEffects(ObjC3Async,ObjC3AsyncFrame,ObjC3ThrowsKind,
++        ObjC3ErrorType,ObjC3ErrorTypeInfo,ObjC3EffectsLoc,ObjC3AsyncLoc,
++        ObjC3ThrowsLoc,ObjC3ThrowsPayloadRange);
++    if (ObjC3EffectsLoc.isValid())DeclEndLoc=PrevTokLocation;
++
+     SourceLocation NoLoc;
+     D.AddTypeInfo(DeclaratorChunk::getFunction(
+                       /*HasProto=*/true,
+@@ -1438,7 +1464,10 @@
+                       NoexceptExpr.isUsable() ? NoexceptExpr.get() : nullptr,
+                       /*ExceptionSpecTokens*/ nullptr,
+                       /*DeclsInPrototype=*/{}, LParenLoc, FunLocalRangeEnd, D,
+-                      TrailingReturnType, TrailingReturnTypeLoc, &DS),
++                      TrailingReturnType, TrailingReturnTypeLoc, &DS,
++                      ObjC3Async,ObjC3ThrowsKind,ObjC3ErrorType,ObjC3ErrorTypeInfo,
++                      ObjC3EffectsLoc,ObjC3AsyncLoc,ObjC3ThrowsLoc,
++                      ObjC3ThrowsPayloadRange,ObjC3AsyncFrame),
+                   std::move(Attributes), DeclEndLoc);
+ 
+     if (HasParentheses && Tok.is(tok::kw_requires))
+@@ -1447,8 +1476,10 @@
+ 
+   // Emit a warning if we see a CUDA host/device/global attribute
+   // after '(...)'. nvcc doesn't accept this.
+-  if (getLangOpts().CUDA) {
+-    for (const ParsedAttr &A : Attributes)
++  unsigned FunctionIndex = 0;
++  if (getLangOpts().CUDA && D.isFunctionDeclarator(FunctionIndex)) {
++    // AddTypeInfo transferred attribute ownership to this function chunk.
++    for (const ParsedAttr &A : D.getTypeObject(FunctionIndex).getAttrs())
+       if (A.getKind() == ParsedAttr::AT_CUDADevice ||
+           A.getKind() == ParsedAttr::AT_CUDAHost ||
+           A.getKind() == ParsedAttr::AT_CUDAGlobal)
+@@ -1933,6 +1964,7 @@
+   }
+ 
+   case ConditionOrInitStatement::InitStmtDecl: {
++    assert(InitStmt && "An init-statement requires output storage");
+     WarnOnInit();
+     DeclGroupPtrTy DG;
+     SourceLocation DeclStart = Tok.getLocation(), DeclEnd;
+

@@ -79,3 +79,20 @@ jobs:
         env:
           RELEASE_HOST: ${{ matrix.host }}
         run: python3 -B -m scripts.objc3c_toolchain.release_install --host "$RELEASE_HOST" --directory out/draft-assets
+  rehearse-source:
+    name: Verify the exact draft source downloads
+    needs: draft
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Download and check the source archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          gh release download "$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" --dir out/draft-sources \
+            --pattern '*-source.tar.gz' --pattern SHA256SUMS
+          cd out/draft-sources
+          awk '$2 ~ /-source\.tar\.gz$/ { print }' SHA256SUMS | sha256sum --check --strict

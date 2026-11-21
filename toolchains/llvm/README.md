@@ -74,6 +74,13 @@ python -m scripts.objc3c_toolchain verify-development
 python -m scripts.objc3c_toolchain build --host linux-x86_64 --stage
 ```
 
+The [series](patches/series) lists packet application order. AST, parser,
+semantic analysis, tooling, and lowering changes have separate owners. When a
+file is changed across several packets, update its ordered patch sections
+together, then run
+`python -m scripts.objc3c_toolchain.check_llvm_patch_application`. The exporter
+preserves these layers when exporting other files.
+
 The generated `ObjC3Features.def` in the LLVM source must match the repository's
 feature authority before exporting patches. Extension feature states come from
 [the capability schema](../../schemas/objc3-language-capabilities.json), never
