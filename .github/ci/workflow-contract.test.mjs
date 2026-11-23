@@ -8,6 +8,7 @@ import {
   validateDependencyRouting,
   validateNativeContainer,
   validateNativeGate,
+  validateNativePR,
   validateNativeRelease,
   validateOptionalLLVM,
   validateQuickChecks,
@@ -34,6 +35,7 @@ const native = await readFile(
   new URL("../workflows/native-assurance.yml", import.meta.url),
   "utf8",
 );
+const nativePR = await readFile(new URL("../workflows/native-pr.yml", import.meta.url), "utf8");
 const implementation = await readFile(
   new URL("../workflows/implementation-analysis.yml", import.meta.url),
   "utf8",
@@ -78,6 +80,20 @@ for (const name of ["planning-lint.yml", "adaptive-policy-checks.yml"])
   );
 test("every native, quick and planning owner reuses pinned dependency caches", () => {
   validateDependencyRouting(dependencyWorkflows);
+});
+test("native PR gate verifies the exact merge and retains failure evidence", () => {
+  validateNativePR(nativePR);
+  for (const edit of [
+    (workflow) => { workflow.on.pull_request = { paths: ["native/**"] }; },
+    (workflow) => { workflow.permissions.contents = "write"; },
+    (workflow) => { workflow.jobs["native-pr"]["continue-on-error"] = true; },
+    (workflow) => { workflow.jobs["native-pr"].steps.find((step) => step.id === "run").if = "false"; },
+    (workflow) => { workflow.jobs["native-pr"].steps.at(-1).with.name = "latest"; },
+  ]) {
+    const workflow = yaml.load(nativePR);
+    edit(workflow);
+    assert.throws(() => validateNativePR(yaml.dump(workflow)), /Native PR gate must/);
+  }
 });
 test("workflow changes run the pinned actionlint and ShellCheck integration", () => {
   const workflow = yaml.load(dependencyWorkflows["adaptive-policy-checks.yml"]);

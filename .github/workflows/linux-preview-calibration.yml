@@ -56,5 +56,6 @@ jobs:
             out/calibration/install.json
             out/calibration/**/qualification.json
             out/calibration/**/calibration.json
+            out/calibration/**/*.log
           if-no-files-found: error
           retention-days: 30

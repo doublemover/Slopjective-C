@@ -111,6 +111,17 @@ def test_pr_foundation_requires_exact_sealed_arch_and_configuration(tmp_path, mo
     assert pr_native.matching_foundation(tmp_path, plan, sdk) is None
 
 
+@pytest.mark.parametrize('paths,expected', [
+    (None, True),
+    (['native/objc3c/tests/keypath_service_test.cpp'], False),
+    (['toolchains/llvm/cmake/ObjC3LLVMCache.cmake'], False),
+    (['toolchains/llvm/cmake/ObjC3LLVMCache.cmake', 'scripts/objc3c_toolchain/install_sdk.py'], True),
+    (['tests/clang_foundation/installed_sdk/carrier-record-main.m'], True),
+])
+def test_install_witness_remains_selected_when_llvm_rebuilds(paths, expected):
+    assert pr_native.needs_install_witness({'changed_paths': paths}) is expected
+
+
 @pytest.mark.parametrize('defect', [None, 'path', 'length', 'seal', 'source'])
 def test_download_pins_release_archive_and_cleans_temporary_bytes(tmp_path, monkeypatch, defect):
     host, tag = preview_download.native_linux_host(), 'v0.1.0-preview.1'

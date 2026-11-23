@@ -9,7 +9,7 @@ from scripts.objc3c_toolchain.binary_packages import write_json
 from scripts.objc3c_toolchain.core import planned_development_identity
 from scripts.objc3c_toolchain.linux_host import native_target
 from scripts.objc3c_toolchain.package import verify_sdk
-from .plan import from_checkout
+from .plan import PACKAGE, from_checkout
 from .runner import run
 
 FOUNDATION_FIELDS = {
@@ -19,6 +19,11 @@ FOUNDATION_FIELDS = {
     'source_build_id': 'build_id',
 }
 SOURCE_SUITES = ('runtime', 'frontend')
+
+
+def needs_install_witness(plan: dict) -> bool:
+    paths = plan['changed_paths']
+    return not paths or any(path.startswith(PACKAGE) for path in paths)
 
 
 def matching_foundation(repo: Path, plan: dict, sdk: Path | None) -> dict | None:

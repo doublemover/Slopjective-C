@@ -95,6 +95,32 @@ export function validateDependencyActions(actions) {
   }
 }
 
+export function validateNativePR(text) {
+  const workflow = yaml.load(text);
+  const job = workflow.jobs?.["native-pr"];
+  const steps = job?.steps ?? [];
+  if (
+    Object.keys(workflow.on ?? {}).join() !== "pull_request" ||
+    workflow.on.pull_request !== null ||
+    Object.keys(workflow.permissions ?? {}).join() !== "contents" ||
+    workflow.permissions.contents !== "read" ||
+    !job || job.if || job.permissions || job["continue-on-error"] ||
+    steps.some((step) => step["continue-on-error"] || (step.uses && !pinnedAction(step.uses)))
+  ) throw new Error("Native PR gate must cover every PR with pinned, read-only execution");
+
+  const checkout = steps.find((step) => step.uses?.startsWith("actions/checkout@"));
+  const execute = steps.find((step) => step.run?.includes("-m scripts.objc3c_assurance.pr_native"));
+  const upload = steps.find((step) => step.uses?.startsWith("actions/upload-artifact@"));
+  if (
+    checkout?.with?.["persist-credentials"] !== false || checkout.with["fetch-depth"] !== 0 ||
+    !steps.some((step) => step.uses === "./.github/actions/linux-host-tools") ||
+    !execute || execute.if ||
+    !execute.run.includes('--head "$PR_HEAD" --base "$PR_BASE" --tested "$TESTED_SHA"') ||
+    !upload?.if?.includes("always()") || upload.with?.["if-no-files-found"] !== "error" ||
+    !["github.sha", "github.run_id", "github.run_attempt"].every((value) => upload.with.name?.includes(value))
+  ) throw new Error("Native PR gate must execute and retain evidence for the exact tested revision");
+}
+
 export function validateNativeContainer(job) {
   if (
     job.container?.image !== "debian:13" ||
@@ -919,6 +945,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     ),
   );
   validateDependencyRouting(allWorkflows);
+  validateNativePR(allWorkflows["native-pr.yml"]);
   validateNativeRelease(
     allWorkflows["native-assurance.yml"],
     allWorkflows["platform-host-evidence.yml"],

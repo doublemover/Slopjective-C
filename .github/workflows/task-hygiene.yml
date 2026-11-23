@@ -76,6 +76,7 @@ jobs:
           tests/tooling/test_semantic_oracles.py
           tests/tooling/test_semantic_source_feedback.py
           tests/tooling/test_semantic_benchmarks.py
+          tests/tooling/test_collection_scaling.py
           tests/tooling/test_semantic_runtime_workloads.py
           tests/tooling/test_semantic_ownership_workloads.py
           tests/tooling/test_semantic_task_frame_workloads.py
@@ -90,11 +91,13 @@ jobs:
           tests/tooling/test_development_patch_export.py
           tests/tooling/test_toolchain_package.py
           tests/tooling/test_toolchain_install.py
+          tests/tooling/test_darwin_bootstrap.py
           tests/tooling/test_linux_archive_debugger_gate.py
           tests/tooling/test_stage_linux_release.py
           tests/tooling/test_workspace_cleanup.py
           tests/tooling/test_linux_sdk_reuse.py
           tests/tooling/test_frontend_serial_tests.py
+          tests/tooling/test_native_assertion_policy.py
           tests/tooling/test_frontend_runtime_dependency.py
           tests/tooling/test_isolated_frontend_cases.py
           tests/tooling/test_artifact_transport.py

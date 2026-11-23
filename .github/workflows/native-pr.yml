@@ -35,6 +35,7 @@ jobs:
           import os
           from pathlib import Path
           from scripts.objc3c_assurance.plan import from_checkout
+          from scripts.objc3c_assurance.pr_native import needs_install_witness
           plan = from_checkout(Path.cwd(), head=os.environ['PR_HEAD'], base=os.environ['PR_BASE'],
                                tested=os.environ['TESTED_SHA'])
           directory = Path('out/native-pr')
@@ -43,6 +44,7 @@ jobs:
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
               print('native=' + str(plan['classification'] == 'native').lower(), file=output)
               print('reuse=' + str(plan['foundation_policy'] != 'rebuild-required').lower(), file=output)
+              print('install=' + str(needs_install_witness(plan)).lower(), file=output)
           PY
       - name: Check source-owned analyzer suppression policy
         if: steps.plan.outputs.native == 'true'
@@ -59,18 +61,28 @@ jobs:
         with:
           output: out/native-pr/startup
       - name: Fetch the base revision's published foundation candidate
-        if: steps.plan.outputs.native == 'true' && steps.plan.outputs.reuse == 'true'
+        if: steps.plan.outputs.native == 'true' && (steps.plan.outputs.reuse == 'true' || steps.plan.outputs.install == 'true')
         shell: bash
+        env:
+          INSTALL_WITNESS: ${{ steps.plan.outputs.install }}
         run: |
           if ! git cat-file -e "$PR_BASE:docs/releases/preview-manifest.json"; then
+            if [[ "$INSTALL_WITNESS" == true ]]; then
+              echo 'Package changes require the base revision to identify a published archive.' >&2
+              exit 1
+            fi
             echo 'No published foundation is recorded at the base revision. Build current source.'
             exit 0
           fi
           mkdir -p "$RUNNER_TEMP/native-pr-preview"
           git show "$PR_BASE:docs/releases/preview-manifest.json" > "$RUNNER_TEMP/native-pr-preview/manifest.json"
+          witness=()
+          if [[ "$INSTALL_WITNESS" == true ]]; then
+            witness=(--witness-log out/native-pr/install-witness.log)
+          fi
           python3 -B -m scripts.objc3c_assurance.preview_download \
-            --manifest "$RUNNER_TEMP/native-pr-preview/manifest.json" \
-            --directory "$RUNNER_TEMP/native-pr-preview" > out/native-pr/preview-install.json
+            --manifest "$RUNNER_TEMP/native-pr-preview/manifest.json" --directory "$RUNNER_TEMP/native-pr-preview" \
+            "${witness[@]}" > out/native-pr/preview-install.json
       - name: Execute the bounded native source suites or record prose classification
         id: run
         shell: bash
