@@ -129,6 +129,90 @@ void WriteArtifact(const InterfaceEmissionArtifact &artifact,
   const auto written = WriteSemanticInterfaceArtifact(artifact, path.string());
   assert(written.success);
 }
+
+void TestRelocatedCategoryProtocolClosure(const std::filesystem::path &root) {
+  const auto source = root / "category-sources";
+  const auto original = root / "category-artifacts";
+  const auto relocated = root / "category-relocated";
+  std::filesystem::create_directories(source);
+  std::filesystem::create_directories(original);
+  auto leaf = Producer((source / "protocols.m").string(), "category.Protocols", "protocols", R"objc(
+@protocol ProtocolAncestor @end
+@protocol PublicProtocol <ProtocolAncestor> @end
+__attribute__((annotate("objc3.spi:Privileged"))) @protocol InternalProtocol @end
+)objc");
+  const auto protocols = Compile(leaf);
+  assert(protocols.success && protocols.interface_artifact);
+  WriteArtifact(*protocols.interface_artifact, original / "Protocols.objc3i");
+
+  const std::string widget = "__attribute__((objc_root_class)) @interface Widget @end\n";
+  auto provider = Producer((source / "category.m").string(), "category.Widget", "widget",
+                           widget + "@interface Widget (Extension) <PublicProtocol> @end\n");
+  provider.interface_search_paths = {original.string()};
+  provider.module_imports = {Locked(protocols.interface_artifact->identity, true)};
+  const auto category = Compile(provider);
+  assert(category.success && category.interface_artifact);
+  assert(category.resolved_interface_dependencies.size() == 1);
+  assert(category.resolved_interface_dependencies.front().reexported);
+  WriteArtifact(*category.interface_artifact, original / "Widget.objc3i");
+
+  auto spi = provider;
+  spi.source_text = widget + "@interface Widget (Extension) <InternalProtocol> @end\n";
+  spi.module_imports.front().spi_groups = {"Privileged"};
+  spi.interface_output_path = (original / "Rejected.objc3i").string();
+  auto rejects_protocol = [&](const CompileRequest &request, const std::string &code) {
+    const auto result = Compile(request);
+    assert(!result.success && result.interface_artifact);
+    assert(std::ranges::any_of(result.interface_artifact->diagnostics, [&](const auto &diagnostic) {
+      return diagnostic.code == code;
+    }));
+    assert(!std::filesystem::exists(request.interface_output_path));
+    assert(!std::filesystem::exists(request.interface_output_path + ".json"));
+  };
+  rejects_protocol(spi, "O3IFC158");
+
+  const auto external = root / "category-foreign";
+  std::filesystem::create_directories(external);
+  const auto foreign_header = external / "Foreign.h";
+  std::ofstream(foreign_header) << "@protocol ForeignProtocol @end\n";
+  auto unresolved = provider;
+  unresolved.source_text = "#include \"Foreign.h\"\n" + widget +
+      "@interface Widget (Extension) <ForeignProtocol> @end\n";
+  unresolved.arguments.push_back("-I" + external.string());
+  unresolved.module_imports.clear();
+  unresolved.interface_search_paths.clear();
+  unresolved.interface_output_path = spi.interface_output_path;
+  rejects_protocol(unresolved, "O3IFC112");
+
+  auto umbrella = Producer((source / "umbrella.m").string(), "category.API", "api", "int public_api(void);");
+  umbrella.interface_search_paths = {original.string()};
+  umbrella.module_imports = {Locked(category.interface_artifact->identity, true)};
+  const auto exported = Compile(umbrella);
+  assert(exported.success && exported.interface_artifact);
+  WriteArtifact(*exported.interface_artifact, original / "API.objc3i");
+  std::filesystem::remove_all(source);
+  std::filesystem::remove_all(external);
+  std::filesystem::rename(original, relocated);
+
+  for (const bool directed : {false, true}) {
+    auto client = Producer((root / "category-client.m").string(), "", "",
+        "id<PublicProtocol> conform(Widget *widget) { return widget; }\n"
+        "id<ProtocolAncestor> inherited(Widget *widget) { return widget; }\n");
+    client.emit_semantic_interface = false;
+    client.arguments.push_back("-Werror=incompatible-pointer-types");
+    client.interface_search_paths = {relocated.string()};
+    client.module_imports = {Locked(exported.interface_artifact->identity)};
+    client.module_imports.front().initially_visible = !directed;
+    client.source_directed_imports = directed;
+    if (directed) client.source_text->insert(0, "@import category.API;\n");
+    const auto admitted = Compile(client);
+    assert(admitted.success);
+    const std::vector<std::string> expected = {"category.Protocols", "category.Widget", "category.API"};
+    assert(admitted.interface_dependency_order == expected);
+  }
+  std::filesystem::remove_all(relocated);
+}
+
 void TestCompactIndexBudgets(const std::filesystem::path &root,
                              const InterfaceEmissionArtifact &artifact,
                              const InterfaceImportTarget &target) {
@@ -272,6 +356,7 @@ int main() {
       "objc3c-module-resolution-three-module";
   std::filesystem::remove_all(root);
   std::filesystem::create_directories(root);
+  TestRelocatedCategoryProtocolClosure(root);
 
   auto a = Compile(Producer("provider-a.m", "fixture.A", "pkg-A",
                             "typedef struct Error { int code; } Error;\n"
