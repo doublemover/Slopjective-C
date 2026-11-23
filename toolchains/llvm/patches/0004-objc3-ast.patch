@@ -734,7 +734,7 @@ index 41ddd88a8..775aaabda 100644
    void VisitCompoundStmt(const CompoundStmt *Node);
    void VisitCXXExpansionStmtPattern(const CXXExpansionStmtPattern *Node);
 diff --git a/clang/include/clang/AST/TypeBase.h b/clang/include/clang/AST/TypeBase.h
-index c9658775f..50582b7cc 100644
+index c9658775f..1e1b01d05 100644
 --- a/clang/include/clang/AST/TypeBase.h
 +++ b/clang/include/clang/AST/TypeBase.h
 @@ -1490,7 +1490,10 @@ public:
@@ -878,15 +878,32 @@ index c9658775f..50582b7cc 100644
  /// Sugar for parentheses used when specifying types.
  class ParenType : public Type, public llvm::FoldingSetNode {
    friend class ASTContext; // ASTContext creates these.
-@@ -4596,6 +4694,7 @@ public:
+@@ -4592,11 +4690,15 @@ public:
+   /// not produce the latter.
+   class ExtParameterInfo {
+     enum {
+-      ABIMask = 0x0F,
++      ABIMask = 0x07,
++      IsObjC3Borrowed = 0x08,
        IsConsumed = 0x10,
        HasPassObjSize = 0x20,
        IsNoEscape = 0x40,
 +      IsCFConsumed = 0x80,
      };
++    static_assert(unsigned(ParameterABI::HLSLInOut) <= ABIMask,
++                  "parameter ABI overlaps the ObjC3 borrowed contract");
      unsigned char Data = 0;
  
-@@ -4622,6 +4721,15 @@ public:
+   public:
+@@ -4605,6 +4707,7 @@ public:
+     /// Return the ABI treatment of this parameter.
+     ParameterABI getABI() const { return ParameterABI(Data & ABIMask); }
+     ExtParameterInfo withABI(ParameterABI kind) const {
++      assert(unsigned(kind) <= ABIMask && "parameter ABI does not fit");
+       ExtParameterInfo copy = *this;
+       copy.Data = (copy.Data & ~ABIMask) | unsigned(kind);
+       return copy;
+@@ -4622,6 +4725,26 @@ public:
        return copy;
      }
  
@@ -899,10 +916,21 @@ index c9658775f..50582b7cc 100644
 +      return Copy;
 +    }
 +
++    // A lifetime permission, independent of the native noescape ABI flag.
++    bool isObjC3Borrowed() const { return Data & IsObjC3Borrowed; }
++    ExtParameterInfo withIsObjC3Borrowed(bool Borrowed) const {
++      ExtParameterInfo Copy = *this;
++      if (Borrowed)
++        Copy.Data |= IsObjC3Borrowed;
++      else
++        Copy.Data &= ~IsObjC3Borrowed;
++      return Copy;
++    }
++
      bool hasPassObjectSize() const { return Data & HasPassObjSize; }
      ExtParameterInfo withHasPassObjectSize() const {
        ExtParameterInfo Copy = *this;
-@@ -4693,6 +4801,7 @@ public:
+@@ -4693,6 +4816,7 @@ public:
      enum { RegParmMask = 0xe00, RegParmOffset = 9 };
      enum { NoCfCheckMask = 0x1000 };
      enum { CmseNSCallMask = 0x2000 };
@@ -910,7 +938,7 @@ index c9658775f..50582b7cc 100644
      uint16_t Bits = CC_C;
  
      ExtInfo(unsigned Bits) : Bits(static_cast<uint16_t>(Bits)) {}
-@@ -4722,6 +4831,10 @@ public:
+@@ -4722,6 +4846,10 @@ public:
  
      bool getNoReturn() const { return Bits & NoReturnMask; }
      bool getProducesResult() const { return Bits & ProducesResultMask; }
@@ -921,7 +949,7 @@ index c9658775f..50582b7cc 100644
      bool getCmseNSCall() const { return Bits & CmseNSCallMask; }
      bool getNoCallerSavedRegs() const { return Bits & NoCallerSavedRegsMask; }
      bool getNoCfCheck() const { return Bits & NoCfCheckMask; }
-@@ -4819,11 +4932,18 @@ public:
+@@ -4819,11 +4947,18 @@ public:
      LLVM_PREFERRED_TYPE(bool)
      unsigned EffectsHaveConditions : 1;
      unsigned NumFunctionEffects : 4;
@@ -941,7 +969,7 @@ index c9658775f..50582b7cc 100644
    };
  
    /// A holder for extra information from attributes which aren't part of an
-@@ -4921,6 +5041,7 @@ public:
+@@ -4921,6 +5056,7 @@ public:
    bool getCmseNSCallAttr() const { return getExtInfo().getCmseNSCall(); }
    CallingConv getCallConv() const { return getExtInfo().getCC(); }
    ExtInfo getExtInfo() const { return ExtInfo(FunctionTypeBits.ExtInfo); }
@@ -949,7 +977,7 @@ index c9658775f..50582b7cc 100644
  
    static_assert((~Qualifiers::FastMask & Qualifiers::CVRMask) == 0,
                  "Const, volatile and restrict are assumed to be a subset of "
-@@ -4932,9 +5053,7 @@ public:
+@@ -4932,9 +5068,7 @@ public:
  
    /// Determine the type of an expression that calls a function of
    /// this type.
@@ -960,7 +988,7 @@ index c9658775f..50582b7cc 100644
  
    static StringRef getNameForCallConv(CallingConv CC);
  
-@@ -5102,6 +5221,47 @@ public:
+@@ -5102,6 +5236,47 @@ public:
    }
  };
  
@@ -1008,7 +1036,7 @@ index c9658775f..50582b7cc 100644
  /// A FunctionEffect plus a potential boolean expression determining whether
  /// the effect is declared (e.g. nonblocking(expr)). Generally the condition
  /// expression when present, is dependent.
-@@ -5368,7 +5528,7 @@ class FunctionProtoType final
+@@ -5368,7 +5543,7 @@ class FunctionProtoType final
            FunctionType::FunctionTypeExtraAttributeInfo,
            FunctionType::FunctionTypeArmAttributes, FunctionType::ExceptionType,
            Expr *, FunctionDecl *, FunctionType::ExtParameterInfo, Qualifiers,
@@ -1017,7 +1045,7 @@ index c9658775f..50582b7cc 100644
    friend class ASTContext; // ASTContext creates these.
    friend TrailingObjects;
  
-@@ -5409,6 +5569,8 @@ class FunctionProtoType final
+@@ -5409,6 +5584,8 @@ class FunctionProtoType final
    // * Optionally, an array of getNumFunctionEffects() EffectConditionExpr.
    //   Present only when getNumFunctionEffectConditions() > 0.
    //
@@ -1026,7 +1054,7 @@ index c9658775f..50582b7cc 100644
    // The optional FunctionTypeExtraBitfields has to be before the data
    // related to the exception specification since it contains the number
    // of exception types.
-@@ -5462,6 +5624,8 @@ public:
+@@ -5462,6 +5639,8 @@ public:
      SourceLocation EllipsisLoc;
      FunctionEffectsRef FunctionEffects;
      FunctionTypeExtraAttributeInfo ExtraAttributeInfo;
@@ -1035,7 +1063,7 @@ index c9658775f..50582b7cc 100644
  
      LLVM_PREFERRED_TYPE(bool)
      unsigned Variadic : 1;
-@@ -5496,6 +5660,8 @@ public:
+@@ -5496,6 +5675,8 @@ public:
        return ExceptionSpec.Type == EST_Dynamic ||
               requiresFunctionProtoTypeArmAttributes() ||
               requiresFunctionProtoTypeExtraAttributeInfo() ||
@@ -1044,7 +1072,7 @@ index c9658775f..50582b7cc 100644
               !FunctionEffects.empty();
      }
  
-@@ -5561,6 +5727,14 @@ private:
+@@ -5561,6 +5742,14 @@ private:
      return getNumFunctionEffects();
    }
  
@@ -1059,7 +1087,7 @@ index c9658775f..50582b7cc 100644
    /// Determine whether there are any argument types that
    /// contain an unexpanded parameter pack.
    static bool containsAnyUnexpandedParameterPack(const QualType *ArgArray,
-@@ -5671,9 +5845,45 @@ public:
+@@ -5671,9 +5860,45 @@ public:
      EPI.ExtraAttributeInfo = getExtraAttributeInfo();
      EPI.AArch64SMEAttributes = getAArch64SMEAttributes();
      EPI.FunctionEffects = getFunctionEffects();
@@ -1387,7 +1415,7 @@ index e2168d0a0..85db4c91f 100644
    }]>;
  }
 diff --git a/clang/lib/AST/ASTContext.cpp b/clang/lib/AST/ASTContext.cpp
-index 222881154..635cdf63d 100644
+index 222881154..f728159d8 100644
 --- a/clang/lib/AST/ASTContext.cpp
 +++ b/clang/lib/AST/ASTContext.cpp
 @@ -11,6 +11,8 @@
@@ -1736,7 +1764,7 @@ index 222881154..635cdf63d 100644
    // FIXME: This assertion cannot be enabled (yet) because the ObjC rewriter
    // functionality creates a function without a prototype regardless of
    // language mode (so it makes them even in C++). Once the rewriter has been
-@@ -5052,6 +5303,18 @@ static bool isCanonicalExceptionSpecification(
+@@ -5052,6 +5303,43 @@ static bool isCanonicalExceptionSpecification(
  QualType ASTContext::getFunctionTypeInternal(
      QualType ResultTy, ArrayRef<QualType> ArgArray,
      const FunctionProtoType::ExtProtoInfo &EPI, bool OnlyWantCanonical) const {
@@ -1745,6 +1773,31 @@ index 222881154..635cdf63d 100644
 +    auto Updated = EPI;
 +    Updated.ExtInfo = Updated.ExtInfo.withObjC3BorrowedResult(true);
 +    return getFunctionTypeInternal(ResultTy, ArgArray, Updated, OnlyWantCanonical);
++  }
++  // Borrowed data-pointer spelling remains sugar, but a callable's permission
++  // belongs to its canonical signature and must survive template substitution.
++  if (getLangOpts().ObjC3 && !OnlyWantCanonical) {
++    SmallVector<FunctionProtoType::ExtParameterInfo, 8> Infos;
++    for (unsigned I = 0; I != ArgArray.size(); ++I) {
++      auto Info = EPI.ExtParameterInfos ? EPI.ExtParameterInfos[I]
++                                       : FunctionProtoType::ExtParameterInfo();
++      if (Info.isObjC3Borrowed() ||
++          !isObjC3BorrowedType(*this, ArgArray[I].getNonReferenceType()))
++        continue;
++      if (Infos.empty()) {
++        Infos.resize(ArgArray.size());
++        if (EPI.ExtParameterInfos)
++          llvm::copy(ArrayRef(EPI.ExtParameterInfos, ArgArray.size()),
++                     Infos.begin());
++      }
++      Infos[I] = Info.withIsObjC3Borrowed(true);
++    }
++    if (!Infos.empty()) {
++      auto Updated = EPI;
++      Updated.ExtParameterInfos = Infos.data();
++      return getFunctionTypeInternal(ResultTy, ArgArray, Updated,
++                                     OnlyWantCanonical);
++    }
 +  }
 +  // This is also the validation boundary for deserialized FunctionProtoType
 +  // properties. Reject malformed effect shapes before Profile or the
@@ -1755,7 +1808,7 @@ index 222881154..635cdf63d 100644
    size_t NumArgs = ArgArray.size();
  
    // Unique functions, to guarantee there is only one function of a particular
-@@ -5090,7 +5353,10 @@ QualType ASTContext::getFunctionTypeInternal(
+@@ -5090,7 +5378,10 @@ QualType ASTContext::getFunctionTypeInternal(
  
    // Determine whether the type being created is already canonical or not.
    bool isCanonical = !Unique && IsCanonicalExceptionSpec &&
@@ -1767,7 +1820,7 @@ index 222881154..635cdf63d 100644
    for (unsigned i = 0; i != NumArgs && isCanonical; ++i)
      if (!ArgArray[i].isCanonicalAsParam())
        isCanonical = false;
-@@ -5111,6 +5377,9 @@ QualType ASTContext::getFunctionTypeInternal(
+@@ -5111,6 +5402,9 @@ QualType ASTContext::getFunctionTypeInternal(
      llvm::SmallVector<QualType, 8> ExceptionTypeStorage;
      FunctionProtoType::ExtProtoInfo CanonicalEPI = EPI;
      CanonicalEPI.HasTrailingReturn = false;
@@ -1777,7 +1830,7 @@ index 222881154..635cdf63d 100644
  
      if (IsCanonicalExceptionSpec) {
        // Exception spec is already OK.
-@@ -5176,14 +5445,15 @@ QualType ASTContext::getFunctionTypeInternal(
+@@ -5176,14 +5470,15 @@ QualType ASTContext::getFunctionTypeInternal(
        FunctionType::FunctionTypeExtraAttributeInfo,
        FunctionType::FunctionTypeArmAttributes, FunctionType::ExceptionType,
        Expr *, FunctionDecl *, FunctionProtoType::ExtParameterInfo, Qualifiers,
@@ -1795,7 +1848,7 @@ index 222881154..635cdf63d 100644
  
    auto *FTP = (FunctionProtoType *)Allocate(Size, alignof(FunctionProtoType));
    FunctionProtoType::ExtProtoInfo newEPI = EPI;
-@@ -8751,6 +9021,7 @@ LangAS ASTContext::getOpenCLTypeAddrSpace(const Type *T) const {
+@@ -8751,6 +9046,7 @@ LangAS ASTContext::getOpenCLTypeAddrSpace(const Type *T) const {
  /// in buildByrefHelpers.
  bool ASTContext::BlockRequiresCopying(QualType Ty,
                                        const VarDecl *D) {
@@ -1803,7 +1856,7 @@ index 222881154..635cdf63d 100644
    if (const CXXRecordDecl *record = Ty->getAsCXXRecordDecl()) {
      const Expr *copyExpr = getBlockVarCopyInit(D).getCopyExpr();
      if (!copyExpr && record->hasTrivialDestructor()) return false;
-@@ -8907,6 +9178,13 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
+@@ -8907,6 +9203,13 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
    QualType BlockTy =
        Expr->getType()->castAs<BlockPointerType>()->getPointeeType();
    QualType BlockReturnTy = BlockTy->castAs<FunctionType>()->getReturnType();
@@ -1817,7 +1870,7 @@ index 222881154..635cdf63d 100644
    // Encode result type.
    if (getLangOpts().EncodeExtendedBlockSig)
      getObjCEncodingForMethodParameter(Decl::OBJC_TQ_None, BlockReturnTy, S,
-@@ -8926,6 +9204,8 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
+@@ -8926,6 +9229,8 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
      assert(sz.isPositive() && "BlockExpr - Incomplete param type");
      ParmOffset += sz;
    }
@@ -1826,7 +1879,7 @@ index 222881154..635cdf63d 100644
    // Size of the argument frame
    S += charUnitsToString(ParmOffset);
    // Block pointer and offset.
-@@ -8952,6 +9232,10 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
+@@ -8952,6 +9257,10 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
      ParmOffset += getObjCEncodingTypeSize(PType);
    }
  
@@ -1837,7 +1890,7 @@ index 222881154..635cdf63d 100644
    return S;
  }
  
-@@ -9019,8 +9303,15 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
+@@ -9019,8 +9328,15 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
    // FIXME: This is not very efficient.
    // Encode return type.
    std::string S;
@@ -1855,7 +1908,7 @@ index 222881154..635cdf63d 100644
    // Compute size of all parameters.
    // Start with computing size of a pointer in number of bytes.
    // FIXME: There might(should) be a better way of doing this computation!
-@@ -9039,6 +9330,8 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
+@@ -9039,6 +9355,8 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
             "getObjCEncodingForMethodDecl - Incomplete param type");
      ParmOffset += sz;
    }
@@ -1864,7 +1917,7 @@ index 222881154..635cdf63d 100644
    S += charUnitsToString(ParmOffset);
    S += "@0:";
    S += charUnitsToString(PtrSize);
-@@ -9062,6 +9355,10 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
+@@ -9062,6 +9380,10 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
      S += charUnitsToString(ParmOffset);
      ParmOffset += getObjCEncodingTypeSize(PType);
    }
@@ -1875,7 +1928,7 @@ index 222881154..635cdf63d 100644
  
    return S;
  }
-@@ -9764,6 +10061,16 @@ void ASTContext::getObjCEncodingForTypeImpl(QualType T, std::string &S,
+@@ -9764,6 +10086,16 @@ void ASTContext::getObjCEncodingForTypeImpl(QualType T, std::string &S,
        *NotEncodedT = T;
      return;
  
@@ -1892,7 +1945,7 @@ index 222881154..635cdf63d 100644
    // We could see an undeduced auto type here during error recovery.
    // Just ignore it.
    case Type::Auto:
-@@ -11642,6 +11949,8 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
+@@ -11642,6 +11974,8 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
    if (lbaseInfo.getRegParm() != rbaseInfo.getRegParm())
      return {};
  
@@ -1901,7 +1954,7 @@ index 222881154..635cdf63d 100644
    if (lbaseInfo.getProducesResult() != rbaseInfo.getProducesResult())
      return {};
    if (lbaseInfo.getNoCallerSavedRegs() != rbaseInfo.getNoCallerSavedRegs())
-@@ -11694,6 +12003,19 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
+@@ -11694,6 +12028,19 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
      if (lproto->getMethodQuals() != rproto->getMethodQuals())
        return {};
  
@@ -1921,7 +1974,7 @@ index 222881154..635cdf63d 100644
      // Function protos with different 'cfi_salt' values aren't compatible.
      if (lproto->getExtraAttributeInfo().CFISalt !=
          rproto->getExtraAttributeInfo().CFISalt)
-@@ -11772,6 +12094,11 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
+@@ -11772,6 +12119,11 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
    const FunctionProtoType *proto = lproto ? lproto : rproto;
    if (proto) {
      assert((AllowCXX || !proto->hasExceptionSpec()) && "C++ shouldn't be here");
@@ -1933,7 +1986,7 @@ index 222881154..635cdf63d 100644
      if (proto->isVariadic())
        return {};
      // Check that the types are compatible with the types that
-@@ -12047,6 +12374,13 @@ QualType ASTContext::mergeTypes(QualType LHS, QualType RHS, bool OfBlockPointer,
+@@ -12047,6 +12399,13 @@ QualType ASTContext::mergeTypes(QualType LHS, QualType RHS, bool OfBlockPointer,
    case Type::OverflowBehavior:
      llvm_unreachable("Types are eliminated above");
  
@@ -1947,7 +2000,7 @@ index 222881154..635cdf63d 100644
    case Type::Pointer:
    {
      // Merge two pointer types, while trying to preserve typedef info
-@@ -14464,6 +14798,33 @@ static QualType getCommonNonSugarTypeNode(const ASTContext &Ctx, const Type *X,
+@@ -14464,6 +14823,33 @@ static QualType getCommonNonSugarTypeNode(const ASTContext &Ctx, const Type *X,
          getCommonSizeModifier(AX, AY), getCommonIndexTypeCVRQualifiers(AX, AY));
      return Ctx.getArrayParameterType(ArrayTy);
    }
@@ -1981,7 +2034,7 @@ index 222881154..635cdf63d 100644
    case Type::Atomic: {
      const auto *AX = cast<AtomicType>(X), *AY = cast<AtomicType>(Y);
      return Ctx.getAtomicType(
-@@ -14743,6 +15104,8 @@ static QualType getCommonSugarTypeNode(const ASTContext &Ctx, const Type *X,
+@@ -14743,6 +15129,8 @@ static QualType getCommonSugarTypeNode(const ASTContext &Ctx, const Type *X,
      CANONICAL_TYPE(HLSLInlineSpirv)
      CANONICAL_TYPE(LValueReference)
      CANONICAL_TYPE(ObjCInterface)
@@ -8083,7 +8136,7 @@ index 4be3e977b..f11303ace 100644
 +      Attributes && !Attributes->empty()) Out << ' ' << *Attributes;
 +}
 diff --git a/clang/lib/AST/ItaniumMangle.cpp b/clang/lib/AST/ItaniumMangle.cpp
-index 172a19f8f..4d90ea9bf 100644
+index 172a19f8f..03e8cb0df 100644
 --- a/clang/lib/AST/ItaniumMangle.cpp
 +++ b/clang/lib/AST/ItaniumMangle.cpp
 @@ -298,6 +298,10 @@ class CXXNameMangler {
@@ -8148,13 +8201,16 @@ index 172a19f8f..4d90ea9bf 100644
    case Type::Atomic:
    case Type::Pipe:
    case Type::MacroQualified:
-@@ -3701,12 +3735,29 @@ CXXNameMangler::mangleExtParameterInfo(FunctionProtoType::ExtParameterInfo PI) {
+@@ -3701,12 +3735,32 @@ CXXNameMangler::mangleExtParameterInfo(FunctionProtoType::ExtParameterInfo PI) {
  
    if (PI.isNoEscape())
      mangleVendorQualifier("noescape");
 +
 +  if (PI.isCFConsumed())
 +    mangleVendorQualifier("cf_consumed");
++
++  if (PI.isObjC3Borrowed())
++    mangleVendorQualifier("objc3_borrowed");
  }
  
  // <type>          ::= <function-type>
@@ -8178,7 +8234,7 @@ index 172a19f8f..4d90ea9bf 100644
    unsigned SMEAttrs = T->getAArch64SMEAttributes();
  
    if (SMEAttrs)
-@@ -4626,6 +4677,30 @@ void CXXNameMangler::mangleType(const AtomicType *T) {
+@@ -4626,6 +4680,30 @@ void CXXNameMangler::mangleType(const AtomicType *T) {
    mangleType(T->getValueType());
  }
  
@@ -8209,7 +8265,7 @@ index 172a19f8f..4d90ea9bf 100644
  void CXXNameMangler::mangleType(const PipeType *T) {
    // Pipe type mangling rules are described in SPIR 2.0 specification
    // A.1 Data types and A.3 Summary of changes
-@@ -5505,6 +5580,62 @@ recurse:
+@@ -5505,6 +5583,62 @@ recurse:
      break;
    }
  
@@ -8272,7 +8328,7 @@ index 172a19f8f..4d90ea9bf 100644
    case Expr::CXXTypeidExprClass: {
      NotPrimaryExpr();
      const CXXTypeidExpr *TIE = cast<CXXTypeidExpr>(E);
-@@ -5978,6 +6109,46 @@ recurse:
+@@ -5978,6 +6112,46 @@ recurse:
    case Expr::HLSLOutArgExprClass:
      llvm_unreachable(
          "cannot mangle hlsl temporary value; mangling wrong thing?");
@@ -8319,7 +8375,7 @@ index 172a19f8f..4d90ea9bf 100644
    case Expr::OpenACCAsteriskSizeExprClass: {
      // We shouldn't ever be able to get here, but diagnose anyway.
      DiagnosticsEngine &Diags = Context.getDiags();
-@@ -6290,6 +6461,7 @@ struct CXXNameMangler::TemplateArgManglingInfo {
+@@ -6290,6 +6464,7 @@ struct CXXNameMangler::TemplateArgManglingInfo {
    const Expr *getTrailingRequiresClauseToMangle() {
      if (!isOverloadable())
        return nullptr;
@@ -9364,6 +9420,7 @@ index 7e72a8513..2078da4d1 100644
  
  //===----------------------------------------------------------------------===//
 diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
+index e8fbffb9f..076b5c465 100644
 --- a/clang/lib/AST/TypePrinter.cpp
 +++ b/clang/lib/AST/TypePrinter.cpp
 @@ -19,6 +19,8 @@
@@ -9375,7 +9432,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
  #include "clang/AST/PrettyPrinter.h"
  #include "clang/AST/TemplateBase.h"
  #include "clang/AST/TemplateName.h"
-@@ -123,7 +125,7 @@
+@@ -123,7 +125,7 @@ public:
               StringRef PlaceHolder);
    void print(QualType T, raw_ostream &OS, StringRef PlaceHolder);
  
@@ -9384,7 +9441,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
    void spaceBeforePlaceHolder(raw_ostream &OS);
    void printTypeSpec(NamedDecl *D, raw_ostream &OS);
    void printTemplateId(const TemplateSpecializationType *T, raw_ostream &OS,
-@@ -236,6 +238,9 @@
+@@ -236,6 +238,9 @@ bool TypePrinter::canPrefixQualifiers(const Type *T,
      case Type::InjectedClassName:
      case Type::DependentName:
      case Type::ObjCObject:
@@ -9394,7 +9451,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
      case Type::ObjCTypeParam:
      case Type::ObjCInterface:
      case Type::Atomic:
-@@ -295,6 +300,15 @@
+@@ -295,6 +300,15 @@ bool TypePrinter::canPrefixQualifiers(const Type *T,
        // We still want to print the address_space before the type if it is an
        // address_space attribute.
        const auto *AttrTy = cast<AttributedType>(UnderlyingType);
@@ -9410,7 +9467,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
        CanPrefixQualifiers = AttrTy->getAttrKind() == attr::AddressSpace;
        break;
      }
-@@ -401,6 +415,42 @@
+@@ -401,6 +415,42 @@ void TypePrinter::printComplexAfter(const ComplexType *T, raw_ostream &OS) {
    printAfter(T->getElementType(), OS);
  }
  
@@ -9453,7 +9510,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
  void TypePrinter::printPointerBefore(const PointerType *T, raw_ostream &OS) {
    IncludeStrongLifetimeRAII Strong(Policy);
    SaveAndRestore NonEmptyPH(HasEmptyPlaceHolder, false);
-@@ -987,10 +1037,25 @@
+@@ -987,10 +1037,25 @@ void TypePrinter::printFunctionProtoBefore(const FunctionProtoType *T,
    } else {
      // If needed for precedence reasons, wrap the inner part in grouping parens.
      SaveAndRestore PrevPHIsEmpty(HasEmptyPlaceHolder, false);
@@ -9479,15 +9536,17 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
  }
  
  StringRef clang::getParameterABISpelling(ParameterABI ABI) {
-@@ -1028,6 +1093,7 @@
+@@ -1028,6 +1093,9 @@ void TypePrinter::printFunctionProtoAfter(const FunctionProtoType *T,
  
        auto EPI = T->getExtParameterInfo(i);
        if (EPI.isConsumed()) OS << "__attribute__((ns_consumed)) ";
 +      if (EPI.isCFConsumed()) OS << "__attribute__((cf_consumed)) ";
++      if (EPI.isObjC3Borrowed() && T->getParamType(i).isCanonical())
++        OS << "borrowed ";
        if (EPI.isNoEscape())
          OS << "__attribute__((noescape)) ";
        auto ABI = EPI.getABI();
-@@ -1104,15 +1170,28 @@
+@@ -1104,15 +1172,28 @@ void TypePrinter::printFunctionProtoAfter(const FunctionProtoType *T,
    }
    T->printExceptionSpecification(OS, Policy);
  
@@ -9525,7 +9584,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
    }
  
    if (T->hasCFIUncheckedCallee())
-@@ -1120,6 +1199,7 @@
+@@ -1120,6 +1201,7 @@ void TypePrinter::printFunctionProtoAfter(const FunctionProtoType *T,
  
    if (T->hasTrailingReturn()) {
      OS << " -> ";
@@ -9533,7 +9592,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
      print(T->getReturnType(), OS, StringRef());
    } else
      printAfter(T->getReturnType(), OS);
-@@ -1228,8 +1308,6 @@
+@@ -1228,8 +1310,6 @@ void TypePrinter::printFunctionAfter(const FunctionType::ExtInfo &Info,
      OS << " __attribute__((noreturn))";
    if (Info.getCmseNSCall())
      OS << " __attribute__((cmse_nonsecure_call))";
@@ -9542,7 +9601,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
    if (Info.getRegParm())
      OS << " __attribute__((regparm ("
         << Info.getRegParm() << ")))";
-@@ -1243,9 +1321,12 @@
+@@ -1243,9 +1323,12 @@ void TypePrinter::printFunctionNoProtoBefore(const FunctionNoProtoType *T,
                                               raw_ostream &OS) {
    // If needed for precedence reasons, wrap the inner part in grouping parens.
    SaveAndRestore PrevPHIsEmpty(HasEmptyPlaceHolder, false);
@@ -9555,7 +9614,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
  }
  
  void TypePrinter::printFunctionNoProtoAfter(const FunctionNoProtoType *T,
-@@ -1544,6 +1625,14 @@
+@@ -1544,6 +1627,14 @@ void TypePrinter::printDependentBitIntAfter(const DependentBitIntType *T,
  
  void TypePrinter::printPredefinedSugarBefore(const PredefinedSugarType *T,
                                               raw_ostream &OS) {
@@ -9570,7 +9629,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
    OS << T->getIdentifier()->getName();
    spaceBeforePlaceHolder(OS);
  }
-@@ -1618,6 +1707,16 @@
+@@ -1618,6 +1709,16 @@ void TypePrinter::printTagType(const TagType *T, raw_ostream &OS) {
  }
  
  void TypePrinter::printRecordBefore(const RecordType *T, raw_ostream &OS) {
@@ -9587,7 +9646,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
    // Print the preferred name if we have one for this type.
    if (Policy.UsePreferredNames) {
      for (const auto *PNA : T->getDecl()
-@@ -1787,7 +1886,7 @@
+@@ -1787,7 +1888,7 @@ void TypePrinter::printTemplateSpecializationAfter(
                                              raw_ostream &OS) {}
  
  void TypePrinter::printParenBefore(const ParenType *T, raw_ostream &OS) {
@@ -9596,7 +9655,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
      printBefore(T->getInnerType(), OS);
      OS << '(';
    } else
-@@ -1795,7 +1894,7 @@
+@@ -1795,7 +1896,7 @@ void TypePrinter::printParenBefore(const ParenType *T, raw_ostream &OS) {
  }
  
  void TypePrinter::printParenAfter(const ParenType *T, raw_ostream &OS) {
@@ -9605,7 +9664,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
      OS << ')';
      printAfter(T->getInnerType(), OS);
    } else
-@@ -1857,6 +1956,28 @@
+@@ -1857,6 +1958,28 @@ void TypePrinter::printCountAttributedAfter(const CountAttributedType *T,
      printCountAttributedImpl(T, OS, Policy);
  }
  
@@ -9634,7 +9693,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
  void TypePrinter::printAttributedBefore(const AttributedType *T,
                                          raw_ostream &OS) {
    // FIXME: Generate this with TableGen.
-@@ -1866,17 +1987,17 @@
+@@ -1866,17 +1989,17 @@ void TypePrinter::printAttributedBefore(const AttributedType *T,
        T->getAttrKind() == attr::ObjCOwnership)
      return printBefore(T->getEquivalentType(), OS);
  
@@ -9660,7 +9719,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
      spaceBeforePlaceHolder(OS);
    }
  
-@@ -1885,6 +2006,10 @@
+@@ -1885,6 +2008,10 @@ void TypePrinter::printAttributedBefore(const AttributedType *T,
    else
      printBefore(T->getModifiedType(), OS);
  
@@ -9671,7 +9730,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
    if (T->isMSTypeSpec()) {
      switch (T->getAttrKind()) {
      default: return;
-@@ -1932,7 +2057,8 @@
+@@ -1932,7 +2059,8 @@ void TypePrinter::printAttributedAfter(const AttributedType *T,
  
    // Some attributes are printed as qualifiers before the type, so we have
    // nothing left to do.
@@ -9681,7 +9740,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
        T->getImmediateNullability() || T->isWebAssemblyFuncrefSpec())
      return;
  
-@@ -1940,10 +2066,8 @@
+@@ -1940,10 +2068,8 @@ void TypePrinter::printAttributedAfter(const AttributedType *T,
    if (T->getAttrKind() == attr::ObjCInertUnsafeUnretained)
      return;
  
@@ -9694,7 +9753,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
      return;
  
    if (T->getAttrKind() == attr::LifetimeBound) {
-@@ -1991,12 +2115,8 @@
+@@ -1991,12 +2117,8 @@ void TypePrinter::printAttributedAfter(const AttributedType *T,
      return;
    }
  
@@ -9708,7 +9767,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
  
    OS << " __attribute__((";
    switch (T->getAttrKind()) {
-@@ -2030,6 +2150,9 @@
+@@ -2030,6 +2152,9 @@ void TypePrinter::printAttributedAfter(const AttributedType *T,
      // AttributedType nodes for them.
      break;
  
@@ -20262,10 +20321,10 @@ index 0a6f256af..81d89af12 100644
  
 diff --git a/clang/include/clang/AST/ObjC3Borrowed.h b/clang/include/clang/AST/ObjC3Borrowed.h
 new file mode 100644
-index 000000000..c957d6d35
+index 000000000..535b74a08
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3Borrowed.h
-@@ -0,0 +1,203 @@
+@@ -0,0 +1,254 @@
 +//===--- ObjC3Borrowed.h - Borrowed pointer type contracts --------*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_AST_OBJC3BORROWED_H
@@ -20294,6 +20353,34 @@ index 000000000..c957d6d35
 +  }
 +  return false;
 +}
++/// Extract a callable's semantic signature through its supported wrappers.
++inline const FunctionType *getObjC3CallableFunctionType(const ASTContext &Context,
++                                                       QualType Type) {
++  while (!Type.isNull()) {
++    if (const auto *Function = Type->getAs<FunctionType>())
++      return Function;
++    if (const auto *Pointer = Type->getAs<PointerType>())
++      Type = Pointer->getPointeeType();
++    else if (const auto *Block = Type->getAs<BlockPointerType>())
++      Type = Block->getPointeeType();
++    else if (const auto *Member = Type->getAs<MemberPointerType>())
++      Type = Member->getPointeeType();
++    else if (const auto *Reference = Type->getAs<ReferenceType>())
++      Type = Reference->getPointeeType();
++    else if (const auto *Array = Context.getAsArrayType(Type))
++      Type = Array->getElementType();
++    else
++      break;
++  }
++  return nullptr;
++}
++
++inline bool hasObjC3BorrowedParameters(const FunctionProtoType *Function) {
++  return Function && Function->hasExtParameterInfos() &&
++         llvm::any_of(Function->getExtParameterInfos(),
++                      [](auto Info) { return Info.isObjC3Borrowed(); });
++}
++
 +/// Inspect stored payloads before canonicalization, including native carriers
 +/// and aggregate fields. The visited set bounds recursive record graphs.
 +inline bool containsObjC3BorrowedTypeImpl(const ASTContext &Context,
@@ -20318,6 +20405,9 @@ index 000000000..c957d6d35
 +  };
 +  if (Type->isPointerType() || Type->isReferenceType() || Type->isBlockPointerType())
 +    return Contains(Type->getPointeeType());
++  if (IncludeSignatures)
++    if (const auto *Member = dyn_cast<MemberPointerType>(Type.getTypePtr()))
++      return Contains(Member->getPointeeType());
 +  if (const auto *Array = dyn_cast<ArrayType>(Type.getTypePtr()))
 +    return Contains(Array->getElementType());
 +  if (const auto *Optional = dyn_cast<ObjC3OptionalType>(Type.getTypePtr()))
@@ -20337,7 +20427,9 @@ index 000000000..c957d6d35
 +  if (const auto *Function = dyn_cast<FunctionType>(Type.getTypePtr())) {
 +    if (Function->hasObjC3BorrowedResult()) return true;
 +    if (const auto *Prototype = dyn_cast<FunctionProtoType>(Function))
-+      if (Prototype->getObjC3BorrowedOwner()) return true;
++      if (Prototype->getObjC3BorrowedOwner() ||
++          hasObjC3BorrowedParameters(Prototype))
++        return true;
 +    if (Contains(Function->getReturnType()))
 +      return true;
 +    if (const auto *Prototype = dyn_cast<FunctionProtoType>(Function))
@@ -20405,6 +20497,9 @@ index 000000000..c957d6d35
 +      (A->isReferenceType() && B->isReferenceType()) ||
 +      (A->isBlockPointerType() && B->isBlockPointerType()))
 +    return Compare(A->getPointeeType(), B->getPointeeType());
++  if (const auto *MA = dyn_cast<MemberPointerType>(A.getTypePtr()))
++    if (const auto *MB = dyn_cast<MemberPointerType>(B.getTypePtr()))
++      return Compare(MA->getPointeeType(), MB->getPointeeType());
 +  if (const auto *AA = dyn_cast<ArrayType>(A.getTypePtr()))
 +    if (const auto *AB = dyn_cast<ArrayType>(B.getTypePtr()))
 +      return Compare(AA->getElementType(), AB->getElementType());
@@ -20425,10 +20520,25 @@ index 000000000..c957d6d35
 +      if ((PA ? PA->getObjC3BorrowedOwner() : 0) !=
 +          (PB ? PB->getObjC3BorrowedOwner() : 0)) return false;
 +      if (PA && PB && PA->getNumParams() == PB->getNumParams()) {
-+        for (unsigned I = 0; I != PA->getNumParams(); ++I)
-+          if (!Compare(PA->getParamType(I), PB->getParamType(I)))
++        for (unsigned I = 0; I != PA->getNumParams(); ++I) {
++          bool Borrowed = PA->getExtParameterInfo(I).isObjC3Borrowed();
++          if (Borrowed != PB->getExtParameterInfo(I).isObjC3Borrowed())
 +            return false;
++          QualType L = PA->getParamType(I), R = PB->getParamType(I);
++          if (Borrowed) {
++            // The direct permission was compared above. Its source spelling
++            // need not be present on both sides after canonicalization.
++            if (L->isReferenceType() != R->isReferenceType())
++              return false;
++            L = Peel(AContext, L.getNonReferenceType());
++            R = Peel(BContext, R.getNonReferenceType());
++          }
++          if (!Compare(L, R))
++            return false;
++        }
 +      } else {
++        if (hasObjC3BorrowedParameters(PA) || hasObjC3BorrowedParameters(PB))
++          return false;
 +        if (PA)
 +          for (QualType P : PA->param_types())
 +            if (containsObjC3BorrowedType(AContext, P))

@@ -23,7 +23,7 @@
     },
     {
       "file": "0004-objc3-ast.patch",
-      "sha256": "d10584f7c47d32996302bb444b12515a942fb16ee867138ba4c9ecc48af50437"
+      "sha256": "ee821f847ee8e41a8ce0bd21a48a356406a273459465cefdbccda99c4ac52c0c"
     },
     {
       "file": "0004-objc3-ast-and-parser-tests.patch",
@@ -43,7 +43,7 @@
     },
     {
       "file": "0004-objc3-ownership.patch",
-      "sha256": "51e3918192d67f2b6bfa169117567a28b59baa88cc4b7ea31a8ef38b77efa157"
+      "sha256": "f9054081622af8c121496f84fd0b0ec1bb630c19b9d2ece2bebc52a76d80b51b"
     },
     {
       "file": "0004-objc3-parser.patch",
@@ -51,11 +51,11 @@
     },
     {
       "file": "0004-objc3-sema.patch",
-      "sha256": "6491703efbd1ad9ae2ebeffb444f331e290cbe3db5ef78ca004820e672ee683c"
+      "sha256": "de95e9df7ef793192e6c06060217b6ea66692200e4e99765c6903266108deab1"
     },
     {
       "file": "0004-objc3-sema-tests.patch",
-      "sha256": "ccbac240dfb80d655c8350188e79bf964516ff7ad5eba246128f6b1829976192"
+      "sha256": "6237cd9fc64f1efefb4ba30455e570dc762a5aecddc53908a1af376846b6c932"
     },
     {
       "file": "0004-objc3-serialization.patch",
@@ -83,7 +83,7 @@
     },
     {
       "file": "0005-objc3-codegen-tests.patch",
-      "sha256": "bf54fdeba40a1e4c09916342320c824b93bda5f7729eaa3710ff8b5a7565caa8"
+      "sha256": "e90aff9a2eec65b6e5006cf882bf4fcbcd5e86d2844141f55a64f75a94a363ab"
     },
     {
       "file": "0006-objc3-native-carrier-expressions.patch",
