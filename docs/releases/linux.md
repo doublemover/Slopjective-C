@@ -35,6 +35,12 @@ root and use `--root /opt/objc3c` for a system installation. The installer uses
 the distribution's apt repositories to install its dependencies. An existing
 installation root keeps its administrator-set permissions.
 
+The current installer source checks the archive's glibc and system libstdc++
+requirements before it activates an SDK. If the check fails, use a qualified
+distribution or update its libstdc++ package. The published preview installer
+predates this check. The [ABI admission replay](../roadmap/linux_installer_abi_acceptance.md)
+uses the published x86-64 archive with the updated installer.
+
 After activating the SDK, follow [Getting started](../tutorials/getting_started.md)
 to compile your first program from a fresh working directory.
 
