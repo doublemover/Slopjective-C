@@ -13,7 +13,7 @@ import time
 
 from .linux_host import native_linux_host, native_target
 from .build import build_foundation
-from .core import build_plans, verify_development
+from .core import FoundationConfigurationChanged, build_plans, verify_development
 from .facade import facade_identity
 from .frontend_tests import qualify as qualify_frontend_tests
 from .install_sdk import install
@@ -28,6 +28,8 @@ from .native_headers import discover as discover_native_headers, materialize as 
 PROJECT_SDK_PREFIXES = ('bin/objc3', 'bin/clang-scan-deps', 'bin/FileCheck', 'lib/libobjc',
                         'lib/cmake/objc3c/', 'include/objc/', 'include/objc3c/',
                         'include/objc3/', 'include/runtime/', 'share/objc3c/')
+NATIVE_TEST_INPUT_PREFIXES = ('native/objc3c/tests/', 'tests/clang_foundation/',
+                              'tests/tooling/fixtures/clang_foundation/')
 
 
 def is_project_sdk_path(name: str) -> bool:
@@ -148,7 +150,7 @@ def input_identity(repo: Path, sdk: Path) -> dict:
                'frontend': facade_identity(repo)['sha256'], 'inputs': inputs,
                'input_resolution': input_resolution}
     test_inputs = {name: (signature, input_resolution.get(name)) for name, signature in inputs.items()
-                   if name.startswith('native/objc3c/tests/')}
+                   if name.startswith(NATIVE_TEST_INPUT_PREFIXES)}
     payload['native_test_inputs_sha256'] = hashlib.sha256(json.dumps(test_inputs, sort_keys=True).encode()).hexdigest()
     return {'sha256': hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest(), **payload}
 
@@ -208,7 +210,11 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
     sdk = repo / ('out/toolchains/objc3-development/stage-' + native_linux_host())
     if foundation_sdk is None and (install_root / 'current/objc3-sdk.json').is_file():
         active = (install_root / 'current').resolve()
-        if json.loads((active / 'objc3-sdk.json').read_text())['source_build_id'] == verify_development(repo)['build_id']:
+        try:
+            current_build = verify_development(repo)['build_id']
+        except FoundationConfigurationChanged:
+            current_build = None
+        if current_build is not None and json.loads((active / 'objc3-sdk.json').read_text())['source_build_id'] == current_build:
             foundation_sdk = active
     if foundation_sdk is not None:
         sdk = foundation_sdk.resolve()

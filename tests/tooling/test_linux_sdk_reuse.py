@@ -280,11 +280,14 @@ def test_packaged_filecheck_does_not_change_foundation_signature(tmp_path):
     assert foundation_identity(prefix) == before
 
 
-@pytest.mark.parametrize('name', ['keypath_service_test.cpp', 'support/new_oracle.hpp'])
+@pytest.mark.parametrize('name', ['native/objc3c/tests/keypath_service_test.cpp',
+                                 'native/objc3c/tests/support/new_oracle.hpp',
+                                 'tests/clang_foundation/interface_import_test.cpp',
+                                 'tests/tooling/fixtures/clang_foundation/support.hpp'])
 def test_native_test_sources_invalidate_qualification_without_rebuilding_foundation(tmp_path, monkeypatch, name):
     from scripts.objc3c_toolchain import linux_sdk
     repo, prefix = identity_project(tmp_path, monkeypatch, {'source_build_id': 'same-foundation'})
-    path = repo / 'native/objc3c/tests' / name
+    path = repo / name
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text('pass')
     before = linux_sdk.input_identity(repo, prefix)
@@ -343,7 +346,34 @@ def test_native_test_edit_enters_fresh_qualification_instead_of_installing_old_r
     assert len(installations) == 2
 
 
-def test_registered_keypath_test_rebuilds_at_the_same_mtime_when_requalified(tmp_path, monkeypatch):
+def test_changed_recipe_routes_active_sdk_to_the_foundation_builder(tmp_path, monkeypatch):
+    from scripts.objc3c_toolchain import linux_sdk
+    from scripts.objc3c_toolchain.core import FoundationConfigurationChanged
+
+    repo = tmp_path / 'repo'
+    install_root = repo / 'installed'
+    active = install_root / 'current'
+    active.mkdir(parents=True)
+    (active / 'objc3-sdk.json').write_text(json.dumps({'source_build_id': 'previous-configuration'}))
+    monkeypatch.setenv('OBJC3C_BOOTSTRAP_LLVM_ROOT', str(tmp_path))
+
+    def changed(_repo):
+        raise FoundationConfigurationChanged('development build configuration changed')
+
+    def rebuild(root, **options):
+        assert root == repo and options['stage'] is True
+        raise RuntimeError('entered current foundation build')
+
+    monkeypatch.setattr(linux_sdk, 'verify_development', changed)
+    monkeypatch.setattr(linux_sdk, 'verify_sdk', lambda *_: pytest.fail('must not reuse old SDK'))
+    monkeypatch.setattr(linux_sdk, 'build_foundation', rebuild)
+    with pytest.raises(RuntimeError, match='entered current foundation build'):
+        linux_sdk.build_sdk(repo, install_root=install_root)
+
+
+@pytest.mark.parametrize('source_directory', ['native/objc3c/tests', 'tests/clang_foundation'])
+def test_registered_keypath_test_rebuilds_at_the_same_mtime_when_requalified(tmp_path, monkeypatch,
+                                                                           source_directory):
     selected = os.environ.get('OBJC3_TEST_NATIVE_REUSE_SDK')
     if not selected:
         pytest.skip('requires an installed Linux SDK for the focused native reuse witness')
@@ -354,10 +384,13 @@ def test_registered_keypath_test_rebuilds_at_the_same_mtime_when_requalified(tmp
     checkout = Path(__file__).resolve().parents[2]
     repo, prefix = identity_project(tmp_path, monkeypatch, {'source_build_id': 'same-foundation'})
     native = repo / 'native/objc3c'
-    for relative in ('tests/keypath_service_test.cpp', 'tests/test_assertion_policy.h', 'cmake/FrontendTests.cmake'):
+    for relative in ('tests/test_assertion_policy.h', 'cmake/FrontendTests.cmake'):
         destination = native / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(checkout / 'native/objc3c' / relative, destination)
+    source = repo / source_directory / 'keypath_service_test.cpp'
+    source.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(checkout / 'native/objc3c/tests/keypath_service_test.cpp', source)
     header = native / 'runtime/public/objc3_keypath.h'
     header.parent.mkdir(parents=True)
     shutil.copyfile(installed / 'include/objc3c/runtime/objc3_keypath.h', header)
@@ -367,11 +400,10 @@ def test_registered_keypath_test_rebuilds_at_the_same_mtime_when_requalified(tmp
         'add_library(objc3c_build_defaults INTERFACE)\n'
         'target_include_directories(objc3c_build_defaults INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")\n'
         'include(cmake/FrontendTests.cmake)\n'
-        'add_executable(objc3_keypath_service_test tests/keypath_service_test.cpp)\n'
+        f'add_executable(objc3_keypath_service_test "{source}")\n'
         f'target_link_libraries(objc3_keypath_service_test PRIVATE "{installed / "lib/libobjc3_runtime_services.a"}")\n'
         'objc3c_add_frontend_test(NAME objc3_keypath_service COMMAND objc3_keypath_service_test)\n'
         'objc3c_write_frontend_test_inventory()\n')
-    source = native / 'tests/keypath_service_test.cpp'
     original, timestamp = source.read_bytes(), source.stat()
     assertion = b'assert(objc3_keypath_validate_v2(&descriptor) == OBJC3_KEYPATH_OK);'
     assert original.count(assertion) == 1

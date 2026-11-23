@@ -8,7 +8,7 @@ from types import SimpleNamespace
 import pytest
 
 from scripts.objc3c_toolchain import build
-from scripts.objc3c_toolchain.core import ToolchainError
+from scripts.objc3c_toolchain.core import FoundationConfigurationChanged, ToolchainError
 
 
 @pytest.fixture
@@ -43,6 +43,29 @@ def test_build_runs_all_plans_with_isolated_logs_and_environment(runner):
     assert all(env['QUALIFIED_BUILD'] == 'yes' and env['CCACHE_COMPILERCHECK'] == 'content' for _, env in calls)
     assert len({phase['log'] for phase in report['phases']}) == 8
     assert json.loads((directory / 'foundation-build-report.json').read_text()) == report
+
+
+@pytest.mark.parametrize('phase', ['before-configure', 'after-stage'])
+def test_only_a_startup_configuration_change_refreshes_verified_source(runner, monkeypatch, phase):
+    repo, _, _ = runner
+    original = build.build_plans
+    invocations, seals = [], []
+
+    def plans(*args, **kwargs):
+        invocations.append(kwargs)
+        if len(invocations) == (1 if phase == 'before-configure' else 2):
+            raise FoundationConfigurationChanged('verified build configuration changed')
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(build, 'build_plans', plans)
+    monkeypatch.setattr(build, 'seal_development', lambda repo, *, source_dir: seals.append(source_dir))
+    if phase == 'before-configure':
+        assert build.build_foundation(repo, stage=True)['status'] == 'passed'
+        assert seals == [repo / 'out/toolchains/objc3-development/src']
+    else:
+        with pytest.raises(FoundationConfigurationChanged, match='verified build configuration changed'):
+            build.build_foundation(repo, stage=True)
+        assert not seals
 
 
 def test_failed_phase_stops_before_tests_and_records_failure(runner, monkeypatch):

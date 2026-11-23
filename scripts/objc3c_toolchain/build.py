@@ -11,7 +11,7 @@ from pathlib import Path
 import subprocess
 import time
 
-from .core import ToolchainError, build_plans, prepare, seal_development
+from .core import FoundationConfigurationChanged, ToolchainError, build_plans, prepare, seal_development
 
 
 def _digest_file(path: Path):
@@ -203,7 +203,12 @@ def _build_foundation(repo: Path, *, host: str | None = None, fetch: bool = Fals
     if not source.exists():
         prepare(repo, source_dir=source, fetch=fetch)
         seal_development(repo, source_dir=source)
-    plans = build_plans(repo, source_dir=source, host=host, instrumentation_profile=instrumentation_profile)
+    try:
+        plans = build_plans(repo, source_dir=source, host=host, instrumentation_profile=instrumentation_profile)
+    except FoundationConfigurationChanged as change:
+        print(f'{change}. Reconfiguring the verified LLVM source.', flush=True)
+        seal_development(repo, source_dir=source)
+        plans = build_plans(repo, source_dir=source, host=host, instrumentation_profile=instrumentation_profile)
     report = {"status": "running", "source_identity": plans["configure"]["source_build_id"], "phases": [],
               "started_utc": datetime.now(timezone.utc).isoformat()}
     report['cost_context'] = cost_context(plans['configure'],
