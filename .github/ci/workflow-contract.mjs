@@ -97,24 +97,28 @@ export function validateDependencyActions(actions) {
 
 export function validateNativePR(text) {
   const workflow = yaml.load(text);
-  const job = workflow.jobs?.["native-pr"];
-  const steps = job?.steps ?? [];
+  const owner = workflow.jobs?.["native-pr-execution"];
+  const gate = workflow.jobs?.["native-pr"];
+  const steps = owner?.steps ?? [];
   if (
     Object.keys(workflow.on ?? {}).join() !== "pull_request" ||
     workflow.on.pull_request !== null ||
     Object.keys(workflow.permissions ?? {}).join() !== "contents" ||
     workflow.permissions.contents !== "read" ||
-    !job ||
-    job.if ||
-    job.permissions ||
-    job["continue-on-error"] ||
-    steps.some((step) => step["continue-on-error"] || (step.uses && !pinnedAction(step.uses)))
+    !owner || owner.if ||
+    !gate || gate.if !== "always()" || gate.needs !== "native-pr-execution" ||
+    [owner, gate].some((job) => job.permissions || job["continue-on-error"] ||
+      (job.steps ?? []).some((step) => step["continue-on-error"] || (step.uses && !pinnedAction(step.uses))))
   )
     throw new Error("Native PR gate must cover every PR with pinned, read-only execution");
 
   const checkout = steps.find((step) => step.uses?.startsWith("actions/checkout@"));
   const execute = steps.find((step) => step.run?.includes("-m scripts.objc3c_assurance.pr_native"));
   const upload = steps.find((step) => step.uses?.startsWith("actions/upload-artifact@"));
+  const gates = gate.steps ?? [];
+  const gateCheckout = gates.find((step) => step.uses?.startsWith("actions/checkout@"));
+  const download = gates.find((step) => step.uses?.startsWith("actions/download-artifact@"));
+  const verify = gates.find((step) => step.run?.includes("--verify-evidence out/native-pr-evidence"));
   if (
     checkout?.with?.["persist-credentials"] !== false ||
     checkout.with["fetch-depth"] !== 0 ||
@@ -126,7 +130,14 @@ export function validateNativePR(text) {
     upload.with?.["if-no-files-found"] !== "error" ||
     !["github.sha", "github.run_id", "github.run_attempt"].every((value) =>
       upload.with.name?.includes(value),
-    )
+    ) ||
+    gate.env?.NATIVE_EXECUTION !== "${{ needs.native-pr-execution.result }}" ||
+    !gates[0]?.run?.includes('"$NATIVE_EXECUTION" != success') || gates[0].if ||
+    gateCheckout?.with?.["persist-credentials"] !== false || gateCheckout.with["fetch-depth"] !== 0 ||
+    download?.with?.name !== upload.with.name || download.with.path !== "out/native-pr-evidence" ||
+    !verify || verify.if || !verify.run.includes('-m scripts.objc3c_assurance.pr_native') ||
+    !verify.run.includes('--head "$PR_HEAD" --base "$PR_BASE" --tested "$TESTED_SHA"') ||
+    !verify.run.includes('--execution "$NATIVE_EXECUTION"')
   )
     throw new Error(
       "Native PR gate must execute and retain evidence for the exact tested revision",

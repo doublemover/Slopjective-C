@@ -19,7 +19,7 @@ from scripts.objc3c_toolchain.frontend_tests import qualify as frontend_tests
 from scripts.objc3c_toolchain.package import verify_sdk
 from scripts.objc3c_toolchain.qualify_installed import qualify_installed
 from .evidence import SCHEMA, evidence_budget, validate_evidence_sizes, artifact, digest, junit, lit, package_execution
-from .plan import foundation_receipts, from_checkout, selected_suites, validate
+from .plan import foundation_receipts, from_checkout, selected_suites
 from .execution import checked_command, execute_ctest, execute_suites
 from .upstream import UPSTREAM, execute_upstream
 
@@ -35,17 +35,7 @@ def _consumer_compile_jobs(repo: Path) -> int:
 def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
         suite_ids: tuple[str, ...] | None = None, product_sdk: Path | None = None,
         package_release: Path | None = None, sanitizer_partition: int | None = None) -> dict:
-    validate(plan)
-    if shard is not None and suite_ids is not None:
-        raise ValueError('native execution cannot combine a canonical shard and an explicit suite partition')
-    if suite_ids is None:
-        suites = selected_suites(plan, shard)
-    else:
-        available = {row['id']: row for row in plan['suites']}
-        if (not suite_ids or len(suite_ids) != len(set(suite_ids)) or
-                any(name not in available for name in suite_ids)):
-            raise ValueError('native suite partition is empty, duplicated or outside the exact plan')
-        suites = [available[name] for name in suite_ids]
+    suites = selected_suites(plan, shard, suite_ids=suite_ids)
     if not suites:
         raise ValueError('native execution requires a nonempty suite selection')
     if sanitizer_partition is not None:

@@ -578,9 +578,7 @@ def release_consumer_fixture(tmp_path, monkeypatch):
     release = tmp_path / 'release.json'
     release.write_text(json.dumps({'status': 'PASS', 'seal_sha256': seal,
                                     'archive_sha256': archive}))
-    plan = {'revision': dict(REV), 'periodic': True, 'sha256': 'p'*64,
-            'cache_policy': 'fixture', 'suites': [{'id': 'installed'}]}
-    monkeypatch.setattr(runner, 'validate', lambda _: None)
+    plan = select(['native/objc3c/src/clang_foundation/interface_codec.cpp'], **REV, periodic=True)
     monkeypatch.setattr(runner, 'from_checkout', lambda *args, **kwargs: plan)
     monkeypatch.setattr(runner, 'execute_suites', lambda *args, **kwargs: None)
     return runner, repo, sdk, release, plan, {'source_build_id': source,

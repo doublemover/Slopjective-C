@@ -190,7 +190,17 @@ def execution_shards(plan: dict) -> list[str]:
     return [name for name in SHARDS if name in selected]
 
 
-def selected_suites(plan: dict, shard: str | None = None) -> list[dict]:
+def selected_suites(plan: dict, shard: str | None = None, *,
+                    suite_ids: tuple[str, ...] | None = None) -> list[dict]:
+    if suite_ids is not None:
+        validate(plan)
+        if shard is not None:
+            raise ValueError('native execution cannot combine a canonical shard and an explicit suite partition')
+        available = {row['id']: row for row in plan['suites']}
+        if (not suite_ids or len(suite_ids) != len(set(suite_ids)) or
+                any(name not in available for name in suite_ids)):
+            raise ValueError('native suite partition is empty, duplicated or outside the exact plan')
+        return [available[name] for name in suite_ids]
     available = execution_shards(plan)
     if shard is None:
         return plan['suites']

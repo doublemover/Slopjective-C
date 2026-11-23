@@ -5,6 +5,11 @@ import subprocess
 import pytest
 
 from scripts.objc3c_assurance import pr_native, preview_download
+from scripts.objc3c_assurance.evidence import SCHEMA as NATIVE_SCHEMA, artifact, native_files, suite_results
+from scripts.objc3c_assurance.plan import from_checkout
+
+RELEASE = {'seal_sha256': 'a' * 64, 'sha256': 'b' * 64, 'bytes': 123,
+           'source_build_id': 'published-foundation'}
 
 
 @pytest.fixture
@@ -15,7 +20,11 @@ def checkout(tmp_path):
     git('init', '-q')
     git('config', 'user.name', 'Native PR Test')
     git('config', 'user.email', 'native-pr@example.org')
-    git('commit', '-qm', 'base', '--allow-empty')
+    manifest = tmp_path / 'docs/releases/preview-manifest.json'
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text(json.dumps({'archives': {pr_native.native_linux_host(): RELEASE}}))
+    git('add', str(manifest))
+    git('commit', '-qm', 'base')
     base = git('rev-parse', 'HEAD')
 
     def commit(path):
@@ -120,6 +129,83 @@ def test_pr_foundation_requires_exact_sealed_arch_and_configuration(tmp_path, mo
 ])
 def test_install_witness_remains_selected_when_llvm_rebuilds(paths, expected):
     assert pr_native.needs_install_witness({'changed_paths': paths}) is expected
+
+
+@pytest.mark.parametrize('defect', [None, 'skipped', 'cancelled', 'lost-artifact', 'wrong-sha',
+                                   'wrong-partition', 'unexpected-skip', 'changed-install-log'])
+def test_terminal_gate_reconciles_independent_execution_evidence(checkout, monkeypatch, defect):
+    repo, commit = checkout
+    revision = commit('scripts/objc3c_toolchain/install_sdk.py')
+    plan = from_checkout(repo, **revision)
+    evidence = repo / 'out/native-pr'
+    native = evidence / 'checked/execution'
+
+    def write(path, value):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(value))
+
+    write(evidence / 'selection.json', plan)
+    write(evidence / 'checked/plan.json', plan)
+    foundation = {name: 'pinned-' + name for name in pr_native.FOUNDATION_FIELDS}
+    foundation.update(source_build_id=RELEASE['source_build_id'], seal_sha256=RELEASE['seal_sha256'],
+                      target=pr_native.native_target())
+    monkeypatch.setattr(pr_native, 'planned_development_identity', lambda repo: {
+        key: foundation[name] for name, key in pr_native.FOUNDATION_FIELDS.items()})
+    log = evidence / 'install-witness.log'
+    log.write_text('native program executed\n')
+    write(evidence / 'preview-install.json', {'status': 'PASS', 'activated': True,
+        'seal_sha256': RELEASE['seal_sha256'], 'cost': {'prefix_reused': True,
+            'source_build_id': RELEASE['source_build_id'], 'archive_bytes': RELEASE['bytes'],
+            'archive_sha256': RELEASE['sha256']}, 'witness': {'source': 'native/main.objc3',
+            'status': 'PASS', 'log_sha256': artifact(evidence, log)['sha256']}})
+    write(evidence / 'checked/result.json', {'schema': pr_native.SCHEMA, 'status': 'PASS',
+        'classification': 'native', 'revision': revision, 'plan_sha256': plan['sha256'],
+        'foundation': 'verified-release', 'foundation_sdk': foundation, 'suites': ['runtime', 'frontend']})
+
+    def junit(path, name, *, skip=False):
+        path.write_text(f'<testsuite tests="1"><testcase name="{name}">'
+                        + ('<skipped/>' if skip else '') + '</testcase></testsuite>')
+
+    runtime = native / 'runtime'
+    write(runtime / 'runtime.json', {'status': 'passed'})
+    write(runtime / 'runtime-ctest-inventory.json', ['runtime_smoke'])
+    runtime_xml = runtime / 'runtime-ctest.xml'
+    junit(runtime_xml, 'runtime_smoke')
+    frontend = native / 'frontend'
+    write(frontend / 'frontend-tests/qualification.json', {'status': 'PASS', 'frontend_ctests': 1,
+        'ctest_test_names': ['objc3_frontend'], 'tests': [{'name': 'objc3_frontend'}]})
+    junit(frontend / 'frontend-objc3_frontend-ctest.xml', 'objc3_frontend')
+    executions = {name: suite_results(native, name) for name in pr_native.SOURCE_SUITES}
+    if defect == 'unexpected-skip':
+        junit(runtime_xml, 'runtime_smoke', skip=True)
+    rows = [{'id': name, 'status': 'PASS', 'executions': executions[name],
+             'artifacts': [artifact(native, path) for path in native_files(native / name)]}
+            for name in pr_native.SOURCE_SUITES]
+    write(native / 'result.json', {'schema': NATIVE_SCHEMA, 'status': 'PASS',
+        'revision': {**revision, 'tested': 'a' * 40} if defect == 'wrong-sha' else revision,
+        'plan_sha256': plan['sha256'], 'suites': rows,
+        'suite_partition': ['runtime'] if defect == 'wrong-partition' else list(pr_native.SOURCE_SUITES)})
+    if defect == 'lost-artifact':
+        runtime_xml.unlink()
+    if defect == 'changed-install-log':
+        log.write_text('different install evidence\n')
+    outcome = defect if defect in ('skipped', 'cancelled') else 'success'
+    if defect:
+        with pytest.raises(ValueError, match='not finish|stale|partition|artifacts|unexpected skip|install'):
+            pr_native.verify(repo, evidence, execution=outcome, **revision)
+    else:
+        verified = pr_native.verify(repo, evidence, execution=outcome, **revision)
+        assert verified['status'] == 'PASS' and verified['revision'] == revision
+        assert set(verified['suites']) == set(pr_native.SOURCE_SUITES)
+
+
+def test_terminal_gate_accepts_explicit_prose_plan_without_native_output(checkout):
+    repo, commit = checkout
+    revision = commit('docs/roadmap/example.md')
+    root = repo / 'out/native-pr'
+    pr_native.execute(repo, root / 'checked', **revision)
+    (root / 'selection.json').write_bytes((root / 'checked/plan.json').read_bytes())
+    assert pr_native.verify(repo, root, execution='success', **revision)['classification'] == 'prose-only'
 
 
 @pytest.mark.parametrize('defect', [None, 'path', 'length', 'seal', 'source'])

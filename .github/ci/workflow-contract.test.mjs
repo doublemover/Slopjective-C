@@ -94,11 +94,15 @@ test("native PR gate verifies the exact merge and retains failure evidence", () 
       workflow.jobs["native-pr"]["continue-on-error"] = true;
     },
     (workflow) => {
-      workflow.jobs["native-pr"].steps.find((step) => step.id === "run").if = "false";
+      workflow.jobs["native-pr-execution"].steps.find((step) => step.id === "run").if = "false";
     },
     (workflow) => {
-      workflow.jobs["native-pr"].steps.at(-1).with.name = "latest";
+      workflow.jobs["native-pr-execution"].steps.at(-1).with.name = "latest";
     },
+    (workflow) => { delete workflow.jobs["native-pr"].if; },
+    (workflow) => { delete workflow.jobs["native-pr"].needs; },
+    (workflow) => { workflow.jobs["native-pr"].steps.splice(2, 1); },
+    (workflow) => { workflow.jobs["native-pr"].steps.at(-1).if = "false"; },
   ]) {
     const workflow = yaml.load(nativePR);
     edit(workflow);

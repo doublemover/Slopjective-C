@@ -7,9 +7,10 @@ from pathlib import Path
 
 from scripts.objc3c_toolchain.binary_packages import write_json
 from scripts.objc3c_toolchain.core import planned_development_identity
-from scripts.objc3c_toolchain.linux_host import native_target
+from scripts.objc3c_toolchain.linux_host import native_linux_host, native_target
 from scripts.objc3c_toolchain.package import verify_sdk
-from .plan import PACKAGE, from_checkout
+from .evidence import aggregate, artifact
+from .plan import PACKAGE, from_checkout, git
 from .runner import run
 
 FOUNDATION_FIELDS = {
@@ -19,6 +20,7 @@ FOUNDATION_FIELDS = {
     'source_build_id': 'build_id',
 }
 SOURCE_SUITES = ('runtime', 'frontend')
+SCHEMA = 'objc3c.native-pr.v1'
 
 
 def needs_install_witness(plan: dict) -> bool:
@@ -47,7 +49,7 @@ def execute(repo: Path, output: Path, *, head: str, base: str, tested: str,
     plan = from_checkout(repo, head=head, base=base, tested=tested)
     output.mkdir(parents=True)
     write_json(output / 'plan.json', plan)
-    receipt = {'schema': 'objc3c.native-pr.v1', 'status': 'running',
+    receipt = {'schema': SCHEMA, 'status': 'running',
                'revision': plan['revision'], 'plan_sha256': plan['sha256'],
                'classification': plan['classification']}
     try:
@@ -76,15 +78,90 @@ def execute(repo: Path, output: Path, *, head: str, base: str, tested: str,
         write_json(output / 'result.json', receipt)
 
 
+def verify(repo: Path, evidence: Path, *, head: str, base: str, tested: str, execution: str) -> dict:
+    """Independently check the exact tested merge and its published native receipts."""
+    if execution != 'success':
+        raise ValueError('native PR execution did not finish successfully: ' + execution)
+    if evidence.is_symlink() or not evidence.is_dir():
+        raise ValueError('native PR evidence directory is missing or linked')
+
+    def read(name):
+        path = evidence / name
+        artifact(evidence, path)
+        return json.loads(path.read_bytes())
+
+    plan = from_checkout(repo, head=head, base=base, tested=tested)
+    if read('selection.json') != plan or read('checked/plan.json') != plan:
+        raise ValueError('native PR evidence describes a different tested selection')
+    receipt = read('checked/result.json')
+    expected = {'schema': SCHEMA, 'status': 'PASS', 'revision': plan['revision'],
+                'plan_sha256': plan['sha256'], 'classification': plan['classification']}
+    if any(receipt.get(key) != value for key, value in expected.items()):
+        raise ValueError('native PR receipt is stale, failed or does not match the tested selection')
+    if plan['classification'] == 'prose-only':
+        if receipt.get('foundation') != 'not-required' or receipt.get('suites') != []:
+            raise ValueError('prose-only PR reported an unexpected native selection')
+        return {**expected, 'suites': []}
+
+    foundation = receipt.get('foundation')
+    install_required = needs_install_witness(plan)
+    if install_required or foundation == 'verified-release':
+        manifest = json.loads(git(repo, 'show', f'{base}:docs/releases/preview-manifest.json'))
+        released = manifest['archives'][native_linux_host()]
+        installation = read('preview-install.json')
+        cost = installation['cost']
+        if (installation.get('status') != 'PASS' or installation.get('activated') is not True or
+                installation.get('seal_sha256') != released['seal_sha256'] or
+                cost.get('source_build_id') != released['source_build_id'] or
+                cost.get('archive_sha256') != released['sha256'] or cost.get('archive_bytes') != released['bytes']):
+            raise ValueError('native PR installation does not match the base release archive')
+        if install_required:
+            witness = installation['witness']
+            log = artifact(evidence, evidence / 'install-witness.log')
+            if (cost.get('prefix_reused') is not True or witness.get('status') != 'PASS' or
+                    witness.get('source') != 'native/main.objc3' or witness.get('log_sha256') != log['sha256']):
+                raise ValueError('native PR is missing its matching installed relocation witness')
+
+    planned = planned_development_identity(repo)
+    if foundation == 'verified-release':
+        admitted = {field: planned[key] for field, key in FOUNDATION_FIELDS.items()}
+        admitted.update(seal_sha256=released['seal_sha256'], target=native_target())
+        if plan['foundation_policy'] == 'rebuild-required' or receipt.get('foundation_sdk') != admitted:
+            raise ValueError('native PR reused an ineligible foundation')
+        suites = SOURCE_SUITES
+    elif foundation == 'current-source-build':
+        built = read('checked/execution/foundation/foundation.json')
+        if receipt.get('foundation_sdk') is not None or built.get('source_identity') != planned['build_id']:
+            raise ValueError('native PR built a different foundation')
+        suites = ('foundation', *SOURCE_SUITES)
+    else:
+        raise ValueError('native PR did not report its foundation source')
+    if receipt.get('suites') != list(suites):
+        raise ValueError('native PR receipt omitted a required suite')
+    return aggregate(plan, evidence / 'checked/execution', outcomes={'plan': 'success', 'native': execution},
+                     tested=tested, suite_ids=suites)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('head', 'base', 'tested'):
         parser.add_argument('--' + name, required=True)
-    parser.add_argument('--output', type=Path, required=True)
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument('--output', type=Path)
+    mode.add_argument('--verify-evidence', type=Path)
     parser.add_argument('--sdk', type=Path)
+    parser.add_argument('--execution')
     args = parser.parse_args()
     arguments = {'head': args.head, 'base': args.base, 'tested': args.tested}
-    print(json.dumps(execute(Path.cwd(), args.output, sdk=args.sdk, **arguments), indent=2))
+    if args.verify_evidence is not None:
+        if args.execution is None or args.sdk is not None:
+            parser.error('evidence verification requires --execution and cannot take --sdk')
+        result = verify(Path.cwd(), args.verify_evidence, execution=args.execution, **arguments)
+    else:
+        if args.execution is not None:
+            parser.error('--execution is only for evidence verification')
+        result = execute(Path.cwd(), args.output, sdk=args.sdk, **arguments)
+    print(json.dumps(result, indent=2))
 
 
 if __name__ == '__main__':

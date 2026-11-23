@@ -6,16 +6,18 @@ permissions:
 concurrency:
   group: native-linux-pr-${{ github.event.pull_request.number }}
   cancel-in-progress: true
+env:
+  PR_HEAD: ${{ github.event.pull_request.head.sha }}
+  PR_BASE: ${{ github.event.pull_request.base.sha }}
+  TESTED_SHA: ${{ github.sha }}
 jobs:
-  native-pr:
+  native-pr-execution:
+    name: Execute Linux native PR checks
     runs-on: ubuntu-26.04
     container: debian:13
     timeout-minutes: 180
     env:
       OBJC3C_CLOUD_SETUP_ROOT: /opt/objc3c-host
-      PR_HEAD: ${{ github.event.pull_request.head.sha }}
-      PR_BASE: ${{ github.event.pull_request.base.sha }}
-      TESTED_SHA: ${{ github.sha }}
     steps:
       - name: Install host prerequisites
         run: |
@@ -105,3 +107,32 @@ jobs:
           path: out/native-pr/
           if-no-files-found: error
           retention-days: 7
+  native-pr:
+    if: always()
+    needs: native-pr-execution
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    env:
+      NATIVE_EXECUTION: ${{ needs.native-pr-execution.result }}
+    steps:
+      - name: Require successful native execution prerequisite
+        shell: bash
+        run: |
+          if [[ "$NATIVE_EXECUTION" != success ]]; then
+            echo "Native PR execution outcome: $NATIVE_EXECUTION" >&2
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: native-pr-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/native-pr-evidence
+      - name: Verify the exact tested source and retained native evidence
+        shell: bash
+        run: |
+          python3 -B -m scripts.objc3c_assurance.pr_native \
+            --head "$PR_HEAD" --base "$PR_BASE" --tested "$TESTED_SHA" \
+            --verify-evidence out/native-pr-evidence --execution "$NATIVE_EXECUTION"

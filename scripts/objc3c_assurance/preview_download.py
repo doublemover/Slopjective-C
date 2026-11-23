@@ -11,6 +11,7 @@ import tempfile
 
 from scripts.objc3c_toolchain.install_sdk import install
 from scripts.objc3c_toolchain.linux_host import native_linux_host
+from .evidence import digest
 
 DOWNLOADS = 'https://github.com/doublemover/Slopjective-C/releases/download'
 
@@ -53,7 +54,7 @@ def install_preview(manifest: Path, directory: Path, *, witness_log: Path | None
                     subprocess.run(command, check=True, env=environment, stdout=log,
                                    stderr=subprocess.STDOUT, timeout=120)
             result = {**relocated, 'witness': {'status': 'PASS', 'source': 'native/main.objc3',
-                      'log': str(witness_log), 'initial_install_cost': result['cost']}}
+                      'log_sha256': digest(witness_log), 'initial_install_cost': result['cost']}}
     return result
 
 

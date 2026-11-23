@@ -449,11 +449,11 @@ def suite_results(root: Path, name: str) -> list[dict]:
 
 
 def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str,
-              shard: str | None = None) -> dict:
+              shard: str | None = None, suite_ids: tuple[str, ...] | None = None) -> dict:
     validate(plan)
     if plan['revision']['tested'] != tested or outcomes.get('plan') != 'success':
         raise ValueError('selection failed or selected the wrong tested revision')
-    suites = selected_suites(plan, shard)
+    suites = selected_suites(plan, shard, suite_ids=suite_ids)
     expected = {suite['id'] for suite in suites}
     if not expected:
         if plan['classification'] != 'prose-only' or outcomes.get('native') != 'skipped':
@@ -467,6 +467,8 @@ def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str,
         raise ValueError('native result is incomplete, stale, failed or belongs to another revision')
     if receipt.get('shard') != shard:
         raise ValueError('native result belongs to a different execution shard')
+    if suite_ids is not None and receipt.get('suite_partition') != list(suite_ids):
+        raise ValueError('native result belongs to a different execution partition')
     records = receipt.get('suites', [])
     if len(records) != len(expected) or {row['id'] for row in records} != expected:
         raise ValueError('native result differs from the exact required suite set')
@@ -489,18 +491,22 @@ def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str,
     commands = receipt.get('commands', [])
     if any(row.get('exit_code') != 0 for row in commands):
         raise ValueError('native command evidence contains a failed execution')
-    from scripts.objc3c_toolchain.semantic_build_costs import snapshot
     cost_file = root / 'operational-costs.json'
-    saved_costs = receipt.get('operational_costs', {})
-    if saved_costs.get('path') != 'operational-costs.json' or artifact(root, cost_file) != saved_costs:
-        raise ValueError('native operational measurements are missing or changed')
-    observed = json.loads(cost_file.read_text())
-    expected_costs = snapshot(foundations=foundation_receipts(root, suites),
-        installations=[root / 'package/installation-cost.json'] if 'package' in expected else [])
-    if observed != expected_costs:
-        raise ValueError('native operational measurements differ from actual owner receipts')
-    total += saved_costs['bytes']
-    validate_evidence_sizes(records, saved_costs['bytes'])
+    foundations = foundation_receipts(root, suites)
+    installations = [root / 'package/installation-cost.json'] if 'package' in expected else []
+    cost_bytes = 0
+    if suite_ids is None or foundations or installations:
+        from scripts.objc3c_toolchain.semantic_build_costs import snapshot
+        saved_costs = receipt.get('operational_costs', {})
+        if saved_costs.get('path') != 'operational-costs.json' or artifact(root, cost_file) != saved_costs:
+            raise ValueError('native operational measurements are missing or changed')
+        if json.loads(cost_file.read_text()) != snapshot(foundations=foundations, installations=installations):
+            raise ValueError('native operational measurements differ from actual owner receipts')
+        cost_bytes = saved_costs['bytes']
+    elif 'operational_costs' in receipt or cost_file.exists() or cost_file.is_symlink():
+        raise ValueError('native operational measurements have no selected owner')
+    total += cost_bytes
+    validate_evidence_sizes(records, cost_bytes)
     if total > evidence_budget(expected):
         raise ValueError('native evidence exceeds its suite artifact budget')
     return {'status': 'PASS', 'classification': 'native', 'revision': plan['revision'],
