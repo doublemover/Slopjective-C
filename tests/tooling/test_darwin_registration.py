@@ -1,5 +1,6 @@
 from pathlib import Path
 import shutil
+import signal
 import subprocess
 import sys
 
@@ -84,35 +85,74 @@ def test_owned_registry_lookup_and_negative_metadata_controls(tmp_path):
 #include "darwin_registration.c"
 #include <sys/resource.h>
 
-static int answer(const struct class_record *receiver, const struct selector_record *selector) {
+static int class_answer(const void *receiver, const struct selector_record *selector) {
   return receiver && selector ? 42 : -1;
 }
 
+static int instance_answer(const void *receiver, const struct selector_record *selector) {
+  return receiver && selector ? 17 : -1;
+}
+
 static const struct selector_record selector = {"answer", "i16@0:8"};
-static const struct {
-  const struct method_list *next;
-  int count;
-  size_t stride;
-  struct method_record methods[1];
-} methods = {NULL, 1, sizeof(struct method_record), {{answer, &selector, "i16@0:8"}}};
-static const struct class_record meta = {.flags = 1, .methods = (const struct method_list *)&methods};
-static const struct class_record root = {.isa = &meta, .name = "Root"};
+static const struct selector_record same_signature = {"answer", "i16@0:8"};
+static const struct selector_record wrong_signature = {"answer", "i20@0:8i16"};
+static const struct method_list class_methods = {
+  NULL, 1, sizeof(struct method_record), {{class_answer, &selector, "i16@0:8"}}
+};
+static const struct method_list instance_methods = {
+  NULL, 1, sizeof(struct method_record), {{instance_answer, &selector, "i16@0:8"}}
+};
+static const struct method_list wrong_methods = {
+  NULL, 1, sizeof(struct method_record), {{instance_answer, &wrong_signature, "i20@0:8i16"}}
+};
+static const struct class_record meta = {.flags = 1, .methods = &class_methods};
+static const struct class_record root = {.isa = &meta, .name = "Root", .methods = &instance_methods};
+static const struct class_record stateful = {.isa = &meta, .name = "Stateful", .instance_size = 8};
+static const struct class_record wrong_methods_class = {.isa = &meta, .name = "Wrong", .methods = &wrong_methods};
 
 int main(int argc, char **argv) {
   struct rlimit no_core = {0, 0};
   setrlimit(RLIMIT_CORE, &no_core);
-  if (argc > 1 && strcmp(argv[1], "unregistered") == 0)
+  const char *control = argc > 1 ? argv[1] : "";
+  if (strcmp(control, "unregistered") == 0)
     objc3_darwin_lookup_v1(&root, &selector);
+  if (strcmp(control, "allocate-unregistered") == 0)
+    objc3_darwin_allocate_v1(&root);
   const struct class_record *batch[] = {&root};
   objc3_darwin_register_v1(batch, 1);
-  if (argc > 1 && strcmp(argv[1], "duplicate") == 0)
+  if (strcmp(control, "duplicate") == 0)
     objc3_darwin_register_v1(batch, 1);
+  if (strcmp(control, "deallocate-class") == 0)
+    objc3_darwin_deallocate_v1((void *)&root);
+  if (strcmp(control, "stateful") == 0) {
+    const struct class_record *bad[] = {&stateful};
+    objc3_darwin_register_v1(bad, 1);
+  }
+  if (strcmp(control, "wrong-method-table") == 0) {
+    const struct class_record *bad[] = {&wrong_methods_class};
+    objc3_darwin_register_v1(bad, 1);
+  }
   if (objc3_darwin_class_v1("Root") != &root || objc3_darwin_class_v1("Missing"))
     return 1;
   if (objc3_darwin_lookup_v1(&root, &selector)(&root, &selector) != 42)
     return 2;
   if (objc3_darwin_lookup_v1(NULL, &selector)(NULL, &selector) != 0)
     return 3;
+  struct instance_record *first = objc3_darwin_allocate_v1(&root);
+  struct instance_record *second = objc3_darwin_allocate_v1(&root);
+  if (!first || !second || first == second || first->isa != &root || second->isa != &root)
+    return 4;
+  if (strcmp(control, "wrong-selector-type") == 0)
+    objc3_darwin_lookup_v1(second, &wrong_signature);
+  if (objc3_darwin_lookup_v1(first, &same_signature)(first, &same_signature) != 17)
+    return 5;
+  objc3_darwin_deallocate_v1(first);
+  if (objc3_darwin_lookup_v1(second, &selector)(second, &selector) != 17)
+    return 6;
+  objc3_darwin_deallocate_v1(second);
+  objc3_darwin_deallocate_v1(NULL);
+  if (instances || objc3_darwin_allocate_v1(NULL))
+    return 7;
   return 0;
 }
 ''')
@@ -120,7 +160,15 @@ int main(int argc, char **argv) {
     subprocess.run(['cc', '-O2', '-Wall', '-Wextra', '-Werror', '-pthread', '-I',
                     darwin_registration.RUNTIME.parent, harness, '-o', binary], check=True)
     subprocess.run([binary], check=True)
-    for name, diagnostic in (('duplicate', 'duplicate class name'), ('unregistered', 'receiver is not a registered class')):
+    for name, diagnostic in (
+        ('duplicate', 'duplicate class name'),
+        ('unregistered', 'receiver has no registered class or live instance'),
+        ('allocate-unregistered', 'allocation requires a registered root class'),
+        ('deallocate-class', 'deallocation requires a live instance'),
+        ('stateful', 'invalid stateless root class metadata'),
+        ('wrong-method-table', 'invalid no-argument int method'),
+        ('wrong-selector-type', 'method selector is missing'),
+    ):
         result = subprocess.run([binary, name], capture_output=True, text=True)
-        assert result.returncode != 0
+        assert result.returncode == -signal.SIGABRT
         assert diagnostic in result.stderr

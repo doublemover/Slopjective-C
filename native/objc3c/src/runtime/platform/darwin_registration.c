@@ -13,11 +13,10 @@ struct selector_record {
   const char *type;
 };
 
-typedef int (*class_method)(const struct class_record *,
-                            const struct selector_record *);
+typedef int (*method_implementation)(const void *, const struct selector_record *);
 
 struct method_record {
-  class_method implementation;
+  method_implementation implementation;
   const struct selector_record *selector;
   const char *extended_type;
 };
@@ -41,13 +40,20 @@ struct class_record {
   const struct method_list *methods;
 };
 
+struct instance_record {
+  const struct class_record *isa;
+  struct instance_record *next;
+};
+
 _Static_assert(offsetof(struct class_record, methods) == 56, "arm64 class ABI");
 _Static_assert(offsetof(struct method_list, methods) == 24, "arm64 method list ABI");
 _Static_assert(sizeof(struct method_record) == 24, "arm64 method ABI");
+_Static_assert(offsetof(struct instance_record, isa) == 0, "arm64 object header ABI");
 
 static pthread_mutex_t registry_lock = PTHREAD_MUTEX_INITIALIZER;
 static const struct class_record **registry;
 static size_t class_count;
+static struct instance_record *instances;
 
 static _Noreturn void registration_error(const char *message) {
   fprintf(stderr, "objc3 Darwin registration: %s\n", message);
@@ -61,23 +67,41 @@ static const struct class_record *find_class(const char *name) {
   return NULL;
 }
 
-static void check_class(const struct class_record *cls) {
-  if (!cls || !cls->name || !*cls->name || !cls->isa || cls->superclass ||
-      cls->flags != 0 || cls->ivars || cls->methods || cls->isa->flags != 1 ||
-      cls->isa->superclass || cls->isa->ivars || cls->isa->version != 0 ||
-      cls->version != 0)
-    registration_error("invalid root class metadata");
-  const struct method_list *list = cls->isa->methods;
+static void check_method_list(const struct method_list *list) {
   if (!list)
     return;
   if (list->next || list->count <= 0 || list->stride != sizeof(struct method_record))
-    registration_error("invalid class method table");
+    registration_error("invalid method table");
   for (int i = 0; i < list->count; ++i) {
     const struct method_record *method = &list->methods[i];
     if (!method->implementation || !method->selector || !method->selector->name ||
-        !method->selector->type || method->selector->type[0] != 'i')
-      registration_error("invalid int class method");
+        !method->selector->type || strcmp(method->selector->type, "i16@0:8") != 0)
+      registration_error("invalid no-argument int method");
   }
+}
+
+static void check_class(const struct class_record *cls) {
+  if (!cls || !cls->name || !*cls->name || !cls->isa || cls->superclass ||
+      cls->flags != 0 || cls->instance_size != 0 || cls->ivars || cls->version != 0 ||
+      cls->isa->flags != 1 || cls->isa->superclass || cls->isa->instance_size != 0 ||
+      cls->isa->ivars || cls->isa->version != 0)
+    registration_error("invalid stateless root class metadata");
+  check_method_list(cls->methods);
+  check_method_list(cls->isa->methods);
+}
+
+static int class_is_registered(const void *cls) {
+  for (size_t i = 0; i < class_count; ++i)
+    if (registry[i] == cls)
+      return 1;
+  return 0;
+}
+
+static struct instance_record **find_instance(const void *receiver) {
+  struct instance_record **link = &instances;
+  while (*link && *link != receiver)
+    link = &(*link)->next;
+  return link;
 }
 
 /* A Mach-O image must remain loaded while its registered records are in use. */
@@ -105,34 +129,66 @@ const struct class_record *objc3_darwin_class_v1(const char *name) {
   return cls;
 }
 
-static int nil_class_method(const struct class_record *cls, const struct selector_record *sel) {
-  (void)cls;
+void *objc3_darwin_allocate_v1(const struct class_record *cls) {
+  if (!cls)
+    return NULL;
+  pthread_mutex_lock(&registry_lock);
+  if (!class_is_registered(cls))
+    registration_error("allocation requires a registered root class");
+  struct instance_record *instance = malloc(sizeof(*instance));
+  if (instance) {
+    *instance = (struct instance_record){cls, instances};
+    instances = instance;
+  }
+  pthread_mutex_unlock(&registry_lock);
+  return instance;
+}
+
+void objc3_darwin_deallocate_v1(void *receiver) {
+  if (!receiver)
+    return;
+  pthread_mutex_lock(&registry_lock);
+  struct instance_record **link = find_instance(receiver);
+  struct instance_record *instance = *link;
+  if (!instance)
+    registration_error("deallocation requires a live instance");
+  *link = instance->next;
+  pthread_mutex_unlock(&registry_lock);
+  free(instance);
+}
+
+static int nil_method(const void *receiver, const struct selector_record *sel) {
+  (void)receiver;
   (void)sel;
   return 0;
 }
 
-class_method objc3_darwin_lookup_v1(const struct class_record *receiver,
-                                   const struct selector_record *selector) {
+method_implementation objc3_darwin_lookup_v1(const void *receiver,
+                                             const struct selector_record *selector) {
   if (!receiver)
-    return nil_class_method;
+    return nil_method;
   if (!selector || !selector->name || !selector->type)
-    registration_error("invalid class selector");
+    registration_error("invalid selector");
 
   pthread_mutex_lock(&registry_lock);
-  size_t position = 0;
-  while (position < class_count && registry[position] != receiver)
-    ++position;
-  int registered = position != class_count;
+  const struct class_record *dispatch_class;
+  if (class_is_registered(receiver)) {
+    const struct class_record *cls = receiver;
+    dispatch_class = cls->isa;
+  } else {
+    const struct instance_record *instance = *find_instance(receiver);
+    if (!instance)
+      registration_error("receiver has no registered class or live instance");
+    dispatch_class = instance->isa;
+  }
   pthread_mutex_unlock(&registry_lock);
-  if (!registered)
-    registration_error("receiver is not a registered class");
 
-  const struct method_list *list = receiver->isa->methods;
+  const struct method_list *list = dispatch_class->methods;
   for (int i = 0; list && i < list->count; ++i) {
     const struct method_record *method = &list->methods[i];
     if (strcmp(method->selector->name, selector->name) == 0 &&
         strcmp(method->selector->type, selector->type) == 0)
       return method->implementation;
   }
-  registration_error("class method selector is missing");
+  registration_error("method selector is missing");
 }

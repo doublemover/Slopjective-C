@@ -13,6 +13,14 @@
   }
   return value;
 }
+
+- (int)answer {
+  return 17;
+}
+
+- (int)combined {
+  return [self answer] + 3;
+}
 @end
 
 __attribute__((objc_root_class))

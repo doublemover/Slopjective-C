@@ -59,8 +59,9 @@ capability and has `support_truth: false`.
 The `macos-arm64-registration-experimental` build uses a Darwin-only compiler
 patch on top of the locked LLVM source. It emits one Mach-O initializer per
 translation unit that defines a root class. The initializer hands that unit's
-class table to the owned runtime. Class sends resolve a selector and signed
-`int` implementation through the registered metaclass methods. The compiler
+class table to the owned runtime. Class sends use the metaclass method table,
+and instance sends use the class method table through the live object's ISA.
+Both lookups match the selector and exact no-argument `int` encoding. The compiler
 driver reserves `-fobjc-runtime=gnustep-2.99` for Objective-C 3 on macOS arm64
 and rejects ARC and Apple runtime linking for this profile.
 
@@ -77,12 +78,14 @@ python3 -B -m scripts.objc3c_toolchain.darwin_registration \
 The command builds a native patched Clang with an AArch64 backend and limits
 the compile pool to the host CPU and memory budget. The receipts bind the
 bootstrap toolchain, compiler inputs, runtime source, fixtures and outputs. The
-native fixture calls a stateless root-class method with Objective-C 3 `defer`,
-proves that a sibling class from the same archive member registered, and loads
-a further class from a dylib into the same runtime. Both a static executable
-and a dynamically linked executable run after moving the install tree. The
-controls check a missing runtime at link and load, the prior GNUstep driver
-guard, a subclass, ARC, Apple runtime linking, and a wrong architecture.
+native fixtures cover a stateless root class with Objective-C 3 `defer`, two
+live instances, same-named class and instance methods, a nil send and nested
+`self` dispatch. The provider's sibling class registers from the same archive
+member. A late-loaded dylib adds a class to the same runtime, and the consumer
+checks both class and instance sends through it. Both executables run after
+moving the install tree. The controls check a missing runtime at link and
+load, the prior GNUstep driver guard, a subclass, an instance ivar, a
+parameterized method, ARC, Apple runtime linking, and a wrong architecture.
 
 The qualifier also compiles the current concrete collection and text service
 sources with the patched compiler and libc++. The existing map-count and text
@@ -94,14 +97,39 @@ Pull requests that change the experimental sources select the same workflow
 step automatically. Manual dispatch selects it with `runtime_registration`.
 An x86-64 replay built the modified driver and CodeGen translation units with
 the preview toolchain. They emitted arm64 Mach-O provider and plugin objects
-with startup initializers and owned runtime symbols. DWARF verified, the
-provider method lowered its deferred cleanup to return `42`, and the subclass,
-x86 and ARC cases each exited with their expected diagnostic.
+with startup initializers and owned runtime symbols. DWARF verified. The
+class method lowers its deferred result to `42`, and the same-named instance
+method returns `17`. The compiler diagnosed subclasses, instance ivars, and
+parameterized methods. The allocation and lookup controls passed the separate
+native Linux C runtime replay with ASan and UBSan.
 
 Native execution evidence for this step is pending. The receipt has
 `support_truth: false`, and the release profile still requires SDK packaging,
 installation and native execution qualification. Loaded experimental libraries
 must remain resident for the lifetime of their registered class records.
+
+### Instance lifetime and the next ABI boundary
+
+The experimental MRC entry points `objc3_darwin_allocate_v1` and
+`objc3_darwin_deallocate_v1` allocate and reclaim one ISA header with private
+registry bookkeeping. Allocation admits the exact registered class pointer
+and its stateless, zero-size compiler metadata. Dispatch recognizes only
+registered class objects and live instances. The owner keeps an instance live
+for the entire send, including nested sends and calls from other threads.
+Deallocation removes the live registry entry and releases the allocation.
+
+Superclass support needs dependency-ordered registration across images,
+inherited lookup, and explicit super dispatch. A stateful ABI must resolve
+the compiler's relative instance-size and ivar-offset records, validate
+alignment and overflow, and initialize the resulting storage before it becomes
+visible to a sender. Native controls need separately linked subclasses,
+cross-image parent registration, and invalid or stale layout records.
+
+ARC requires retain and release operations with a defined finalization path,
+weak-slot synchronization, autorelease pools, and exception-aware cleanup.
+Those operations need ABI and compiler lowering tests alongside the Mach-O
+loader tests. They also need native lifetime evidence for instances and Blocks
+that cross image and thread boundaries.
 
 ## Evidence required for a port
 
@@ -117,9 +145,9 @@ must remain resident for the lifetime of their registered class records.
   gates. The released driver rejects GNUstep 2.2 for Mach-O. Its GNUstep
   registration emits ELF section boundaries, COMDAT groups and an ELF
   constructor section. The separate experimental compiler handles stateless root
-  classes and ordinary no-argument `int` class methods. Inheritance, instances,
-  properties, protocols, categories, ARC, exceptions and cross-image runtime
-  lifecycle still need a design and native workloads. Inspect the linked
+  classes and instances with ordinary no-argument `int` methods. Inheritance,
+  instance storage, properties, protocols, categories, ARC, exceptions and
+  cross-image runtime lifecycle still need a design and native workloads. Inspect the linked
   dependency closure for accidental Apple ObjC2 use. [Driver guard](https://github.com/llvm/llvm-project/blob/392dfff97d29b59d77e5cac6d4b6ef2585fe7117/clang/lib/Driver/ToolChains/Clang.cpp#L8628)
   · [Registration lowering](https://github.com/llvm/llvm-project/blob/392dfff97d29b59d77e5cac6d4b6ef2585fe7117/clang/lib/CodeGen/CGObjCGNU.cpp#L1518)
 - A native patched Clang and runtime build plan, a Mach-O distribution layout
