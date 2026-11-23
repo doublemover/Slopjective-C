@@ -99,6 +99,10 @@ executables and system C++ library dependencies.
 
 Pull requests that change the experimental sources select the same workflow
 step automatically. Manual dispatch selects it with `runtime_registration`.
+The workflow passes `--package-sdk` to seal that same compiler and runtime,
+then installs the archive into a fresh relocated root after removing the build
+tree. The installed compiler recompiles the packaged consumers before the
+runner checks their native execution and debug information.
 An x86-64 replay built the modified driver and CodeGen translation units with
 the preview toolchain. They emitted arm64 Mach-O provider and plugin objects
 with startup initializers and owned runtime symbols. DWARF verified. The

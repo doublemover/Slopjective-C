@@ -13,6 +13,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import tarfile
 import tempfile
 
 from .core import ToolchainError, prepare
@@ -115,7 +116,7 @@ int main(int argc, char **argv) {
             'reported_version': version, 'hash_probe': {**artifact, 'load_paths': libraries}}
 
 
-def qualify(bootstrap_report: Path, output: Path, *, fetch: bool) -> dict:
+def qualify(bootstrap_report: Path, output: Path, *, fetch: bool, package_sdk: bool = False) -> dict:
     require_apple_silicon()
     profile, patch = load_profile()
     output = output.resolve()
@@ -228,8 +229,18 @@ def qualify(bootstrap_report: Path, output: Path, *, fetch: bool) -> dict:
                     pin['commit'] not in version):
                 raise ValueError('native patched Clang did not report the Darwin compiler source/configuration identity')
             _exercise(run, clang, llvm_root, sdk, linker, output, report)
+            if package_sdk:
+                from . import darwin_sdk
+                package_output = output / 'sdk/package'
+                registration = {**report, 'status': 'registration-verified'}
+                report['sdk_package'] = darwin_sdk.package_registration(
+                    clang, source, bootstrap_report, registration, package_output)
+        if package_sdk:
+            report['sdk_qualification'] = darwin_sdk.qualify(
+                package_output / darwin_sdk.ARCHIVE_NAME, report['sdk_package']['archive_sha256'],
+                output / 'sdk/qualification')
         report['status'] = 'registration-verified'
-    except (OSError, KeyError, ValueError, ToolchainError, subprocess.SubprocessError) as error:
+    except (OSError, KeyError, ValueError, ToolchainError, subprocess.SubprocessError, tarfile.TarError) as error:
         report['error'] = str(error)
         raise
     finally:
@@ -375,10 +386,11 @@ def main() -> int:
     parser.add_argument('--bootstrap-report', type=Path, required=True)
     parser.add_argument('--output-dir', type=Path, required=True)
     parser.add_argument('--fetch', action='store_true', help='fetch the pinned upstream LLVM Git source')
+    parser.add_argument('--package-sdk', action='store_true', help='package the admitted build and qualify a relocated SDK')
     args = parser.parse_args()
     try:
-        qualify(args.bootstrap_report, args.output_dir, fetch=args.fetch)
-    except (OSError, ValueError, KeyError, ToolchainError, subprocess.SubprocessError) as error:
+        qualify(args.bootstrap_report, args.output_dir, fetch=args.fetch, package_sdk=args.package_sdk)
+    except (OSError, ValueError, KeyError, ToolchainError, subprocess.SubprocessError, tarfile.TarError) as error:
         parser.exit(2, f'objc3c Darwin registration: {error}\n')
     print(args.output_dir.resolve() / 'report.json')
     return 0

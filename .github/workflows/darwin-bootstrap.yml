@@ -11,12 +11,14 @@ on:
       - ".github/workflows/darwin-bootstrap.yml"
       - "scripts/objc3c_toolchain/darwin_bootstrap.py"
       - "scripts/objc3c_toolchain/darwin_registration.py"
+      - "scripts/objc3c_toolchain/darwin_sdk.py"
       - "scripts/objc3c_toolchain_runtime/runtime-profile.json"
       - "scripts/objc3c_toolchain_runtime/verify_runtime_profile.py"
       - "native/objc3c/src/runtime/platform/darwin_registration.c"
       - "tests/clang_foundation/darwin_registration/**"
       - "tests/tooling/test_darwin_bootstrap.py"
       - "tests/tooling/test_darwin_registration.py"
+      - "tests/tooling/test_darwin_sdk.py"
       - "toolchains/llvm/manifest.json"
       - "toolchains/llvm/experimental/**"
 permissions:
@@ -62,6 +64,7 @@ jobs:
           if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
             changes=$(git diff --name-only HEAD^1 HEAD -- toolchains/llvm/experimental \
               scripts/objc3c_toolchain/darwin_registration.py \
+              scripts/objc3c_toolchain/darwin_sdk.py tests/tooling/test_darwin_sdk.py \
               native/objc3c/src/runtime/platform/darwin_registration.c \
               tests/clang_foundation/darwin_registration tests/tooling/test_darwin_registration.py)
             if [[ -n "$changes" ]]; then
@@ -103,7 +106,7 @@ jobs:
         run: |
           evidence="$RUNNER_TEMP/darwin-bootstrap-evidence"
           python -B -m scripts.objc3c_toolchain.darwin_registration \
-            --profile macos-arm64-registration-experimental --fetch \
+            --profile macos-arm64-registration-experimental --fetch --package-sdk \
             --bootstrap-report "$evidence/result/report.json" \
             --output-dir "$evidence/runtime" 2>&1 | tee "$evidence/runtime.log"
       - name: Preserve the probe result and diagnostics
