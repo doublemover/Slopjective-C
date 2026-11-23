@@ -31,6 +31,7 @@ COMMAND_TIMEOUT = 900
 # Clang-facing façade units remain separately bounded from execution/export.
 BUILD_TIMEOUT = 3600
 MAX_TEST_TIMEOUT = 900
+COVERAGE_SECTIONS = ('__llvm_covmap', '__llvm_prf_cnts', '__llvm_prf_data')
 
 
 def partition_catalogue(policy: dict, index: int, count: int) -> tuple[list[tuple[str, str]], str]:
@@ -97,6 +98,21 @@ def profile_runtime(bootstrap: Path, target: str) -> tuple[Path, Path]:
             not runtime.resolve().is_relative_to(bootstrap.resolve())):
         raise ValueError('pinned bootstrap profile runtime is missing or escaped')
     return resource.resolve(), runtime.resolve()
+
+
+def coverage_section_command(llvm_objdump: Path, obj) -> list:
+    return [llvm_objdump, '--section-headers',
+            *(f'--section={name}' for name in COVERAGE_SECTIONS), obj]
+
+
+def coverage_object_sections(text: str) -> list[str]:
+    """Require nonempty ELF coverage records independently of compiler flags."""
+    present = {name for name, size in re.findall(r'^ *\d+ (\S+) +([0-9a-f]+) +', text, re.MULTILINE)
+               if int(size, 16)}
+    missing = set(COVERAGE_SECTIONS) - present
+    if missing:
+        raise ValueError('actual object has no coverage counters/mapping: ' + ', '.join(sorted(missing)))
+    return list(COVERAGE_SECTIONS)
 
 
 def compile_inventory(build, graph, *, required_flags):
@@ -317,6 +333,7 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None,
         for key in ('cmake_path', 'ninja_path')]+[env['PATH']])
     env['OBJC3C_BOOTSTRAP_LLVM_ROOT'] = str(bootstrap)
     tools = {name: stage / 'bin' / name for name in ('llvm-cov', 'llvm-profdata', 'llvm-readobj')}
+    tools['llvm-objdump'] = bootstrap / 'bin/llvm-objdump'
     report = {'schema': 'objc3c.native-source-coverage.v1', 'status': 'running',
         'source_build_id': plan['source_build_id'], 'build_config_digest': plan['build_config_digest'],
         'revision': subprocess.check_output(['git', '-C', repo, 'rev-parse', 'HEAD'], text=True).strip(),
@@ -446,9 +463,9 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None,
                     if obj['object'] in records:
                         if records[obj['object']] != obj: raise ValueError('coverage object changed between test shards')
                         continue
-                    sections = run(component+'-sections-'+str(len(records)), [tools['llvm-readobj'], '--sections', obj['object']])
-                    if not all(marker in sections for marker in ('__llvm_covmap', '__llvm_prf_cnts', '__llvm_prf_data')):
-                        raise ValueError('actual object has no coverage counters/mapping')
+                    sections = run(component+'-sections-'+str(len(records)),
+                        coverage_section_command(tools['llvm-objdump'], obj['object']))
+                    coverage_object_sections(sections)
                     records[obj['object']] = obj
                     frozen[obj['object']] = obj['sha256']
                 report['objects'][component] = list(records.values())

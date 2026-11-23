@@ -73,20 +73,27 @@ execution. The earlier persistent-storage failure remains a failed attempt.
 The integrated compiler owner now uses the isolated `compiler-source-coverage`
 foundation. It derives whole-file and changed-hunk denominators directly from
 the admitted patches, verifies every eligible implementation object's flags,
-hashes and coverage mappings, and executes the ObjC3 lit suite plus the selected
-native unit binaries. Actual ELF identities bind each profile to the executed
+hashes and nonempty ELF coverage sections, and executes the ObjC3 lit suite plus
+the selected native unit binaries. Actual ELF identities bind each profile to the executed
 main and allowed loaded modules; unrelated support-tool profiles remain separate.
 Exports retain zero-hit and missing-mapping files rather than silently reducing
-the denominator. Source/object/DSO identities are checked again after execution.
+the denominator. The changed-hunk view records region entries and both arm counts
+for every branch decision intersecting a maintained hunk. Source, object, DSO
+and tool identities are checked again after execution.
 
 ```sh
 python3 -B -m scripts.objc3c_toolchain.compiler_source_coverage \
   --output out/compiler-source-coverage
 ```
 
+For a reviewed comparison, pass `--baseline out/previous/qualification.json`.
+The new report binds that baseline by digest. It records added and removed files,
+source and mapping changes, and hit deltas for comparable files. Earlier reports
+without changed-branch data identify that evidence gap. The comparison carries
+no percentage threshold.
+
 The existing native assurance lane selects reader controls, first-party coverage
-and patched-compiler coverage together when required. Live integrated hosted
-acceptance, matching cost observations and reviewed changed-region baseline
-policy remain open under #8290/#8283. No automatic PR percentage threshold is
-introduced. Compiler-process coverage, runtime execution coverage, language
-conformance and fuzzer feedback remain separate claims.
+and patched-compiler coverage together when required. The source-coverage merge
+and terminal gates passed on the published x86-64 and AArch64 preview. The
+changed-hunk branch and baseline comparison additions still need matching hosted
+execution and reviewed cost observations. [x86-64](https://github.com/doublemover/Slopjective-C/actions/runs/44865570421/job/136764381872) · [AArch64](https://github.com/doublemover/Slopjective-C/actions/runs/44865570382/job/136767054311)

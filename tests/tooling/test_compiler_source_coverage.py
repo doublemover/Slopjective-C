@@ -1,13 +1,17 @@
 """Patch-owned compiler coverage cannot silently shrink its denominator."""
 import json
+import os
 from pathlib import Path
+import subprocess
 
 import pytest
 
 from scripts.objc3c_toolchain.compiler_source_coverage import (
-    EXPORT_FLAGS, FLAGS, compile_inventory, merged_ranges, patched_inventory, read_export,
+    EXPORT_FLAGS, FLAGS, PROFILE, SCHEMA, changed_branches, compare_coverage, compile_inventory,
+    inspect_objects, merged_ranges, patched_inventory, read_export,
     require_binary_ids, select_coverage_profiles, unique_binary_paths,
 )
+from scripts.objc3c_toolchain.source_coverage import COVERAGE_SECTIONS, coverage_section_command
 
 
 def fixture(tmp_path):
@@ -48,13 +52,83 @@ def test_export_retains_zero_hit_files_and_changed_region_evidence(tmp_path):
     export = tmp_path / 'export.json'
     export.write_text(json.dumps({'type': 'llvm.coverage.json.export', 'data': [{'files': [{
         'filename': str(unit), 'summary': summary,
-        'segments': [[1, 1, 0, True, True], [2, 1, 3, True, True], [3, 1, 0, True, True]]}]}]}))
+        'segments': [[1, 1, 0, True, True], [2, 1, 3, True, True], [3, 1, 0, True, True],
+                     [2, 2, 0, True, True, True]],
+        'branches': [[2, 3, 2, 8, 3, 0, 0, 0, 4]]}]}]}))
     rows = read_export(export, source=source, eligible=eligible, changed=changed)
     key = 'clang/lib/Sema/SemaObjC3.cpp'
     assert rows[key]['state'] == 'executed'
     assert rows[key]['covered_changed_region_entries'] == 1
     assert rows[key]['uncovered_changed_lines'] == [1, 3]
+    assert rows[key]['changed_branches'] == {'arms': 2, 'covered_arms': 1,
+        'decisions': [{'start': [2, 3], 'end': [2, 8], 'true_count': 3, 'false_count': 0}]}
     assert rows['clang/include/clang/Sema/ObjC3.h']['state'] == 'no-emitted-mapping'
+    assert rows['clang/include/clang/Sema/ObjC3.h']['changed_branches'] is None
+
+
+def test_changed_branch_span_can_enter_the_hunk_after_its_first_line():
+    branches = [[1, 2, 2, 3, 2, 3, 0, 0, 4], [5, 1, 5, 2, 0, 1, 0, 0, 4]]
+    result = changed_branches(branches, [[2, 3]])
+    assert result == {'arms': 2, 'covered_arms': 2, 'decisions': [
+        {'start': [1, 2], 'end': [2, 3], 'true_count': 2, 'false_count': 3}]}
+    for invalid in ([2, 1, 1, 2, 1, 2, 0, 0, 4], [1, 1, 2, 2, -1, 0, 0, 0, 4]):
+        with pytest.raises(ValueError, match='coverage branch'):
+            changed_branches([invalid], [[2, 3]])
+
+
+def test_baseline_compares_hits_and_exposes_denominator_changes():
+    def row(hits, *, count=2, column=2):
+        return {'summary': {name: {'count': count, 'covered': hits}
+                            for name in ('functions', 'regions', 'branches', 'lines')},
+                'changed_lines': [[1, 3]], 'changed_region_entries': 2,
+                'covered_changed_region_entries': hits,
+                'changed_branches': changed_branches([[2, 1, 2, column, 1, hits - 1, 0, 0, 4]], [[1, 3]])}
+
+    baseline = {'schema': SCHEMA, 'profile': PROFILE, 'status': 'PASS', 'revision': 'a' * 40,
+                'host': 'linux-x86_64', 'coverage_owner': 'shared-clang-cpp-patched-implementation',
+                'eligible': {'old.cpp': 'same', 'different.cpp': 'before', 'same.cpp': 'same', 'shape.cpp': 'same'},
+                'source_coverage': {name: row(1) for name in ('old.cpp', 'different.cpp', 'same.cpp', 'shape.cpp')}}
+    current = {'revision': 'b' * 40, 'host': 'linux-x86_64',
+               'eligible': {'new.cpp': 'same', 'different.cpp': 'after', 'same.cpp': 'same', 'shape.cpp': 'same'},
+               'source_coverage': {'new.cpp': row(2), 'different.cpp': row(2), 'same.cpp': row(2),
+                                   'shape.cpp': row(2, column=3)}}
+    result = compare_coverage(baseline, current)
+    assert result['added_files'] == ['new.cpp'] and result['removed_files'] == ['old.cpp']
+    assert result['changed_files'] == {'different.cpp': 'source-bytes', 'shape.cpp': 'emitted-mapping'}
+    assert result['comparable_files'] == ['same.cpp']
+    assert result['hit_deltas']['same.cpp']['changed_region_entries'] == 1
+    assert result['hit_deltas']['same.cpp']['changed_branch_arms'] == 1
+    del baseline['source_coverage']['same.cpp']['changed_branches']
+    result = compare_coverage(baseline, current)
+    assert result['missing_branch_baseline'] == ['same.cpp']
+    assert 'changed_branch_arms' not in result['hit_deltas']['same.cpp']
+    with pytest.raises(ValueError, match='complete patched-compiler report'):
+        compare_coverage({**baseline, 'host': 'linux-aarch64'}, current)
+
+
+def test_object_instrumentation_is_verified_even_if_database_flags_stay_identical(tmp_path):
+    bootstrap = os.environ.get('OBJC3C_BOOTSTRAP_LLVM_ROOT')
+    if not bootstrap:
+        pytest.skip('requires the pinned LLVM bootstrap')
+    tools = Path(bootstrap) / 'bin'
+    repo, source, build, unit = fixture(tmp_path)
+    eligible, _ = patched_inventory(repo, source)
+    obj = build / 'unit.o'
+
+    def compile_unit(*flags):
+        subprocess.run([tools / 'clang++', *flags, '-c', unit, '-o', obj], check=True, timeout=30)
+        return compile_inventory(build, source, eligible)
+
+    def sections(_, path):
+        return subprocess.check_output(coverage_section_command(tools / 'llvm-objdump', path), text=True, timeout=30)
+
+    records = compile_unit(*FLAGS)
+    inspect_objects(records, sections)
+    assert records[0]['coverage_sections'] == list(COVERAGE_SECTIONS)
+    records = compile_unit()
+    assert set(FLAGS) <= set(records[0]['argv'])
+    with pytest.raises(ValueError, match='SemaObjC3.cpp: actual object has no coverage counters/mapping'):
+        inspect_objects(records, sections)
 
 
 def test_changed_range_normalization_is_stable():

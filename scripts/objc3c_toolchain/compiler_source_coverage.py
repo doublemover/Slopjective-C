@@ -5,6 +5,7 @@ from .linux_host import native_linux_host
 
 import argparse
 from collections import Counter
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -17,11 +18,13 @@ import time
 
 from .binary_packages import digest, installed_shared_library, write_json
 from .core import build_plans
-from .source_coverage import binary_ids, reclaim_indexed_export
+from .source_coverage import binary_ids, coverage_object_sections, coverage_section_command, reclaim_indexed_export
 
 PROFILE = 'compiler-source-coverage'
+SCHEMA = 'objc3c.compiler-source-coverage.v1'
 FLAGS = ('-fprofile-instr-generate', '-fcoverage-mapping', '-fprofile-update=atomic')
 EXPORT_FLAGS = ('--check-binary-ids', '--skip-expansions', '--skip-functions')
+COVERAGE_KINDS = ('functions', 'regions', 'branches', 'lines')
 PATCH_FILE = re.compile(r'^\+\+\+ b/((?:clang|llvm)/\S+)$')
 HUNK = re.compile(r'^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@')
 
@@ -158,7 +161,7 @@ def compile_inventory(build: Path, source: Path, eligible: dict) -> list[dict]:
     rows = json.loads((build / 'compile_commands.json').read_text())
     records = []
     implementations = {str((source / name).resolve()): name for name in eligible if name.endswith(('.c', '.cc', '.cpp'))}
-    seen = set()
+    seen, outputs = set(), set()
     for row in rows:
         unit = str(Path(row['file']).resolve())
         name = implementations.get(unit)
@@ -166,17 +169,44 @@ def compile_inventory(build: Path, source: Path, eligible: dict) -> list[dict]:
             continue
         argv = row.get('arguments') or shlex.split(row['command'])
         output = (Path(row['directory']) / (row.get('output') or argv[argv.index('-o') + 1])).resolve()
-        if (not output.is_relative_to(build) or not output.is_file() or
+        if (output in outputs or not output.is_relative_to(build) or not output.is_file() or
                 not set(FLAGS) <= set(argv) or
                 any(arg.startswith(('-fno-profile-instr-generate', '-fno-coverage-mapping')) for arg in argv)):
             raise ValueError('patched compiler object lacks source coverage instrumentation: ' + name)
         records.append({'source': name, 'source_sha256': eligible[name], 'object': str(output),
                         'sha256': digest(output), 'argv': argv})
         seen.add(name)
+        outputs.add(output)
     missing = sorted(set(implementations.values()) - seen)
     if missing:
         raise ValueError('patched compiler implementations disappeared from the compiled denominator: ' + ', '.join(missing))
     return records
+
+
+def inspect_objects(records, read_sections) -> None:
+    """Bind recorded compilation rows to the instrumentation in their actual ELF bytes."""
+    for index, row in enumerate(records):
+        try:
+            row['coverage_sections'] = coverage_object_sections(read_sections(index, row['object']))
+        except ValueError as error:
+            raise ValueError(f"{row['source']}: {error}") from error
+
+
+def changed_branches(branches: list, ranges: list[list[int]]) -> dict:
+    """Keep individual true/false counts for decisions intersecting maintained hunks."""
+    decisions = []
+    for branch in branches:
+        if (not isinstance(branch, list) or len(branch) != 9 or
+                any(type(value) is not int or value < 0 for value in branch) or
+                any(not value for value in branch[:4]) or tuple(branch[:2]) > tuple(branch[2:4])):
+            raise ValueError('invalid patched compiler coverage branch')
+        start, column, end, end_column, taken, not_taken, *_ = branch
+        if any(start <= last and first <= end for first, last in ranges):
+            decisions.append({'start': [start, column], 'end': [end, end_column],
+                              'true_count': taken, 'false_count': not_taken})
+    return {'arms': len(decisions) * 2,
+            'covered_arms': sum((row['true_count'] > 0) + (row['false_count'] > 0) for row in decisions),
+            'decisions': decisions}
 
 
 def read_export(path: Path, *, source: Path, eligible: dict, changed: dict) -> dict:
@@ -185,8 +215,8 @@ def read_export(path: Path, *, source: Path, eligible: dict, changed: dict) -> d
     document = json.loads(path.read_text())
     if document.get('type') != 'llvm.coverage.json.export' or not document.get('data'):
         raise ValueError('missing patched compiler coverage export')
-    result = {name: {'state': 'no-emitted-mapping', 'summary': None,
-                     'changed_lines': changed[name]} for name in eligible}
+    result = {name: {'state': 'no-emitted-mapping', 'summary': None, 'changed_lines': changed[name],
+                     'changed_branches': None} for name in eligible}
     for data in document['data']:
         for row in data['files']:
             filename = Path(row['filename']).resolve()
@@ -198,23 +228,80 @@ def read_export(path: Path, *, source: Path, eligible: dict, changed: dict) -> d
             if result[name]['summary'] is not None:
                 raise ValueError('duplicate patched source in coverage export')
             summary = row['summary']
-            for key in ('functions', 'regions', 'branches', 'lines'):
+            for key in COVERAGE_KINDS:
                 value = summary[key]
                 if (type(value['count']) is not int or type(value['covered']) is not int or
                         not 0 <= value['covered'] <= value['count']):
                     raise ValueError('invalid patched compiler coverage count')
             selected = []
             for segment in row.get('segments', []):
-                if len(segment) < 5 or not segment[3]:
+                if len(segment) < 5 or not segment[3] or (len(segment) > 5 and segment[5]):
                     continue
                 line, count = segment[0], segment[2]
                 if any(start <= line <= end for start, end in changed[name]):
-                    selected.append({'line': line, 'count': count, 'region_entry': bool(segment[4])})
+                    selected.append({'line': line, 'column': segment[1], 'count': count, 'region_entry': bool(segment[4])})
+            entries = [row for row in selected if row['region_entry']]
             result[name] = {'state': 'executed' if summary['regions']['covered'] else 'zero-hit',
                 'summary': summary, 'changed_lines': changed[name],
-                'changed_region_entries': len([row for row in selected if row['region_entry']]),
-                'covered_changed_region_entries': len([row for row in selected if row['region_entry'] and row['count'] > 0]),
+                'changed_branches': changed_branches(row.get('branches', []), changed[name]),
+                'changed_region_entries': len(entries),
+                'covered_changed_region_entries': sum(row['count'] > 0 for row in entries),
+                'changed_region_mapping_sha256': hashlib.sha256(json.dumps(
+                    [(row['line'], row['column']) for row in entries], separators=(',', ':')).encode()).hexdigest(),
                 'uncovered_changed_lines': sorted({row['line'] for row in selected if row['count'] == 0})}
+    return result
+
+
+def compare_coverage(previous: dict, current: dict) -> dict:
+    """Compare comparable source units and expose every changed denominator."""
+    if (previous.get('schema') != SCHEMA or previous.get('status') != 'PASS' or
+            previous.get('profile') != PROFILE or not previous.get('eligible') or
+            set(previous['eligible']) != set(previous.get('source_coverage', {})) or
+            not re.fullmatch(r'[0-9a-f]{40}', previous.get('revision', '')) or
+            previous.get('coverage_owner') != 'shared-clang-cpp-patched-implementation' or
+            (previous.get('host') and previous['host'] != current['host'])):
+        raise ValueError('coverage baseline must be a complete patched-compiler report')
+    before, after = previous['eligible'], current['eligible']
+    result = {'baseline_revision': previous['revision'], 'current_revision': current['revision'],
+              'baseline_host': previous.get('host'), 'current_host': current['host'],
+              'added_files': sorted(after.keys() - before.keys()),
+              'removed_files': sorted(before.keys() - after.keys()),
+              'changed_files': {}, 'comparable_files': [], 'hit_deltas': {},
+              'missing_branch_baseline': []}
+    for name in sorted(before.keys() & after.keys()):
+        old, new = previous['source_coverage'][name], current['source_coverage'][name]
+        old_summary, new_summary = old['summary'], new['summary']
+        if before[name] != after[name]:
+            result['changed_files'][name] = 'source-bytes'
+        elif old['changed_lines'] != new['changed_lines']:
+            result['changed_files'][name] = 'maintained-hunks'
+        elif (bool(old_summary) != bool(new_summary) or
+              (old_summary and any(old_summary[key]['count'] != new_summary[key]['count']
+                                   for key in COVERAGE_KINDS)) or
+              old.get('changed_region_entries') != new.get('changed_region_entries') or
+              (old.get('changed_region_mapping_sha256') and
+               old['changed_region_mapping_sha256'] != new['changed_region_mapping_sha256'])):
+            result['changed_files'][name] = 'emitted-mapping'
+        else:
+            if not old_summary:
+                result['comparable_files'].append(name)
+                continue
+            old_branches, new_branches = old.get('changed_branches'), new['changed_branches']
+            if old_branches is not None:
+                old_points = sorted((row['start'], row['end']) for row in old_branches['decisions'])
+                new_points = sorted((row['start'], row['end']) for row in new_branches['decisions'])
+                if old_points != new_points:
+                    result['changed_files'][name] = 'emitted-mapping'
+                    continue
+            result['comparable_files'].append(name)
+            delta = {key: new_summary[key]['covered'] - old_summary[key]['covered'] for key in COVERAGE_KINDS}
+            delta['changed_region_entries'] = new['covered_changed_region_entries'] - old['covered_changed_region_entries']
+            if old_branches is not None:
+                delta['changed_branch_arms'] = new_branches['covered_arms'] - old_branches['covered_arms']
+            else:
+                result['missing_branch_baseline'].append(name)
+            if any(delta.values()):
+                result['hit_deltas'][name] = delta
     return result
 
 
@@ -230,11 +317,19 @@ def compiler_raw_profiles(root: Path) -> list[Path]:
     return paths
 
 
-def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
+def qualify(repo: Path, output: Path, *, jobs=2, baseline: Path | None = None) -> dict:
     repo, output = repo.resolve(strict=True), output.resolve()
     if output.exists() or not output.is_relative_to(repo / 'out') or jobs not in (1, 2, 3, 4):
         raise ValueError('compiler source coverage requires fresh owned output and bounded jobs')
-    plan = build_plans(repo, host=native_linux_host(), instrumentation_profile=PROFILE)['configure']
+    if baseline is not None:
+        baseline = baseline.resolve(strict=True)
+        if (not baseline.is_relative_to(repo / 'out') or not baseline.is_file() or
+                baseline.stat().st_size > 64 * 1024**2):
+            raise ValueError('compiler coverage baseline must be bounded and stored under out')
+        baseline_hash = digest(baseline)
+        prior = json.loads(baseline.read_text())
+    host = native_linux_host()
+    plan = build_plans(repo, host=host, instrumentation_profile=PROFILE)['configure']
     build, stage, source = (Path(plan['paths'][key]).resolve(strict=True) for key in ('build', 'stage', 'source'))
     foundation = json.loads((build / 'foundation-build-report.json').read_text())
     if (foundation.get('status') != 'passed' or foundation.get('source_identity') != plan['source_build_id'] or
@@ -249,15 +344,17 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
         raise ValueError('compiler source coverage needs 3 GiB of temporary profile storage')
     started = time.monotonic()
     tools = {name: stage / 'bin' / name for name in ('llvm-cov', 'llvm-profdata', 'llvm-readobj')}
+    bootstrap = Path(plan['host_environment']['bootstrap_root'])
+    tools['llvm-objdump'] = bootstrap / 'bin/llvm-objdump'
     test_binaries = [build / relative for relative in plan['instrumentation']['test_binaries']]
     binaries = [stage / 'bin/clang',
                 installed_shared_library(stage / 'lib', 'libclang-cpp.so'),
                 installed_shared_library(stage / 'lib', 'libLLVM.so'), *test_binaries]
-    report = {'schema': 'objc3c.compiler-source-coverage.v1', 'status': 'running',
-        'profile': PROFILE, 'source_build_id': plan['source_build_id'],
+    report = {'schema': SCHEMA, 'status': 'running',
+        'profile': PROFILE, 'host': host, 'source_build_id': plan['source_build_id'],
         'build_config_digest': plan['build_config_digest'],
         'revision': subprocess.check_output(['git', '-C', repo, 'rev-parse', 'HEAD'], text=True).strip(),
-        'eligible': eligible, 'eligible_sha256': __import__('hashlib').sha256(
+        'eligible': eligible, 'eligible_sha256': hashlib.sha256(
             json.dumps(eligible, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
         'changed_ranges': changed, 'commands': [], 'suites': [], 'objects': [],
         'temporary_profile_root': str(profile_root),
@@ -329,7 +426,11 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
         compiler_ids = {binary_identity[str(binary)] for binary in compiler_binaries}
         export_binaries = unique_binary_paths(compiler_binaries, binary_identity)
         report['objects'] = compile_inventory(build, source, eligible)
+        inspect_objects(report['objects'], lambda index, path: run('object-sections-'+str(index),
+            coverage_section_command(tools['llvm-objdump'], path), profile=False).read_text())
         before = {row['object']: row['sha256'] for row in report['objects']}
+        before.update({str(source / name): value for name, value in eligible.items()})
+        before.update({str(path): digest(path) for path in [*binaries, *tools.values()]})
         lit_json = output / 'lit-results.json'
         lit_log = run('objc3-lit', [build / 'bin/llvm-lit', '-sv', '--show-unsupported', '-j', str(min(jobs, 4)),
             '--output', lit_json, source / 'clang/test/ObjC3'], timeout=1800)
@@ -380,10 +481,14 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
             raise ValueError('compiler source coverage export emitted mismatch diagnostics')
         report['source_coverage'] = read_export(export, source=source, eligible=eligible, changed=changed)
         report['indexed_export'] = reclaim_indexed_export(export)
+        if baseline is not None:
+            if digest(baseline) != baseline_hash:
+                raise ValueError('compiler coverage baseline changed during execution')
+            report['baseline_comparison'] = {'sha256': baseline_hash, **compare_coverage(prior, report)}
         if not any(row['state'] == 'executed' for row in report['source_coverage'].values()):
             raise ValueError('patched compiler coverage has no executed source')
         if any(digest(Path(path)) != value for path, value in before.items()):
-            raise ValueError('compiler coverage object changed during execution')
+            raise ValueError('compiler coverage source, object, binary or tool changed during execution')
         report['raw_profiles'] = {'count': len(profiles), 'bytes': sum(path.stat().st_size for path in profiles),
                                   'sha256': {path.relative_to(profile_root).as_posix(): digest(path)
                                              for path in profiles}}
@@ -413,6 +518,7 @@ def main():
     parser.add_argument('--repo', type=Path, default=Path.cwd())
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--jobs', type=int, choices=(1, 2, 3, 4), default=2)
+    parser.add_argument('--baseline', type=Path, help='optional previously qualified report under out/')
     result = qualify(**vars(parser.parse_args()))
     print(json.dumps({'status': result['status'], 'eligible': len(result['eligible']),
                       'suites': len(result['suites'])}))

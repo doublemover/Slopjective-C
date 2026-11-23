@@ -18,7 +18,7 @@ import time
 
 from .binary_packages import digest, installed_shared_library, write_json
 from .compiler_source_coverage import (
-    EXPORT_FLAGS, PROFILE, compile_inventory, compiler_raw_profiles, patched_inventory,
+    EXPORT_FLAGS, PROFILE, compile_inventory, compiler_raw_profiles, inspect_objects, patched_inventory,
     require_binary_ids,
 )
 from .core import build_plans
@@ -26,7 +26,7 @@ from .llvm_tools import identity
 from .semantic_generation import cpu_seconds
 from .semantic_model import VERSION, OPERATIONS, Operation, coverage, eligibility, generate
 from .semantic_oracles import Campaign
-from .source_coverage import binary_ids, elf_build_id
+from .source_coverage import binary_ids, coverage_section_command, elf_build_id
 
 STRATEGIES = ('uniform', 'source-feedback')
 GENERATOR_VERSION = 'source-feedback.v1'
@@ -146,6 +146,10 @@ class Feedback:
         self.build = Path(self.plan['paths']['build']).resolve(strict=True)
         self.eligible, self.changed = patched_inventory(campaign.repo, self.source)
         self.objects = compile_inventory(self.build, self.source, self.eligible)
+        objdump = Path(self.plan['host_environment']['bootstrap_root']) / 'bin/llvm-objdump'
+        campaign.inputs[str(objdump)] = digest(objdump)
+        inspect_objects(self.objects, lambda index, path: campaign.run('feedback-object-sections-'+str(index),
+            coverage_section_command(objdump, path)))
         self.identities = {}
         stage = Path(self.plan['paths']['stage'])
         self.owner = installed_shared_library(stage / 'lib', 'libclang-cpp.so')
