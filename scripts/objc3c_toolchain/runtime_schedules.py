@@ -10,7 +10,7 @@ import time
 from .binary_packages import digest, write_json
 from .product_evidence import ProductCommands
 from .runtime_instrumentation import RuntimeProfiles, used_receipts
-from .runtime_schedule_model import check, coverage_domain, generate, protocol, signature, shrink, validate
+from .runtime_schedule_model import OPCODES, check, coverage_domain, generate, protocol, signature, shrink, validate
 from .sanitizer_policy import SanitizerQualification
 
 
@@ -39,12 +39,18 @@ SCENARIO_INVENTORY = {
     'nested-and-last-owner-abandoned-awaits': 'structured-runtime',
     'typed-next-mismatch-nonconsumption': 'async-handle-joins',
     'allocation-publication-and-copy-failure-injection': 'async-handle-joins',
+    'dependency-wake-allocation-failure-and-shared-result': 'async-handle-joins',
+    'deep-scope-cleanup-with-failed-allocation': 'async-handle-joins',
     'unforced-worker-group-and-actor-stress': 'structured-runtime',
     'executor-last-release-and-worker-drain': 'runtime-lifetime',
     'reentrant-result-copy-lease': 'runtime-lifetime',
     'callable-native-frame-admission': 'runtime-lifetime',
     'constrained-stack-task-group-depth': 'runtime-lifetime',
     'constrained-stack-dependency-wake-rejection': 'runtime-lifetime',
+    'actor-object-generation-reuse-and-competing-first-entry-arc': 'actor-lifetime-arc',
+    'actor-object-generation-reuse-and-competing-first-entry-mrc': 'actor-lifetime-mrc',
+    'object-block-void-and-error-results-arc': 'actor-lifetime-arc',
+    'object-block-void-and-error-results-mrc': 'actor-lifetime-mrc',
 }
 
 
@@ -57,7 +63,34 @@ def observations(text):
     return rows
 
 
+def watchdog_snapshot(command, argv):
+    snapshot = {'name': command['name'], 'log': command['log'], 'status': 'timeout'}
+    if len(argv) != 3 or argv[1] not in ('manual', 'worker'):
+        return snapshot
+    operations = json.loads(Path(argv[2]).read_text())
+    with Path(command['log']).open(errors='replace') as stream:
+        lines = stream.read(256 * 1024).splitlines()
+    completed = []
+    for line, (opcode, slot) in zip(lines, operations):
+        try:
+            event = json.loads(line)
+        except ValueError:
+            break
+        if not isinstance(event, dict) or (event.get('operation'), event.get('id')) != (OPCODES[opcode], slot):
+            break
+        completed.append(event)
+    blocked = len(completed)
+    pending = ['final-reclamation', None]
+    if blocked < len(operations):
+        opcode, slot = operations[blocked]
+        pending = [OPCODES[opcode], slot]
+    return {**snapshot, 'backend': argv[1], 'completed_operations': blocked,
+            'pending_operation': pending, 'last_events': completed[-3:]}
+
+
 def qualify(repo, compiler_root, resource_root, output, *, seeds=DEFAULT_SEEDS, replay=None):
+    import resource
+
     repo, compiler_root, resource_root = (path.resolve(strict=True) for path in (repo, compiler_root, resource_root))
     output = output.resolve()
     if output.exists() or not output.is_relative_to(repo / 'out'):
@@ -70,6 +103,15 @@ def qualify(repo, compiler_root, resource_root, output, *, seeds=DEFAULT_SEEDS, 
     work = output / 'work';work.mkdir()
     fixture = repo / 'tests/clang_foundation/runtime_schedules/history.cpp'
     lifetime = repo / 'native/objc3c/tests/runtime_lifetime_test.cpp'
+    actor_fixtures = repo / 'tests/clang_foundation/native_async'
+    scenario_sources = (
+        repo / 'tests/tooling/fixtures/clang_foundation/services/task_services.cpp',
+        repo / 'tests/clang_foundation/structured_runtime/actor_scheduling.cpp',
+        repo / 'tests/clang_foundation/structured_runtime/worker.cpp',
+        repo / 'tests/clang_foundation/async_handle_joins/runtime.cpp',
+        repo / 'native/objc3c/src/runtime/concurrency/service_group.cpp',
+        actor_fixtures / 'provider.cpp', actor_fixtures / 'provider.h',
+        actor_fixtures / 'actor_lifetime_control.mm', lifetime)
     model_source = Path(__file__).with_name('runtime_schedule_model.py')
     for index, history in enumerate(histories):
         write_json(work / ('history-'+str(index)+'.json'), history)
@@ -87,15 +129,25 @@ def qualify(repo, compiler_root, resource_root, output, *, seeds=DEFAULT_SEEDS, 
         'scope': 'Bounded generated public-C histories plus current public-contract scenario fixtures. Manual/gated replay is complemented by unforced worker/global-pool executions; this is not exhaustive scheduler or memory-model verification.',
         'scenario_inventory': SCENARIO_INVENTORY,
         'bounds': {'generated_operations': 96, 'generated_tasks': 8, 'next_probe_tasks': 1, 'generated_actors': 1,
-                   'worker_fixture_timeout_seconds': 90, 'native_reduction_trials': 32}}
+                   'overlap_control_threads': 1, 'history_timeout_seconds': 30,
+                   'worker_fixture_timeout_seconds': 90, 'native_reduction_trials': 32},
+        'child_rss_before_kib': resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss}
     tick = time.monotonic()
     def save():
-        report['seconds'] = round(time.monotonic()-tick, 6);write_json(output / 'qualification.json', report)
+        report['seconds'] = round(time.monotonic()-tick, 6)
+        report['peak_child_rss_kib'] = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
+        write_json(output / 'qualification.json', report)
     def run(name, argv, *, timeout=30):
-        row = products.record(policy, name, argv, report['commands'], cwd=work, timeout=timeout)
+        try:
+            row = products.record(policy, name, argv, report['commands'], cwd=work, timeout=timeout)
+        except ValueError:
+            row = report['commands'][-1]
+            if row.get('timed_out'):
+                report['watchdog'] = watchdog_snapshot(row, argv)
+            raise
         return Path(row['log']).read_text(errors='replace')
     try:
-        products = ProductCommands(output / 'product-evidence', sources=(fixture, lifetime, model_source, Path(__file__), work))
+        products = ProductCommands(output / 'product-evidence', sources=(fixture, model_source, Path(__file__), work, *scenario_sources))
         profiles = RuntimeProfiles(repo, compiler_root, resource_root, output / 'runtime-profiles')
         transition_hits, pair_hits = set(), set()
         for sanitizer in SANITIZERS:
@@ -116,13 +168,13 @@ def qualify(repo, compiler_root, resource_root, output, *, seeds=DEFAULT_SEEDS, 
                     run(suffix+'-link', [*common, '-fuse-ld=lld', obj, runtime.archive, '-Wl,--no-as-needed',
                         runtime.objc_runtime, '-Wl,--as-needed', '-Wl,-rpath,'+str(runtime.objc_runtime.parent), '-o', binary])
                     return binary
-                def build_fixture(suffix, sources, *, definitions=(), link_options=()):
+                def build_fixture(suffix, sources, *, definitions=(), compile_options=(), link_options=()):
                     objects = []
                     for source_index, source in enumerate(sources):
                         obj = work / (suffix+'-'+str(source_index)+'.o')
                         run(suffix+'-'+str(source_index)+'-compile', [*common,
                             *('-D'+value for value in definitions), '-I'+str(repo / 'native/objc3c/src'),
-                            '-c', source, '-o', obj], timeout=120)
+                            *compile_options, '-c', source, '-o', obj], timeout=120)
                         objects.append(obj)
                     binary = work / suffix
                     run(suffix+'-link', [*common, '-fuse-ld=lld', *objects, runtime.archive,
@@ -196,12 +248,23 @@ def qualify(repo, compiler_root, resource_root, output, *, seeds=DEFAULT_SEEDS, 
                         link_options=('-Wl,--wrap=_ZnwmRKSt9nothrow_t',
                                       '-Wl,--wrap=_ZnwmSt11align_val_tRKSt9nothrow_t')),
                     'runtime-lifetime': build_fixture(label+'-runtime-lifetime', [lifetime])}
+                for ownership, flag in (('arc', '-fobjc-arc'), ('mrc', '-fno-objc-arc')):
+                    owner = 'actor-lifetime-'+ownership
+                    fixtures[owner] = build_fixture(label+'-'+owner,
+                        [actor_fixtures / 'provider.cpp', actor_fixtures / 'actor_lifetime_control.mm'],
+                        definitions=('OBJC3_ACTOR_LIFETIME_INTERNAL_TESTING',),
+                        compile_options=('-x', 'objective-c++', '-fblocks', '-fobjc-version=3', flag,
+                                         '-fcoro-aligned-allocation', '-fobjc-runtime=gnustep-2.2',
+                                         '-Wno-unused-parameter'),
+                        link_options=('-Wl,--wrap=_Znwm',))
                 for fixture_name, fixture_binary in fixtures.items():
                     text = run(label+'-'+fixture_name+'-execute', [fixture_binary], timeout=90)
                     if fixture_name == 'task-services' and 'task services: all focused checks passed' not in text:
                         raise ValueError('task-service scenario fixture omitted its completion witness')
                     if fixture_name == 'runtime-lifetime' and 'runtime lifetime: all focused checks passed' not in text:
                         raise ValueError('runtime lifetime scenario fixture omitted its completion witness')
+                    if fixture_name.startswith('actor-lifetime-') and 'actor lifetime: all focused checks passed' not in text:
+                        raise ValueError('actor lifetime scenario fixture omitted its completion witness')
                     report.setdefault('scenario_cases', []).append({'name': label+'-'+fixture_name,
                         'fixture': fixture_name, 'status': 'PASS', 'sanitizer': sanitizer,
                         'client_optimization': optimization, 'service_optimization': 'O1',

@@ -10,6 +10,7 @@
 #include <iostream>
 #include <mutex>
 #include <string>
+#include <thread>
 
 #ifndef SCHEDULE_MUTANT
 #define SCHEDULE_MUTANT 0
@@ -69,10 +70,22 @@ void complete(void *context, const objc3_completion *completion) {
 void waiter(void *context, const objc3_completion *) {
   static_cast<Task *>(context)->counts[3] += SCHEDULE_MUTANT == 2 ? 2 : 1;
 }
+void record_actor_entry(Job &job) {
+  if (active.fetch_add(1) != 0) ++overlap;
+  ++job.counts[0];
+}
 void actor_job(void *context) {
-  const auto running = active.fetch_add(1);
-  if (running != 0 || SCHEDULE_MUTANT == 4) ++overlap;
-  ++static_cast<Job *>(context)->counts[0];
+  record_actor_entry(*static_cast<Job *>(context));
+  if constexpr (SCHEDULE_MUTANT == 4) {
+    // Exercise the exclusion ledger with a second live job while this job
+    // still owns the same logical actor. The incorrect dispatch is test-owned.
+    Job concurrent;
+    std::thread bad_dispatch([&] {
+      record_actor_entry(concurrent);
+      assert(active.fetch_sub(1) == 2);
+    });
+    bad_dispatch.join();
+  }
   assert(active.fetch_sub(1) == 1);
 }
 void destroy_job(void *context) {

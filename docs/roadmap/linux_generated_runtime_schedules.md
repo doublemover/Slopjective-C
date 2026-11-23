@@ -46,25 +46,34 @@ witness history.
 Receipts bind model/generator versions, exact JSON histories and native input
 protocols, compile/link/execution commands, source/header closures, tool/resource
 and runtime identities, effective sanitizer controls, diagnostics, observations
-and compressed product bytes. The product-evidence CLI can restore and execute
-retained clients. The independent model checks their observations.
+and compressed product bytes. Receipts also record the Linux child-process peak
+RSS before and after the campaign. A native watchdog failure retains the last
+completed events and the pending generated operation. The product-evidence CLI
+can restore and execute retained clients. The independent model checks their
+observations.
 
-The integrated owner runs four maintained public-contract fixtures in each of
+The integrated owner runs six maintained public-contract fixtures in each of
 the four sanitizer/client-optimization configurations. They cover concurrent
 registration/cancellation/publication,
 global-pool multi-actor exclusion, queued discard and named-binding retirement,
 nested/last-owner abandoned awaits, nonconsuming typed next-result mismatch,
 allocation/publication/copy failure injection, unforced worker stress and the
-focused lifetime cases. The lifetime fixture checks worker release cycles and
-queued drain, reentrant C++ result extraction, malformed callable frames, group
-depth rejection, and dependency wake failures at queue saturation and actor
-closure. The sixteen scenario executions have their own fixture inventory.
+focused lifetime cases. The lifetime fixture covers direct and indirect worker
+release, reentrant C++ result extraction, malformed callable frames, deep group
+failure propagation and dependency wake failures at queue saturation and actor
+closure. It bounds callback stack displacement to 32 KiB on the 512 KiB test
+thread for both two-task and 4,096-task chains. The join fixture checks an
+allocation-failed wake with a shared dependency and deep scope cleanup through
+quiescence. Separate ARC and MRC scenarios verify deterministic actor generation
+reuse, competing explicit and automatic first entries, and C++ result bridge
+ownership. The twenty-four scenario executions have their own fixture inventory.
 
 Five sanitizer-clean controls exercise missing frame destruction, duplicate
 waiter delivery, premature quiescence, overlapping actor jobs and consuming a
 type-mismatched next result. The typed-next control removes an actual group
 result after the probe reports a mismatch. The semantic model detects its absence
-in the following consumption sequence. The owner requires each control's
+in the following consumption sequence. The actor control uses a second live
+callback while the first owns the logical actor. The owner requires each control's
 expected failure class and retains a fresh replay of the reduced destruction
 history.
 

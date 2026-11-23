@@ -6,7 +6,7 @@ import pytest
 
 from scripts.objc3c_toolchain.runtime_schedule_model import (Model, OPCODES, TYPE_MISMATCH, check, coverage_domain, generate,
     protocol, signature, shrink, validate)
-from scripts.objc3c_toolchain.runtime_schedules import observations
+from scripts.objc3c_toolchain.runtime_schedules import observations, watchdog_snapshot
 
 
 @pytest.mark.parametrize('seed', range(64))
@@ -88,3 +88,17 @@ def test_shrinking_preserves_public_preconditions_owned_handles_and_explicit_qui
 @pytest.mark.parametrize('text', ['', '[]', '{}\n'*97, 'not-json'])
 def test_missing_malformed_and_excessive_native_ledgers_fail(text):
     with pytest.raises(ValueError): observations(text)
+
+
+def test_watchdog_locates_the_blocked_operation_from_the_retained_ledger(tmp_path):
+    history = generate(0)
+    complete = Model().run(history['operations'])[:4]
+    log = tmp_path / 'worker.log'
+    log.write_text('\n'.join(map(json.dumps, complete)) + '\n{"operation":')
+    fixture = tmp_path / 'operations.json'
+    fixture.write_text(protocol(history))
+    report = watchdog_snapshot({'name': 'history', 'log': str(log)}, ['fixture', 'worker', fixture])
+    assert report['status'] == 'timeout'
+    assert report['completed_operations'] == len(complete)
+    assert report['pending_operation'] == history['operations'][len(complete)]
+    assert report['last_events'] == complete[-3:]

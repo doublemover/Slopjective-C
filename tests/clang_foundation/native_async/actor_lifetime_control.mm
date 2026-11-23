@@ -1,7 +1,10 @@
 #include "objc3_runtime_services.h"
+#include "objc3_task.hpp"
 
 #include <atomic>
 #include <cassert>
+#include <cstdio>
+#include <memory>
 #include <new>
 
 extern "C" id class_createInstance(Class, __SIZE_TYPE__)
@@ -76,9 +79,71 @@ static void binding_allocation_rollback() {
   objc3_executor_release(executor);
 }
 
+using ResultBlock = int (^)(void);
+
+static objc3::task<ResultBlock> return_block(std::shared_ptr<int> state) {
+  co_return ^{ return *state; };
+}
+
+static objc3::task<BindingAllocationControl *> return_object(BindingAllocationControl *value) {
+  co_return value;
+}
+
+static void task_result_bridges() {
+  objc3_executor_t *executor = nullptr;
+  assert(objc3_executor_create(1, &executor) == OBJC3_SERVICE_OK);
+  auto pump = [&] {
+    uint32_t count = 0;
+    assert(objc3_executor_pump(executor, 1, &count) == OBJC3_SERVICE_OK && count == 1);
+  };
+  std::weak_ptr<int> weak;
+  const auto before = destroyed;
+  @autoreleasepool {
+    auto state = std::make_shared<int>(42);
+    weak = state;
+    auto block_task = return_block(std::move(state)).start(executor);
+    pump();
+    ResultBlock block = block_task.result();
+    block_task = {};
+    assert(!weak.expired() && block() == 42);
+
+    BindingAllocationControl *object = [BindingAllocationControl new];
+    auto object_task = return_object(object).start(executor);
+    pump();
+    auto *extracted = object_task.result();
+    assert(extracted == object);
+    object_task = {};
+#if !__has_feature(objc_arc)
+    objc_release(object);
+#endif
+    object = (BindingAllocationControl *)0;
+    assert(destroyed == before && !extracted->retired);
+  }
+  assert(weak.expired() && destroyed == before + 1);
+
+  auto successful_void = []() -> objc3::task<void> { co_return; };
+  auto done = successful_void().start(executor);
+  pump();
+  done.result();
+  const int identity = 73;
+  auto failing_void = [](const int *identity) -> objc3::task<void> {
+    throw identity;
+    co_return;
+  };
+  auto failed = failing_void(&identity).start(executor);
+  pump();
+  bool caught = false;
+  try { failed.result(); }
+  catch (const int *error) { caught = error == &identity; }
+  assert(caught);
+  objc3_executor_release(executor);
+}
+
 int main() {
   @autoreleasepool {
     assert(native_actor_object_association());
     binding_allocation_rollback();
+    task_result_bridges();
   }
+  std::puts("actor lifetime: all focused checks passed");
 }

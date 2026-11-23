@@ -116,7 +116,7 @@ def test_runtime_schedule_gate_requires_each_scenario_in_each_configuration(tmp_
     receipt = tmp_path / 'runtime-schedules/campaign/qualification.json'
     receipt.parent.mkdir(parents=True)
     receipt.write_text(json.dumps(report))
-    assert len(evidence.suite_results(tmp_path, 'runtime-schedules')) == 117
+    assert len(evidence.suite_results(tmp_path, 'runtime-schedules')) == len(cases) + len(scenarios) + len(SEMANTIC_CONTROLS)
     for mutation in ('scenario', 'configuration', 'inventory', 'case', 'replay', 'control', 'diagnostic', 'coverage'):
         broken = deepcopy(report)
         if mutation == 'configuration':

@@ -1186,6 +1186,52 @@ static void actor_object_lifetime_reuse(objc3_executor_t *executor) {
   objc3_actor_release(old);
 }
 
+#ifdef OBJC3_ACTOR_LIFETIME_INTERNAL_TESTING
+static void explicit_and_automatic_first_binding(objc3_executor_t *executor) {
+  const auto before = actor_association_destructions.load();
+  auto *object = [RuntimeActorAssociationValue new];
+  auto *raw = (__bridge void *)object;
+  objc3_actor_t *explicit_actor = nullptr, *automatic_actor = nullptr;
+  assert(objc3_actor_create(executor, &explicit_actor) == OBJC3_SERVICE_OK);
+  std::barrier first_entry(2);
+  objc3_service_status bind_status = OBJC3_SERVICE_FAILED;
+  std::thread binding([&] {
+    @autoreleasepool {
+      first_entry.arrive_and_wait();
+      bind_status = objc3_actor_bind_object(raw, explicit_actor);
+    }
+  });
+  first_entry.arrive_and_wait();
+  assert(objc3_actor_get_or_create_for_object(raw, executor, &automatic_actor) == OBJC3_SERVICE_OK);
+  binding.join();
+  if (bind_status == OBJC3_SERVICE_OK) {
+    assert(explicit_actor == automatic_actor);
+  } else {
+    assert(bind_status == OBJC3_SERVICE_INVALID_ARGUMENT && explicit_actor != automatic_actor);
+    assert(objc3_actor_bind_object(raw, automatic_actor) == OBJC3_SERVICE_OK);
+  }
+  objc3_executor_t *wrong = nullptr;
+  assert(objc3_executor_create(1, &wrong) == OBJC3_SERVICE_OK);
+  objc3_actor_t *found = nullptr;
+  assert(objc3_actor_get_or_create_for_object(raw, wrong, &found) == OBJC3_SERVICE_INVALID_ARGUMENT && !found);
+  objc3_executor_release(wrong);
+  assert(objc3_actor_close(automatic_actor) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_join(automatic_actor) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_close(explicit_actor) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_join(explicit_actor) == OBJC3_SERVICE_OK);
+  object->expectRetired = true;
+  assert(objc3_actor_unbind_object(raw) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_get_or_create_for_object(raw, executor, &found) == OBJC3_SERVICE_CLOSED && !found);
+#if !__has_feature(objc_arc)
+  objc_release(object);
+#endif
+  object = (RuntimeActorAssociationValue *)0;
+  assert(actor_association_destructions.load() == before + 1);
+  objc3_actor_release(automatic_actor);
+  objc3_actor_release(explicit_actor);
+}
+#endif
+
 bool native_actor_object_association() {
   const auto before = actor_association_destructions.load();
   objc3_executor_t *executor = nullptr;
@@ -1301,6 +1347,9 @@ bool native_actor_object_association() {
     objc3_actor_release(candidate);
   }
   actor_object_lifetime_reuse(executor);
+#ifdef OBJC3_ACTOR_LIFETIME_INTERNAL_TESTING
+  explicit_and_automatic_first_binding(executor);
+#endif
   objc3_executor_release(executor);
   return true;
 }
