@@ -16718,3 +16718,103 @@ index 000000000..16cd11da6
 +
 +// CHECK-LABEL: define {{.*}} @{{.*}}retain_swift_context
 +// CHECK: call swiftcc void %{{[^ ]+}}(ptr noundef swiftself
+diff --git a/clang/test/ObjC3/CodeGen/managed-record-alignment-operations.m b/clang/test/ObjC3/CodeGen/managed-record-alignment-operations.m
+new file mode 100644
+index 000000000..fa7d6e128
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/managed-record-alignment-operations.m
+@@ -0,0 +1,94 @@
++// REQUIRES: x86-registered-target, aarch64-registered-target
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -O0 -x objective-c-header -emit-pch %s -o %t.x86_64.O0.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -O0 -x objective-c -include %s -emit-llvm -o - %s | FileCheck %s --check-prefixes=O0,EH
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -O0 -x objective-c -include-pch %t.x86_64.O0.pch -emit-llvm -o - %s | FileCheck %s --check-prefixes=O0,EH
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -O2 -x objective-c-header -emit-pch %s -o %t.x86_64.O2.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -O2 -x objective-c -include %s -emit-llvm -o - %s | FileCheck %s --check-prefixes=O2,EH
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -O2 -x objective-c -include-pch %t.x86_64.O2.pch -emit-llvm -o - %s | FileCheck %s --check-prefixes=O2,EH
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -O0 -x objective-c-header -emit-pch %s -o %t.aarch64.O0.pch
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -O0 -x objective-c -include %s -emit-llvm -o - %s | FileCheck %s --check-prefixes=O0,EH
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -O0 -x objective-c -include-pch %t.aarch64.O0.pch -emit-llvm -o - %s | FileCheck %s --check-prefixes=O0,EH
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -O2 -x objective-c-header -emit-pch %s -o %t.aarch64.O2.pch
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -O2 -x objective-c -include %s -emit-llvm -o - %s | FileCheck %s --check-prefixes=O2,EH
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -O2 -x objective-c -include-pch %t.aarch64.O2.pch -emit-llvm -o - %s | FileCheck %s --check-prefixes=O2,EH
++
++#ifndef MANAGED_OPERATION_DECLARATIONS
++#define MANAGED_OPERATION_DECLARATIONS
++typedef Optional(id) Strong;
++typedef Result(id, id) StrongResult;
++struct Pair {
++  Strong option;
++  StrongResult result;
++};
++#pragma pack(push, 1)
++struct Packed {
++  char marker;
++  struct Pair first;
++  struct Pair others[2];
++};
++#pragma pack(pop)
++_Static_assert(__builtin_offsetof(struct Packed, first) == 1, "packed offset");
++void examine(const struct Packed *);
++void examine_pair(const struct Pair *);
++struct Packed make(void);
++StrongResult produce(void);
++#else
++void default_initialize(void) {
++  struct Packed value;
++  examine(&value);
++}
++void copy_initialize(const struct Packed *in) {
++  struct Packed copied = *in;
++  examine(&copied);
++}
++void move_initialize(void) {
++  struct Pair moved = make().first;
++  examine_pair(&moved);
++}
++void initialize_with_throw(id object) {
++  struct Packed value = {42, {None(id), Err(id, id, object)}, {
++    {Some(id, object), Ok(id, id, object)},
++    {Some(id, object), produce()}
++  }};
++  examine(&value);
++}
++#endif
++
++// Select the storage helper at each call site and check its actual accesses.
++// O0-LABEL: define{{.*}} void @default_initialize(
++// O0: invoke void @[[DEFAULT:__objc3_v12_storage_0_[0-9A-F]+]](ptr %value)
++// O0: call void @[[DESTROY:__objc3_v12_storage_1_[0-9A-F]+]](ptr %value)
++// O0: define internal void @[[DEFAULT]](
++// O0: @llvm.memset.p0.i64(ptr align 1 %option,
++// O0: @llvm.memset.p0.i64(ptr align 1 %result,
++// O0: define internal void @[[DESTROY]](
++// O0: load ptr, ptr %[[OLD:objc3.carrier.payload.addr[0-9]*]], align 1
++// O0-NEXT: store ptr null, ptr %[[OLD]], align 1
++// O0-LABEL: define{{.*}} void @copy_initialize(
++// O0: invoke void @[[COPY:__objc3_v12_storage_2_[0-9A-F]+]](ptr %copied,
++// O0: define internal void @[[COPY]](
++// O0: objc3.storage.array.body:
++// O0: load ptr, ptr %objc3.carrier.payload.addr{{[0-9]*}}, align 1
++// O0: store ptr {{.*}}, ptr %objc3.carrier.payload.addr{{[0-9]*}}, align 1
++// O0-LABEL: define{{.*}} void @move_initialize(
++// O0: invoke void @[[MOVE:__objc3_v12_storage_3_[0-9A-F]+]](ptr %moved, ptr %first)
++// O0: define internal void @[[MOVE]](
++// O0: [[MOVED:%.*]] = load ptr, ptr %[[SOURCE:objc3.carrier.payload.addr]], align 1
++// O0-NEXT: store ptr null, ptr %[[SOURCE]], align 1
++// O0-NEXT: store ptr [[MOVED]], ptr %objc3.carrier.payload.addr2, align 8
++
++// O2-LABEL: define{{.*}} void @default_initialize(
++// O2: @llvm.memset.p0.i64(ptr noundef nonnull align 1
++// O2: load ptr, ptr %objc3.carrier.payload.addr{{.*}}, align 1
++// O2-LABEL: define{{.*}} void @copy_initialize(
++// O2: [[COPYVALUE:%.*]] = load ptr, ptr %objc3.carrier.payload.addr{{.*}}, align 1
++// O2: store ptr [[COPYVALUE]], ptr %objc3.carrier.payload.addr{{.*}}, align 1
++// O2-LABEL: define{{.*}} void @move_initialize(
++// O2: [[MOVED:%.*]] = load ptr, ptr %[[SOURCE:objc3.carrier.payload.addr[^,]*]], align 1
++// O2-NEXT: store ptr null, ptr %[[SOURCE]], align 1
++// O2-NEXT: store ptr [[MOVED]], ptr %objc3.carrier.payload.addr{{.*}}, align 8
++
++// EH-LABEL: define{{.*}} void @initialize_with_throw(
++// EH: invoke void @produce(
++// EH: landingpad {
++// EH: load ptr, ptr %objc3.carrier.payload.addr{{.*}}, align 1

@@ -83,7 +83,7 @@
     },
     {
       "file": "0005-objc3-codegen-tests.patch",
-      "sha256": "6adb17e8a805e065bac0ebbdd051c77f6ed1cb116b0d043d8da4635c846f2ea5"
+      "sha256": "c76b176261fffbd0b7522ff95c96306d721e982e639d2c0afa1b4fa896ca0944"
     },
     {
       "file": "0006-objc3-native-carrier-expressions.patch",

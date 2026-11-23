@@ -142,6 +142,79 @@ static int packed_record_storage(void) {
   CHECK(record_destroyed(106) == 1);
   return 0;
 }
+typedef Result(id, id) RecordStrongResult;
+struct ResultPair { RecordStrong option; RecordStrongResult result; };
+#pragma pack(push, 1)
+struct PackedResults { char marker; struct ResultPair values[2]; };
+#pragma pack(pop)
+_Static_assert(__builtin_offsetof(struct PackedResults, values) == 1,
+               "the nested array starts in underaligned storage");
+
+static int strong_result_arm(RecordStrongResult value) {
+  match(value) {
+    case .Ok(let object): { return object ? 1 : -1; }
+    case .Err(let object): { return object ? 0 : -1; }
+  }
+  return -1;
+}
+
+static __attribute__((noinline)) struct PackedResults make_packed_results(void) {
+  return (struct PackedResults){42, {
+    {record_value(110), Ok(id, id, record_object(111))},
+    {None(id), Err(id, id, record_object(112))},
+  }};
+}
+
+static RecordStrongResult fail_packed_result(void) { @throw record_object(116); }
+
+static int packed_result_lifetimes(void) {
+  {
+    struct PackedResults empty;
+    CHECK(!hasValue(empty.values[0].option) && !hasValue(empty.values[1].option));
+  }
+  {
+    struct PackedResults source = {42, {
+      {record_value(107), Ok(id, id, record_object(108))},
+      {None(id), Err(id, id, record_object(109))},
+    }};
+    struct PackedResults copy = source;
+    source.values[0].option = None(id);
+    source.values[0].result = Err(id, id, (id)0);
+    source.values[1].result = Ok(id, id, (id)0);
+    CHECK(copy.marker == 42 && hasValue(copy.values[0].option));
+    CHECK(!hasValue(copy.values[1].option));
+    CHECK(strong_result_arm(copy.values[0].result) == 1);
+    CHECK(strong_result_arm(copy.values[1].result) == 0);
+    CHECK(!record_destroyed(107) && !record_destroyed(108) &&
+          !record_destroyed(109));
+  }
+  CHECK(record_destroyed(107) == 1 && record_destroyed(108) == 1 &&
+        record_destroyed(109) == 1);
+  {
+    struct ResultPair moved = make_packed_results().values[0];
+    CHECK(hasValue(moved.option) && strong_result_arm(moved.result) == 1);
+    CHECK(!record_destroyed(110) && !record_destroyed(111) &&
+          record_destroyed(112) == 1);
+  }
+  CHECK(record_destroyed(110) == 1 && record_destroyed(111) == 1 &&
+        record_destroyed(112) == 1);
+  @autoreleasepool {
+    @try {
+      struct PackedResults partial = {42, {
+        {record_value(113), Ok(id, id, record_object(114))},
+        {record_value(115), fail_packed_result()},
+      }};
+      (void)partial;
+      CHECK(0);
+    } @catch (id error) {
+      CHECK(error && record_destroyed(113) == 1 &&
+            record_destroyed(114) == 1 && record_destroyed(115) == 1);
+    }
+  }
+  CHECK(record_destroyed(116) == 1);
+  return 0;
+}
+
 #endif
 static RecordStrong fail_native(void) { @throw record_object(16); }
 static int failures(void) {
@@ -369,6 +442,7 @@ int main(void) {
 #else
   CHECK(separated_bit_fields() == 0);
   CHECK(packed_record_storage() == 0);
+  CHECK(packed_result_lifetimes() == 0);
 #endif
   return 0;
 }
