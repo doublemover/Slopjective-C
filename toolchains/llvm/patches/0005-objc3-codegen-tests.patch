@@ -16601,3 +16601,78 @@ index 000000000..ee4ed3527
 +// O2LAST-LABEL: define{{.*}} void @ordinary(
 +// O2LAST: load ptr, ptr %objc3.carrier.payload.addr.i, align 8
 +// O2LAST: store ptr {{.*}}, ptr %objc3.carrier.payload.addr15.i, align 8
+diff --git a/clang/test/ObjC3/CodeGen/managed-weak-storage-alignment.m b/clang/test/ObjC3/CodeGen/managed-weak-storage-alignment.m
+new file mode 100644
+index 000000000..471aa830a
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/managed-weak-storage-alignment.m
+@@ -0,0 +1,69 @@
++// REQUIRES: x86-registered-target, aarch64-registered-target
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -emit-llvm -o - %s | FileCheck %s --check-prefix=ALIGNED
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -DCASE=1 -emit-obj -o %t.x86_64.1.o -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -DCASE=2 -emit-obj -o %t.x86_64.2.o -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -DCASE=3 -emit-obj -o %t.x86_64.3.o -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -DCASE=4 -emit-obj -o %t.x86_64.4.o -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -DCASE=5 -emit-obj -o %t.x86_64.5.o -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -DCASE=6 -emit-obj -o %t.x86_64.6.o -verify %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -emit-llvm -o - %s | FileCheck %s --check-prefix=ALIGNED
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -DCASE=1 -emit-obj -o %t.aarch64.1.o -verify %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -DCASE=2 -emit-obj -o %t.aarch64.2.o -verify %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -DCASE=3 -emit-obj -o %t.aarch64.3.o -verify %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -DCASE=4 -emit-obj -o %t.aarch64.4.o -verify %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -DCASE=5 -emit-obj -o %t.aarch64.5.o -verify %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -DCASE=6 -emit-obj -o %t.aarch64.6.o -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -O2 -emit-pch %s -o %t.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -O2 -include-pch %t.pch -DCASE=3 -emit-obj -o %t.pch.o -verify %s
++
++#ifndef WEAK_STORAGE_DECLARATIONS
++#define WEAK_STORAGE_DECLARATIONS
++typedef Optional(id __weak) ManagedWeak;
++struct Inner { ManagedWeak object; };
++struct Plain { id __weak object; };
++#pragma pack(push, 1)
++struct Envelope { char prefix; struct Inner member; };
++struct Array { char prefix; ManagedWeak values[2]; };
++struct PlainEnvelope { char prefix; struct Plain member; };
++#pragma pack(pop)
++struct Field {
++  char prefix;
++  struct Inner member __attribute__((packed));
++};
++#else
++#if CASE
++// expected-error@* 1+ {{ObjC3 managed weak storage requires native pointer alignment}}
++#endif
++#if CASE == 1
++void read_packed(struct Inner *out, const struct Envelope *in) {
++  *out = in->member;
++}
++#elif CASE == 2
++void write_packed(struct Field *out, const struct Inner *in) {
++  out->member = *in;
++}
++#elif CASE == 3
++void copy_array(struct Array *out, const struct Array *in) {
++  *out = *in;
++}
++#elif CASE == 4
++id read_native_weak(const struct PlainEnvelope *in) {
++  return in->member.object;
++}
++#elif CASE == 5
++void write_native_weak(struct PlainEnvelope *out, id value) {
++  out->member.object = value;
++}
++#elif CASE == 6
++void initialize_packed(id value) {
++  struct Envelope packed = {0, {Some(id __weak, value)}};
++  (void)packed;
++}
++#else
++// ALIGNED-LABEL: define{{.*}} void @copy_aligned(
++// ALIGNED: call void @llvm.objc.copyWeak(
++void copy_aligned(struct Inner *out, const struct Inner *in) {
++  *out = *in;
++}
++#endif
++#endif

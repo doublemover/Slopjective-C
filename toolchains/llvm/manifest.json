@@ -79,11 +79,11 @@
     },
     {
       "file": "0005-objc3-codegen.patch",
-      "sha256": "dae2844841865844c1ad47e6af9dac437af953274473de7c4e2b0465117b09e6"
+      "sha256": "0f3a9367788e91655e941ed955a69447cf809dfedcbb6b44b8b71af6251131e7"
     },
     {
       "file": "0005-objc3-codegen-tests.patch",
-      "sha256": "23c0d721a98bd186cb402cdd14a118dddbc0557958ac3132c3e9a1a7fc910cf6"
+      "sha256": "bf54fdeba40a1e4c09916342320c824b93bda5f7729eaa3710ff8b5a7565caa8"
     },
     {
       "file": "0006-objc3-native-carrier-expressions.patch",

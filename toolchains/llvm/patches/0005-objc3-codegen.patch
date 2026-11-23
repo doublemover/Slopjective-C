@@ -3698,7 +3698,7 @@ index 6f7b7e7d6..0835d15e5 100644
    Value *V = Visit(E->getSubExpr());
    // Defend against dominance problems caused by jumps out of expression
 diff --git a/clang/lib/CodeGen/CGObjC.cpp b/clang/lib/CodeGen/CGObjC.cpp
-index c724a063b..0e16891fb 100644
+index c724a063b..d8b879729 100644
 --- a/clang/lib/CodeGen/CGObjC.cpp
 +++ b/clang/lib/CodeGen/CGObjC.cpp
 @@ -12,7 +12,15 @@
@@ -4013,7 +4013,57 @@ index c724a063b..0e16891fb 100644
    return object;
  }
  
-@@ -2380,6 +2526,18 @@ llvm::Value *CodeGenFunction::EmitARCRetainNonBlock(llvm::Value *value) {
+@@ -2264,11 +2410,30 @@ static llvm::Value *emitARCValueOperation(
+   return CGF.Builder.CreateBitCast(call, origType);
+ }
+ 
++// GNUstep's weak runtime accepts id* addresses and dereferences them with
++// native pointer alignment. A packed subobject can have weaker alignment than
++// its type, including when it reaches this point through an aggregate helper.
++static bool checkObjC3ARCWeakAlignment(CodeGenFunction &CGF, Address Addr) {
++  const auto &Runtime = CGF.getLangOpts().ObjCRuntime;
++  if (!CGF.getLangOpts().ObjC3 || !CGF.CGM.getTarget().getTriple().isOSLinux() ||
++      Runtime.getKind() != ObjCRuntime::GNUstep ||
++      Runtime.getVersion() != VersionTuple(2, 2) ||
++      Addr.getAlignment() >= CGF.getPointerAlign())
++    return true;
++
++  CGF.CGM.Error(CGF.CurCodeDecl ? CGF.CurCodeDecl->getLocation()
++                              : SourceLocation(),
++                "ObjC3 managed weak storage requires native pointer alignment");
++  return false;
++}
++
+ /// Perform an operation having the following signature:
+ ///   i8* (i8**)
+ static llvm::Value *emitARCLoadOperation(CodeGenFunction &CGF, Address addr,
+                                          llvm::Function *&fn,
+                                          llvm::Intrinsic::ID IntID) {
++  if (!checkObjC3ARCWeakAlignment(CGF, addr))
++    return getNullForVariable(addr);
+   if (!fn)
+     fn = getARCIntrinsic(IntID, CGF.CGM);
+ 
+@@ -2282,6 +2447,8 @@ static llvm::Value *emitARCStoreOperation(CodeGenFunction &CGF, Address addr,
+                                           llvm::Function *&fn,
+                                           llvm::Intrinsic::ID IntID,
+                                           bool ignored) {
++  if (!checkObjC3ARCWeakAlignment(CGF, addr))
++    return ignored ? nullptr : getNullForVariable(addr);
+   assert(addr.getElementType() == value->getType());
+ 
+   if (!fn)
+@@ -2304,6 +2471,9 @@ static llvm::Value *emitARCStoreOperation(CodeGenFunction &CGF, Address addr,
+ static void emitARCCopyOperation(CodeGenFunction &CGF, Address dst, Address src,
+                                  llvm::Function *&fn,
+                                  llvm::Intrinsic::ID IntID) {
++  if (!checkObjC3ARCWeakAlignment(CGF, dst) ||
++      !checkObjC3ARCWeakAlignment(CGF, src))
++    return;
+   assert(dst.getType() == src.getType());
+ 
+   if (!fn)
+@@ -2380,6 +2550,18 @@ llvm::Value *CodeGenFunction::EmitARCRetainNonBlock(llvm::Value *value) {
  /// if it can prove that the block never escapes except down the stack.
  llvm::Value *CodeGenFunction::EmitARCRetainBlock(llvm::Value *value,
                                                   bool mandatory) {
@@ -4032,7 +4082,7 @@ index c724a063b..0e16891fb 100644
    llvm::Value *result
      = emitARCValueOperation(*this, value, nullptr,
                              CGM.getObjCEntrypoints().objc_retainBlock,
-@@ -2558,6 +2716,17 @@ llvm::Value *CodeGenFunction::EmitARCStoreStrongCall(Address addr,
+@@ -2558,6 +2740,17 @@ llvm::Value *CodeGenFunction::EmitARCStoreStrongCall(Address addr,
                                                       bool ignored) {
    assert(addr.getElementType() == value->getType());
  
@@ -4050,7 +4100,25 @@ index c724a063b..0e16891fb 100644
    llvm::Function *&fn = CGM.getObjCEntrypoints().objc_storeStrong;
    if (!fn)
      fn = getARCIntrinsic(llvm::Intrinsic::objc_storeStrong, CGM);
-@@ -3211,7 +3380,7 @@ ARCExprEmitter<Impl,Result>::visitPseudoObjectExpr(const PseudoObjectExpr *E) {
+@@ -2693,6 +2886,8 @@ llvm::Value *CodeGenFunction::EmitARCStoreWeak(Address addr,
+ /// Essentially equivalent to:
+ ///   *addr = nil; objc_storeWeak(addr, value);
+ void CodeGenFunction::EmitARCInitWeak(Address addr, llvm::Value *value) {
++  if (!checkObjC3ARCWeakAlignment(*this, addr))
++    return;
+   // If we're initializing to null, just write null to memory; no need
+   // to get the runtime involved.  But don't do this if optimization
+   // is enabled, because accounting for this would make the optimizer
+@@ -2711,6 +2906,8 @@ void CodeGenFunction::EmitARCInitWeak(Address addr, llvm::Value *value) {
+ /// void \@objc_destroyWeak(i8** %addr)
+ /// Essentially objc_storeWeak(addr, nil).
+ void CodeGenFunction::EmitARCDestroyWeak(Address addr) {
++  if (!checkObjC3ARCWeakAlignment(*this, addr))
++    return;
+   llvm::Function *&fn = CGM.getObjCEntrypoints().objc_destroyWeak;
+   if (!fn)
+     fn = getARCIntrinsic(llvm::Intrinsic::objc_destroyWeak, CGM);
+@@ -3211,7 +3408,7 @@ ARCExprEmitter<Impl,Result>::visitPseudoObjectExpr(const PseudoObjectExpr *E) {
    // Find the result expression.
    const Expr *resultExpr = E->getResultExpr();
    assert(resultExpr);
@@ -4059,7 +4127,7 @@ index c724a063b..0e16891fb 100644
  
    for (PseudoObjectExpr::const_semantics_iterator
           i = E->semantics_begin(), e = E->semantics_end(); i != e; ++i) {
-@@ -3229,7 +3398,7 @@ ARCExprEmitter<Impl,Result>::visitPseudoObjectExpr(const PseudoObjectExpr *E) {
+@@ -3229,7 +3426,7 @@ ARCExprEmitter<Impl,Result>::visitPseudoObjectExpr(const PseudoObjectExpr *E) {
          assert(!OVMA::shouldBindAsLValue(ov));
          result = asImpl().visit(ov->getSourceExpr());
          opaqueData = OVMA::bind(CGF, ov,
@@ -4068,7 +4136,7 @@ index c724a063b..0e16891fb 100644
  
        // Otherwise, just bind it.
        } else {
-@@ -3252,7 +3421,8 @@ ARCExprEmitter<Impl,Result>::visitPseudoObjectExpr(const PseudoObjectExpr *E) {
+@@ -3252,7 +3449,8 @@ ARCExprEmitter<Impl,Result>::visitPseudoObjectExpr(const PseudoObjectExpr *E) {
    for (CodeGenFunction::OpaqueValueMappingData &opaque : opaques)
      opaque.unbind(CGF);
  
@@ -4078,7 +4146,7 @@ index c724a063b..0e16891fb 100644
  }
  
  template <typename Impl, typename Result>
-@@ -3525,6 +3695,7 @@ static llvm::Value *emitARCRetainLoadOfScalar(CodeGenFunction &CGF,
+@@ -3525,6 +3723,7 @@ static llvm::Value *emitARCRetainLoadOfScalar(CodeGenFunction &CGF,
  llvm::Value *CodeGenFunction::EmitARCRetainScalarExpr(const Expr *e) {
    // The retain needs to happen within the full-expression.
    if (const ExprWithCleanups *cleanups = dyn_cast<ExprWithCleanups>(e)) {
@@ -4086,7 +4154,7 @@ index c724a063b..0e16891fb 100644
      RunCleanupsScope scope(*this);
      return EmitARCRetainScalarExpr(cleanups->getSubExpr());
    }
-@@ -3540,6 +3711,7 @@ llvm::Value *
+@@ -3540,6 +3739,7 @@ llvm::Value *
  CodeGenFunction::EmitARCRetainAutoreleaseScalarExpr(const Expr *e) {
    // The retain needs to happen within the full-expression.
    if (const ExprWithCleanups *cleanups = dyn_cast<ExprWithCleanups>(e)) {
@@ -4094,7 +4162,7 @@ index c724a063b..0e16891fb 100644
      RunCleanupsScope scope(*this);
      return EmitARCRetainAutoreleaseScalarExpr(cleanups->getSubExpr());
    }
-@@ -3650,6 +3822,7 @@ static llvm::Value *emitARCUnsafeUnretainedScalarExpr(CodeGenFunction &CGF,
+@@ -3650,6 +3850,7 @@ static llvm::Value *emitARCUnsafeUnretainedScalarExpr(CodeGenFunction &CGF,
  llvm::Value *CodeGenFunction::EmitARCUnsafeUnretainedScalarExpr(const Expr *e) {
    // Look through full-expressions.
    if (const ExprWithCleanups *cleanups = dyn_cast<ExprWithCleanups>(e)) {
@@ -4102,7 +4170,7 @@ index c724a063b..0e16891fb 100644
      RunCleanupsScope scope(*this);
      return emitARCUnsafeUnretainedScalarExpr(*this, cleanups->getSubExpr());
    }
-@@ -3693,6 +3866,17 @@ CodeGenFunction::EmitARCStoreStrong(const BinaryOperator *e,
+@@ -3693,6 +3894,17 @@ CodeGenFunction::EmitARCStoreStrong(const BinaryOperator *e,
      hasImmediateRetain = true;
    }
  
@@ -4120,7 +4188,7 @@ index c724a063b..0e16891fb 100644
    LValue lvalue = EmitLValue(e->getLHS());
  
    // If the RHS was emitted retained, expand this.
-@@ -3704,6 +3888,10 @@ CodeGenFunction::EmitARCStoreStrong(const BinaryOperator *e,
+@@ -3704,6 +3916,10 @@ CodeGenFunction::EmitARCStoreStrong(const BinaryOperator *e,
      value = EmitARCStoreStrong(lvalue, value, ignored);
    }
  
@@ -4131,7 +4199,7 @@ index c724a063b..0e16891fb 100644
    return std::pair<LValue,llvm::Value*>(lvalue, value);
  }
  
-@@ -3719,6 +3907,10 @@ CodeGenFunction::EmitARCStoreAutoreleasing(const BinaryOperator *e) {
+@@ -3719,6 +3935,10 @@ CodeGenFunction::EmitARCStoreAutoreleasing(const BinaryOperator *e) {
  
  void CodeGenFunction::EmitObjCAutoreleasePoolStmt(
                                            const ObjCAutoreleasePoolStmt &ARPS) {
@@ -4142,7 +4210,7 @@ index c724a063b..0e16891fb 100644
    const Stmt *subStmt = ARPS.getSubStmt();
    const CompoundStmt &S = cast<CompoundStmt>(*subStmt);
  
-@@ -3736,8 +3928,7 @@ void CodeGenFunction::EmitObjCAutoreleasePoolStmt(
+@@ -3736,8 +3956,7 @@ void CodeGenFunction::EmitObjCAutoreleasePoolStmt(
      EHStack.pushCleanup<CallObjCMRRAutoreleasePoolObject>(NormalCleanup, token);
    }
  
@@ -4152,7 +4220,7 @@ index c724a063b..0e16891fb 100644
  
    if (DI)
      DI->EmitLexicalBlockEnd(Builder, S.getRBracLoc());
-@@ -3771,6 +3962,9 @@ CodeGenFunction::GenerateObjCAtomicSetterCopyHelperFunction(
+@@ -3771,6 +3990,9 @@ CodeGenFunction::GenerateObjCAtomicSetterCopyHelperFunction(
    QualType Ty = PID->getPropertyIvarDecl()->getType();
    ASTContext &C = getContext();
  
@@ -4162,7 +4230,7 @@ index c724a063b..0e16891fb 100644
    if (Ty.isNonTrivialToPrimitiveCopy() == QualType::PCK_Struct) {
      // Call the move assignment operator instead of calling the copy assignment
      // operator and destructor.
-@@ -3871,6 +4065,9 @@ llvm::Constant *CodeGenFunction::GenerateObjCAtomicGetterCopyHelperFunction(
+@@ -3871,6 +4093,9 @@ llvm::Constant *CodeGenFunction::GenerateObjCAtomicGetterCopyHelperFunction(
    QualType Ty = PD->getType();
    ASTContext &C = getContext();
  
