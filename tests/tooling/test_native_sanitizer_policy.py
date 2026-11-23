@@ -45,7 +45,11 @@ def test_detection_requires_its_class_site_and_exact_failure_exit(detector):
     for bad_code, bad_diagnostic in [(0, diagnostic), (-11, diagnostic), (124, diagnostic),
             (127, 'loader error'), (1, 'Assertion failed'), (code, 'unrelated finding'),
             (code, diagnostic.replace(site, 'other_function')),
-            (code, diagnostic.replace(str(source), '/other/source.cpp'))]:
+            (code, diagnostic.replace(str(source), '/other/source.cpp')),
+            (code, f'{marker}\n{site} at /other/source.cpp:1\nhelper at {source}:7:3\n'),
+            (code, f'{marker}\n{site}\n{source}:7:3\n'),
+            (code, f'{marker}\n{site} at {source}\n'),
+            (code, f'{marker}\n{site} at /different{source}:7:3\n')]:
         with pytest.raises(ValueError):
             policy.validate_detection(detector, source, bad_code, bad_diagnostic, bad=True)
     with pytest.raises(ValueError):

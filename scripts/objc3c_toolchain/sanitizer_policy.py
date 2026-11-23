@@ -15,6 +15,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import time
 
@@ -63,8 +64,8 @@ def validate_detection(detector: str, source: Path, code: int, diagnostic: str, 
             raise ValueError(f'{detector}: corrected detector control was not clean')
         return
     marker, site, expected, _ = DETECTORS[detector]
-    if (code != expected or marker not in diagnostic or site not in diagnostic or
-            str(source) not in diagnostic):
+    frame = re.compile(rf'\b{re.escape(site)}\b[^\n]*[ \t(]{re.escape(str(source))}:[1-9]\d*(?::\d+)?\b')
+    if code != expected or marker not in diagnostic or not frame.search(diagnostic):
         raise ValueError(f'{detector}: expected its symbolized source site and exit {expected}, got {code}')
     if any(text in diagnostic for text in ('unrecognized flag', 'failed to parse suppressions',
                                           'failed to open suppressions', 'Invalid path to external symbolizer')):
