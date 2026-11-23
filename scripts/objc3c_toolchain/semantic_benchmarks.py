@@ -27,6 +27,7 @@ from .sanitizer_policy import require_clean_diagnostic
 
 SCALES = (32, 256, 2048)
 ROUNDS, SEED = 16, 17
+MINIMUM_DELAY_CONTROL_SECONDS = ROUNDS * 0.001 / 2
 
 
 def _link_or_copy(source, destination):
@@ -413,37 +414,33 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
                         if not artifact.is_file() or not artifact.stat().st_size:
                             raise ValueError('frontend benchmark omitted its object')
                         row['object_sha256'] = digest(artifact)
-        # A bounded same-input delay must preserve semantics and produce a
-        # measurable minimum effect. This calibrates a control, not product limits.
-        state, delayed = states[-1], []
-        for repetition in range(repetitions):
-            row = run('delay-control-'+str(repetition), [*state['rows']['runtime-32'][:-1], '1'], state)
-            delayed.append(runtime_result(Path(row['log']).read_text(), 32)['nanoseconds']/1e9)
-        ordinary = [row['work_seconds'] for row in report['samples'] if row.get('workload') == 'runtime-32'
-                    and row['sdk_index'] == state['index'] and not row.get('warmup')]
-        effect = statistics.median(delayed)-statistics.median(ordinary)
-        if effect < ROUNDS*0.001/2:
-            raise ValueError('bounded-delay regression control was not detected')
-        report['delay_control'] = {'status': 'PASS', 'samples_seconds': delayed, 'median_effect_seconds': effect,
-            'semantic_output_unchanged': True, 'minimum_control_effect_seconds': ROUNDS*0.001/2}
+        # Keep each delay next to its same-input control and alternate which
+        # runs first. Independent product measurements can drift under load.
+        state = states[-1]
+
+        def delay_control(workload, label, ordinary, delayed):
+            controls, treatments = [], []
+            for repetition in range(repetitions):
+                following = (('ordinary', ordinary, controls), ('delayed', delayed, treatments))
+                for variant, command, samples in following[::1 if repetition % 2 == 0 else -1]:
+                    row = run(f'{label}-{repetition}-{variant}', command, state)
+                    samples.append(semantic_result(Path(row['log']).read_text(), workload)['nanoseconds']/1e9)
+            effect = statistics.median(treatment - control for control, treatment in zip(controls, treatments))
+            if effect < MINIMUM_DELAY_CONTROL_SECONDS:
+                raise ValueError(f'bounded-delay regression control was not detected: {workload}')
+            return {'status': 'PASS', 'samples_seconds': treatments, 'control_samples_seconds': controls,
+                    'median_effect_seconds': effect, 'semantic_output_unchanged': True,
+                    'minimum_control_effect_seconds': MINIMUM_DELAY_CONTROL_SECONDS}
+
+        ordinary = state['rows']['runtime-32']
+        report['delay_control'] = delay_control('runtime-32', 'delay-control', ordinary, [*ordinary[:-1], '1'])
         if extended_runtime:
             report['runtime_delay_controls'] = []
             for family in FAMILIES:
                 workload = 'runtime-'+family+'-32'
-                delayed = []
-                for repetition in range(repetitions):
-                    row = run(f'delay-control-{family}-{repetition}',
-                              [*state['rows'][workload], '1'], state)
-                    delayed.append(semantic_result(Path(row['log']).read_text(), workload)['nanoseconds']/1e9)
-                ordinary = [row['work_seconds'] for row in report['samples']
-                    if row.get('workload') == workload and row['sdk_index'] == state['index'] and
-                    row.get('warmup') is False]
-                effect = statistics.median(delayed)-statistics.median(ordinary)
-                if effect < ROUNDS*0.001/2:
-                    raise ValueError('extended runtime delay control was not detected: '+family)
-                report['runtime_delay_controls'].append({'family': family, 'status': 'PASS',
-                    'samples_seconds': delayed, 'median_effect_seconds': effect,
-                    'semantic_output_unchanged': True, 'minimum_control_effect_seconds': ROUNDS*0.001/2})
+                ordinary = state['rows'][workload]
+                control = delay_control(workload, 'delay-control-'+family, ordinary, [*ordinary, '1'])
+                report['runtime_delay_controls'].append({'family': family, **control})
             report['task_frame_controls'] = []
             for fault, (before, after) in TASK_FRAME_MUTATIONS.items():
                 text = (repo / 'tests/benchmarks/task_frame_workloads.cpp').read_text()

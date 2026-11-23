@@ -134,6 +134,14 @@ python3 -B -m scripts.objc3c_toolchain.semantic_benchmark_calibration \
   --output out/semantic-workload-calibration
 ```
 
+The [Calibrate Linux preview workloads](../../.github/workflows/linux-preview-calibration.yml)
+workflow installs the published SDK on a native x86-64 or AArch64 runner,
+takes two complete observations on the same host, and retains the raw and pooled
+receipts. Each deliberate delay is measured alongside a same-input control, in
+alternating order. The delay is ten milliseconds per workload round. Ordinary
+workload samples retain separate timing and memory observations. Calibration
+remains advisory until an explicit performance budget is reviewed.
+
 Calibration rejects duplicate receipts and different host, SDK, workload,
 instrumentation or repetition contexts. It recomputes every summary from raw
 samples, rechecks runtime semantic work, then retains pooled and per-receipt

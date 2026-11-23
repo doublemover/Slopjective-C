@@ -1,0 +1,60 @@
+name: Calibrate Linux preview workloads
+on:
+  workflow_dispatch:
+    inputs:
+      linux_host:
+        description: Native architecture of the published preview
+        type: choice
+        options: [linux-x86_64, linux-aarch64]
+        default: linux-x86_64
+permissions:
+  contents: read
+concurrency:
+  group: preview-calibration-${{ inputs.linux_host }}-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  calibration:
+    runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
+    container: debian:13
+    timeout-minutes: 35
+    steps:
+      - name: Install distribution prerequisites
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git ca-certificates curl python3 zstd g++ libc6-dev libzstd-dev zlib1g-dev libssl-dev
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install exact published preview
+        env:
+          EXPECTED_HOST: ${{ inputs.linux_host }}
+        run: |
+          mkdir -p out/calibration
+          python3 -B scripts/objc3c_toolchain/linux_host.py --expect-host "$EXPECTED_HOST" --field host
+          python3 -B -m scripts.objc3c_assurance.preview_download \
+            --manifest docs/releases/preview-manifest.json --directory "$RUNNER_TEMP/objc3-calibration" \
+            > out/calibration/install.json
+      - name: Measure two complete observations on one admitted host
+        id: measure
+        shell: bash
+        run: |
+          sdk="$RUNNER_TEMP/objc3-calibration/sdk/current"
+          for repeat in 1 2; do
+            python3 -B -m scripts.objc3c_toolchain.semantic_benchmarks --sdk "$sdk" \
+              --extended-runtime --repetitions 3 --output "out/calibration/observation-$repeat"
+          done
+          python3 -B -m scripts.objc3c_toolchain.semantic_benchmark_calibration \
+            --receipt out/calibration/observation-1/qualification.json --label "${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-1" \
+            --receipt out/calibration/observation-2/qualification.json --label "${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-2" \
+            --output out/calibration/pooled
+      - name: Preserve observations and measured costs
+        if: always() && steps.measure.outcome != 'skipped'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: preview-calibration-${{ inputs.linux_host }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            out/calibration/install.json
+            out/calibration/**/qualification.json
+            out/calibration/**/calibration.json
+          if-no-files-found: error
+          retention-days: 30

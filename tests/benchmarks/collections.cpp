@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
     ++operations;
     // Test-only paired measurement control; semantic work and checksum stay
     // identical. It is never enabled for a product performance sample.
-    if (delay) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    if (delay) std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
   const auto nanos = std::chrono::duration_cast<std::chrono::nanoseconds>(
       std::chrono::steady_clock::now() - started).count();

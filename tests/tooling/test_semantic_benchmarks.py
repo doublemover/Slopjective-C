@@ -240,6 +240,11 @@ def test_complete_receipt_keeps_workload_annotations_and_rechecks_sdk(
         assert all(row['wall']['samples'] == 3 for row in report['summaries'])
         assert len([row for row in report['samples'] if row.get('semantic_result')]) == (132 if extended_runtime else 12)
         assert report['delay_control']['status'] == 'PASS'
+        assert report['delay_control']['control_samples_seconds'] == [0.000001] * report['repetitions']
+        control_commands = [row['name'] for row in report['samples']
+                            if row['name'].startswith(('delay-control-0-', 'delay-control-1-'))]
+        assert control_commands == ['delay-control-0-ordinary', 'delay-control-0-delayed',
+                                    'delay-control-1-delayed', 'delay-control-1-ordinary']
         from scripts.objc3c_assurance.evidence import suite_results
         import copy
         import shutil
