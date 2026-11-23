@@ -8,6 +8,7 @@ from __future__ import annotations
 from .linux_host import HOSTS, native_linux_host, native_loader, native_target
 
 
+from collections import Counter
 import hashlib
 import json
 from pathlib import Path
@@ -86,13 +87,16 @@ def foundation(repo: Path) -> tuple[dict, dict]:
             document.get('foundation_tools') != ['clang', 'clang++', 'llc', 'llvm-dwarfdump', 'ld.lld'] or
             document.get('pipelines') != ['default<O0>', 'default<O2>']):
         raise ValueError('unreviewed LLVM development tool inventory')
-    plan = build_plans(repo, host=native_linux_host(),
-                       instrumentation_profile=document['foundation_profile'])['configure']
+    plans = build_plans(repo, host=native_linux_host(),
+                        instrumentation_profile=document['foundation_profile'])
+    plan = plans['configure']
     build, stage = (Path(plan['paths'][key]).resolve(strict=True) for key in ('build', 'stage'))
     completed = json.loads((build / 'foundation-build-report.json').read_text())
+    expected = {name: 1 + len(plans[name].get('follow_up_commands', []))
+                for name in ('configure', 'build', 'test', 'stage')}
     if (completed.get('status') != 'passed' or completed.get('source_identity') != plan['source_build_id'] or
-            {row['phase'] for row in completed['phases']} != {'configure', 'build', 'test', 'stage'} or
-            any(row['exit_code'] for row in completed['phases'])):
+            Counter(row.get('phase') for row in completed.get('phases', [])) != expected or
+            any(row.get('exit_code') != 0 for row in completed['phases'])):
         raise ValueError('development tools require the complete matching foundation')
     verify_effective_configuration(plan)
     return plan, document

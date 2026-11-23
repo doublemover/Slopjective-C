@@ -16,7 +16,7 @@ from .llvm_debugger import qualify as qualify_debugger
 from .llvm_ir import qualify as qualify_ir
 from .llvm_ir_execution import Execution
 from .llvm_optimized_debug import qualify as qualify_debug
-from .llvm_tools import foundation as admit_foundation, identity, selected
+from .llvm_tools import foundation as admit_foundation, identity, qualify as qualify_tools, selected
 from .sanitizer_policy import strict_environment
 
 
@@ -44,10 +44,13 @@ def verify_results(ir: dict, debugger: dict, optimized: dict) -> list[dict]:
     return [{'name': row['name'], 'status': 'PASS'} for row in ir['cases']] + optimized['cases']
 
 
-def qualify(repo: Path, output: Path, *, fetch=False, prepared=False, jobs=3) -> dict:
+def qualify(repo: Path, output: Path, *, fetch=False, prepared=False, jobs=3,
+            tools_receipt: Path | None = None, verify_compiler_graph=False) -> dict:
     repo, output = repo.resolve(strict=True), output.resolve()
     if output.exists() or not output.is_relative_to(repo / 'out') or jobs < 1:
         raise ValueError('LLVM campaign requires fresh repository out evidence and positive jobs')
+    if tools_receipt is not None and not prepared:
+        raise ValueError('LLVM tool receipt reuse requires the matching prepared foundation')
     output.mkdir(parents=True)
     revision = subprocess.check_output(['git', '-C', str(repo), 'rev-parse', 'HEAD'], text=True).strip()
     report = {'schema': 'objc3c.llvm-assurance-campaign.v1', 'status': 'running',
@@ -78,15 +81,22 @@ def qualify(repo: Path, output: Path, *, fetch=False, prepared=False, jobs=3) ->
         run = executor.run
         stage, build = (Path(foundation['paths'][key]) for key in ('stage', 'build'))
         report['foundation'] = json.loads((build / 'foundation-build-report.json').read_text())
+        report['foundation_reused'] = prepared
         report['source_build_id'] = foundation['source_build_id']
         root = repo / 'out/toolchains' / ('objc3-assurance-campaign-'+identity({
             'source': foundation['source_build_id'], 'config': foundation['build_config_digest'],
             'host': host})[:16])
         report['build_root'] = str(root)
         runtime, facade = root / 'runtime', root / 'facade'
-        run('development-tools', [host['cmake_path'], '--build', build, '--target',
-            'opt', 'llvm-dis', 'llvm-reduce', 'llvm-tblgen', 'LLVMTableGen',
-            'LLVMDebuginfod', 'LLVMHTTP', 'SupportTests', '--parallel', str(jobs)])
+        tools_to_build = ['opt', 'llvm-dis', 'llvm-reduce']
+        if tools_receipt is not None:
+            tools_receipt = tools_receipt.resolve(strict=True)
+            receipt_hash = digest(tools_receipt)
+            admitted_tools, _, _ = qualify_tools(repo, run=run, receipt=tools_receipt)
+            report['reused_development_tools'] = {'sha256': receipt_hash, 'identity': admitted_tools['identity']}
+            tools_to_build.clear()
+        run('development-tools', [host['cmake_path'], '--build', build, '--target', *tools_to_build,
+            'llvm-tblgen', 'LLVMTableGen', 'LLVMDebuginfod', 'LLVMHTTP', 'SupportTests', '--parallel', str(jobs)])
         # A clean host has no opt/dis/reduce until the preceding build. Admit
         # the complete tool bundle only now; prepared hosts follow this too.
         selected(repo)
@@ -113,12 +123,23 @@ def qualify(repo: Path, output: Path, *, fetch=False, prepared=False, jobs=3) ->
         run('facade-build', [host['cmake_path'], '--build', facade, '--target', 'objc3c', '--parallel', str(jobs)])
         ir = qualify_ir(repo, output / 'ir', runtime=runtime / 'libobjc3_runtime_services.a',
             objc_runtime=Path(dependency['stage']) / 'lib/libobjc.so',
-            facade=facade / 'src/clang_foundation/objc3c')
+            facade=facade / 'src/clang_foundation/objc3c', tools_receipt=tools_receipt)
         debugger = qualify_debugger(repo, output / 'debugger', jobs=jobs,
                                     tools_receipt=output / 'ir/tools.json')
         optimized = qualify_debug(repo, output / 'optimized-debug',
             debugger_receipt=output / 'debugger/qualification.json', ir_receipt=output / 'ir/qualification.json')
         report['executions'] = verify_results(ir, debugger, optimized)
+        if tools_receipt is not None and digest(tools_receipt) != receipt_hash:
+            raise ValueError('LLVM development tools receipt changed during the campaign')
+        if verify_compiler_graph:
+            from .compiler_instrumentation import qualify as qualify_compiler_instrumentation
+            output_graph = output / 'instrumentation'
+            graph = qualify_compiler_instrumentation(repo, output_graph, jobs=jobs)
+            if (graph.get('status') != 'PASS' or graph.get('source_build_id') != foundation['source_build_id'] or
+                    graph.get('build_config_digest') != foundation['build_config_digest']):
+                raise ValueError('compiler instrumentation differs from the LLVM campaign foundation')
+            report['compiler_instrumentation'] = {'status': graph['status'],
+                'sha256': digest(output_graph / 'qualification.json')}
         if digest(Path(__file__)) != report['owner_sha256']:
             raise ValueError('LLVM campaign owner changed during execution')
         if subprocess.check_output(['git', '-C', str(repo), 'rev-parse', 'HEAD'], text=True).strip() != revision:
@@ -139,8 +160,11 @@ def main(argv=None):
     parser.add_argument('--jobs', type=int, default=3)
     parser.add_argument('--fetch', action='store_true')
     parser.add_argument('--prepared', action='store_true', help='admit an already built/tested/staged matching foundation')
+    parser.add_argument('--tools-receipt', type=Path, help='reuse matching opt, llvm-dis and llvm-reduce objects')
+    parser.add_argument('--verify-compiler-graph', action='store_true',
+                        help='qualify compiler instrumentation using the same foundation build')
     args = parser.parse_args(argv)
-    report = qualify(args.repo, args.output, fetch=args.fetch, prepared=args.prepared, jobs=args.jobs)
+    report = qualify(**vars(args))
     print(json.dumps({'status': report['status'], 'executions': len(report['executions'])}))
 
 

@@ -760,6 +760,7 @@ export function validateOptionalLLVM(text) {
   const workflow = yaml.load(text);
   const cacheMode = workflow.on?.workflow_dispatch?.inputs?.dependency_cache;
   const assuranceMode = workflow.on?.workflow_dispatch?.inputs?.assurance_mode;
+  const graphMode = workflow.on?.workflow_dispatch?.inputs?.verify_compiler_graph;
   const nativeCompiler = "inputs.dependency_cache != 'any' && inputs.dependency_cache != 'warm'";
   const job = workflow.jobs?.["llvm-assurance"];
   const installed = workflow.jobs?.["installed-preview"];
@@ -767,6 +768,8 @@ export function validateOptionalLLVM(text) {
     cacheMode?.default !== "compiler" ||
     JSON.stringify(cacheMode.options) !== JSON.stringify(["compiler", "any", "warm"]) ||
     assuranceMode?.default !== "development" ||
+    graphMode?.type !== "boolean" ||
+    graphMode?.default !== false ||
     JSON.stringify(assuranceMode.options) !==
       JSON.stringify([
         "development",

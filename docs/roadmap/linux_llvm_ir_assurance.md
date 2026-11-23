@@ -233,3 +233,8 @@ matched SDK and the language/runtime fixtures. The published SDK supports the
 installed preview witness through its packaged tools. The published analyzer
 producer inventory contains neither those development executables nor their
 Ninja target closure. Current-head full optimizer qualification remains open.
+
+Use campaign-level `--prepared --tools-receipt` to admit the retained development
+executables and their exact Ninja object and archive bytes before the support
+build. The hosted development mode can also run compiler instrumentation using
+the same producer when `verify_compiler_graph` is selected.

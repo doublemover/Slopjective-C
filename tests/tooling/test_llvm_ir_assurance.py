@@ -227,10 +227,11 @@ def test_clean_foundation_admission_does_not_require_unbuilt_development_tools(t
     build.mkdir()
     stage.mkdir()
     plan = {'paths': {'build': str(build), 'stage': str(stage)}, 'source_build_id': 'current'}
+    plans = {'configure': plan, 'build': {}, 'test': {'follow_up_commands': [['native-unit']]}, 'stage': {}}
     report = {'status': 'passed', 'source_identity': 'current',
-              'phases': [{'phase': phase, 'exit_code': 0} for phase in ('configure', 'build', 'test', 'stage')]}
+              'phases': [{'phase': phase, 'exit_code': 0} for phase in ('configure', 'build', 'test', 'stage', 'test')]}
     (build / 'foundation-build-report.json').write_text(json.dumps(report))
-    monkeypatch.setattr(llvm_tools, 'build_plans', lambda *args, **kwargs: {'configure': plan})
+    monkeypatch.setattr(llvm_tools, 'build_plans', lambda *args, **kwargs: plans)
     monkeypatch.setattr(llvm_tools, 'verify_effective_configuration', lambda value: {})
     assert llvm_tools.foundation(tmp_path)[0] == plan
     with pytest.raises(FileNotFoundError):
@@ -239,6 +240,49 @@ def test_clean_foundation_admission_does_not_require_unbuilt_development_tools(t
     (build / 'foundation-build-report.json').write_text(json.dumps(report))
     with pytest.raises(ValueError, match='complete matching foundation'):
         llvm_tools.foundation(tmp_path)
+
+
+def test_campaign_uses_exact_prepared_receipt_before_building_only_support_targets(tmp_path, monkeypatch):
+    from scripts.objc3c_toolchain import llvm_campaign as campaign
+
+    output = tmp_path / 'out/evidence'
+    receipt = tmp_path / 'tools.json'
+    receipt.write_text('{}')
+    with pytest.raises(ValueError, match='matching prepared foundation'):
+        campaign.qualify(tmp_path, output, tools_receipt=receipt)
+    assert not output.exists()
+
+    build = tmp_path / 'build'
+    build.mkdir()
+    (build / 'foundation-build-report.json').write_text('{}')
+    plan = {'source_build_id': 'exact-source', 'build_config_digest': 'exact-config',
+            'paths': {'stage': str(tmp_path / 'stage'), 'build': str(build)},
+            'host_environment': {'cmake_path': '/owned/cmake', 'ninja_path': '/owned/ninja',
+                                 'bootstrap_root': '/owned/bootstrap'}}
+    monkeypatch.setattr(campaign.subprocess, 'check_output', lambda *args, **kwargs: 'a'*40)
+    monkeypatch.setattr(campaign, 'admit_foundation', lambda *_: (plan, {}))
+    monkeypatch.setattr(campaign, 'build_foundation', lambda *args, **kwargs: pytest.fail('reused foundation rebuilt'))
+    calls = []
+
+    def admit(repo, *, run, receipt):
+        calls.append(receipt)
+        return {'identity': 'verified-graph'}, {}, {}
+
+    class ReachedSupportBuild(RuntimeError):
+        pass
+
+    def build_support(self, name, command, **kwargs):
+        assert calls == [receipt]
+        assert name == 'development-tools' and 'SupportTests' in command
+        assert not {'opt', 'llvm-dis', 'llvm-reduce'} & set(command)
+        raise ReachedSupportBuild
+
+    monkeypatch.setattr(campaign, 'qualify_tools', admit)
+    monkeypatch.setattr(campaign.Execution, 'run', build_support)
+    with pytest.raises(ReachedSupportBuild):
+        campaign.qualify(tmp_path, output, prepared=True, tools_receipt=receipt)
+    prepared = json.loads((output / 'qualification.json').read_text())
+    assert prepared['reused_development_tools']['identity'] == 'verified-graph'
 
 
 def spec():
