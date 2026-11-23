@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from scripts.objc3c_toolchain import compiler_instrumentation as compiler
+from scripts.objc3c_toolchain import test_runtime
 
 
 class Admitted(RuntimeError):
@@ -24,8 +25,14 @@ def fixture(tmp_path, monkeypatch):
     bootstrap = repo / 'out/bootstrap'; bootstrap.mkdir()
     plan = {'paths': {key: str(value) for key, value in paths.items()}, 'source_build_id': 'profile-source',
             'build_config_digest': 'profile-config', 'configuration_inputs': {},
+            'effective_configuration': {'LLVM_ENABLE_ASSERTIONS': 'ON'},
+            'instrumentation': {'boundaries': {}},
             'host_environment': {'bootstrap_root': str(bootstrap), 'clang_sha256': 'matched-tool',
                                  'ccache_path': '/caller/optional-cache'}}
+    (paths['build'] / 'CMakeCache.txt').write_text('LLVM_ENABLE_ASSERTIONS:BOOL=ON\n')
+    ignorelist = paths['source'] / 'llvm/utils/sanitizers/ubsan_ignorelist.txt'
+    ignorelist.parent.mkdir(parents=True)
+    ignorelist.write_text('# controlled input\n')
     report = {'status': 'passed', 'source_identity': plan['source_build_id'],
               'phases': [{'phase': phase, 'exit_code': 0} for phase in ('configure', 'build', 'test', 'stage')]}
     (paths['build'] / 'foundation-build-report.json').write_text(json.dumps(report))
@@ -33,10 +40,11 @@ def fixture(tmp_path, monkeypatch):
     old = deepcopy(plan)
     old['host_environment']['ccache_path'] = None
     (embedding / 'compiler-instrumentation-plan.json').write_text(json.dumps(old))
-    monkeypatch.setattr(compiler, 'build_plans', lambda *a, **k: {'configure': plan})
+    monkeypatch.setattr(compiler, 'build_plans', lambda *a, **k: {
+        'configure': plan, **{phase: {} for phase in ('build', 'test', 'stage')}})
     def admitted(*a, **k):
         raise Admitted('passed reuse admission; no native execution is mocked as a pass')
-    monkeypatch.setattr(compiler, 'SanitizerQualification', admitted)
+    monkeypatch.setattr(test_runtime, 'prepare', admitted)
     return repo, paths, embedding, old
 
 
