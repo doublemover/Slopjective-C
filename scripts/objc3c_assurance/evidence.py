@@ -124,7 +124,7 @@ def lit(path: Path) -> list[dict]:
     return inventory
 
 
-def suite_results(root: Path, name: str) -> list[dict]:
+def suite_results(root: Path, name: str, *, frontend_names: frozenset[str] | None = None) -> list[dict]:
     """Validate the canonical owners' contents, rather than trust an outer PASS."""
     directory = root / name
 
@@ -155,10 +155,13 @@ def suite_results(root: Path, name: str) -> list[dict]:
     if name == 'frontend':
         result = read('frontend-tests/qualification.json')
         names = result.get('ctest_test_names', [])
+        expected = set(names) if frontend_names is None else frontend_names
+        selection = None if frontend_names is None else sorted(frontend_names)
         tests = result.get('tests', [])
-        if (not names or len(names) != len(set(names)) or
-                len(tests) != len(names) or {row['name'] for row in tests} != set(names) or
-                result.get('frontend_ctests') != len(names)):
+        if (not expected or not expected <= set(names) or len(names) != len(set(names)) or
+                result.get('selected_ctest_names') != selection or
+                len(tests) != len(expected) or {row['name'] for row in tests} != expected or
+                result.get('frontend_ctests') != len(expected)):
             raise ValueError('frontend manifest and executed tests are incomplete')
         for row in tests:
             junit(directory / ('frontend-' + row['name'] + '-ctest.xml'), expected={row['name']})
@@ -449,12 +452,15 @@ def suite_results(root: Path, name: str) -> list[dict]:
 
 
 def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str,
-              shard: str | None = None, suite_ids: tuple[str, ...] | None = None) -> dict:
+              shard: str | None = None, suite_ids: tuple[str, ...] | None = None,
+              frontend_names: frozenset[str] | None = None) -> dict:
     validate(plan)
     if plan['revision']['tested'] != tested or outcomes.get('plan') != 'success':
         raise ValueError('selection failed or selected the wrong tested revision')
     suites = selected_suites(plan, shard, suite_ids=suite_ids)
     expected = {suite['id'] for suite in suites}
+    if frontend_names is not None and (suite_ids is None or 'frontend' not in expected):
+        raise ValueError('focused CTest evidence requires an explicit frontend suite')
     if not expected:
         if plan['classification'] != 'prose-only' or outcomes.get('native') != 'skipped':
             raise ValueError('only justified prose-only changes may skip native execution')
@@ -486,7 +492,7 @@ def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str,
                 raise ValueError('native artifact is missing, duplicated or changed')
             paths.add(saved['path'])
             total += saved['bytes']
-        if suite_results(root, row['id']) != row['executions']:
+        if suite_results(root, row['id'], frontend_names=frontend_names) != row['executions']:
             raise ValueError('native execution inventory differs from canonical owner results')
     commands = receipt.get('commands', [])
     if any(row.get('exit_code') != 0 for row in commands):

@@ -40,6 +40,28 @@ def test_links_and_runs_one_test_at_a_time(tmp_path, monkeypatch):
     assert not list(build.glob('*_test'))
 
 
+def test_focused_selection_keeps_full_inventory_and_runs_only_the_requested_variant(tmp_path, monkeypatch):
+    build, _ = fixture(tmp_path, monkeypatch)
+    calls = []
+
+    def run(label, args):
+        calls.append(label)
+        if args[0] == 'cmake':
+            (build / args[4]).write_bytes(b'passed program')
+
+    result = qualify(build, tmp_path / 'proof', run, jobs=2, required_names=frozenset({'objc3_second'}))
+    assert result['ctest_test_names'] == ['objc3_first', 'objc3_second']
+    assert result['selected_ctest_names'] == ['objc3_second']
+    assert calls == ['frontend-objc3_second-build', 'frontend-objc3_second-ctest']
+
+
+def test_focused_selection_fails_if_the_required_name_is_missing(tmp_path, monkeypatch):
+    build, _ = fixture(tmp_path, monkeypatch)
+    with pytest.raises(ValueError, match='outside the configured CTest inventory'):
+        qualify(build, tmp_path / 'proof', lambda *a: pytest.fail('must not build'), jobs=2,
+                required_names=frozenset({'objc3_missing'}))
+
+
 def test_failed_test_preserves_its_executable_and_receipt(tmp_path, monkeypatch):
     build, rows = fixture(tmp_path, monkeypatch)
     def run(label, args):

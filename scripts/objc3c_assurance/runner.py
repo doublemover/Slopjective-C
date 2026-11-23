@@ -34,10 +34,13 @@ def _consumer_compile_jobs(repo: Path) -> int:
 
 def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
         suite_ids: tuple[str, ...] | None = None, product_sdk: Path | None = None,
-        package_release: Path | None = None, sanitizer_partition: int | None = None) -> dict:
+        package_release: Path | None = None, sanitizer_partition: int | None = None,
+        frontend_names: frozenset[str] | None = None) -> dict:
     suites = selected_suites(plan, shard, suite_ids=suite_ids)
     if not suites:
         raise ValueError('native execution requires a nonempty suite selection')
+    if frontend_names is not None and (suite_ids is None or 'frontend' not in suite_ids):
+        raise ValueError('focused CTest selection requires an explicit frontend suite')
     if sanitizer_partition is not None:
         from scripts.objc3c_toolchain.sanitizer_partitions import select
         select(sanitizer_partition)
@@ -251,7 +254,8 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
                 '-DOBJC3C_BUILD_SCAN_DEPS=OFF', '-DBUILD_TESTING=ON'])
             jobs = _consumer_compile_jobs(repo)
             command('build', ['cmake', '--build', build, '--target', 'objc3c', '--parallel', str(jobs)])
-            tests = frontend_tests(build, directory / 'frontend-tests', command, jobs=jobs)
+            tests = frontend_tests(build, directory / 'frontend-tests', command,
+                                   jobs=jobs, required_names=frontend_names)
             for row in tests['tests']:
                 junit(directory / ('frontend-' + row['name'] + '-ctest.xml'), expected={row['name']})
             return tests['tests']

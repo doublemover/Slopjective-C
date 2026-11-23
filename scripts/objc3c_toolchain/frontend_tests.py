@@ -10,7 +10,8 @@ import subprocess
 from .sdk_example import write_json
 
 
-def qualify(build: Path, output: Path, run, *, jobs: int) -> dict:
+def qualify(build: Path, output: Path, run, *, jobs: int,
+            required_names: frozenset[str] | None = None) -> dict:
     """Build, execute and reclaim each owned test; retain failed outputs."""
     build = build.resolve(strict=True)
     report = {'status': 'running', 'schema': 'objc3c.frontend-serial-ctest.v2',
@@ -27,6 +28,8 @@ def qualify(build: Path, output: Path, run, *, jobs: int) -> dict:
         if (not names or len(names) != len(set(names)) or
                 len(rows) != len(names) or {row['name'] for row in rows} != set(names)):
             raise ValueError('frontend target manifest does not match the CTest inventory')
+        if required_names is not None and (not required_names or not required_names <= set(names)):
+            raise ValueError('frontend selection is empty or outside the configured CTest inventory')
         groups = {}
         for row in rows:
             name, target, executable = row['name'], row['target'], Path(row['executable'])
@@ -43,8 +46,14 @@ def qualify(build: Path, output: Path, run, *, jobs: int) -> dict:
                 raise ValueError('frontend target aliases disagree on their executable')
             group.append(row)
         report['ctest_test_names'] = names
+        if required_names is not None:
+            report['selected_ctest_names'] = sorted(required_names)
         write_json(receipt, report)
         for target, variants in groups.items():
+            if required_names is not None:
+                variants = [row for row in variants if row['name'] in required_names]
+                if not variants:
+                    continue
             executable = Path(variants[0]['executable'])
             try:
                 run('frontend-' + variants[0]['name'] + '-build',

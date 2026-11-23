@@ -43,6 +43,8 @@ def checkout(tmp_path):
     ('docs/roadmap/prose.md', True, ()),
     ('docs/contracts/consumed.md', True, pr_native.SOURCE_SUITES),
     ('native/objc3c/tests/keypath_service_test.cpp', True, pr_native.SOURCE_SUITES),
+    ('.github/workflows/native-pr.yml', True, pr_native.SOURCE_SUITES),
+    ('.github/workflows/native-pr.yml', False, ('foundation', *pr_native.SOURCE_SUITES)),
     ('toolchains/llvm/cmake/ObjC3LLVMCache.cmake', True, ('foundation', *pr_native.SOURCE_SUITES)),
     ('tests/clang_foundation/runtime.m', False, ('foundation', *pr_native.SOURCE_SUITES)),
 ])
@@ -58,11 +60,12 @@ def test_pr_gate_selects_exact_revision_and_only_admitted_foundation(
         id_key: identity[field] for field, id_key in pr_native.FOUNDATION_FIELDS.items()})
     executed = []
 
-    def execute(repo, plan, output, *, suite_ids, product_sdk):
+    def execute(repo, plan, output, *, suite_ids, product_sdk, frontend_names):
         assert plan['revision'] == revision
         assert plan['changed_paths'] == [changed]
         assert not output.exists()
         assert product_sdk == (sdk if expected == pr_native.SOURCE_SUITES else None)
+        assert frontend_names == (pr_native.FRONTEND_WITNESSES if product_sdk and changed.startswith('.github/') else None)
         executed.extend(suite_ids)
         return {'status': 'PASS', 'revision': plan['revision'], 'plan_sha256': plan['sha256'],
                 'suites': [{'id': name, 'status': 'PASS', 'executions': ['witness']}
@@ -86,7 +89,8 @@ def test_pr_gate_records_failure_for_incomplete_or_drifting_evidence(checkout, m
     foundations = iter([{'seal_sha256': 'a'*64}, {'seal_sha256': 'b'*64}])
     monkeypatch.setattr(pr_native, 'matching_foundation', lambda *arguments: next(foundations))
 
-    def execute(repo, plan, output, *, suite_ids, product_sdk):
+    def execute(repo, plan, output, *, suite_ids, product_sdk, frontend_names):
+        assert frontend_names is None
         rows = [{'id': name, 'status': 'PASS', 'executions': ['witness']} for name in suite_ids]
         if defect == 'missing':
             rows.pop()
@@ -129,6 +133,19 @@ def test_pr_foundation_requires_exact_sealed_arch_and_configuration(tmp_path, mo
 ])
 def test_install_witness_remains_selected_when_llvm_rebuilds(paths, expected):
     assert pr_native.needs_install_witness({'changed_paths': paths}) is expected
+
+
+@pytest.mark.parametrize('paths,focused', [
+    (None, False),
+    (['.github/workflows/native-pr.yml', 'docs/roadmap/assurance.md'], True),
+    (['scripts/objc3c_assurance/pr_native.py', 'tests/tooling/test_native_pr.py'], True),
+    (['.github/workflows/native-pr.yml', 'native/objc3c/tests/runtime_lifetime_test.cpp'], False),
+    (['tests/tooling/fixtures/clang_foundation/fixture.m'], False),
+    (['.github/workflows/native-pr.yml', 'docs/contracts/rules.md'], False),
+])
+def test_frontend_probes_require_a_known_tooling_only_delta(paths, focused):
+    assert pr_native.frontend_selection({'changed_paths': paths}) == (
+        pr_native.FRONTEND_WITNESSES if focused else None)
 
 
 @pytest.mark.parametrize('defect', [None, 'skipped', 'cancelled', 'lost-artifact', 'wrong-sha',
@@ -206,6 +223,21 @@ def test_terminal_gate_accepts_explicit_prose_plan_without_native_output(checkou
     pr_native.execute(repo, root / 'checked', **revision)
     (root / 'selection.json').write_bytes((root / 'checked/plan.json').read_bytes())
     assert pr_native.verify(repo, root, execution='success', **revision)['classification'] == 'prose-only'
+
+
+def test_focused_frontend_receipt_cannot_satisfy_full_suite_or_different_selection(tmp_path):
+    frontend = tmp_path / 'frontend'
+    proof = frontend / 'frontend-tests'
+    proof.mkdir(parents=True)
+    (proof / 'qualification.json').write_text(json.dumps({'status': 'PASS', 'frontend_ctests': 1,
+        'ctest_test_names': ['objc3_a', 'objc3_b'], 'selected_ctest_names': ['objc3_b'],
+        'tests': [{'name': 'objc3_b'}]}))
+    (frontend / 'frontend-objc3_b-ctest.xml').write_text(
+        '<testsuite tests="1"><testcase name="objc3_b"/></testsuite>')
+    assert suite_results(tmp_path, 'frontend', frontend_names=frozenset({'objc3_b'})) == [{'name': 'objc3_b'}]
+    for selection in (None, frozenset({'objc3_a'})):
+        with pytest.raises(ValueError, match='executed tests are incomplete'):
+            suite_results(tmp_path, 'frontend', frontend_names=selection)
 
 
 @pytest.mark.parametrize('defect', [None, 'path', 'length', 'seal', 'source'])

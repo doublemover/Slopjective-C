@@ -10,7 +10,7 @@ from scripts.objc3c_toolchain.core import planned_development_identity
 from scripts.objc3c_toolchain.linux_host import native_linux_host, native_target
 from scripts.objc3c_toolchain.package import verify_sdk
 from .evidence import aggregate, artifact
-from .plan import PACKAGE, from_checkout, git
+from .plan import PACKAGE, from_checkout, git, prose
 from .runner import run
 
 FOUNDATION_FIELDS = {
@@ -21,11 +21,25 @@ FOUNDATION_FIELDS = {
 }
 SOURCE_SUITES = ('runtime', 'frontend')
 SCHEMA = 'objc3c.native-pr.v1'
+TOOLING_PATHS = ('.github/', 'scripts/objc3c_assurance/')
+FRONTEND_WITNESSES = frozenset((
+    'objc3_borrowed_pointers', 'objc3_c_inline_provider', 'objc3_carrier_service',
+    'objc3_compile_session', 'objc3_diagnostic_cli', 'objc3_interface_codec',
+))
 
 
 def needs_install_witness(plan: dict) -> bool:
     paths = plan['changed_paths']
     return not paths or any(path.startswith(PACKAGE) for path in paths)
+
+
+def frontend_selection(plan: dict) -> frozenset[str] | None:
+    paths = plan['changed_paths']
+    if paths and all(prose(path) or path.startswith(TOOLING_PATHS) or
+                     (path.startswith('tests/tooling/test_') and path.endswith('.py') and path.count('/') == 2)
+                     for path in paths):
+        return FRONTEND_WITNESSES
+    return None
 
 
 def matching_foundation(repo: Path, plan: dict, sdk: Path | None) -> dict | None:
@@ -58,10 +72,12 @@ def execute(repo: Path, output: Path, *, head: str, base: str, tested: str,
             return receipt
         foundation = matching_foundation(repo, plan, sdk)
         suites = SOURCE_SUITES if foundation else ('foundation', *SOURCE_SUITES)
+        frontend_names = frontend_selection(plan) if foundation else None
         receipt.update(foundation='verified-release' if foundation else 'current-source-build',
-                       foundation_sdk=foundation, suites=list(suites))
+                       foundation_sdk=foundation, suites=list(suites),
+                       frontend_ctests=sorted(frontend_names) if frontend_names is not None else None)
         result = run(repo, plan, output / 'execution', suite_ids=suites,
-                     product_sdk=sdk if foundation else None)
+                     product_sdk=sdk if foundation else None, frontend_names=frontend_names)
         if result.get('revision') != plan['revision'] or result.get('plan_sha256') != plan['sha256']:
             raise ValueError('native PR execution reported a different tested plan')
         if result['status'] != 'PASS' or tuple(row['id'] for row in result['suites']) != suites or any(
@@ -131,15 +147,19 @@ def verify(repo: Path, evidence: Path, *, head: str, base: str, tested: str, exe
         suites = SOURCE_SUITES
     elif foundation == 'current-source-build':
         built = read('checked/execution/foundation/foundation.json')
-        if receipt.get('foundation_sdk') is not None or built.get('source_identity') != planned['build_id']:
+        if (receipt.get('foundation_sdk') is not None or built.get('source_identity') != planned['build_id'] or
+                built.get('cost_context', {}).get('build_config_digest') != planned['build_config_digest']):
             raise ValueError('native PR built a different foundation')
         suites = ('foundation', *SOURCE_SUITES)
     else:
         raise ValueError('native PR did not report its foundation source')
     if receipt.get('suites') != list(suites):
         raise ValueError('native PR receipt omitted a required suite')
+    frontend_names = frontend_selection(plan) if foundation == 'verified-release' else None
+    if receipt.get('frontend_ctests') != (sorted(frontend_names) if frontend_names is not None else None):
+        raise ValueError('native PR receipt omitted the exact frontend CTest selection')
     return aggregate(plan, evidence / 'checked/execution', outcomes={'plan': 'success', 'native': execution},
-                     tested=tested, suite_ids=suites)
+                     tested=tested, suite_ids=suites, frontend_names=frontend_names)
 
 
 def main() -> None:
