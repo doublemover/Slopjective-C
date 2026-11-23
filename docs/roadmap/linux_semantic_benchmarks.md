@@ -214,6 +214,24 @@ qualification receipts totaled 694,664 bytes. Review-tool verification passes
 185 focused Python tests covering timing, memory, throughput, review scope
 and the surrounding assurance admission checks.
 
+The labeled hosted run on `af41a499ec66bc83ca068553762bcc6e666a4eee`
+passed on both Linux architectures with the published SDK. Each host admitted
+two independent observations, 39 standard workloads, 48 additional collection
+and text cases, and six measured repetitions per case. Both artifact digests
+matched GitHub and both pooled receipts reproduced byte-for-byte from the raw
+logs. [Hosted run](https://github.com/doublemover/Slopjective-C/actions/runs/45289421716)
+
+| Host    | Job seconds | Command wall / CPU seconds | Artifact bytes | Artifact SHA-256                                                                                                                                                          |
+| ------- | ----------: | -------------------------: | -------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| x86-64  |         146 |              86.25 / 76.94 |      1,141,415 | `091b0b7c568058976ae03584ca5e39f18cc9ca6ce07234ffa547a1fd7d032f89` [Archive](https://github.com/doublemover/Slopjective-C/actions/runs/45289421716/artifacts/14874250531) |
+| AArch64 |         196 |            133.16 / 124.31 |      1,141,714 | `b035e172a59e25ed133c951d8abe81e5e3ac57984122c84c91f035b74edb5294` [Archive](https://github.com/doublemover/Slopjective-C/actions/runs/45289421716/artifacts/14873521687) |
+
+Each host recorded 1,510 commands and 992 raw collection samples. Timings retain
+the advisory decision. The largest between-observation median spread among
+standard workloads was 64.0 ms on x86-64 and 48.8 ms on AArch64. Any timing gate
+requires a reviewed choice of workloads and runner-specific latency, throughput,
+memory and noise limits.
+
 ## Import and incremental-build pilot
 
 The separate `semantic_import_benchmarks` owner generates actual ObjC3
