@@ -23,7 +23,7 @@
     },
     {
       "file": "0004-objc3-ast.patch",
-      "sha256": "ee821f847ee8e41a8ce0bd21a48a356406a273459465cefdbccda99c4ac52c0c"
+      "sha256": "6cb6e72f57470ee005f5469e4aed36ed831e26399711fd024fe8b18987eb0060"
     },
     {
       "file": "0004-objc3-ast-and-parser-tests.patch",
@@ -43,7 +43,7 @@
     },
     {
       "file": "0004-objc3-ownership.patch",
-      "sha256": "f9054081622af8c121496f84fd0b0ec1bb630c19b9d2ece2bebc52a76d80b51b"
+      "sha256": "b411bf5609a29c12ddec5f9de366e14b279cadb6c31610d1f90704a9812713bb"
     },
     {
       "file": "0004-objc3-parser.patch",

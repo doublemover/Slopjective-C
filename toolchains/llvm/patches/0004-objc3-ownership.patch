@@ -1860,10 +1860,10 @@ index 000000000..0e4277c34
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..dc6350761
+index 000000000..8890be020
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,7312 @@
+@@ -0,0 +1,7309 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -2273,11 +2273,6 @@ index 000000000..dc6350761
 +  bool Invalid = false;
 +  bool MightBorrow = false;
 +
-+  const Expr *statementResult(const StmtExpr *Expression) const {
-+    const CompoundStmt *Body = Expression->getSubStmt();
-+    if (Body->body_empty()) return nullptr;
-+    return dyn_cast<Expr>(Body->body_back()->stripLabelLikeStatements());
-+  }
 +  bool carriesBorrowedValue(QualType Type) const {
 +    return carriesObjC3BorrowedValue(Context, Type);
 +  }
@@ -2527,7 +2522,7 @@ index 000000000..dc6350761
 +    if (const auto *Cast = dyn_cast<CastExpr>(E))
 +      return adjustBaseStorage(storage(Cast->getSubExpr(), State), Cast);
 +    if (const auto *Statement = dyn_cast<StmtExpr>(E))
-+      return storage(statementResult(Statement), State);
++      return storage(getObjC3StatementExpressionResult(*Statement), State);
 +    // Built-in prefix and assignment expressions designate the same object in
 +    // C++. Their pointer value is separately snapshotted at evaluation time.
 +    if (const auto *Unary = dyn_cast<UnaryOperator>(E);
@@ -2597,7 +2592,7 @@ index 000000000..dc6350761
 +      if (Variable->getType()->isReferenceType() && E->getType()->isRecordType())
 +        return storage(E, State);
 +    if (const auto *Statement = dyn_cast<StmtExpr>(E))
-+      return referent(statementResult(Statement), State, Depth + 1);
++      return referent(getObjC3StatementExpressionResult(*Statement), State, Depth + 1);
 +    if (const auto *Address = dyn_cast<UnaryOperator>(E))
 +      if (Address->getOpcode() == UO_AddrOf)
 +        return storage(Address->getSubExpr(), State);
@@ -2831,7 +2826,9 @@ index 000000000..dc6350761
 +    E = E->IgnoreParenCasts();
 +    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E)) return ownerExpressions(Cleanups->getSubExpr(), Owners);
 +    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(E)) return ownerExpressions(Opaque->getSourceExpr(), Owners);
-+    if (const auto *Statement = dyn_cast<StmtExpr>(E)) return ownerExpressions(statementResult(Statement), Owners);
++    if (const auto *Statement = dyn_cast<StmtExpr>(E))
++      return ownerExpressions(getObjC3StatementExpressionResult(*Statement),
++                              Owners);
 +    if (const auto *Binary = dyn_cast<BinaryOperator>(E); Binary && Binary->getOpcode() == BO_Comma)
 +      return ownerExpressions(Binary->getRHS(), Owners);
 +    if (const auto *Conditional = dyn_cast<AbstractConditionalOperator>(E)) {
@@ -4139,7 +4136,7 @@ index 000000000..dc6350761
 +      return Result;
 +    E = E->IgnoreParenCasts();
 +    if (const auto *Statement = dyn_cast<StmtExpr>(E))
-+      return evaluatedOwnerIdentity(statementResult(Statement), State);
++      return evaluatedOwnerIdentity(getObjC3StatementExpressionResult(*Statement), State);
 +    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E))
 +      return ownerIdentity(Cleanups->getSubExpr(), State);
 +    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(E))
@@ -4189,7 +4186,7 @@ index 000000000..dc6350761
 +    if (!E) return false;
 +    E = E->IgnoreParenCasts();
 +    if (const auto *Statement = dyn_cast<StmtExpr>(E))
-+      return ownerIsUnowned(statementResult(Statement), State);
++      return ownerIsUnowned(getObjC3StatementExpressionResult(*Statement), State);
 +    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E))
 +      return ownerIsUnowned(Cleanups->getSubExpr(), State);
 +    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(E))
@@ -4470,7 +4467,7 @@ index 000000000..dc6350761
 +      }
 +    E = E->IgnoreParenCasts();
 +    if (const auto *Statement = dyn_cast<StmtExpr>(E))
-+      return effects(statementResult(Statement), State);
++      return effects(getObjC3StatementExpressionResult(*Statement), State);
 +    if (const auto *Writeback = dyn_cast<ObjCIndirectCopyRestoreExpr>(E))
 +      return Writeback->shouldCopy() ? effects(Writeback->getSubExpr(), State) : empty();
 +    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E)) return effects(Cleanups->getSubExpr(), State);
@@ -4685,7 +4682,7 @@ index 000000000..dc6350761
 +      return Targets;
 +    }
 +    if (const auto *Statement = dyn_cast<StmtExpr>(E))
-+      return possibleTargets(statementResult(Statement), State);
++      return possibleTargets(getObjC3StatementExpressionResult(*Statement), State);
 +    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E))
 +      return possibleTargets(Cleanups->getSubExpr(), State);
 +    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(E))
@@ -4759,7 +4756,7 @@ index 000000000..dc6350761
 +    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(E))
 +      return closedTargets(Opaque->getSourceExpr(), State, Depth + 1);
 +    if (const auto *Statement = dyn_cast<StmtExpr>(E))
-+      return closedTargets(statementResult(Statement), State, Depth + 1);
++      return closedTargets(getObjC3StatementExpressionResult(*Statement), State, Depth + 1);
 +    if (const auto *Conditional = dyn_cast<AbstractConditionalOperator>(E)) {
 +      bool Truth;
 +      if (!Conditional->getCond()->HasSideEffects(Context) &&
@@ -4807,7 +4804,7 @@ index 000000000..dc6350761
 +             (Cast->getSubExpr()->getType()->isPointerType() || Cast->getSubExpr()->getType()->isArrayType()) &&
 +             nonNullAddress(Cast->getSubExpr(), State, Depth + 1);
 +    if (const auto *Statement = dyn_cast<StmtExpr>(E))
-+      return nonNullAddress(statementResult(Statement), State, Depth + 1);
++      return nonNullAddress(getObjC3StatementExpressionResult(*Statement), State, Depth + 1);
 +    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E))
 +      return nonNullAddress(Cleanups->getSubExpr(), State, Depth + 1);
 +    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(E))
@@ -4970,7 +4967,7 @@ index 000000000..dc6350761
 +    if (const auto *Call = dyn_cast<CallExpr>(E); Call && addressBuiltin(Call->getDirectCallee()) && Call->getNumArgs() == 1)
 +      return addressValue(Call->getArg(0), State);
 +    if (const auto *Statement = dyn_cast<StmtExpr>(E))
-+      return value(statementResult(Statement), State);
++      return value(getObjC3StatementExpressionResult(*Statement), State);
 +    if (const auto *Cast = dyn_cast<CastExpr>(E)) {
 +      if (Cast->getCastKind() == CK_ArrayToPointerDecay) return addressValue(Cast->getSubExpr(), State);
 +      if (Cast->getType()->isBooleanType())
@@ -5947,7 +5944,7 @@ index 000000000..dc6350761
 +    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(Expression))
 +      return memoryBytePositions(Cleanups->getSubExpr(), State, Positions, Depth + 1);
 +    if (const auto *Statement = dyn_cast<StmtExpr>(Expression))
-+      return memoryBytePositions(statementResult(Statement), State, Positions, Depth + 1);
++      return memoryBytePositions(getObjC3StatementExpressionResult(*Statement), State, Positions, Depth + 1);
 +    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(Expression))
 +      return memoryBytePositions(Opaque->getSourceExpr(), State, Positions, Depth + 1);
 +    if (const auto *Conditional = dyn_cast<AbstractConditionalOperator>(Expression)) {

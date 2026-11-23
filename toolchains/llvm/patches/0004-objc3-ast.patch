@@ -20321,10 +20321,10 @@ index 0a6f256af..81d89af12 100644
  
 diff --git a/clang/include/clang/AST/ObjC3Borrowed.h b/clang/include/clang/AST/ObjC3Borrowed.h
 new file mode 100644
-index 000000000..535b74a08
+index 000000000..cff88dc89
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3Borrowed.h
-@@ -0,0 +1,254 @@
+@@ -0,0 +1,264 @@
 +//===--- ObjC3Borrowed.h - Borrowed pointer type contracts --------*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_AST_OBJC3BORROWED_H
@@ -20334,11 +20334,12 @@ index 000000000..535b74a08
 +#include "clang/AST/Decl.h"
 +#include "clang/AST/DeclCXX.h"
 +#include "clang/AST/DeclObjC.h"
++#include "clang/AST/Expr.h"
 +#include "llvm/ADT/SmallPtrSet.h"
 +#include <optional>
 +
 +namespace clang {
-+/// Borrowing is ABI-neutral type sugar, retained through typedefs and aliases.
++/// Direct borrowed pointer spelling is retained through typedefs and aliases.
 +/// Do not canonicalize before asking this question: canonical C pointers have
 +/// the same representation but do not carry the source lifetime contract.
 +inline bool isObjC3BorrowedType(const ASTContext &Context, QualType Type) {
@@ -20353,6 +20354,15 @@ index 000000000..535b74a08
 +  }
 +  return false;
 +}
++/// Find the value selected by a GNU statement expression. Labels around the
++/// final statement do not change that value.
++inline const Expr *getObjC3StatementExpressionResult(const StmtExpr &Statement) {
++  const CompoundStmt *Body = Statement.getSubStmt();
++  return Body->body_empty()
++             ? nullptr
++             : dyn_cast<Expr>(Body->body_back()->stripLabelLikeStatements());
++}
++
 +/// Extract a callable's semantic signature through its supported wrappers.
 +inline const FunctionType *getObjC3CallableFunctionType(const ASTContext &Context,
 +                                                       QualType Type) {
@@ -21298,10 +21308,10 @@ index 3b50b8115..6bf8ee9c4 100644
  }
 diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
 new file mode 100644
-index 000000000..b54e9cbe0
+index 000000000..f4a62f4dc
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,4345 @@
+@@ -0,0 +1,4412 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -21314,6 +21324,7 @@ index 000000000..b54e9cbe0
 +#include "clang/AST/ObjC3TypeContracts.h"
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/ASTImporter.h"
++#include "clang/AST/ObjC3Borrowed.h"
 +#include "clang/AST/RecordLayout.h"
 +#include "clang/AST/ASTStructuralEquivalence.h"
 +#include "clang/AST/VTableBuilder.h"
@@ -25646,6 +25657,72 @@ index 000000000..b54e9cbe0
 +  ASSERT_EQ(SourceABI.getFieldCount(), TargetABI.getFieldCount());
 +  for (unsigned I = 0; I != SourceABI.getFieldCount(); ++I)
 +    EXPECT_EQ(SourceABI.getFieldOffset(I), TargetABI.getFieldOffset(I));
++}
++
++TEST(ObjC3ASTInfrastructure, WrappedBlockKeepsItsOwnershipPrototype) {
++  constexpr llvm::StringLiteral Code = R"(
++    typedef id (^OwnedBlock)(id __attribute__((ns_consumed)))
++        __attribute__((ns_returns_retained));
++    OwnedBlock block;
++    OwnedBlock __strong *pointer;
++    OwnedBlock array[2];
++  )";
++  auto AST = tooling::buildASTFromCodeWithArgs(
++      Code, {"-x", "objective-c", "-std=c17", "-fblocks", "-fobjc-version=3",
++             "-fobjc-runtime=gnustep-2.2", "-fobjc-arc",
++             "-target", "x86_64-unknown-linux-gnu"}, "blocks.m");
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  ASTContext &Context = AST->getASTContext();
++  const FunctionProtoType *Shared = nullptr;
++  for (StringRef Name : {"block", "pointer", "array"}) {
++    const auto *Variable = selectFirst<VarDecl>(
++        "variable", match(varDecl(hasName(Name)).bind("variable"), Context));
++    ASSERT_TRUE(Variable);
++    const auto *Prototype = dyn_cast_or_null<FunctionProtoType>(
++        getObjC3CallableFunctionType(Context, Variable->getType()));
++    ASSERT_TRUE(Prototype);
++    ASSERT_EQ(1u, Prototype->getNumParams());
++    EXPECT_TRUE(Prototype->isParamConsumed(0));
++    EXPECT_TRUE(Prototype->getExtInfo().getProducesResult());
++    if (!Shared)
++      Shared = Prototype;
++    EXPECT_EQ(Shared, Prototype);
++  }
++  EXPECT_EQ(nullptr, getObjC3CallableFunctionType(Context, Context.IntTy));
++}
++
++TEST(ObjC3ASTInfrastructure, StatementExpressionSelectsOnlyItsTerminalBorrow) {
++  constexpr llvm::StringLiteral Code = R"(
++    void examine(borrowed const char *loan, const char *owned) {
++      const char *owned_result = ({ (void)loan; owned_label: owned; });
++      const char *borrowed_result = ({ (void)owned; loan_label: loan; });
++      (void)owned_result;
++      (void)borrowed_result;
++    }
++  )";
++  auto AST = tooling::buildASTFromCodeWithArgs(
++      Code, {"-x", "objective-c", "-std=c17", "-fobjc-version=3",
++             "-fobjc3-profile=strict-system",
++             "-target", "x86_64-unknown-linux-gnu"}, "result.m");
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  ASTContext &Context = AST->getASTContext();
++  for (bool Borrowed : {false, true}) {
++    StringRef Name = Borrowed ? "borrowed_result" : "owned_result";
++    const auto *Variable = selectFirst<VarDecl>(
++        "variable", match(varDecl(hasName(Name)).bind("variable"), Context));
++    ASSERT_TRUE(Variable && Variable->hasInit());
++    const auto *Statement = dyn_cast<StmtExpr>(
++        Variable->getInit()->IgnoreParenImpCasts());
++    ASSERT_TRUE(Statement);
++    const Expr *Result = getObjC3StatementExpressionResult(*Statement);
++    ASSERT_TRUE(Result);
++    const auto *Reference = dyn_cast<DeclRefExpr>(Result->IgnoreParenImpCasts());
++    ASSERT_TRUE(Reference);
++    EXPECT_EQ(Borrowed ? "loan" : "owned", Reference->getDecl()->getName());
++    EXPECT_EQ(Borrowed, isObjC3BorrowedType(Context, Reference->getType()));
++  }
 +}
 diff --git a/clang/include/clang/AST/DeclTemplate.h b/clang/include/clang/AST/DeclTemplate.h
 index ed1a51724..c7a0cadc6 100644
