@@ -84,6 +84,12 @@ and a dynamically linked executable run after moving the install tree. The
 controls check a missing runtime at link and load, the prior GNUstep driver
 guard, a subclass, ARC, Apple runtime linking, and a wrong architecture.
 
+The qualifier also compiles the current concrete collection and text service
+sources with the patched compiler and libc++. The existing map-count and text
+boundary regressions run from the relocated tree with active checks. Their
+`portable_services` receipt binds the source files, arm64 Mach-O objects,
+executables and system C++ library dependencies.
+
 Pull requests that change the experimental sources select the same workflow
 step automatically. Manual dispatch selects it with `runtime_registration`.
 An x86-64 replay built the modified driver and CodeGen translation units with

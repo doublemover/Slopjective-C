@@ -25,6 +25,58 @@ def test_experimental_driver_rejects_other_hosts_before_build(monkeypatch, tmp_p
     assert not (tmp_path / 'output').exists()
 
 
+@pytest.mark.parametrize('extra_library', ['', '/usr/lib/libobjc.A.dylib'])
+def test_portable_services_link_current_sources_and_run_after_relocation(monkeypatch, tmp_path, extra_library):
+    stages = tmp_path / 'build'
+    layout = tmp_path / 'Relocated install'
+    stages.mkdir()
+    (layout / 'bin').mkdir(parents=True)
+    commands = {}
+
+    def run(*args, label):
+        argv = list(map(str, args))
+        commands[label] = argv
+        if '-o' in argv:
+            Path(argv[argv.index('-o')+1]).write_bytes(b'linked by mock compiler')
+        if label.endswith('-load-paths'):
+            paths = ['/usr/lib/libc++.1.dylib', '/usr/lib/libSystem.B.dylib']
+            if extra_library:
+                paths.append(extra_library)
+            return argv[-1]+'\n'+'\n'.join(f'  {path} (compatibility version 1.0.0)' for path in paths)
+        return ''
+
+    def verify_macho(path, kind):
+        assert path.is_file()
+        return {'path': str(path), 'format': 'Mach-O arm64', 'kind': kind}
+
+    monkeypatch.setattr(darwin_registration, 'verify_macho', verify_macho)
+    defaults = ['/owned/clang', '--target=arm64-apple-macos15.0', '-isysroot', '/owned/SDK']
+    if extra_library:
+        with pytest.raises(ValueError, match='unexpected portable Darwin service dependencies'):
+            darwin_registration._exercise_portable_services(run, defaults, '/owned/ld', stages, layout)
+        assert 'stdlib-map-count-native' not in commands
+        return
+    report = darwin_registration._exercise_portable_services(run, defaults, '/owned/ld', stages, layout)
+    assert report['status'] == 'PASS'
+    assert set(report['suites']) == {'stdlib-map-count', 'text-scalar-boundary'}
+    for label, unit, fixture in (
+        ('stdlib-map-count', 'collections_service', 'stdlib_map_count_test'),
+        ('text-scalar-boundary', 'text_service', 'text_scalar_boundary_test'),
+    ):
+        service = f'native/objc3c/src/runtime/stdlib/{unit}.cpp'
+        test = f'native/objc3c/tests/{fixture}.cpp'
+        for source in (service, test):
+            assert report['inputs'][source] == darwin_registration.file_digest(darwin_registration.ROOT / source)
+        assert str(darwin_registration.ROOT / service) in commands[label+'-service']
+        assert str(darwin_registration.ROOT / test) in commands[label+'-fixture']
+        assert '-UNDEBUG' in commands[label+'-fixture']
+        assert str(stages / (unit+'.o')) in commands[label+'-link']
+        assert str(stages / (fixture+'.o')) in commands[label+'-link']
+        assert all('--driver-mode=g++' in commands[label+'-'+step] for step in ('service', 'fixture', 'link'))
+        assert '-stdlib=libc++' in commands[label+'-link']
+        assert commands[label+'-native'] == [str(layout / 'bin' / label)]
+
+
 @pytest.mark.skipif(sys.platform != 'linux' or not shutil.which('cc'), reason='LP64 C registry control uses Linux cc')
 def test_owned_registry_lookup_and_negative_metadata_controls(tmp_path):
     harness = tmp_path / 'harness.c'

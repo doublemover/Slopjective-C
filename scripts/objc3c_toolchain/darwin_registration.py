@@ -21,6 +21,17 @@ from .darwin_bootstrap import DEPLOYMENT_TARGET, ROOT, require_apple_silicon, ve
 PROFILE_DIR = ROOT / 'toolchains/llvm/experimental'
 FIXTURES = ROOT / 'tests/clang_foundation/darwin_registration'
 RUNTIME = ROOT / 'native/objc3c/src/runtime/platform/darwin_registration.c'
+NATIVE = ROOT / 'native/objc3c'
+PORTABLE_SERVICES = {
+    'stdlib-map-count': ('collections_service', 'stdlib_map_count_test'),
+    'text-scalar-boundary': ('text_service', 'text_scalar_boundary_test'),
+}
+PORTABLE_HEADERS = (
+    'src/runtime/public/objc3_collections.h', 'src/runtime/public/objc3_stdlib_status.h',
+    'src/runtime/public/objc3_text.h', 'src/runtime/stdlib/opaque_service_storage.h',
+    'src/runtime/stdlib/stdlib_service_contract.h', 'src/runtime/stdlib/text_utf8_decode.h',
+    'tests/test_assertion_policy.h',
+)
 PROFILE_NAME = 'macos-arm64-registration-experimental'
 
 
@@ -250,6 +261,41 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
     finally:
         hidden.rename(library)
     report.update(artifacts=artifacts, installation_root=str(layout))
+    report['portable_services'] = _exercise_portable_services(run, defaults, linker, stages, layout)
+
+
+def _exercise_portable_services(run, defaults, linker: str, stages: Path, layout: Path) -> dict:
+    pairs = {label: (NATIVE / 'src/runtime/stdlib' / (service+'.cpp'),
+                     NATIVE / 'tests' / (fixture+'.cpp'))
+             for label, (service, fixture) in PORTABLE_SERVICES.items()}
+    sources = {path for pair in pairs.values() for path in pair}
+    sources.update(NATIVE / header for header in PORTABLE_HEADERS)
+    inputs = {str(path.relative_to(ROOT)): file_digest(path) for path in sorted(sources)}
+    cxx = [*defaults, '--driver-mode=g++', '-stdlib=libc++']
+    compile_options = ['-std=c++20', '-O2', '-Wall', '-Wextra', '-Werror', '-I', NATIVE / 'src']
+    portable = {}
+    for label, (service, fixture) in pairs.items():
+        runtime_object = stages / (service.stem+'.o')
+        fixture_object = stages / (fixture.stem+'.o')
+        binary = stages / label
+        run(*cxx, *compile_options, '-c', service, '-o', runtime_object, label=label+'-service')
+        run(*cxx, *compile_options, '-UNDEBUG', '-include', NATIVE / 'tests/test_assertion_policy.h',
+            '-c', fixture, '-o', fixture_object, label=label+'-fixture')
+        objects = {path.name: verify_macho(path, 'object') for path in (runtime_object, fixture_object)}
+        run(*cxx, '--ld-path='+linker, '-Wl,-dead_strip', runtime_object, fixture_object,
+            '-o', binary, label=label+'-link')
+        installed = binary.rename(layout / 'bin' / label)
+        artifact = verify_macho(installed, 'executable')
+        libraries = [line.strip().split(' (', 1)[0]
+                     for line in run('/usr/bin/otool', '-L', installed, label=label+'-load-paths').splitlines()[1:]]
+        if sorted(libraries) != ['/usr/lib/libSystem.B.dylib', '/usr/lib/libc++.1.dylib']:
+            raise ValueError(f'unexpected portable Darwin service dependencies of {installed}: {libraries}')
+        run(installed, label=label+'-native')
+        portable[label] = {'objects': objects, 'executable': {**artifact, 'load_paths': libraries}}
+    if inputs != {str(path.relative_to(ROOT)): file_digest(path) for path in sorted(sources)}:
+        raise ValueError('portable Darwin service inputs changed during qualification')
+    return {'status': 'PASS', 'scope': 'Portable C++ services and public API regressions on Mach-O arm64.',
+            'inputs': inputs, 'suites': portable}
 
 
 def main() -> int:
