@@ -93,31 +93,53 @@ static void indexed_work() {
   check(objc3_runtime_stdlib_map_i32_i32_v2_create(&map) == 0);
   check(objc3_runtime_stdlib_set_i32_v2_create(&set) == 0);
   constexpr int32_t size = 16384;
-  objc3_test_i32_index_reset();
-  for (int32_t key = 0; key < size; ++key) {
+  // Count each operation independently so a scan in one service cannot hide
+  // behind index probes from a different service or operation.
+  const auto measure = [&](const char *operation, auto action) {
+    objc3_test_i32_index_reset();
+    for (int32_t key = 0; key < size; ++key) action(key);
+    const auto hashes = objc3_test_i32_index_hash_calls();
+    const auto probes = hashes + objc3_test_i32_index_equal_calls();
+    check(hashes >= size && probes < 64 * size);
+    std::printf("i32 %s: %d entries, %llu probes\n", operation, size,
+                static_cast<unsigned long long>(probes));
+  };
+  measure("map insert", [&](int32_t key) {
     uint64_t count = 0;
-    int inserted = 0;
     check(objc3_runtime_stdlib_map_i32_i32_v2_insert_count(map, key, key ^ 42, &count) == 0);
     check(count == static_cast<uint64_t>(key + 1));
+  });
+  measure("set insert", [&](int32_t key) {
+    int inserted = 0;
     check(objc3_runtime_stdlib_set_i32_v2_insert(set, key, &inserted) == 0 && inserted == 1);
-  }
-  const auto construction_work = objc3_test_i32_index_hash_calls() + objc3_test_i32_index_equal_calls();
-  check(construction_work > size && construction_work < 64 * size);
-  objc3_test_i32_index_reset();
-  for (int32_t key = 0; key < size; ++key) {
+  });
+  measure("map duplicate", [&](int32_t key) {
+    uint64_t count = 0;
+    check(objc3_runtime_stdlib_map_i32_i32_v2_insert_count(map, key, key ^ 42, &count) == 0);
+    check(count == size);
+  });
+  measure("set duplicate", [&](int32_t key) {
+    int inserted = -1;
+    check(objc3_runtime_stdlib_set_i32_v2_insert(set, key, &inserted) == 0 && inserted == 0);
+  });
+  measure("map get", [&](int32_t key) {
     int found = 0;
     int32_t value = 0;
     check(objc3_runtime_stdlib_map_i32_i32_v2_get(map, key, &found, &value) == 0);
     check(found == 1 && value == (key ^ 42));
+    check(objc3_runtime_stdlib_map_i32_i32_v2_get(map, -key - 1, &found, &value) == 0);
+    check(found == 0 && value == 0);
+  });
+  measure("map contains", [&](int32_t key) {
+    int found = 0;
+    check(objc3_runtime_stdlib_map_i32_i32_v2_contains(map, key, &found) == 0 && found == 1);
     check(objc3_runtime_stdlib_map_i32_i32_v2_contains(map, -key - 1, &found) == 0 && found == 0);
+  });
+  measure("set contains", [&](int32_t key) {
+    int found = 0;
     check(objc3_runtime_stdlib_set_i32_v2_contains(set, key, &found) == 0 && found == 1);
     check(objc3_runtime_stdlib_set_i32_v2_contains(set, -key - 1, &found) == 0 && found == 0);
-  }
-  const auto query_work = objc3_test_i32_index_hash_calls() + objc3_test_i32_index_equal_calls();
-  check(objc3_test_i32_index_hash_calls() >= size && query_work < 64 * size);
-  std::printf("i32 index: %d entries, %llu construction probes, %llu query probes\n",
-              size, static_cast<unsigned long long>(construction_work),
-              static_cast<unsigned long long>(query_work));
+  });
   check(objc3_runtime_stdlib_map_i32_i32_v2_release(map) == 0);
   check(objc3_runtime_stdlib_set_i32_v2_release(set) == 0);
 }

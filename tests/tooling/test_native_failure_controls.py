@@ -53,7 +53,9 @@ def test_semantic_oracle_detects_mutant(tmp_path, mutant):
             assert expected in result.stderr
 
 
-@pytest.mark.parametrize('mutant', ['index-rollback', 'index-repair', 'index-collisions'])
+@pytest.mark.parametrize('mutant', [
+    'index-rollback', 'index-repair', 'index-collisions', 'index-linear-contains',
+])
 def test_i32_index_oracle_detects_mutant(tmp_path, mutant):
     source = ROOT / 'native/objc3c/src/runtime/stdlib/collections_service.cpp'
     original = source.read_text()
@@ -61,6 +63,9 @@ def test_i32_index_oracle_detects_mutant(tmp_path, mutant):
         'index-rollback': ('catch (...) { values.pop_back(); throw; }', 'catch (...) { throw; }'),
         'index-repair': ('index.find(key(values[i]))->second = i;', '(void)key;'),
         'index-collisions': ('return std::hash<std::int32_t>{}(value);', 'return 0;'),
+        'index-linear-contains': (
+            '*out_found = record.key_index->find(value) != record.key_index->end();',
+            '*out_found = std::find(record.values.begin(), record.values.end(), value) != record.values.end();'),
     }
     before, after = replacements[mutant]
     assert before in original
