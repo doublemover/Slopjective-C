@@ -51,6 +51,8 @@ def main() -> int:
     robin_release = profile.get("robin_map_release", "")
     if manifest.get("schema_version") != 1:
         return fail("unsupported runtime manifest schema")
+    if args.profile == "macos-arm64":
+        return fail(profile.get("reason", "macOS arm64 runtime qualification is blocked"))
     if args.profile in ("windows-x86_64", *HOSTS):
         if profile.get("runtime_commit") != PIN or profile.get("runtime_release") != "2.3":
             return fail("GNUstep runtime pin does not match libobjc2 v2.3 commit " + PIN)
