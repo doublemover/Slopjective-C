@@ -96,15 +96,31 @@ python3 -B -m scripts.objc3c_toolchain.semantic_benchmarks \
   --output out/semantic-workload-measurement --repetitions 3
 ```
 
-Add `--collection-scaling` to measure concrete i32 maps and sets at 1, 32, 128,
-512 and 2,048 entries. The optional `collection_scaling` receipt section retains
-raw samples and phase summaries for construction, mixed hit/miss lookup,
-duplicate insertion or replacement, ordered iteration, removal and teardown.
-Each phase checks its operation count and any applicable checksum.
+Add `--collection-scaling` to retain per-phase samples and timing summaries for
+collections and text. Each phase checks completed work, values or byte samples,
+and lifetime balance where its API exposes ownership callbacks.
 
-An independent executable records cumulative allocation requests and requested
-bytes for vectors, indexes and handles. These are allocation-traffic measures.
-The ordinary executable measures phase times separately.
+- Concrete i32 maps and sets cover build, mixed hit/miss lookup, duplicate
+  insertion or replacement, ordered iteration, removal and teardown at 1, 32,
+  128, 512 and 2,048 entries.
+- Generic maps and sets cover distinct, duplicate-heavy, and colliding keys at
+  the same scales with integer or owned-string payloads. Construct and release
+  have separate timings and a combined summary. Mid-input callback rejection
+  checks rollback, and copy, equality, and destructor counts describe the work.
+- Generic arrays cover append, repeated middle replacement, indexed reads,
+  iteration and teardown for both payloads. A contiguous bulk-create route
+  supplies the corresponding read and teardown measurements.
+- ASCII and mixed-width UTF-8 with embedded NUL run at 1 KiB, 64 KiB, one byte
+  below 1 MiB and exactly 1 MiB. The phases cover raw create, concat including
+  equal operands, scalar slicing, builder append and repeated finish, teardown,
+  and rejected imported scalar counts.
+
+An independent executable linked to the same SDK archive tracks cumulative
+allocation requests and requested bytes. A separate diagnostic build uses
+candidate compiler and checkout service sources to measure live index requests,
+array metadata copying, and text decoder and byte-copy work. Live index bytes
+include the index object, nodes, and buckets, with allocator overhead outside
+that total. Those independent diagnostics accompany the advisory archive timings.
 
 A bounded same-input delay control must preserve semantic results and show its
 minimum intended timing effect. Zero/partial work, incorrect checksums, absent

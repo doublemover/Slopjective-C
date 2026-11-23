@@ -35,7 +35,39 @@ struct I32Equal {
     return left == right;
   }
 };
-using I32Index = std::unordered_map<std::int32_t, std::size_t, I32Hash, I32Equal>;
+using I32IndexLayout = std::unordered_map<std::int32_t, std::size_t, I32Hash, I32Equal>;
+#ifdef OBJC3_RUNTIME_I32_INDEX_MEMORY_TESTING
+// Benchmark-only accounting. The stateless allocator forwards allocation to
+// the ordinary allocator and counts live requests from its node/bucket rebinds.
+std::atomic<std::size_t> index_retained_bytes{0};
+template <typename T>
+struct MeasuredIndexAllocator {
+  using value_type = T;
+  MeasuredIndexAllocator() = default;
+  template <typename U>
+  MeasuredIndexAllocator(const MeasuredIndexAllocator<U> &) noexcept {}
+  T *allocate(std::size_t count) {
+    T *allocation = std::allocator<T>{}.allocate(count);
+    index_retained_bytes.fetch_add(count * sizeof(T), std::memory_order_relaxed);
+    return allocation;
+  }
+  void deallocate(T *allocation, std::size_t count) noexcept {
+    index_retained_bytes.fetch_sub(count * sizeof(T), std::memory_order_relaxed);
+    std::allocator<T>{}.deallocate(allocation, count);
+  }
+  template <typename U>
+  bool operator==(const MeasuredIndexAllocator<U> &) const noexcept { return true; }
+};
+using MeasuredIndex = std::unordered_map<std::int32_t, std::size_t, I32Hash, I32Equal,
+    MeasuredIndexAllocator<std::pair<const std::int32_t, std::size_t>>>;
+struct I32Index : MeasuredIndex {
+  I32Index() { index_retained_bytes.fetch_add(sizeof(I32Index), std::memory_order_relaxed); }
+  ~I32Index() { index_retained_bytes.fetch_sub(sizeof(I32Index), std::memory_order_relaxed); }
+};
+static_assert(sizeof(I32Index) == sizeof(I32IndexLayout));
+#else
+using I32Index = I32IndexLayout;
+#endif
 // Average constant-time membership/append, with ordered payloads retained in
 // their existing vectors. Ordered removal repairs shifted slots in O(N).
 template <class T>
@@ -862,4 +894,10 @@ extern "C" int objc3_runtime_stdlib_set_i32_v2_iterator(
 extern "C" void objc3_test_i32_index_reset() { index_hash_calls = 0; index_equal_calls = 0; }
 extern "C" uint64_t objc3_test_i32_index_hash_calls() { return index_hash_calls.load(); }
 extern "C" uint64_t objc3_test_i32_index_equal_calls() { return index_equal_calls.load(); }
+#endif
+
+#ifdef OBJC3_RUNTIME_I32_INDEX_MEMORY_TESTING
+extern "C" std::size_t objc3_test_i32_index_retained_bytes() {
+  return index_retained_bytes.load(std::memory_order_relaxed);
+}
 #endif
