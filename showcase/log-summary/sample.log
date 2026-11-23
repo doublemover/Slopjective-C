@@ -1,0 +1,6 @@
+INFO starting backup
+WARN retrying disk read
+
+INFO copied documents
+ERROR checksum mismatch
+INFO finished

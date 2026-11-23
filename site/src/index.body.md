@@ -4,9 +4,12 @@ Objective-C 3.0 is a native compiler built on a patched LLVM/Clang SDK. The comp
 uses the GNUstep 2.2 ABI and pinned libobjc2. Release qualification covers Linux
 x86-64 and AArch64 on Debian 13 and Ubuntu 26.04.
 
-[Linux release downloads and installation](../../docs/releases/linux.md)
+[Download the Linux SDK preview](https://github.com/doublemover/Slopjective-C/releases/tag/v0.1.0-preview.1)
+and follow [Getting started](../../docs/tutorials/getting_started.md) to compile your
+first program. Try the [log summary example](../../docs/tutorials/log_summary.md)
+for a complete command-line application.
 
-[Linux release status](../../docs/releases/status.md)
+[Linux release support](../../docs/releases/preview-support.md)
 
 ## Current implementation {#intro}
 
@@ -26,7 +29,8 @@ minimum runtime versions in its release manifest.
 ## Start here {#toc-quick-routes}
 
 - [Root README](../../README.md) for building or installing the SDK.
-- [Getting started](../../docs/tutorials/getting_started.md) for compiling and running an application.
+- [Linux release downloads and installation](../../docs/releases/linux.md).
+- [Linux release status](../../docs/releases/status.md).
 - [Build, run and verify](../../docs/tutorials/build_run_verify.md) for expected output and checks.
 - [Installed walkthrough](../../docs/tutorials/guided_walkthrough.md) for managed modules and package graphs.
 - [Showcase catalog](../../showcase/README.md) for runnable examples.

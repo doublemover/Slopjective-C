@@ -2,7 +2,7 @@
 
 The public carrier syntax uses native Clang types and lifetime operations in
 Objective-C C17 and Objective-C++ C++20/23. It is
-available in explicitly enabled ObjC3 mode on Linux x86-64 with GNUstep 2.2 and
+available in explicitly enabled ObjC3 mode on Linux x86-64 and AArch64 with GNUstep 2.2 and
 the compatibility profile. Objective-C ARC owns object and Block payloads;
 plain scalar carriers retain their native C/C++ value semantics. The [synchronous error contract](linux_public_errors.md) composes these values
 with public checked calls and handlers. Async/await and actors remain reserved.

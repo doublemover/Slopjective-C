@@ -127,6 +127,7 @@ sh install-linux.sh --provision --archive "$archive" --sha256 "$checksum" --root
 objc3c --version
 objc3c "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/main.objc3" -O2 -o /tmp/application
 /tmp/application
+sh "$OBJC3C_SDK_ROOT/share/objc3c/examples/log-summary/verify.sh"
 ''', 'sh', record['file']], check=True)
 
 

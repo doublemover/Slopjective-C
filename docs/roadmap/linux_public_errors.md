@@ -1,27 +1,28 @@
 # Public Linux synchronous errors
 
 The qualified public synchronous error contract uses explicit native function
-effects and checked call expressions. It shares the Linux x86-64 GNUstep 2.2
-compatibility profile, ownership operations and ABI of
-[public Optional/Result values](linux_public_carriers.md).
+effects and checked call expressions. It shares the Linux x86-64 and AArch64
+GNUstep 2.2 compatibility scope of [public Optional/Result values](linux_public_carriers.md).
+The shipped callable ABI supports object errors declared as `id<Error>`.
 
 ```objc
-int checked(int value) throws(int) {
-  if (value < 0) throwError(value);
+#include <objc3/errors.h>
+
+int checked(int value, id<Error> invalid) throws(id<Error>) {
+  if (value < 0) throwError(invalid);
   return value;
 }
 
-int forward(int value) throws(int) {
-  return tryValue(checked(value));
-}
-
-int recover(int value) {
+int recover(int value, id<Error> invalid) {
   int answer = 0;
-  handle { answer = tryValue(forward(value)); }
-  catch(int error) { answer = -error; }
+  handle { answer = tryValue(checked(value, invalid)); }
+  catch { answer = -1; }
   return answer;
 }
 ```
+
+The [log summary example](../tutorials/log_summary.md) shows an error token,
+checked call, diagnostic, and exit status in a runnable application.
 
 `throws(E)` declares one error payload type. Native type identity, ownership and
 layout participate in function, callback, Block, C++ member and Objective-C method

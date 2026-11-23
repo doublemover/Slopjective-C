@@ -32,7 +32,7 @@ def reader_tree(tmp_path):
 def test_current_routes_and_installed_example_owners():
     report = check(ROOT)
     assert report['status'] == 'PASS'
-    assert report['examples'] == ['managed-modules', 'native-application', 'package-graph']
+    assert report['examples'] == ['log-summary', 'managed-modules', 'native-application', 'package-graph']
 
 
 @pytest.mark.parametrize('addition,diagnostic', [

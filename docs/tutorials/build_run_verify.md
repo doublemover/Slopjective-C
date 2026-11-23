@@ -1,27 +1,23 @@
 # Build, run and verify
 
-First [build or install and activate the SDK](getting_started.md). Run from the
-repository root:
+Complete [Getting started](getting_started.md) and keep the SDK activated.
+In the same working directory, compile your first program again with debug
+information and a Makefile dependency record:
 
 ```sh
-objc3c tests/clang_foundation/installed_sdk/main.objc3 -O2 -g -MMD -MF application.d -o application
-./application
+objc3c hello.objc3 -O0 -g -MMD -MF hello.d -o hello
+./hello
+cat hello.d
 ```
 
-Expect `native Linux application` and exit status zero. `application.d` records
-source/header dependencies. `objc3c --help` lists Clang driver options; `-c`,
-`-S`, `-E` and `-fsyntax-only` select individual compilation stages.
+The program prints the same two lines. `hello.d` lists the source and any
+project headers used to build `hello`. Use `objc3c --help` for driver options.
+Use `-fsyntax-only` to check the source without linking or `-c` to stop at an
+object file.
 
-The installed SDK qualification compiles this same source at O0 and O2 and runs
-both executables outside the checkout. The installed managed module and package
-graph gates exercise the next [walkthrough](guided_walkthrough.md) examples.
-Receipts under `out/toolchains/linux-sdk-builds/` identify the inputs and checks
-for a specific build. Keep application output separate from sources and the SDK.
+If the compiler command is missing, source the installation's `activate.sh`
+in the current shell. If the installer reports a missing prerequisite,
+see the provisioning instructions in the [release guide](../releases/linux.md).
 
-For repository maintainers, the current documentation guard is:
-
-```sh
-python -m scripts.objc3c_toolchain.check_onboarding
-```
-
-See [tutorial navigation](README.md) and the [showcase catalog](../../showcase/README.md).
+Continue with the [log summary example](log_summary.md) or the
+[installed module and package walkthrough](guided_walkthrough.md).

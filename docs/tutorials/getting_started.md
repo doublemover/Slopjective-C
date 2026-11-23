@@ -1,29 +1,45 @@
 # Getting started on Linux
 
-For an SDK preview, start with the [Linux release and install guide](../releases/linux.md).
-Use the archive and distribution listed for your architecture in its release notes.
-The [root README](../../README.md#build-and-use) lists the pinned development tools.
-If you are building the compiler from a configured Linux checkout:
+[Install the published SDK](../releases/linux.md) for your architecture. The
+preview supports x86-64 and AArch64 on the distributions in its
+[support table](../releases/preview-support.md).
+
+For a user installation, activate the SDK and check the compiler version:
 
 ```sh
-python -m scripts.objc3c_toolchain build-sdk --fetch
-. out/toolchains/linux-sdk/activate.sh
+. "$HOME/.local/objc3c/activate.sh"
 objc3c --version
-objc3c tests/clang_foundation/installed_sdk/main.objc3 -O2 -g -o application
-./application
 ```
 
-The application prints `native Linux application` and exits successfully. It
-exercises a managed Objective-C object, ARC, Blocks-enabled language mode and
-`defer` cleanup. `.objc3` selects Objective-C 3 with ARC and Blocks; use
-`-fno-objc-arc` for manual ownership.
+For a system installation, source `/opt/objc3c/activate.sh` instead. In an empty
+working directory, create and run an Objective-C 3 program:
 
-Continue with [Build, run and verify](build_run_verify.md), then the
-[guided walkthrough](guided_walkthrough.md) for installed managed modules and
-package graphs. The [showcase catalog](../../showcase/README.md) links their sources.
+```sh
+cat > hello.objc3 <<'SRC'
+#include <stdio.h>
 
-[The capability schema](../../schemas/objc3-language-capabilities.json) is the
-feature authority. Public `defer`, `Optional`, `Result` and typed `throws` have
-qualified support. Public async/await and actors remain reserved. Internal
-migration intrinsics in advanced SDK fixtures are experimental implementation
-interfaces, not additional public syntax.
+int main(void) {
+  defer { puts("Done."); }
+  puts("Hello from Objective-C 3.0.");
+  return 0;
+}
+SRC
+objc3c hello.objc3 -O2 -o hello
+./hello
+```
+
+```text
+Hello from Objective-C 3.0.
+Done.
+```
+
+The `defer` block executes when `main` exits. The `.objc3` extension selects
+Objective-C 3 with ARC and Blocks enabled.
+
+Try the [log summary example](log_summary.md) next. It combines `defer` with
+`Optional`, `Result`, and typed `throws`. The
+[capability schema](../../schemas/objc3-language-capabilities.json) records
+qualified features and modes. Public async/await and actors remain reserved.
+
+For the compiler checkout and build, follow the
+[maintainer workflow](../runbooks/objc3c_maintainer_workflows.md).

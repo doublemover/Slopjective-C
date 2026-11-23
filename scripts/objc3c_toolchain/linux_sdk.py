@@ -88,7 +88,8 @@ def input_identity(repo: Path, sdk: Path) -> dict:
     files = set()
     for directory in ('scripts/objc3c_toolchain', 'scripts/objc3c_toolchain_runtime',
                       'scripts/objc3c_native_validation', 'tests/clang_foundation',
-                      'tests/tooling/fixtures/clang_foundation', 'native/objc3c/src/runtime', 'native/objc3c/tests', 'stdlib/include'):
+                      'tests/tooling/fixtures/clang_foundation', 'native/objc3c/src/runtime', 'native/objc3c/tests',
+                      'stdlib/include', 'showcase/log-summary'):
         root = repo / directory
         if not (root.exists() or root.is_symlink()):
             continue

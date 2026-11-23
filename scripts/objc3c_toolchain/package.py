@@ -342,6 +342,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
         shutil.copy2(Path(temporary) / 'objc3-managed-sample', prefix / 'bin/objc3-managed-sample')
     shutil.copytree(repo / 'tests/clang_foundation/installed_sdk',
                     prefix / 'share/objc3c/examples/native', dirs_exist_ok=True)
+    shutil.copytree(repo / 'showcase/log-summary', prefix / 'share/objc3c/examples/log-summary')
     verifier = prefix / 'share/objc3c/verify-sdk.py'
     verifier.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(Path(__file__), verifier)
@@ -371,6 +372,11 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     data['seal_sha256'] = _digest(data)
     (prefix / MANIFEST).write_text(json.dumps(data, indent=2) + '\n')
     (prefix / MANIFEST).chmod(0o644)
+    log_summary = validation_report.parent / 'installed-log-summary.log'
+    with log_summary.open('wb') as log:
+        subprocess.run(['env', '-u', 'LD_LIBRARY_PATH', f'PATH={prefix / "bin"}{os.pathsep}{os.environ["PATH"]}',
+                        'sh', prefix / 'share/objc3c/examples/log-summary/verify.sh'],
+                       stdout=log, stderr=subprocess.STDOUT, timeout=180, check=True)
     from functools import partial
     from .host import resource_limits
     from .qualify_source_modules import qualify
@@ -462,6 +468,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
 
     qualification = _run_qualifications(
         {name: partial(qualify_frozen_sdk, task) for name, task in tasks.items()}, workers)
+    qualification['installed_log_summary'] = {'status': 'PASS', 'log_sha256': _file_hash(log_summary)}
     cache_dir.mkdir(parents=True, exist_ok=True)
     archive = cache_dir / (source['build_id'] + '-' + native_linux_host() + '-' + data['seal_sha256'][:16] + '.tar.zst')
     receipt = {'archive': str(archive), 'seal_sha256': data['seal_sha256'],

@@ -1,0 +1,110 @@
+#define _POSIX_C_SOURCE 200809L
+#include <ctype.h>
+#include <inttypes.h>
+#include <objc3/errors.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef enum { Info, Warning, Error } Level;
+typedef enum { UnknownLevel } LogFailure;
+
+typedef struct {
+  uintmax_t info;
+  uintmax_t warnings;
+  uintmax_t errors;
+} Totals;
+
+// Blank lines have no token. Other lines begin with a log level.
+static Optional(size_t) level_start(const char *line, size_t length) {
+  for (size_t i = 0; i < length; ++i) {
+    if (!isspace((unsigned char)line[i]))
+      return Some(size_t, i);
+  }
+  return None(size_t);
+}
+
+static Result(Level, LogFailure) parse_level(const char *line, size_t length) {
+  size_t token = 0;
+  while (token < length && !isspace((unsigned char)line[token]))
+    ++token;
+  if (token == 4 && memcmp(line, "INFO", token) == 0)
+    return Ok(Level, LogFailure, Info);
+  if (token == 4 && memcmp(line, "WARN", token) == 0)
+    return Ok(Level, LogFailure, Warning);
+  if (token == 5 && memcmp(line, "ERROR", token) == 0)
+    return Ok(Level, LogFailure, Error);
+  return Err(Level, LogFailure, UnknownLevel);
+}
+
+
+// A class object serves as a stateless error token with process lifetime.
+__attribute__((objc_root_class))
+@interface InvalidLogLevel <Error>
++ (id<Error>)token;
+@end
+
+@implementation InvalidLogLevel
++ (id<Error>)token { return (id<Error>)self; }
+@end
+
+static int checked_level(const char *line, size_t length) throws(id<Error>) {
+  match (parse_level(line, length)) {
+  case .Ok(let level): { return (int)level; }
+  case .Err(_): { throwError([InvalidLogLevel token]); }
+  }
+}
+
+int summarize_log(const char *path) {
+  FILE *input = fopen(path, "r");
+  if (!input) {
+    perror(path);
+    return 1;
+  }
+  defer { fclose(input); }
+
+  Totals totals = {0};
+  size_t line_number = 0;
+  char *line = NULL;
+  size_t capacity = 0;
+  defer { free(line); }
+
+  ssize_t count;
+  while ((count = getline(&line, &capacity, input)) >= 0) {
+    ++line_number;
+    match (level_start(line, (size_t)count)) {
+    case .None: { continue; }
+    case .Some(let start): {
+      handle {
+        switch (tryValue(checked_level(line + start, (size_t)count - start))) {
+        case Info: ++totals.info; break;
+        case Warning: ++totals.warnings; break;
+        case Error: ++totals.errors; break;
+        }
+      } catch (id<Error> failure) {
+        (void)failure;
+        fprintf(stderr, "%s:%zu: expected INFO, WARN, or ERROR\n", path, line_number);
+        return 1;
+      }
+    }
+    }
+  }
+  if (!feof(input) || ferror(input)) {
+    fprintf(stderr, "%s: could not read log\n", path);
+    return 1;
+  }
+
+  printf("INFO %" PRIuMAX "\nWARN %" PRIuMAX "\nERROR %" PRIuMAX "\n",
+         totals.info, totals.warnings, totals.errors);
+  return 0;
+}
+
+#ifndef LOG_SUMMARY_LIBRARY
+int main(int argc, char **argv) {
+  if (argc != 2) {
+    fprintf(stderr, "usage: %s LOG_FILE\n", argv[0]);
+    return 2;
+  }
+  return summarize_log(argv[1]);
+}
+#endif

@@ -1,0 +1,178 @@
+{
+  "schema": "objc3c.linux-release.v1",
+  "tag": "v0.1.0-preview.1",
+  "revision": "8fe5c2fd89008d1c090a9355c11bdda01ceb9309",
+  "channel": "preview",
+  "profiles_claimed": [],
+  "archives": {
+    "linux-x86_64": {
+      "target": "x86_64-unknown-linux-gnu",
+      "sha256": "279269c7e87b56289e11e800097f2490dd18d2124fc456306665471fab207222",
+      "bytes": 505521738,
+      "seal_sha256": "d7de09cc1d27fb7add8c2f4792d34d488384300df8d248318b3539e0cfcf2fd0",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-a598cb13befe-1fe5e2a6",
+      "linux_abi": {
+        "glibc_minimum": "2.41",
+        "libstdcxx_symbol_minimum": "GLIBCXX_3.4.33"
+      },
+      "extension_abi": 24,
+      "upstream_commit": "392dfff97d29b59d77e5cac6d4b6ef2585fe7117",
+      "patch_digest": "a598cb13befe377f044b7af7aaec99075c0362755558faf36225cd9a47c56b61",
+      "qualification_attempt": 1,
+      "clean_installs": [
+        {
+          "schema": "objc3c.linux-archive-install.v1",
+          "status": "PASS",
+          "host": "linux-x86_64",
+          "distribution": "debian:13",
+          "revision": "8fe5c2fd89008d1c090a9355c11bdda01ceb9309",
+          "run": 44865570421,
+          "attempt": 1,
+          "image": "debian@sha256:9c6e381421d0f48d1b8133e573f33c185ee16cbf505eda9c4a8a4791b25ea8a6",
+          "image_id": "sha256:9c6e381421d0f48d1b8133e573f33c185ee16cbf505eda9c4a8a4791b25ea8a6",
+          "archive_sha256": "279269c7e87b56289e11e800097f2490dd18d2124fc456306665471fab207222",
+          "seal_sha256": "d7de09cc1d27fb7add8c2f4792d34d488384300df8d248318b3539e0cfcf2fd0",
+          "source_build_id": "llvmorg-23.1.5-392dfff97d29-a598cb13befe-1fe5e2a6",
+          "scopes": {
+            "smoke": "d909c91e27a3aec982ce6fb75b4423e826426dbad1d9a615f1e584bd235cdba6",
+            "package-build": "e8c8cf09ba11eaa10facd3551460271b392cab946b7a32c9cfca949bb24f5db8",
+            "package-surface": "55ea41fd8f1d05715f36f210389e3ac596b13a8773119137565130ffe4ad40cc",
+            "package-modules": "5cd3ac35c9561742d790117720ebfd6c1d9919133bbd3835fc4193b1f5fc32cc",
+            "async": "89a34aac7da42c2c4c5c2f1cb3112464f74ecbbf0c560434d851133e73204456",
+            "isolation": "8c8e3783d3f323a6b9306ce8ea3f7ba85757a2c8dbaafa7f404834dc3439c36c",
+            "features": "f86428f706e751b88555a399867c6afafd31012cf249aa89d87cb57287d91fff",
+            "carriers": "0bee275f70c0cc1e85e32d28db93dfa67f779046051060f68f30466e6b766099"
+          }
+        },
+        {
+          "schema": "objc3c.linux-archive-install.v1",
+          "status": "PASS",
+          "host": "linux-x86_64",
+          "distribution": "ubuntu:26.04",
+          "revision": "8fe5c2fd89008d1c090a9355c11bdda01ceb9309",
+          "run": 44865570421,
+          "attempt": 1,
+          "image": "ubuntu@sha256:d66b366dac61b575bee2aef07e9c26e8070096fbe84a3d4d3eb0da069b5d76db",
+          "image_id": "sha256:d66b366dac61b575bee2aef07e9c26e8070096fbe84a3d4d3eb0da069b5d76db",
+          "archive_sha256": "279269c7e87b56289e11e800097f2490dd18d2124fc456306665471fab207222",
+          "seal_sha256": "d7de09cc1d27fb7add8c2f4792d34d488384300df8d248318b3539e0cfcf2fd0",
+          "source_build_id": "llvmorg-23.1.5-392dfff97d29-a598cb13befe-1fe5e2a6",
+          "scopes": {
+            "smoke": "51882c3e216aca0ea6f5790ae2baa061580f2ef879d60f30e07a99275816200c",
+            "package-build": "50454e59b47b847f660ec3b1f5d052c2b72e793845415ef05e5c5a21ceed3609",
+            "package-surface": "07741dc9bbb4e5afed311fc581d58c25399fc0162a604ba2a7102b361ebe8121",
+            "package-modules": "a381f16f1713409ab4b9fedcf8a9f2c5847d6a508554507049fa2246434ccd29",
+            "async": "74c26ebafb6aabca86d52590e109e81c1b113267d9000ee966ac5ceade0372ec",
+            "isolation": "22abe9619ccec86bf569b7cce519d158b7e6054df7c3a37b0004786e61526bcb",
+            "features": "1165eb9477b14e35f5d91d92a097a78e6a48d6826c4ff675f17fc32e931b5e93",
+            "carriers": "4c361098fa07946af5f2e4a40563136f0151a4eb98d5b4a58962141b08b7ac88"
+          }
+        }
+      ],
+      "file": "objc3-sdk-v0.1.0-preview.1-linux-x86_64.tar.zst",
+      "qualification_run": 44865570421,
+      "qualification_url": "https://github.com/doublemover/Slopjective-C/actions/runs/44865570421"
+    },
+    "linux-aarch64": {
+      "target": "aarch64-unknown-linux-gnu",
+      "sha256": "390a78c403cf9e391a973abd91bbf296e0242136a43ec87eab48d017574e5ee9",
+      "bytes": 494267364,
+      "seal_sha256": "05484cd8c8c9c97840900a99ebb7375540a914aeffcbacb92d61b2d83670718e",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-a598cb13befe-1fe5e2a6",
+      "linux_abi": {
+        "glibc_minimum": "2.41",
+        "libstdcxx_symbol_minimum": "GLIBCXX_3.4.33"
+      },
+      "extension_abi": 24,
+      "upstream_commit": "392dfff97d29b59d77e5cac6d4b6ef2585fe7117",
+      "patch_digest": "a598cb13befe377f044b7af7aaec99075c0362755558faf36225cd9a47c56b61",
+      "qualification_attempt": 1,
+      "clean_installs": [
+        {
+          "schema": "objc3c.linux-archive-install.v1",
+          "status": "PASS",
+          "host": "linux-aarch64",
+          "distribution": "debian:13",
+          "revision": "8fe5c2fd89008d1c090a9355c11bdda01ceb9309",
+          "run": 44865570382,
+          "attempt": 1,
+          "image": "debian@sha256:9c6e381421d0f48d1b8133e573f33c185ee16cbf505eda9c4a8a4791b25ea8a6",
+          "image_id": "sha256:9c6e381421d0f48d1b8133e573f33c185ee16cbf505eda9c4a8a4791b25ea8a6",
+          "archive_sha256": "390a78c403cf9e391a973abd91bbf296e0242136a43ec87eab48d017574e5ee9",
+          "seal_sha256": "05484cd8c8c9c97840900a99ebb7375540a914aeffcbacb92d61b2d83670718e",
+          "source_build_id": "llvmorg-23.1.5-392dfff97d29-a598cb13befe-1fe5e2a6",
+          "scopes": {
+            "smoke": "5d5b4c9b0146fa34492459651b2026c437bf560db6f3871b008edc76bbddac67",
+            "package-build": "dcc25c2fe622042b8021d1550186fd20183c60a21bda78064eaf600aaa7bd96f",
+            "package-surface": "151cdc3c64d126a7fb8498ebcc1bb0e5399aeb0ce1116136490cd5b17a4c5f63",
+            "package-modules": "6f92418335e2b99136f7f435f9f4732f321ba582d6229d3c3ab661f09390d558",
+            "async": "74a06f71aeb5217f45d802e4ae4053bc1c5b9331091a9855558af598b66c93bc",
+            "isolation": "c407e05ca2d9e02a045f590a351dcb839953ab7a9dc1076fca3d516b9847d971",
+            "features": "b105f01f573a022d5e6ebd27469a85fe0c9214704e00da95b152719c81a4ec41",
+            "carriers": "71c840adf4a9adbf6658c723d40414ab4cc137130cb06dd329834cb8454d5021"
+          }
+        },
+        {
+          "schema": "objc3c.linux-archive-install.v1",
+          "status": "PASS",
+          "host": "linux-aarch64",
+          "distribution": "ubuntu:26.04",
+          "revision": "8fe5c2fd89008d1c090a9355c11bdda01ceb9309",
+          "run": 44865570382,
+          "attempt": 1,
+          "image": "ubuntu@sha256:d66b366dac61b575bee2aef07e9c26e8070096fbe84a3d4d3eb0da069b5d76db",
+          "image_id": "sha256:d66b366dac61b575bee2aef07e9c26e8070096fbe84a3d4d3eb0da069b5d76db",
+          "archive_sha256": "390a78c403cf9e391a973abd91bbf296e0242136a43ec87eab48d017574e5ee9",
+          "seal_sha256": "05484cd8c8c9c97840900a99ebb7375540a914aeffcbacb92d61b2d83670718e",
+          "source_build_id": "llvmorg-23.1.5-392dfff97d29-a598cb13befe-1fe5e2a6",
+          "scopes": {
+            "smoke": "2a4e42af3991e226c2596c81210b8aad5ba24d3c54f3b38ffcdf63c41fe4fc36",
+            "package-build": "d1552ab3cac612305b1eba3f5f61b316758c963a90248efa7b5466638afc5218",
+            "package-surface": "3b7bf1485cf748e2d41a714056bb4d7c0fb03233f19ce29a3152407e9e128bb4",
+            "package-modules": "35aa6bd5bb4ba848da4132099b5e25973d50149e3cb62278e9ae9082a684e716",
+            "async": "aaa57c4e9e87d7cf8daf6f5dd6dd2bda0cbc01314ae9a39e7b9275e4e49c3d4b",
+            "isolation": "784671814ece146a45d6f10ce6ec067f888a7f5a7e35a91e86d8decd860bf523",
+            "features": "406679c2b8ed1dc67f2a669201c725b20ce310b9f8073374f6c56137cc6ec166",
+            "carriers": "f30fb452e10d22c65de9eae42e73b4ae05caa6ce5dcaeaaa4c664d5af21c51db"
+          }
+        }
+      ],
+      "file": "objc3-sdk-v0.1.0-preview.1-linux-aarch64.tar.zst",
+      "qualification_run": 44865570382,
+      "qualification_url": "https://github.com/doublemover/Slopjective-C/actions/runs/44865570382"
+    }
+  },
+  "sources": [
+    {
+      "component": "Slopjective-C",
+      "revision": "8fe5c2fd89008d1c090a9355c11bdda01ceb9309",
+      "file": "slopjective-c-v0.1.0-preview.1-source.tar.gz",
+      "sha256": "ae8d2789c1b69ddbcaeb60051ec843ddc0b0cfa6e4ee91fe15e53e9b226570fc",
+      "bytes": 11086011
+    },
+    {
+      "component": "libobjc2",
+      "revision": "e877e782fb965c4e870d2ecf6aff58dddc6290ae",
+      "file": "libobjc2-e877e782fb965c4e870d2ecf6aff58dddc6290ae-source.tar.gz",
+      "url": "https://codeload.github.com/gnustep/libobjc2/tar.gz/e877e782fb965c4e870d2ecf6aff58dddc6290ae",
+      "sha256": "de7080624103fe52f53e6ff36ea3162d38ecf06babe24d2693429e0ddb507007",
+      "bytes": 213239
+    },
+    {
+      "component": "llvm-project",
+      "revision": "392dfff97d29b59d77e5cac6d4b6ef2585fe7117",
+      "file": "llvm-project-392dfff97d29b59d77e5cac6d4b6ef2585fe7117-source.tar.gz",
+      "url": "https://codeload.github.com/llvm/llvm-project/tar.gz/392dfff97d29b59d77e5cac6d4b6ef2585fe7117",
+      "sha256": "d6dd769a5c981bc0ec5d877e55ca141e826aca1bca5c5e7d6128e70341dd3ae0",
+      "bytes": 277759388
+    },
+    {
+      "component": "robin-map",
+      "revision": "bd14e6830a1474fed9d2d03f5c3b0683d818d540",
+      "file": "robin-map-bd14e6830a1474fed9d2d03f5c3b0683d818d540-source.tar.gz",
+      "url": "https://codeload.github.com/Tessil/robin-map/tar.gz/bd14e6830a1474fed9d2d03f5c3b0683d818d540",
+      "sha256": "71d621a23943d625ba9f872a64878782df0136f70709a685c5ecd3d90939effd",
+      "bytes": 70418
+    }
+  ]
+}

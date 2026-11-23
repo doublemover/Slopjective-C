@@ -1,0 +1,65 @@
+name: Published Linux SDK examples
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "docs/releases/linux.md"
+      - "docs/releases/preview-manifest.json"
+      - "docs/tutorials/getting_started.md"
+      - "docs/tutorials/build_run_verify.md"
+      - "docs/tutorials/log_summary.md"
+      - "showcase/log-summary/**"
+      - ".github/workflows/linux-preview-examples.yml"
+permissions:
+  contents: read
+concurrency:
+  group: linux-preview-examples-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  examples:
+    name: Published preview examples (${{ matrix.arch }})
+    runs-on: ${{ matrix.arch == 'aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
+    container: debian:13
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x86_64, aarch64]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Fetch and install the archived preview
+        shell: bash
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: |
+          test "$(uname -m)" = "$ARCH"
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates curl python3
+          tag=$(python3 -c 'import json; print(json.load(open("docs/releases/preview-manifest.json"))["tag"])')
+          archive="objc3-sdk-$tag-linux-$ARCH.tar.zst"
+          downloads=$(mktemp -d)
+          for file in "$archive" linux-release.json SHA256SUMS install-linux.sh install-sdk.py; do
+            curl --fail --location --silent --show-error --retry 3 \
+              --output "$downloads/$file" \
+              "https://github.com/doublemover/Slopjective-C/releases/download/$tag/$file"
+          done
+          cmp docs/releases/preview-manifest.json "$downloads/linux-release.json"
+          cd "$downloads"
+          sha256sum --check --ignore-missing SHA256SUMS
+          checksum=$(awk -v archive="$archive" '$2 == archive { print $1 }' SHA256SUMS)
+          sh install-linux.sh --provision --archive "$archive" --sha256 "$checksum" --root /opt/objc3c
+      - name: Run the documented examples outside the checkout
+        shell: bash
+        run: |
+          source /opt/objc3c/activate.sh
+          scratch=$(mktemp -d)
+          cp -R showcase/log-summary "$scratch/"
+          awk '/^cat > hello[.]objc3 / { code = 1 } code && /^\x60\x60\x60/ { exit } code' \
+            docs/tutorials/getting_started.md > "$scratch/hello.sh"
+          test -s "$scratch/hello.sh"
+          cd "$scratch"
+          bash -e hello.sh > output.txt
+          printf 'Hello from Objective-C 3.0.\nDone.\n' | cmp - output.txt
+          sh log-summary/verify.sh

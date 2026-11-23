@@ -7,7 +7,7 @@ import re
 from urllib.parse import unquote, urlsplit
 
 from scripts.build_pages import REPOSITORY_DOCUMENTS, load_contract, render_markdown_source
-from . import cli
+from . import cli, preview_support
 
 RETIRED = re.compile(
     r'\b(?:build-native-binaries|test-smoke|compile-objc3c|check-showcase-surface|'
@@ -63,6 +63,7 @@ def check(repo: Path) -> dict:
     if portfolio.get('schema') != 'objc3c.linux-sdk-examples.v1':
         errors.append('showcase: wrong catalog schema')
     expected = {
+        'log-summary': ('showcase/log-summary/library/log-summary.objc3', 'installed_log_summary'),
         'native-application': ('tests/clang_foundation/installed_sdk/main.objc3', 'installed_qualification'),
         'managed-modules': ('tests/clang_foundation/native_package', 'installed_source_modules'),
         'package-graph': ('tests/clang_foundation/source_graph/workspace.json', 'installed_source_graph'),
@@ -75,6 +76,9 @@ def check(repo: Path) -> dict:
                 errors.append(f'showcase: missing {field} {example[field]}')
     if actual != expected or len(portfolio.get('examples', [])) != len(expected):
         errors.append('showcase: examples must use the installed SDK qualification owners')
+    if (repo / preview_support.TABLE).read_text() != preview_support.render(
+            json.loads((repo / preview_support.MANIFEST).read_bytes())):
+        errors.append('preview support table differs from the published manifest')
     authority = 'schemas/objc3-language-capabilities.json'
     contract = json.loads((repo / 'site/src/index.contract.json').read_text())
     if any(owner.get('capability_authority') != authority for owner in (portfolio, contract)):

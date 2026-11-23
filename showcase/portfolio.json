@@ -3,9 +3,16 @@
   "capability_authority": "schemas/objc3-language-capabilities.json",
   "examples": [
     {
+      "id": "log-summary",
+      "source": "showcase/log-summary/library/log-summary.objc3",
+      "installed": "share/objc3c/examples/log-summary/workspace.json",
+      "tutorial": "docs/tutorials/log_summary.md",
+      "qualification": "installed_log_summary"
+    },
+    {
       "id": "native-application",
       "source": "tests/clang_foundation/installed_sdk/main.objc3",
-      "tutorial": "docs/tutorials/getting_started.md",
+      "tutorial": "docs/tutorials/build_run_verify.md",
       "qualification": "installed_qualification"
     },
     {

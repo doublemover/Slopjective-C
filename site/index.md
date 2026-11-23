@@ -9,9 +9,12 @@ Objective-C 3.0 is a native compiler built on a patched LLVM/Clang SDK. The comp
 uses the GNUstep 2.2 ABI and pinned libobjc2. Release qualification covers Linux
 x86-64 and AArch64 on Debian 13 and Ubuntu 26.04.
 
-[Linux release downloads and installation](https://github.com/doublemover/Slopjective-C/blob/main/docs/releases/linux.md)
+[Download the Linux SDK preview](https://github.com/doublemover/Slopjective-C/releases/tag/v0.1.0-preview.1)
+and follow [Getting started](https://github.com/doublemover/Slopjective-C/blob/main/docs/tutorials/getting_started.md) to compile your
+first program. Try the [log summary example](https://github.com/doublemover/Slopjective-C/blob/main/docs/tutorials/log_summary.md)
+for a complete command-line application.
 
-[Linux release status](https://github.com/doublemover/Slopjective-C/blob/main/docs/releases/status.md)
+[Linux release support](https://github.com/doublemover/Slopjective-C/blob/main/docs/releases/preview-support.md)
 
 ## Current implementation <a id="intro"></a>
 
@@ -31,7 +34,8 @@ minimum runtime versions in its release manifest.
 ## Start here <a id="toc-quick-routes"></a>
 
 - [Root README](https://github.com/doublemover/Slopjective-C/blob/main/README.md) for building or installing the SDK.
-- [Getting started](https://github.com/doublemover/Slopjective-C/blob/main/docs/tutorials/getting_started.md) for compiling and running an application.
+- [Linux release downloads and installation](https://github.com/doublemover/Slopjective-C/blob/main/docs/releases/linux.md).
+- [Linux release status](https://github.com/doublemover/Slopjective-C/blob/main/docs/releases/status.md).
 - [Build, run and verify](https://github.com/doublemover/Slopjective-C/blob/main/docs/tutorials/build_run_verify.md) for expected output and checks.
 - [Installed walkthrough](https://github.com/doublemover/Slopjective-C/blob/main/docs/tutorials/guided_walkthrough.md) for managed modules and package graphs.
 - [Showcase catalog](https://github.com/doublemover/Slopjective-C/blob/main/showcase/README.md) for runnable examples.

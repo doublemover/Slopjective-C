@@ -1,0 +1,14 @@
+{
+  "schema": "objc3c.source-workspace.v4",
+  "packages": ["library/package.json"],
+  "application": {
+    "root": "app",
+    "source": "main.m",
+    "language": "objective-c",
+    "standard": "c17",
+    "ownership": "arc",
+    "dependencies": [
+      { "name": "example.LogSummary", "package": "log-summary-v1", "visibility": "private" }
+    ]
+  }
+}

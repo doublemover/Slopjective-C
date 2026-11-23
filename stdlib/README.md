@@ -96,7 +96,7 @@ and ownership diagnostics. The compiler source now also implements native
 under ARC and MRC. These statements need no library import; `objc3.system`
 imports retain their Strict System gate. Borrowed-pointer contracts and escape
 checking are authored in the native compiler; remaining alias/diagnostic boundaries
-and complete Strict System conformance remain outstanding. Source 2.263 / System 2.189 is the current development checkpoint. SDK 2.62 /
+and complete Strict System conformance remain outstanding. Source 2.263 / System 2.189 was an earlier development checkpoint. SDK 2.62 /
 extension ABI 21 remains the last accepted archive; extension ABI 24 source
 changes still require one fresh matching SDK campaign.
 

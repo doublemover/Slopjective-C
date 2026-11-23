@@ -14,40 +14,20 @@ Third-party code, including upstream code reproduced in patches, remains
 under its original license. LLVM and Clang use the Apache License 2.0 with
 LLVM Exceptions.
 
-## Build and use
+## Install the Linux SDK
 
-Start with the [Linux release and install guide](docs/releases/linux.md) or the
-[Linux tutorial](docs/tutorials/getting_started.md). The
-[showcase catalog](showcase/README.md) links installed examples.
-The [Linux release status](docs/releases/status.md) tracks the current candidate
-and remaining acceptance gates.
+Use the published Linux preview on x86-64 or AArch64. The
+[installation guide](docs/releases/linux.md) walks through downloading,
+verifying and installing the archive. Then compile a program from an empty
+directory with [Getting started](docs/tutorials/getting_started.md), or try
+the [log summary example](docs/tutorials/log_summary.md) to see how
+`defer`, `Optional`, `Result` and typed errors work together.
 
-The authoritative versions are in
-[`toolchains/llvm/manifest.json`](toolchains/llvm/manifest.json). The current
-foundation is LLVM 23.1.5. Development requires Python 3.15.0, Node 26.13.0,
-npm 12.2.2, CMake 4.4.5 and Ninja 1.13.2. A compiler cache is recommended.
-Native SDK development also needs the system OpenSSL 3.5+, zlib and zstd
-development headers.
-PowerShell is not part of the Linux compiler build or qualification pipeline.
+See the [release status](docs/releases/status.md) for the qualified distributions
+and ABI, and the [showcase catalog](showcase/README.md) for runnable examples.
+The prebuilt SDK requires neither a source checkout nor the maintainer toolchain.
 
-In the managed Linux development environment:
-
-```sh
-bash scripts/setup_cloud_environment.sh
-source /workspace/.cloud-setup/Slopjective-C/activate.sh
-npm run objc3c -- build-sdk --fetch
-source out/toolchains/linux-sdk/activate.sh
-objc3c tests/clang_foundation/installed_sdk/main.objc3 -O2 -g -o application
-./application
-```
-
-`build-sdk` builds and tests the sealed LLVM fork, pinned native runtime and
-frontend; installs an isolated candidate; qualifies the installed compiler,
-embedding API, semantic interfaces, runtime and editor tools; creates a sealed
-archive; and publishes a content-addressed installation. Logs and phase timings
-live under `out/toolchains/linux-sdk-builds/`. Incremental Ninja builds and a
-persistent compiler cache are reused. The product SDK and the bootstrap compiler
-have separate roots; `OBJC3C_BOOTSTRAP_LLVM_ROOT` pins the latter.
+## Use the installed SDK
 
 The compiler accepts normal Clang compilation, linking, diagnostics and
 Makefile dependency options. `.objc3` selects Objective-C 3 with ARC and Blocks.
@@ -72,36 +52,6 @@ target_link_libraries(my_embedding PRIVATE objc3c::Frontend)
 Pass the installation through `CMAKE_PREFIX_PATH`. See the
 [frontend API and interfaces](native/objc3c/src/clang_foundation/README.md) and
 [LLVM foundation workflow](toolchains/llvm/README.md) for details.
-
-## Install a release archive
-
-The [Linux release guide](docs/releases/linux.md) lists the download location,
-required files, checksum verification, and installation commands for a
-published SDK preview.
-
-An installation needs no checkout, Node, PowerShell or development Python.
-On an apt-based Linux host, the release installer can provision its distribution
-Python, decompressor, system headers and loader dependencies:
-
-```sh
-sh install-linux.sh --provision --archive objc3-sdk.tar.zst \
-  --sha256 SHA256_FROM_RELEASE_RECEIPT --root /opt/objc3c
-. /opt/objc3c/activate.sh
-objc3c --version
-```
-
-Run provisioning as root; omit `--provision` when prerequisites are installed.
-Release installers are shipped under `share/objc3c/` in the archive and alongside
-CI release artifacts. Installations live under `sdks/<full-content-seal>`;
-activation atomically switches `current`. Existing prefixes are verified before
-reuse. The standalone verifier checks all file contents, modes and relative
-symbolic links after extraction or relocation. Directory permissions are also
-sealed; archives and activation files support root installation followed by
-ordinary-user development, including under a restrictive installation umask.
-
-The release workflow checks each archive on Debian 13 and Ubuntu 26.04. The
-release manifest records the matching qualification runs and minimum glibc and
-libstdc++ symbol versions. Check the manifest for the archive you install.
 
 The installed sample combines semantic interface imports, managed objects and
 Blocks, typed errors and `defer` cleanup. It uses the bounded native migration
@@ -153,7 +103,7 @@ and runs the application. It retains a build report and a content-identified
 package installation inventory. The same operation is exposed through
 `npm run objc3c -- build-packages`.
 
-The v3 package contract requires explicit language, standard and ownership locks.
+The v4 package contract requires explicit language, standard and ownership locks.
 It supports Objective-C C17 and C++20/C++23 in Objective-C++ or plain C++ mode,
 with exact mode matching across every dependency. Packages use local sources;
 remote fetching, mode adaptation and public module syntax remain separate work.
@@ -167,7 +117,7 @@ identifies the archive, code hashes and installed/fresh-distribution evidence.
 is the authority for public extensions; its generated
 [Clang capability report](docs/support/clang_foundation_capabilities.json)
 and compiler feature queries must agree. Public `defer { ... }` is qualified for
-Linux x86-64, GNUstep 2.2, compatibility profile, with ARC and MRC. Cleanup runs
+Linux x86-64 and AArch64 with GNUstep 2.2 in the compatibility profile, with ARC and MRC. Cleanup runs
 in reverse registration order on returns, structured exits and native exception
 unwinding.
 
@@ -345,6 +295,35 @@ The [native match result contract](docs/roadmap/linux_match_results.md) adds
 record, carrier, object, Block, complex, vector and C++ member-pointer results,
 owned scrutinee snapshots and independent mutable case bindings. Its acceptance
 receipt binds the activated SDK and fresh Debian 13 / Ubuntu 26.04 checks.
+
+## Build the compiler from source
+
+The authoritative versions are in
+[`toolchains/llvm/manifest.json`](toolchains/llvm/manifest.json). The current
+foundation is LLVM 23.1.5. Development requires Python 3.15.0, Node 26.13.0,
+npm 12.2.2, CMake 4.4.5 and Ninja 1.13.2. A compiler cache is recommended.
+Native SDK development also needs the system OpenSSL 3.5+, zlib and zstd
+development headers.
+PowerShell is not part of the Linux compiler build or qualification pipeline.
+
+In the managed Linux development environment:
+
+```sh
+bash scripts/setup_cloud_environment.sh
+source /workspace/.cloud-setup/Slopjective-C/activate.sh
+npm run objc3c -- build-sdk --fetch
+source out/toolchains/linux-sdk/activate.sh
+objc3c tests/clang_foundation/installed_sdk/main.objc3 -O2 -g -o application
+./application
+```
+
+`build-sdk` builds and tests the sealed LLVM fork, pinned native runtime and
+frontend; installs an isolated candidate; qualifies the installed compiler,
+embedding API, semantic interfaces, runtime and editor tools; creates a sealed
+archive; and publishes a content-addressed installation. Logs and phase timings
+live under `out/toolchains/linux-sdk-builds/`. Incremental Ninja builds and a
+persistent compiler cache are reused. The product SDK and the bootstrap compiler
+have separate roots; `OBJC3C_BOOTSTRAP_LLVM_ROOT` pins the latter.
 
 ## Validation and development
 
