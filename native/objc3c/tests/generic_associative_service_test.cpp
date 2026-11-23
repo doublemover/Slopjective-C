@@ -30,7 +30,14 @@ objc3_service_status MoveI64(void *dst, void *src) {
   std::memcpy(dst, src, sizeof(std::int64_t));
   return OBJC3_SERVICE_OK;
 }
-void DestroyI64(void *) {}
+void NoopDestroy(void *) {}
+objc3_service_status CopyPointer(void *dst, const void *src) {
+  std::memcpy(dst, src, sizeof(void *));
+  return OBJC3_SERVICE_OK;
+}
+objc3_service_status MovePointer(void *dst, void *src) {
+  return CopyPointer(dst, src);
+}
 objc3_service_status HashI64(const void *key, std::uint64_t *out) {
   ++payload_callbacks;
   std::int64_t value = 0;
@@ -83,7 +90,7 @@ void DestroyItem(void *item) {
 
 objc3_value_ops I64Ops(objc3_service_status (*copy)(void *, const void *) = CopyI64) {
   return {sizeof(objc3_value_ops), OBJC3_VALUE_OPS_VERSION,
-      sizeof(std::int64_t), alignof(std::int64_t), copy, MoveI64, DestroyI64};
+      sizeof(std::int64_t), alignof(std::int64_t), copy, MoveI64, NoopDestroy};
 }
 objc3_value_ops ItemOps() {
   return {sizeof(objc3_value_ops), OBJC3_VALUE_OPS_VERSION,
@@ -146,6 +153,26 @@ int main() {
   std::uint64_t count = 0;
   assert(objc3_generic_map_count(map, &count) ==
          OBJC3_GENERIC_COLLECTION_OK && count == 2);
+
+  // A null pointer payload (such as an Objective-C nil) still has a
+  // nonnull storage address, and replaces the original pointer value.
+  const objc3_value_ops pointer_ops = {
+      sizeof(objc3_value_ops), OBJC3_VALUE_OPS_VERSION,
+      sizeof(void *), alignof(void *), CopyPointer, MovePointer, NoopDestroy};
+  auto pointer_descriptor = MapDescriptor(I64Ops(), pointer_ops);
+  objc3_generic_map_t pointer_map = nullptr;
+  assert(objc3_generic_map_create_empty(&pointer_descriptor, &pointer_map) ==
+         OBJC3_GENERIC_COLLECTION_OK);
+  int object = 0;
+  void *pointer = &object;
+  assert(objc3_generic_map_insert(pointer_map, &zero, &pointer, &inserted) ==
+         OBJC3_GENERIC_COLLECTION_OK && inserted == 1);
+  void *nil = nullptr;
+  assert(objc3_generic_map_insert(pointer_map, &zero, &nil, &inserted) ==
+         OBJC3_GENERIC_COLLECTION_OK && inserted == 0);
+  assert(objc3_generic_map_lookup(pointer_map, &zero, &has_value, &pointer) ==
+         OBJC3_GENERIC_COLLECTION_OK && has_value == 1 && pointer == nullptr);
+  assert(objc3_generic_map_release(pointer_map) == OBJC3_GENERIC_COLLECTION_OK);
 
   auto noncopy_descriptor = MapDescriptor(I64Ops(), I64Ops(nullptr));
   objc3_generic_map_t noncopy_map = nullptr;

@@ -9,6 +9,8 @@
 #include <mutex>
 #include <condition_variable>
 #include <chrono>
+#include <string_view>
+#include <utility>
 
 #ifdef OBJC3_TEXT_CONSTRUCTION_TESTING
 extern "C" void objc3_test_text_construction_reset();
@@ -63,6 +65,26 @@ void TrustedCopy(std::size_t bytes) {
   assert(objc3_test_text_copied_bytes() == bytes);
   assert(!bytes || observed_allocations == 1);
 }
+void RawInputRejection() {
+  const std::string_view invalid_inputs[] = {
+      "\xff" "A", "A\x80" "B", "AB\xff", "\xc2", "\xe2\x82",
+      "\xf0\x9f\x99", "\xc0\x80", "\xe0\x80\x80",
+      "\xed\xa0\x80", "\xf4\x90\x80\x80"};
+  const auto tokens = objc3_test_text_token_count();
+  const auto live = objc3_test_text_live_count();
+  for (const auto input : invalid_inputs) {
+    auto *out = reinterpret_cast<objc3_text_v2_t>(1);
+    Observe(0);
+    assert(objc3_runtime_stdlib_text_v2_create_utf8_checked(
+               input.data(), input.size(), &out) == OBJC3_STDLIB_V2_INVALID_UTF8);
+    assert(!out && objc3_test_text_decode_calls() == 1 &&
+           objc3_test_text_copied_bytes() == 0);
+  }
+  auto *out = reinterpret_cast<objc3_text_v2_t>(1);
+  assert(objc3_runtime_stdlib_text_v2_create_utf8_checked(nullptr, 1, &out) ==
+         OBJC3_STDLIB_V2_INVALID_ARGUMENT && !out);
+  assert(objc3_test_text_token_count() == tokens && objc3_test_text_live_count() == live);
+}
 void ConstructionTransactions() {
   const std::vector<char> sample = {'A', char(0xc2), char(0xa2), char(0xe2), char(0x82), char(0xac),
       char(0xf0), char(0x9f), char(0x99), char(0x82), 0};
@@ -98,11 +120,14 @@ void ConstructionTransactions() {
   assert(objc3_test_text_decode_calls() == 1 && objc3_test_text_decoded_input_bytes() == sample.size());
   assert(objc3_test_text_copied_bytes() == sample.size() && observed_allocations == 1);
   assert(objc3_runtime_stdlib_text_v2_create_utf8_checked(nullptr, 0, &empty) == 0);
-  for (bool equal : {false, true}) {
+  const std::pair<objc3_text_v2_t, objc3_text_v2_t> operands[] = {
+      {empty, source}, {source, empty}, {source, source}};
+  for (auto [left, right] : operands) {
+    const bool equal = left == right;
     objc3_text_v2_t joined = nullptr;
     const auto size = sample.size() * (equal ? 2 : 1);
     Observe(size);
-    assert(objc3_runtime_stdlib_text_v2_concat(source, equal ? source : empty, &joined) == 0);
+    assert(objc3_runtime_stdlib_text_v2_concat(left, right, &joined) == 0);
     TrustedCopy(size);
     auto expected = std::vector<std::uint8_t>(sample.begin(), sample.end());
     if (equal) expected.insert(expected.end(), sample.begin(), sample.end());
@@ -146,6 +171,8 @@ void ConstructionTransactions() {
   bool saw_success = false, saw_failure = false;
   for (long fail_at = 0; fail_at < 32; ++fail_at) {
     auto *out = reinterpret_cast<objc3_text_v2_t>(1);
+    const auto before_tokens = objc3_test_text_token_count();
+    const auto before_live = objc3_test_text_live_count();
     fail_text_allocation = fail_at;
     const auto rejected = objc3_runtime_stdlib_text_v2_create_utf8_checked(invalid.data(), invalid.size(), &out);
     fail_text_allocation = -1;
@@ -153,8 +180,16 @@ void ConstructionTransactions() {
     fail_text_allocation = fail_at;
     const auto status = objc3_runtime_stdlib_text_v2_create_utf8_checked(sample.data(), sample.size(), &out);
     fail_text_allocation = -1;
-    if (status == 0) { saw_success = true; assert(objc3_runtime_stdlib_text_v2_release_checked(out) == 0); }
-    else { saw_failure = true; assert(status == OBJC3_STDLIB_V2_OUT_OF_MEMORY && !out); }
+    if (status == 0) {
+      saw_success = true;
+      assert(objc3_test_text_token_count() == before_tokens + 1);
+      assert(objc3_runtime_stdlib_text_v2_release_checked(out) == 0);
+    } else {
+      saw_failure = true;
+      assert(status == OBJC3_STDLIB_V2_OUT_OF_MEMORY && !out);
+      assert(objc3_test_text_token_count() == before_tokens);
+    }
+    assert(objc3_test_text_live_count() == before_live);
     assert(Bytes(source) == std::vector<std::uint8_t>(sample.begin(), sample.end()));
   }
   assert(saw_success && saw_failure);
@@ -166,6 +201,8 @@ void ConstructionTransactions() {
       assert(objc3_runtime_stdlib_text_builder_v2_create(&scratch) == 0);
       if (operation == 2) assert(objc3_runtime_stdlib_text_builder_v2_append_text(scratch, source) == 0);
       objc3_text_v2_t out = nullptr;
+      const auto before_tokens = objc3_test_text_token_count();
+      const auto before_live = objc3_test_text_live_count();
       fail_text_allocation = fail_at;
       const int status = operation == 0 ? objc3_runtime_stdlib_text_v2_concat(source, source, &out) :
           operation == 1 ? objc3_runtime_stdlib_text_v2_slice_scalars(source, 1, 3, &out) :
@@ -174,6 +211,8 @@ void ConstructionTransactions() {
       fail_text_allocation = -1;
       if (status == 0) { passed = true; if (out) assert(objc3_runtime_stdlib_text_v2_release_checked(out) == 0); }
       else { failed = true; assert(status == OBJC3_STDLIB_V2_OUT_OF_MEMORY && !out); }
+      assert(objc3_test_text_token_count() == before_tokens + (status == 0 && operation < 3));
+      assert(objc3_test_text_live_count() == before_live);
       objc3_text_v2_t snapshot = nullptr;
       assert(objc3_runtime_stdlib_text_builder_v2_finish(scratch, &snapshot) == 0);
       assert(Bytes(snapshot).size() == (operation == 2 || (operation == 3 && status == 0) ? sample.size() : 0));
@@ -208,6 +247,7 @@ void ConcurrentSourceRelease() {
 
 int main() {
 #ifdef OBJC3_TEXT_CONSTRUCTION_TESTING
+  RawInputRejection();
   ConstructionTransactions();
   ConcurrentSourceRelease();
 #endif
@@ -395,6 +435,20 @@ int main() {
              capacity_text, capacity_count - 1, &last_byte) ==
          OBJC3_STDLIB_V2_OK);
   assert(last_byte == 'b');
+  objc3_text_v2_t prefix = nullptr, joined = nullptr;
+  assert(objc3_runtime_stdlib_text_v2_slice_scalars(
+             capacity_text, 0, capacity_count - 1, &prefix) == OBJC3_STDLIB_V2_OK);
+  assert(objc3_runtime_stdlib_text_v2_concat(prefix, reused, &joined) ==
+         OBJC3_STDLIB_V2_OK);
+  std::uint64_t joined_count = 0;
+  assert(objc3_runtime_stdlib_text_v2_scalar_count_checked(joined, &joined_count) ==
+         OBJC3_STDLIB_V2_OK && joined_count == capacity_count);
+  assert(objc3_runtime_stdlib_text_v2_byte_at_checked(joined, joined_count - 1, &last_byte) ==
+         OBJC3_STDLIB_V2_OK && last_byte == 0);
+  assert(objc3_runtime_stdlib_text_v2_release_checked(joined) == OBJC3_STDLIB_V2_OK);
+  assert(objc3_runtime_stdlib_text_v2_concat(capacity_text, reused, &joined) ==
+         OBJC3_STDLIB_V2_CAPACITY_EXCEEDED && !joined);
+  assert(objc3_runtime_stdlib_text_v2_release_checked(prefix) == OBJC3_STDLIB_V2_OK);
 
   assert(objc3_runtime_stdlib_text_builder_v2_append_scalar(nullptr, 'a') ==
          OBJC3_STDLIB_V2_INVALID_HANDLE);

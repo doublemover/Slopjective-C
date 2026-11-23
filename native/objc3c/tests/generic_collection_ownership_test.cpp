@@ -36,6 +36,10 @@ extern "C" std::uint64_t objc3_test_array_metadata_slots();
 extern "C" std::uint64_t objc3_test_array_nodes();
 extern "C" std::uint64_t objc3_test_array_chunks();
 #endif
+#ifdef OBJC3_GENERIC_ASSOCIATIVE_STORAGE_TESTING
+extern "C" std::size_t objc3_test_associative_token_count();
+extern "C" std::size_t objc3_test_associative_live_count();
+#endif
 
 namespace {
 constexpr auto ok = OBJC3_GENERIC_COLLECTION_OK;
@@ -51,31 +55,66 @@ void CheckSources(const auto &sources) {
   for (const auto &source : sources) assert(source.instance == 0);
 }
 
-void Rollback() {
-  const std::array<Payload, 4> keys = {{{1}, {2}, {1}, {3}}};
-  const std::array<Payload, 4> values = {{{10}, {20}, {30}, {40}}};
-  auto descriptor = Map();
+template <typename Handle, typename Create, typename Release>
+void AssociativeConstructionFailures(Create create, Release release) {
   // Learn callback counts from the normal case, then fail every invocation,
   // including new-key/value and duplicate-value construction, under both status
   // mappings. No readback or output destruction can balance a missing rollback.
   ledger.Reset();
-  objc3_generic_map_t map = nullptr;
-  assert(objc3_generic_map_create(&descriptor, keys.data(), values.data(), 4, &map) == ok);
+  Handle handle = nullptr;
+#ifdef OBJC3_GENERIC_ASSOCIATIVE_STORAGE_TESTING
+  const auto initial_tokens = objc3_test_associative_token_count();
+  const auto initial_live = objc3_test_associative_live_count();
+#endif
+  assert(create(&handle) == ok && handle);
   const std::array<unsigned, 3> calls = {ledger.copies.load(), ledger.hashes, ledger.equals};
-  assert(objc3_generic_map_release(map) == ok);
+#ifdef OBJC3_GENERIC_ASSOCIATIVE_STORAGE_TESTING
+  assert(objc3_test_associative_token_count() == initial_tokens + 1);
+  assert(objc3_test_associative_live_count() == initial_live + 1);
+#endif
+  assert(release(handle) == ok);
   ledger.Balanced();
   for (unsigned kind = 0; kind != 3; ++kind)
     for (unsigned position = 0; position != calls[kind]; ++position)
       for (bool oom : {false, true}) {
         ledger.Reset();
         ledger.FailAt(static_cast<Callback>(kind), position, oom);
-        map = reinterpret_cast<objc3_generic_map_t>(1);
-        const auto status = objc3_generic_map_create(&descriptor, keys.data(), values.data(), 4, &map);
+        handle = reinterpret_cast<Handle>(1);
+        const auto status = create(&handle);
         assert(status == (oom ? OBJC3_GENERIC_COLLECTION_OUT_OF_MEMORY : OBJC3_GENERIC_COLLECTION_INVALID_ARGUMENT));
-        assert(map == nullptr);
+        assert(handle == nullptr);
+#ifdef OBJC3_GENERIC_ASSOCIATIVE_STORAGE_TESTING
+        assert(objc3_test_associative_token_count() == initial_tokens + 1);
+        assert(objc3_test_associative_live_count() == initial_live);
+#endif
         ledger.Balanced();
-        CheckSources(keys); CheckSources(values);
       }
+  ledger.Reset();
+  assert(create(&handle) == ok && handle);
+  assert(release(handle) == ok);
+  ledger.Balanced();
+}
+
+void Rollback() {
+  const std::array<Payload, 4> keys = {{{1}, {2}, {1}, {3}}};
+  const std::array<Payload, 4> values = {{{10}, {20}, {30}, {40}}};
+  const auto descriptor = Map();
+  const auto set_descriptor = Set();
+  AssociativeConstructionFailures<objc3_generic_map_t>(
+      [&](objc3_generic_map_t *out) {
+        const auto status = objc3_generic_map_create(
+            &descriptor, keys.data(), values.data(), keys.size(), out);
+        CheckSources(keys);
+        CheckSources(values);
+        return status;
+      }, objc3_generic_map_release);
+  AssociativeConstructionFailures<objc3_generic_set_t>(
+      [&](objc3_generic_set_t *out) {
+        const auto status = objc3_generic_set_create(
+            &set_descriptor, keys.data(), keys.size(), out);
+        CheckSources(keys);
+        return status;
+      }, objc3_generic_set_release);
 
   auto ops = Ops();
   for (unsigned position = 0; position != values.size(); ++position) {
@@ -108,7 +147,7 @@ void Rollback() {
     ledger.Reset(); ledger.fail_allocation_after_copies = associative ? 8 : 4;
     if (associative) {
       const std::array<Payload, 4> distinct = {{{1}, {2}, {3}, {4}}};
-      map = nullptr;
+      objc3_generic_map_t map = nullptr;
       assert(objc3_generic_map_create(&descriptor, distinct.data(), values.data(), 4, &map) == OBJC3_GENERIC_COLLECTION_OUT_OF_MEMORY);
       assert(!map);
     } else {
@@ -169,10 +208,57 @@ void BulkCopiesAndOrder() {
   assert(!map); ledger.Balanced();
 }
 
+void AssociativeReplacementRollback() {
+  const std::array<Payload, 3> keys = {{{1}, {2}, {3}}};
+  const std::array<Payload, 3> values = {{{10}, {20}, {30}}};
+  const Payload replacement{40};
+  const auto descriptor = Map();
+  bool completed = false;
+  for (unsigned position = 0; position != 12 && !completed; ++position) {
+    ledger.Reset();
+    objc3_generic_map_t map = nullptr;
+    assert(objc3_generic_map_create(&descriptor, keys.data(), values.data(), keys.size(), &map) == ok);
+    objc3_generic_associative_iterator_t iterator = nullptr;
+    assert(objc3_generic_map_iterator(map, &iterator) == ok);
+    const auto published = ledger.Live();
+    ledger.FailAt(Callback::Copy, position);
+    int inserted = 1;
+    const auto status = objc3_generic_map_insert(map, &keys[1], &replacement, &inserted);
+    ledger.FailAt(Callback::None, -1);
+    assert(!inserted);
+    Payload key{}, value{};
+    int has = 0;
+    if (status == ok) {
+      assert(position > 0);
+      completed = true;
+      assert(objc3_generic_associative_iterator_next(iterator, &has, &key, &value) ==
+             OBJC3_GENERIC_COLLECTION_MUTATED_DURING_ITERATION && !has);
+    } else {
+      assert(status == OBJC3_GENERIC_COLLECTION_INVALID_ARGUMENT && ledger.Live() == published);
+      for (unsigned index = 0; index != keys.size(); ++index) {
+        assert(objc3_generic_associative_iterator_next(iterator, &has, &key, &value) == ok && has);
+        assert(key.value == keys[index].value && value.value == values[index].value);
+        Destroy(&key);
+        Destroy(&value);
+      }
+      assert(objc3_generic_associative_iterator_next(iterator, &has, &key, &value) == ok && !has);
+    }
+    assert(objc3_generic_associative_iterator_release(iterator) == ok);
+    assert(objc3_generic_map_release(map) == ok);
+    ledger.Balanced();
+    CheckSources(keys);
+    CheckSources(values);
+    assert(!replacement.instance);
+  }
+  assert(completed);
+}
+
+const void *previous_zero_value = nullptr;
 template <bool Key>
 objc3_service_status CopyZero(void *destination, const void *source) {
   assert(destination && source && reinterpret_cast<std::uintptr_t>(destination) % 64 == 0 &&
          reinterpret_cast<std::uintptr_t>(source) % 64 == 0);
+  if constexpr (!Key) assert(source != previous_zero_value);
   if (ledger.Fail(Callback::Copy)) return ledger.Failure();
   ledger.RegisterZero(destination);
   if constexpr (Key) ++ledger.key_copies; else ++ledger.value_copies;
@@ -202,6 +288,14 @@ void ZeroSizedAndBounds() {
   ledger.Reset(); objc3_generic_map_t map = nullptr;
   assert(objc3_generic_map_create(&descriptor, nullptr, nullptr, 3, &map) == ok);
   assert(ledger.key_copies == 1 && ledger.value_copies == 3 && ledger.Live().size() == 2);
+  // The last constructed logical value is still live. A null replacement
+  // must supply a fresh synthetic source instead of reading that value.
+  const auto prior = ledger.Live();
+  previous_zero_value = ledger.events[prior.back()].address;
+  int inserted = -1;
+  assert(objc3_generic_map_insert(map, nullptr, nullptr, &inserted) == ok && !inserted);
+  previous_zero_value = nullptr;
+  assert(ledger.value_copies == 4 && ledger.Live().size() == 2 && ledger.Live() != prior);
   assert(objc3_generic_map_release(map) == ok); ledger.Balanced();
   ledger.Reset(); objc3_generic_set_t set = nullptr;
   assert(objc3_generic_set_create(&set_descriptor, nullptr, 3, &set) == ok);
@@ -245,6 +339,10 @@ void AllocationSweeps() {
   for (unsigned family = 0; family != 3; ++family) {
     bool completed = false; unsigned failures = 0;
     for (unsigned position = 0; position != 64 && !completed; ++position) {
+#ifdef OBJC3_GENERIC_ASSOCIATIVE_STORAGE_TESTING
+      const auto before_tokens = objc3_test_associative_token_count();
+      const auto before_live = objc3_test_associative_live_count();
+#endif
       ledger.Reset(); ledger.allocation_failure_position = position;
       objc3_generic_map_t map = nullptr; objc3_generic_set_t set = nullptr; objc3_generic_array_t array = nullptr;
       auto status = family == 0 ? objc3_generic_map_create(&map_descriptor, sources.data(), sources.data(), sources.size(), &map)
@@ -260,6 +358,10 @@ void AllocationSweeps() {
         ++failures;
         assert(status == OBJC3_GENERIC_COLLECTION_OUT_OF_MEMORY && !map && !set && !array);
       }
+#ifdef OBJC3_GENERIC_ASSOCIATIVE_STORAGE_TESTING
+      assert(objc3_test_associative_token_count() == before_tokens + (family < 2 && completed));
+      assert(objc3_test_associative_live_count() == before_live);
+#endif
       ledger.Balanced(); CheckSources(sources);
     }
     assert(completed && failures > 0);
@@ -493,4 +595,15 @@ void Reentry() {
 }
 } // namespace
 
-int main() { Rollback(); BulkCopiesAndOrder(); ZeroSizedAndBounds(); AllocationSweeps(); ArrayScaling(); ReaderRetirement(); ArrayReentry(); Reentry(); ledger.Balanced(); }
+int main() {
+  Rollback();
+  BulkCopiesAndOrder();
+  AssociativeReplacementRollback();
+  ZeroSizedAndBounds();
+  AllocationSweeps();
+  ArrayScaling();
+  ReaderRetirement();
+  ArrayReentry();
+  Reentry();
+  ledger.Balanced();
+}

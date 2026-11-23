@@ -603,6 +603,15 @@ Status RetainRecord(std::uint32_t kind, Handle handle, Handle *out) {
 
 }  // namespace
 
+#ifdef OBJC3_GENERIC_ASSOCIATIVE_STORAGE_TESTING
+extern "C" std::size_t objc3_test_associative_token_count() {
+  return AssociativeStorage().TokenCount();
+}
+extern "C" std::size_t objc3_test_associative_live_count() {
+  return AssociativeStorage().LiveCount();
+}
+#endif
+
 extern "C" Status objc3_generic_map_create_empty(
     const objc3_generic_map_descriptor *descriptor,
     objc3_generic_map_t *out) try {

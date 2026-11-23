@@ -121,6 +121,52 @@ static void indexed_work() {
   check(objc3_runtime_stdlib_map_i32_i32_v2_release(map) == 0);
   check(objc3_runtime_stdlib_set_i32_v2_release(set) == 0);
 }
+
+static void index_capacity() {
+  constexpr int32_t capacity = 1 << 20;
+  objc3_map_i32_i32_v2_t map = nullptr;
+  check(objc3_runtime_stdlib_map_i32_i32_v2_create(&map) == OBJC3_STDLIB_V2_OK);
+  uint64_t count = 0;
+  for (int32_t key = 0; key != capacity; ++key) {
+    check(objc3_runtime_stdlib_map_i32_i32_v2_insert_count(map, key, key, &count) ==
+          OBJC3_STDLIB_V2_OK && count == static_cast<uint64_t>(key + 1));
+  }
+  objc3_iterator_i32_v2_t iterator = nullptr;
+  check(objc3_runtime_stdlib_map_i32_i32_v2_iterator(map, &iterator) == OBJC3_STDLIB_V2_OK);
+  check(objc3_runtime_stdlib_map_i32_i32_v2_insert_count(map, capacity, -1, &count) ==
+        OBJC3_STDLIB_V2_CAPACITY_EXCEEDED && count == 0);
+  int has = 0;
+  int32_t key = -1, value = -1;
+  check(objc3_runtime_stdlib_map_i32_i32_v2_iterator_next(iterator, &has, &key, &value) ==
+        OBJC3_STDLIB_V2_OK && has && key == 0 && value == 0);
+  check(objc3_runtime_stdlib_map_i32_i32_v2_insert_count(map, 0, -1, &count) ==
+        OBJC3_STDLIB_V2_OK && count == capacity);
+  check(objc3_runtime_stdlib_map_i32_i32_v2_iterator_next(iterator, &has, &key, &value) ==
+        OBJC3_STDLIB_V2_MUTATED_DURING_ITERATION);
+  check(objc3_runtime_stdlib_map_i32_i32_v2_get(map, 0, &has, &value) ==
+        OBJC3_STDLIB_V2_OK && has && value == -1);
+  check(objc3_runtime_stdlib_iterator_i32_v2_release(iterator) == OBJC3_STDLIB_V2_OK);
+  check(objc3_runtime_stdlib_map_i32_i32_v2_release(map) == OBJC3_STDLIB_V2_OK);
+
+  objc3_set_i32_v2_t set = nullptr;
+  check(objc3_runtime_stdlib_set_i32_v2_create(&set) == OBJC3_STDLIB_V2_OK);
+  int inserted = 0;
+  for (int32_t item = 0; item != capacity; ++item) {
+    check(objc3_runtime_stdlib_set_i32_v2_insert(set, item, &inserted) ==
+          OBJC3_STDLIB_V2_OK && inserted == 1);
+  }
+  check(objc3_runtime_stdlib_set_i32_v2_iterator(set, &iterator) == OBJC3_STDLIB_V2_OK);
+  check(objc3_runtime_stdlib_set_i32_v2_insert(set, capacity, &inserted) ==
+        OBJC3_STDLIB_V2_CAPACITY_EXCEEDED && inserted == 0);
+  check(objc3_runtime_stdlib_set_i32_v2_insert(set, 0, &inserted) ==
+        OBJC3_STDLIB_V2_OK && inserted == 0);
+  check(objc3_runtime_stdlib_iterator_i32_v2_next(iterator, &has, &key) ==
+        OBJC3_STDLIB_V2_OK && has && key == 0);
+  check(objc3_runtime_stdlib_set_i32_v2_count(set, &count) ==
+        OBJC3_STDLIB_V2_OK && count == capacity);
+  check(objc3_runtime_stdlib_iterator_i32_v2_release(iterator) == OBJC3_STDLIB_V2_OK);
+  check(objc3_runtime_stdlib_set_i32_v2_release(set) == OBJC3_STDLIB_V2_OK);
+}
 #endif
 static void ordered_index_oracle() {
   objc3_map_i32_i32_v2_t map = nullptr;
@@ -209,6 +255,7 @@ int main() {
 #ifdef OBJC3_RUNTIME_I32_INDEX_TESTING
   index_allocation_rollback();
   indexed_work();
+  index_capacity();
 #endif
   objc3_map_i32_i32_v2_t map = nullptr;
   check(objc3_runtime_stdlib_map_i32_i32_v2_create(&map) == OBJC3_STDLIB_V2_OK);
