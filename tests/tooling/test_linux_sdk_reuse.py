@@ -1,6 +1,8 @@
 from pathlib import Path
 import os
 import json
+import shutil
+import subprocess
 
 import pytest
 
@@ -180,6 +182,7 @@ def test_packaging_input_edit_prevents_installation(tmp_path, monkeypatch):
     changed = False
     monkeypatch.setattr(linux_sdk, 'input_identity', lambda *a: {
         'sha256': 'edited' if changed else 'qualified', 'foundation_contents': 'foundation',
+        'native_test_inputs_sha256': 'test-inputs',
         'native_headers': {'sha256': 'native-headers'}, 'compiler_runtimes': {'sha256': 'builtin-input'}})
     monkeypatch.setattr(linux_sdk, 'discover_native_headers', lambda *a: {'sha256': 'native-headers'})
     monkeypatch.setattr(linux_sdk, 'materialize_native_headers', lambda *a: {'files': 0})
@@ -291,10 +294,124 @@ def test_native_test_sources_invalidate_qualification_without_rebuilding_foundat
     os.utime(path, ns=(stamp.st_atime_ns, stamp.st_mtime_ns))
     after = linux_sdk.input_identity(repo, prefix)
     assert after['sha256'] != before['sha256']
+    assert after['native_test_inputs_sha256'] != before['native_test_inputs_sha256']
     assert after['foundation_plan'] == before['foundation_plan']
     assert after['frontend'] == before['frontend']
+    path.write_text('pass')
+    os.utime(path, ns=(stamp.st_atime_ns, stamp.st_mtime_ns))
+    assert linux_sdk.input_identity(repo, prefix) == before
     path.unlink()
-    assert linux_sdk.input_identity(repo, prefix)['sha256'] != after['sha256']
+    assert linux_sdk.input_identity(repo, prefix)['native_test_inputs_sha256'] != before['native_test_inputs_sha256']
+
+
+def test_native_test_edit_enters_fresh_qualification_instead_of_installing_old_release(tmp_path, monkeypatch):
+    from scripts.objc3c_toolchain import linux_sdk
+    repo, prefix = identity_project(tmp_path, monkeypatch, {'source_build_id': 'same-foundation'})
+    source = repo / 'native/objc3c/tests/keypath_service_test.cpp'
+    source.parent.mkdir(parents=True)
+    source.write_text('return 0;')
+    original = linux_sdk.input_identity(repo, prefix)
+    stamp = source.stat()
+    builds = repo / 'out/toolchains/linux-sdk-builds'
+    original_receipt = builds / original['sha256'] / 'release.json'
+    original_receipt.parent.mkdir(parents=True)
+    original_receipt.write_text(json.dumps({'status': 'PASS', 'input_identity': original['sha256'],
+        'archive': 'expected.tar.zst', 'archive_sha256': 'archive'}))
+    monkeypatch.setattr(linux_sdk, 'verify_sdk', lambda *_: {
+        'source_build_id': 'llvm-build', 'seal_sha256': 'seal', 'target': native_target()})
+    monkeypatch.setattr(linux_sdk, 'verify_development', lambda *_: {'build_id': 'llvm-build'})
+    installations, candidates = [], []
+    monkeypatch.setattr(linux_sdk, 'install', lambda *args: installations.append(args) or {})
+
+    def enter_fresh_qualification(foundation, candidate):
+        candidates.append((foundation, candidate))
+        raise ValueError('fresh candidate reached')
+
+    monkeypatch.setattr(linux_sdk, 'copy_foundation', enter_fresh_qualification)
+    assert linux_sdk.build_sdk(repo, foundation_sdk=prefix)['cache_hit']
+    source.write_text('return 1;')
+    os.utime(source, ns=(stamp.st_atime_ns, stamp.st_mtime_ns))
+    edited = linux_sdk.input_identity(repo, prefix)
+    with pytest.raises(ValueError, match='fresh candidate reached'):
+        linux_sdk.build_sdk(repo, foundation_sdk=prefix)
+    assert len(installations) == 1
+    assert candidates == [(prefix, builds / edited['sha256'] / 'prefix')]
+    assert not (builds / edited['sha256'] / 'release.json').exists()
+    source.write_text('return 0;')
+    os.utime(source, ns=(stamp.st_atime_ns, stamp.st_mtime_ns))
+    assert linux_sdk.build_sdk(repo, foundation_sdk=prefix)['cache_hit']
+    assert len(installations) == 2
+
+
+def test_registered_keypath_test_rebuilds_at_the_same_mtime_when_requalified(tmp_path, monkeypatch):
+    selected = os.environ.get('OBJC3_TEST_NATIVE_REUSE_SDK')
+    if not selected:
+        pytest.skip('requires an installed Linux SDK for the focused native reuse witness')
+    from scripts.objc3c_toolchain import linux_sdk
+    from scripts.objc3c_toolchain.frontend_tests import qualify
+
+    installed = Path(selected).resolve(strict=True)
+    checkout = Path(__file__).resolve().parents[2]
+    repo, prefix = identity_project(tmp_path, monkeypatch, {'source_build_id': 'same-foundation'})
+    native = repo / 'native/objc3c'
+    for relative in ('tests/keypath_service_test.cpp', 'tests/test_assertion_policy.h', 'cmake/FrontendTests.cmake'):
+        destination = native / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(checkout / 'native/objc3c' / relative, destination)
+    header = native / 'runtime/public/objc3_keypath.h'
+    header.parent.mkdir(parents=True)
+    shutil.copyfile(installed / 'include/objc3c/runtime/objc3_keypath.h', header)
+    (native / 'CMakeLists.txt').write_text('cmake_minimum_required(VERSION 3.24)\n'
+        'project(keypath_reuse_witness LANGUAGES CXX)\n'
+        'set(CMAKE_CXX_STANDARD 20)\nenable_testing()\n'
+        'add_library(objc3c_build_defaults INTERFACE)\n'
+        'target_include_directories(objc3c_build_defaults INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")\n'
+        'include(cmake/FrontendTests.cmake)\n'
+        'add_executable(objc3_keypath_service_test tests/keypath_service_test.cpp)\n'
+        f'target_link_libraries(objc3_keypath_service_test PRIVATE "{installed / "lib/libobjc3_runtime_services.a"}")\n'
+        'objc3c_add_frontend_test(NAME objc3_keypath_service COMMAND objc3_keypath_service_test)\n'
+        'objc3c_write_frontend_test_inventory()\n')
+    source = native / 'tests/keypath_service_test.cpp'
+    original, timestamp = source.read_bytes(), source.stat()
+    assertion = b'assert(objc3_keypath_validate_v2(&descriptor) == OBJC3_KEYPATH_OK);'
+    assert original.count(assertion) == 1
+    edited = original.replace(assertion, assertion.replace(b' == ', b' != '))
+    assert len(edited) == len(original)
+    build = tmp_path / 'warm-frontend'
+
+    def execute(phase, name, argv):
+        result = subprocess.run(argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=60)
+        (tmp_path / (phase + '-' + name + '.log')).write_text(result.stdout)
+        result.check_returncode()
+
+    identities = []
+    for phase, data in (('baseline', original), ('edited', edited), ('restored', original)):
+        source.write_bytes(data)
+        os.utime(source, ns=(timestamp.st_atime_ns, timestamp.st_mtime_ns))
+        assert source.stat().st_mtime_ns == timestamp.st_mtime_ns
+        identity = linux_sdk.input_identity(repo, prefix)
+        identities.append({key: identity[key] for key in ('sha256', 'native_test_inputs_sha256', 'foundation_plan')})
+        execute(phase, 'configure', ['cmake', '-S', native, '-B', build, '-G', 'Ninja',
+            '-DCMAKE_BUILD_TYPE=Release', f'-DCMAKE_CXX_COMPILER={installed / "bin/clang++"}',
+            f'-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld={installed / "bin/ld.lld"}',
+            f'-DOBJC3C_NATIVE_TEST_INPUT_SHA256={identity["native_test_inputs_sha256"]}'])
+        output = tmp_path / phase
+        if phase == 'edited':
+            with pytest.raises(ValueError, match='frontend test commands failed'):
+                qualify(build, output, lambda name, argv: execute(phase, name, argv), jobs=1)
+            failure = json.loads((output / 'qualification.json').read_text())
+            assert failure['status'] == 'FAIL' and failure['failures'][0]['phase'] == 'ctest'
+            diagnostic = (tmp_path / 'edited-frontend-objc3_keypath_service-ctest.log').read_text()
+            assert 'objc3_keypath_validate_v2(&descriptor) != OBJC3_KEYPATH_OK' in diagnostic
+        else:
+            result = qualify(build, output, lambda name, argv: execute(phase, name, argv), jobs=1)
+            assert result['status'] == 'PASS' and result['frontend_ctests'] == 1
+            assert result['test_executables'] == 1
+    assert identities[0] == identities[2]
+    assert identities[0]['sha256'] != identities[1]['sha256']
+    assert identities[0]['native_test_inputs_sha256'] != identities[1]['native_test_inputs_sha256']
+    assert len({record['foundation_plan'] for record in identities}) == 1
+    (tmp_path / 'input-identities.json').write_text(json.dumps(identities, indent=2))
 
 
 @pytest.mark.parametrize('shape', ['file', 'directory', 'root', 'cycle', 'broken'])

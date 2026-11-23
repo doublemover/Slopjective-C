@@ -74,3 +74,16 @@ The [release status](../releases/status.md) identifies the exact preview
 archives and hosted qualification. SDK 2.62 / ABI 21 was an earlier
 development checkpoint. The [preview issue review](linux_preview_issue_review.md)
 tracks the remaining acceptance work.
+
+## Warm frontend test objects
+
+**#8322:** SDK requalification passes the registered native test input digest to
+the frontend build. Each native test target's compile command now changes when
+the test-source inventory changes, even when file sizes and modification times
+are preserved. The LLVM foundation identity stays stable across test-only edits.
+
+A focused Release build uses the published x86-64 SDK's compiler and runtime
+archive with the registered keypath test. Its original and restored inputs pass
+CTest. Flipping one assertion with the same source size and timestamp causes
+the warm build to recompile and CTest to record the edited assertion failure.
+The full warmed SDK archive publication replay remains open.

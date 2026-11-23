@@ -147,6 +147,9 @@ def input_identity(repo: Path, sdk: Path) -> dict:
                'native_headers': {'sha256': native_headers['sha256']}, 'compiler_runtimes': runtimes,
                'frontend': facade_identity(repo)['sha256'], 'inputs': inputs,
                'input_resolution': input_resolution}
+    test_inputs = {name: (signature, input_resolution.get(name)) for name, signature in inputs.items()
+                   if name.startswith('native/objc3c/tests/')}
+    payload['native_test_inputs_sha256'] = hashlib.sha256(json.dumps(test_inputs, sort_keys=True).encode()).hexdigest()
     return {'sha256': hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest(), **payload}
 
 
@@ -319,6 +322,7 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
         frontend = repo / ('out/toolchains/objc3-facade/build-' + native_linux_host())
         configure = ['cmake', '-S', repo / 'native/objc3c', '-B', frontend, '-G', 'Ninja',
             f'-DOBJC3C_CLANG_FOUNDATION_ROOT={sdk}', f'-DCMAKE_CXX_COMPILER={Path(bootstrap) / "bin/clang++"}',
+            f'-DOBJC3C_NATIVE_TEST_INPUT_SHA256={identity["native_test_inputs_sha256"]}',
             f'-DPython3_EXECUTABLE={sys.executable}',
             '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
             '-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
