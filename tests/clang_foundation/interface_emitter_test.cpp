@@ -119,9 +119,14 @@ void TestPrimitiveAndObjectiveCContractIdentity() {
     const auto moved = emit("void store(int * _Nullable * _Nonnull value);", flags);
     const auto unannotated = emit("int *value(void);", flags);
     const auto unspecified = emit("int * _Null_unspecified value(void);", flags);
+    const auto annotated_parameter = emit("void collect(int * _Nonnull value);", flags);
+    const auto nonnull_attribute = emit("void collect(int *value) __attribute__((nonnull(1)));", flags);
+    const auto ordinary_parameter = emit("void collect(int *value);", flags);
     assert(contracted.identity.semantic_fingerprint == spelled.identity.semantic_fingerprint);
     assert(nested.identity.semantic_fingerprint != moved.identity.semantic_fingerprint);
     assert(unannotated.identity.semantic_fingerprint != unspecified.identity.semantic_fingerprint);
+    assert(annotated_parameter.identity.semantic_fingerprint != ordinary_parameter.identity.semantic_fingerprint);
+    assert(annotated_parameter.identity.semantic_fingerprint != nonnull_attribute.identity.semantic_fingerprint);
   }
   for (const std::string standard : {"c17", "c++20", "c++23"}) {
     const std::vector<std::string> flags = {
@@ -153,9 +158,30 @@ void TestPrimitiveAndObjectiveCContractIdentity() {
   feature_flags.push_back(test::NativeFeatureEnabled);
   assert(emit(byte, feature_flags).identity.language_profile == with_feature.identity.language_profile);
   const std::string object = "__attribute__((objc_root_class)) @interface Object @end\n";
-  auto width_one = emit(object + "@interface Flags : Object { @public unsigned flag : 1; unsigned neighbor : 2; } @end\n", objc);
-  auto width_two = emit(object + "@interface Flags : Object { @public unsigned flag : 2; unsigned neighbor : 2; } @end\n", objc);
+  if (!test::NativeAArch64) {
+    const std::string wide_float = "long double operation(long double);";
+    auto flags = c;
+    auto default_float = emit(wide_float, flags);
+    flags.push_back("-mlong-double-80");
+    assert(emit(wide_float, flags).identity.semantic_fingerprint == default_float.identity.semantic_fingerprint);
+    flags.back() = "-mlong-double-64";
+    assert(emit(wide_float, flags).identity.semantic_fingerprint != default_float.identity.semantic_fingerprint);
+  }
+  const auto flag_layout = [&](const std::string &fields) {
+    return emit(object + "@interface Flags : Object { @public " + fields + " } @end\n", objc);
+  };
+  auto width_one = flag_layout("unsigned flag : 1; unsigned neighbor : 2;");
+  auto width_two = flag_layout("unsigned flag : 2; unsigned neighbor : 2;");
+  const auto equivalent_width = flag_layout("unsigned flag : (1 + 0); unsigned neighbor : 2;");
+  const auto ordinary_ivar = flag_layout("unsigned flag; unsigned neighbor : 2;");
+  const auto unnamed_ivar = flag_layout("unsigned flag : 1; unsigned : 1; unsigned neighbor : 2;");
+  const auto zero_width = flag_layout("unsigned flag : 1; unsigned : 0; unsigned neighbor : 2;");
+  assert(equivalent_width.identity.semantic_fingerprint == width_one.identity.semantic_fingerprint);
   assert(width_one.identity.semantic_fingerprint != width_two.identity.semantic_fingerprint);
+  assert(width_one.identity.semantic_fingerprint != ordinary_ivar.identity.semantic_fingerprint);
+  assert(width_one.identity.semantic_fingerprint != unnamed_ivar.identity.semantic_fingerprint);
+  assert(unnamed_ivar.identity.semantic_fingerprint != zero_width.identity.semantic_fingerprint);
+  assert(zero_width.source_bytes.find("unsigned int : 0;") != std::string::npos);
   auto getter_one = emit(object + "@interface Widget : Object\n- (int)first; - (int)second;\n@property(nonatomic,readonly,getter=first) int value;\n@end\n", objc);
   auto getter_two = emit(object + "@interface Widget : Object\n- (int)first; - (int)second;\n@property(nonatomic,readonly,getter=second) int value;\n@end\n", objc);
   assert(getter_one.identity.semantic_fingerprint != getter_two.identity.semantic_fingerprint);
@@ -173,11 +199,15 @@ void TestPrimitiveAndObjectiveCContractIdentity() {
   const auto protocols = "@protocol P @end\n@protocol Q @end\n";
   auto adopts_p = emit(object + protocols + "@interface Object (Extra) <P> @end\n", objc);
   auto adopts_q = emit(object + protocols + "@interface Object (Extra) <Q> @end\n", objc);
+  auto adopts_none = emit(object + protocols + "@interface Object (Extra) @end\n", objc);
   assert(adopts_p.source_bytes.find("(Extra) <P>") != std::string::npos);
   assert(adopts_p.identity.semantic_fingerprint != adopts_q.identity.semantic_fingerprint);
+  assert(adopts_p.identity.semantic_fingerprint != adopts_none.identity.semantic_fingerprint);
   auto invariant = emit(object + "@interface Box<T> : Object @end\n", objc);
   auto covariant = emit(object + "@interface Box<__covariant T> : Object @end\n", objc);
+  auto more_parameters = emit(object + "@interface Box<T, Metadata> : Object @end\n", objc);
   assert(invariant.identity.semantic_fingerprint != covariant.identity.semantic_fingerprint);
+  assert(invariant.identity.semantic_fingerprint != more_parameters.identity.semantic_fingerprint);
   auto animal_bound = emit(object + "@interface Animal : Object @end\n@interface Dog : Animal @end\n@interface Box<T : Animal *> : Object @end\n", objc);
   auto dog_bound = emit(object + "@interface Animal : Object @end\n@interface Dog : Animal @end\n@interface Box<T : Dog *> : Object @end\n", objc);
   assert(animal_bound.identity.semantic_fingerprint != dog_bound.identity.semantic_fingerprint);
@@ -185,6 +215,9 @@ void TestPrimitiveAndObjectiveCContractIdentity() {
   auto animal_super = emit(generic + "@interface Sub : Box<Animal *> @end\n", objc);
   auto dog_super = emit(generic + "@interface Sub : Box<Dog *> @end\n", objc);
   assert(animal_super.identity.semantic_fingerprint != dog_super.identity.semantic_fingerprint);
+  const std::string superclass_alias = generic + "typedef Animal *AnimalPointer;\n";
+  assert(emit(superclass_alias + "@interface Sub : Box<AnimalPointer> @end\n", objc).identity.semantic_fingerprint ==
+         emit(superclass_alias + "@interface Sub : Box<Animal *> @end\n", objc).identity.semantic_fingerprint);
   auto rejects_hidden_dependency = [&](const std::string &source,
                                         std::vector<std::string> exports) {
     auto ast = clang::tooling::buildASTFromCodeWithArgs(source, objc, "hidden.m");
@@ -428,12 +461,13 @@ __attribute__((objc_root_class)) @interface Object @end
     assert(!missing);
     llvm::consumeError(missing.takeError());
 
-    auto consume = [&](const auto &artifact, const InterfaceModuleIdentity &identity, bool directed) {
+    auto consume = [&](const auto &artifact, const InterfaceModuleIdentity &identity, bool directed,
+                       const char *client_source = "Dog *projected(Child<Dog *, Animal *> *box) { return [box value]; }") {
       const auto path = root / "GenericReferences.objc3i";
       std::ofstream(path) << artifact.source_bytes;
       std::ofstream(path.string() + ".json") << artifact.sidecar_json;
       auto client = request;
-      client.source_text = "Dog *projected(Child<Dog *, Animal *> *box) { return [box value]; }";
+      client.source_text = client_source;
       if (directed) {
         client.source_text->insert(0, "@import fixture.GenericReferences;\n");
         client.source_directed_imports = true;
@@ -451,8 +485,16 @@ __attribute__((objc_root_class)) @interface Object @end
       }
       return Compile(client);
     };
+    const auto invariant = emit(edit(provider, "__covariant Input", "Input"));
+    const char *widen = "Box<Animal *, Animal *> *widen(Box<Dog *, Animal *> *box) { return box; }";
     for (bool directed : {false, true}) {
       assert(consume(original, original.identity, directed).success);
+      assert(consume(original, original.identity, directed, widen).success);
+      const auto variance = consume(invariant, invariant.identity, directed, widen);
+      assert(!variance.success && std::ranges::any_of(variance.diagnostics, [](const auto &diag) {
+        return diag.message.find("incompatible pointer types") != std::string::npos ||
+               diag.message.find("cannot initialize return object") != std::string::npos;
+      }));
       for (const auto *changed : {&property, &base}) {
         const auto substituted = consume(*changed, changed->identity, directed);
         assert(!substituted.success && std::ranges::any_of(substituted.diagnostics, [](const auto &diag) {
@@ -473,10 +515,12 @@ __attribute__((objc_root_class)) @interface Object @end
     specialized.package_identity = "specialized";
     specialized.source_text = "@interface Fixed : Box<Dog *, Animal *> @end";
     specialized.emit_semantic_interface = true;
+    specialized.interface_output_path = (root / "Specialized.objc3i").string();
     InterfaceImportInput base_import;
     base_import.source_path = base_path.string();
     base_import.locked_identity = original.identity;
     base_import.public_import = true;
+    base_import.reexported = true;
     specialized.imported_interfaces = {std::move(base_import)};
     const auto fixed = Compile(specialized);
     test::ReportFailure(fixed);
@@ -486,6 +530,53 @@ __attribute__((objc_root_class)) @interface Object @end
     assert(decoded_fixed && decoded_fixed->declarations.size() == 1);
     assert(std::ranges::find(decoded_fixed->required_semantics, kObjCGenericSignaturesSemantic) !=
            decoded_fixed->required_semantics.end());
+
+    auto relay = request;
+    relay.source_text = "int specialized_api(void);";
+    relay.emit_semantic_interface = true;
+    relay.module_name = "fixture.GenericAPI";
+    relay.package_identity = "generic-api";
+    relay.interface_output_path = (root / "GenericAPI.objc3i").string();
+    relay.interface_search_paths = {root.string()};
+    InterfaceModuleRequest edge;
+    edge.canonical_name = fixed.interface_artifact->identity.canonical_name;
+    edge.locked_identity = fixed.interface_artifact->identity;
+    edge.reexported = true;
+    relay.module_imports = {edge};
+    const auto original_api = Compile(relay);
+    test::ReportFailure(original_api);
+    assert(original_api.success && original_api.interface_artifact);
+    auto client = request;
+    client.source_text = "Dog *read_fixed(Fixed *box) { return [box value]; }";
+    client.interface_search_paths = {root.string()};
+    InterfaceModuleRequest api_lock;
+    api_lock.canonical_name = original_api.interface_artifact->identity.canonical_name;
+    api_lock.locked_identity = original_api.interface_artifact->identity;
+    client.module_imports = {api_lock};
+    assert(Compile(client).success);
+
+    specialized.source_text = "@interface Fixed : Box<Animal *, Animal *> @end";
+    const auto changed = Compile(specialized);
+    test::ReportFailure(changed);
+    assert(changed.success && changed.interface_artifact);
+    assert(changed.interface_artifact->identity.semantic_fingerprint != fixed.interface_artifact->identity.semantic_fingerprint);
+    const auto stale = Compile(client);
+    assert(!stale.success && stale.imported_declarations.empty());
+    assert(std::ranges::any_of(stale.interface_import_diagnostics, [](const auto &diagnostic) {
+      return diagnostic.code == "O3IFC134";
+    }));
+    relay.module_imports.front().locked_identity = changed.interface_artifact->identity;
+    const auto changed_api = Compile(relay);
+    test::ReportFailure(changed_api);
+    assert(changed_api.success && changed_api.interface_artifact);
+    assert(changed_api.interface_artifact->identity.semantic_fingerprint != original_api.interface_artifact->identity.semantic_fingerprint);
+    client.module_imports.front().locked_identity = changed_api.interface_artifact->identity;
+    client.source_text = "Animal *read_fixed(Fixed *box) { return [box value]; }";
+    assert(Compile(client).success);
+    std::filesystem::remove(specialized.interface_output_path);
+    std::filesystem::remove(specialized.interface_output_path + ".json");
+    std::filesystem::remove(relay.interface_output_path);
+    std::filesystem::remove(relay.interface_output_path + ".json");
   }
 }
 
