@@ -205,7 +205,7 @@ int main(void) {
   finish(pool_task, executor);
   int pool_result = 0;
   assert(objc3_task_copy_result(pool_task, &int_type, &int_ops, &pool_result) == OBJC3_SERVICE_OK);
-  assert(pool_result == 42 && pool_destructions == 4);
+  assert(pool_result == 42 && pool_destructions == 6);
   objc3_task_release(pool_task);
   pool_destructions = 0;
   pools = native_c_pools(&pool_destructions);
@@ -215,7 +215,7 @@ int main(void) {
   assert(pool_destructions == 2);
   objc3_task_request_cancel(pool_task);
   finish(pool_task, executor);
-  assert(pool_destructions == 2);
+  assert(pool_destructions == 3);
   objc3_task_release(pool_task);
   objc3_async_frame abandoned_oom = native_c_force_oom();
   assert(objc3_async_frame_validate(&abandoned_oom) == OBJC3_SERVICE_OK);

@@ -166,23 +166,54 @@ static void autoreleased_worker(int *destroyed) {
 #endif
   source_autorelease(pending);
 }
+static NativeCAsyncWorker *pool_worker(int number, int *destroyed)
+    __attribute__((ns_returns_retained));
+static NativeCAsyncWorker *pool_worker(int number, int *destroyed) {
+  NativeCAsyncWorker *worker = [NativeCAsyncWorker new];
+  worker->number = number;
+  worker->destroyed = destroyed;
+  return worker;
+}
 int native_c_pools(int *destroyed) __objc3_async {
   int before = __atomic_load_n(destroyed, __ATOMIC_ACQUIRE);
   @autoreleasepool {
-    guard let pool_binding = Some(int, 42) else { return -4; }
+#if __has_feature(objc_arc)
+    NativeCAsyncWorker * __weak witness;
+    __objc3_defer {
+      NativeCAsyncWorker *live = witness;
+      if (!live || live->number != 40) __builtin_trap();
+    }
+#endif
+    guard let outer = pool_worker(40, destroyed) else { return -4; }
+#if __has_feature(objc_arc)
+    witness = outer;
+#else
+    __objc3_defer { release_source((__bridge void *)outer); }
+#endif
     autoreleased_worker(destroyed);
+    int result;
     @autoreleasepool {
       autoreleased_worker(destroyed);
       __objc3_await native_c_leaf(0, 0);
-      if (__atomic_load_n(destroyed, __ATOMIC_ACQUIRE) != before + 2) return -1;
+      if (__atomic_load_n(destroyed, __ATOMIC_ACQUIRE) != before + 2 ||
+          outer->number != 40) return -1;
+      guard let inner = pool_worker(2, destroyed) else { return -5; }
+      __objc3_defer {
+        if (inner->number != 2) __builtin_trap();
+#if !__has_feature(objc_arc)
+        release_source((__bridge void *)inner);
+#endif
+      }
       autoreleased_worker(destroyed);
       __objc3_await native_c_leaf(0, 0);
       if (__atomic_load_n(destroyed, __ATOMIC_ACQUIRE) != before + 3) return -2;
+      result = outer->number + inner->number;
     }
+    if (__atomic_load_n(destroyed, __ATOMIC_ACQUIRE) != before + 4 ||
+        result != 42) return -6;
     autoreleased_worker(destroyed);
-    if (pool_binding != 42) return -5;
   }
-  return __atomic_load_n(destroyed, __ATOMIC_ACQUIRE) == before + 4 ? 42 : -3;
+  return __atomic_load_n(destroyed, __ATOMIC_ACQUIRE) == before + 6 ? 42 : -3;
 }
 
 id native_c_new_object(int *destroyed) __objc3_async {
