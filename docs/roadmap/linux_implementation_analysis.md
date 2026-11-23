@@ -210,3 +210,48 @@ callbacks reject. Modern constant-expression, decomposition and matrix suites
 are enrolled in every foundation profile. The new sealed identity is
 `llvmorg-23.1.5-392dfff97d29-bace3bd39a7e-0fcb354b`; complete matching hosted
 qualification is still required before SDK acceptance.
+
+## Published preview review
+
+The retained plans and all eight partition archives per host verify through the
+terminal aggregation code at the published revision `8fe5c2fd8`. Each host's
+disjoint union contains 246 fresh native actions across 180 maintained Clang,
+45 integrated frontend, and 21 standalone runtime variants. Each host's
+partitions agree on the analyzer binary, dependency-input identities, and
+producer archive. The [receipt index](../support/linux_analysis_receipts.json)
+records the exact artifact IDs and SHA-256 digests. [x86-64 gate](https://github.com/doublemover/Slopjective-C/actions/runs/44865570421/job/136767271492) · [AArch64 gate](https://github.com/doublemover/Slopjective-C/actions/runs/44865570382/job/136760510480)
+
+- Every partition retains a corrected control and a blocker diagnostic from
+  `clang-analyzer-core.NullDereference` at the intended source site. Retained
+  analyzer arguments, configurations, diagnostics and build receipts verify
+  against the selected compilation variants.
+- The terminal gate admits both native build configurations and the fork's
+  compiler inventory. Tool identity, compile database, missing dependency,
+  timeout and corrupt receipt controls fail closed in the focused tooling
+  selection.
+- The same-mtime header-edit test uses real Ninja compile commands and fresh
+  Clang preprocessing. The benign checker control produces a blocker in the
+  unchanged dependent translation unit after the transitive include changes.
+  The optional ancestor-comparison workflow still needs a hosted replay of this
+  current selection path.
+- Seven checked executor controls and `retainable-family-analyzer.m` passed in
+  the published host receipts. The empty suppression policy is code-enforced for
+  maintained source additions. Scheduled and release gates cover the full
+  inventory. Required default-PR analyzer execution remains open.
+
+While a current producer artifact is retained, the existing analysis runner can
+reuse it through `--foundation-bundle` and `--foundation-archive-sha256` from the
+same tested revision, host and runner workspace. It reconstructs the sealed
+source and verifies the producer digest and transported Ninja inputs before
+analysis. Diagnostic partition ZIPs support offline replay of the completed
+terminal gate. A fresh native scan needs the producer's `foundation.tar.zst` and
+receipt, including the staged compiler, matched PCH inputs and owning build graph.
+
+For offline review, place the plan and eight partition archives in one directory
+as `<artifact-id>.zip`. The replay command binds each ZIP to the reviewed digest
+before extracting it and runs the existing terminal aggregator.
+
+```sh
+python3 -B -m scripts.objc3c_implementation_assurance.replay \
+  --host linux-x86_64 --archive-directory /path/to/retained-artifacts
+```

@@ -1,0 +1,156 @@
+{
+  "schema": "objc3c.reviewed-implementation-receipts.v1",
+  "revision": "8fe5c2fd89008d1c090a9355c11bdda01ceb9309",
+  "hosts": {
+    "linux-x86_64": {
+      "run_id": 44865570421,
+      "plan_artifact_id": 14693134106,
+      "plan_archive_sha256": "ccd17101303269556e934f0b590ce5f397436996b04af8f02b8042cefbb9c09d",
+      "shared_foundation_sha256": "0258902575910068bf0f35f68733391e22f7f12149bf842fe464eccae382e1ff",
+      "result": "PASS",
+      "analyzed_variants": 246,
+      "owners": {
+        "frontend": 45,
+        "standalone-runtime": 21,
+        "maintained-clang": 180
+      },
+      "analyzer_sha256": ["f141dfa7ef9162c3f6356c51f7b569b3cc907301a5e3a66b1e76a4eaaddf9c85"],
+      "partitions": [
+        {
+          "partition": 0,
+          "artifact_id": 14695661716,
+          "archive_sha256": "2a2bac4379c2de6ea375136c9cdce19fc0f34ca034788b4680cf1e173a6462cc",
+          "analyzed_variants": 25
+        },
+        {
+          "partition": 1,
+          "artifact_id": 14696622256,
+          "archive_sha256": "6cc9a23fabe101860e7cd5378b809f54834ce87cb39e896925c25a47ac755ce9",
+          "analyzed_variants": 30
+        },
+        {
+          "partition": 2,
+          "artifact_id": 14696176217,
+          "archive_sha256": "d65ea45167f1a31c8e61be8a25b18bf31d1a31115d854d6e7419c538d1ffff0b",
+          "analyzed_variants": 32
+        },
+        {
+          "partition": 3,
+          "artifact_id": 14695876827,
+          "archive_sha256": "4131fa9fd4910d497a741a9ba1b7c040b1f47f79017e47a4bb0b2486cbeeb789",
+          "analyzed_variants": 33
+        },
+        {
+          "partition": 4,
+          "artifact_id": 14696425912,
+          "archive_sha256": "369d88e690ad04c7a4ef8276aee598a722dab8bd60ff80937b8c11ab6f4e9e6c",
+          "analyzed_variants": 33
+        },
+        {
+          "partition": 5,
+          "artifact_id": 14695936011,
+          "archive_sha256": "c9dd38a80cfea6d0391dd294ecc6527958c4264df25441ca6c626d309a31d945",
+          "analyzed_variants": 31
+        },
+        {
+          "partition": 6,
+          "artifact_id": 14697186139,
+          "archive_sha256": "fbcf9681bea5bd2ce53414f4058a3b3de1e60c52f444f553c0cb56978d52951e",
+          "analyzed_variants": 31
+        },
+        {
+          "partition": 7,
+          "artifact_id": 14696027040,
+          "archive_sha256": "afa6cd6ad81cbe6da0d2f3241585f137efbc4cb05a359de59a7a4159428c49e9",
+          "analyzed_variants": 31
+        }
+      ],
+      "terminal_job_id": 136767271492,
+      "inventory_sha256": "255ce0b970cc3d54dc9fa98cb1dd88386f5c2726f402833bc5f99cf0b7d11ec9",
+      "language_analyzer_lit": "PASS",
+      "executor_lock_artifact_id": 14695617338,
+      "executor_lock_cases": 7
+    },
+    "linux-aarch64": {
+      "run_id": 44865570382,
+      "plan_artifact_id": 14694006361,
+      "plan_archive_sha256": "49cd33884397399e87dbecdba7ed74b16b8123ae34bcce606ad4f9be66d5cec1",
+      "shared_foundation_sha256": "d7d7c7bba3d6a9f7e1f335789348e555ae57bf24a4d6582bde50a5eba7c1af96",
+      "result": "PASS",
+      "analyzed_variants": 246,
+      "owners": {
+        "frontend": 45,
+        "standalone-runtime": 21,
+        "maintained-clang": 180
+      },
+      "analyzer_sha256": ["f4c88530fd70c935a8e8b63f944f3a5874487906b8ac6649176da013898edd6f"],
+      "partitions": [
+        {
+          "partition": 0,
+          "artifact_id": 14695815276,
+          "archive_sha256": "609019eb5b9e034fdcde28531ec051a975148cdbe2d3fd8076258aa0685600ba",
+          "analyzed_variants": 25
+        },
+        {
+          "partition": 1,
+          "artifact_id": 14695198881,
+          "archive_sha256": "c4b477dd463ef3c81c86ae4f021c9191a16f33cc0833a08ae785989e6467007a",
+          "analyzed_variants": 30
+        },
+        {
+          "partition": 2,
+          "artifact_id": 14694991774,
+          "archive_sha256": "aaa3fc372793a217ca0da46b9e772c9b056bacf7d5e6ad3c0a6d8173004d5495",
+          "analyzed_variants": 32
+        },
+        {
+          "partition": 3,
+          "artifact_id": 14695285745,
+          "archive_sha256": "ef6d7a26a4e63576b9df89583cf4799fe7caa9e57069c4f7b1f50495d3d962b0",
+          "analyzed_variants": 33
+        },
+        {
+          "partition": 4,
+          "artifact_id": 14695495370,
+          "archive_sha256": "0ae80d3ac950cee5e642526623de2ea5bf00aff2503cb588144ca8b4482c941c",
+          "analyzed_variants": 33
+        },
+        {
+          "partition": 5,
+          "artifact_id": 14694054479,
+          "archive_sha256": "2e6def2b2ea73da8cbfe446f03edf6bcba8a3bee93abfad46850286a58f47140",
+          "analyzed_variants": 31
+        },
+        {
+          "partition": 6,
+          "artifact_id": 14695195508,
+          "archive_sha256": "43dee9fc41b86fdbba8e6072d2fc2f831eff0d3ffb8a884df8e65ce52f512f85",
+          "analyzed_variants": 31
+        },
+        {
+          "partition": 7,
+          "artifact_id": 14694761928,
+          "archive_sha256": "ec961f656b5608acf0bb4fe399761e990f337adf30e431a2ce3d348d0ce384e6",
+          "analyzed_variants": 31
+        }
+      ],
+      "terminal_job_id": 136760510480,
+      "inventory_sha256": "7fcdf17e3230ee6c5aa6fb2e91fe8773a17c1b00208462568b5545d4b442d295",
+      "language_analyzer_lit": "PASS",
+      "executor_lock_artifact_id": 14698722034,
+      "executor_lock_cases": 7
+    }
+  },
+  "historical_llvm_optimizer": {
+    "revision": "c564dfb2dd7d6c325d0c9464cf58532ef06dbfc5",
+    "run_id": 42593505049,
+    "job_id": 129080538608,
+    "decoded_job_log_sha256": "de8ffccee9aaf13d00d28ce2e441204b8fa9808154905ffcd34c821ca27e149c",
+    "ir_and_debugger_executions": 21,
+    "generated_semantic_cases": 63,
+    "generated_semantic_controls": 7,
+    "reported_artifact_id": 13669670681,
+    "reported_archive_sha256": "f57c050d76479f868e50ed88e5fd19049289ea3dd627f53eda05a40b9311e272",
+    "artifact_retrieval_status": 404
+  }
+}

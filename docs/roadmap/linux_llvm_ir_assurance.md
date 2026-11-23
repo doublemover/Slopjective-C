@@ -201,3 +201,35 @@ accuracy. At `abbfff813`, the complete campaign passes all 21 selected IR/debugg
 configurations; both optimized-local checks correctly report unavailable state.
 The [issue inventory](../support/linux_open_issue_review.json) records the source
 identity and receipt hashes. Hosted cold-run acceptance remains under #8283.
+
+## Historical hosted execution and reuse
+
+The hosted x86-64 job at `c564dfb2d` reported 21 successful IR and debugger
+executions and 63 generated semantic cases with seven controls. Its upload log
+identifies artifact `13669670681` and the archive SHA-256. The download endpoint
+now returns HTTP 404. The [receipt index](../support/linux_analysis_receipts.json)
+records these values and the decoded job log digest. [Hosted LLVM job](https://github.com/doublemover/Slopjective-C/actions/runs/42593505049/job/129080538608)
+
+- The historical campaign source requires valid and malformed IR controls and
+  deliberate invalid MIR rejection before the corpus runs. It verifies real
+  transformed O2 and size IR and reconciles source, PCH, and interface case and
+  stage inventories. The installed preview witness independently verified real
+  transformed O2 IR and native execution through both code-generation routes.
+- The historical controls bind tool substitution, absent passes, missing
+  outputs, crashes and timeouts to rejection. Optimized debugger cases cover
+  source and visible-state expectations. The separate malformed DWARF control
+  requires an actual verifier diagnostic.
+- The reducer requires the intended deterministic exit and rejects unrelated
+  invalid IR, link errors, and correct output. It retains the original and
+  requires native replay of the reduced case. The historical aggregate log
+  confirms campaign success. Individual pass, reduction and optimized-debugger
+  receipts require the unavailable archive.
+
+A current local producer can reuse the exact sanitizer foundation with
+`llvm_campaign --prepared`. The IR owner can also admit an existing matching
+`--tools-receipt`. Full pass and reduction replay needs the exact build-tree
+`opt`, `llvm-dis`, and `llvm-reduce` executables, their owning Ninja inputs, the
+matched SDK and the language/runtime fixtures. The published SDK supports the
+installed preview witness through its packaged tools. The published analyzer
+producer inventory contains neither those development executables nor their
+Ninja target closure. Current-head full optimizer qualification remains open.

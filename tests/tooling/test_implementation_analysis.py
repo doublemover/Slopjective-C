@@ -219,7 +219,10 @@ def test_current_dependency_scan_reaches_an_unchanged_tu_across_owner_boundaries
     bridge = runtime / 'bridge.h'
     bridge.write_text('#include "../clang_foundation/first.h"\n')
     consumer = runtime / 'consumer.cpp'
-    consumer.write_text('#include "bridge.h"\nint read() { return VALUE; }\n')
+    consumer_text = ('#include "bridge.h"\n#if VALUE == 2\n'
+                     'int read() { return sizeof(sizeof(int)); }\n'
+                     '#else\nint read() { return VALUE; }\n#endif\n')
+    consumer.write_text(consumer_text)
     sibling = runtime / 'sibling.cpp'
     sibling.write_text('int sibling() { return 3; }\n')
     (runtime / 'CMakeLists.txt').write_text('cmake_minimum_required(VERSION 3.24)\n'
@@ -231,6 +234,11 @@ def test_current_dependency_scan_reaches_an_unchanged_tu_across_owner_boundaries
     subprocess.run(['cmake', '--build', build], check=True, capture_output=True)
     graph = subprocess.check_output([ninja, '-C', build, '-t', 'commands'], text=True)
     rows = inventory(build / 'compile_commands.json', graph, {consumer, sibling})
+    analyzer = shutil.which('clang-tidy')
+    if analyzer:
+        check = [analyzer, '-p', build, consumer, '--checks=-*,bugprone-sizeof-expression', '--warnings-as-errors=*']
+        baseline = subprocess.run(check, capture_output=True, text=True, timeout=30)
+        assert baseline.returncode == 0
     original = bridge.stat()
     bridge.write_text(bridge.read_text().replace('first.h', 'later.h'))
     os.utime(bridge, ns=(original.st_atime_ns, original.st_mtime_ns))
@@ -246,6 +254,14 @@ def test_current_dependency_scan_reaches_an_unchanged_tu_across_owner_boundaries
                 name=str(index), run=run) for index, row in enumerate(rows)}
     selected = select_owner_variants(tmp_path, 'standalone-runtime', rows, headers, [changed])
     assert [row['file'] for row in selected] == [str(consumer)]
+    if analyzer:
+        from scripts.objc3c_toolchain.analysis_checkpoint import tidy_diagnostics
+        assert consumer.read_text() == consumer_text
+        finding = subprocess.run(check, capture_output=True, text=True, timeout=30)
+        assert finding.returncode == 1
+        diagnostics = tidy_diagnostics(finding.stdout + finding.stderr)
+        assert [(row['path'], row['line'], row['check']) for row in diagnostics] == [
+            (str(consumer), 3, 'bugprone-sizeof-expression')]
     changed.unlink()
     with pytest.raises(subprocess.CalledProcessError):
         discover_variant_dependencies(selected[0], tmp_path / 'missing.d', name='missing', run=run)

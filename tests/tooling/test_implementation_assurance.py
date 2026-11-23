@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+from zipfile import ZipFile
 
 import pytest
 
@@ -52,6 +53,22 @@ def test_manual_comparison_uses_the_tested_commit_and_exact_ancestor(tmp_path):
     assert result['revision'] == {'head': tested, 'tested': tested, 'base': base}
     assert result['periodic'] is False and result['analysis_partitions'] == 1
     assert result['analysis_paths'] == ['native/objc3c/src/runtime/public/header.h']
+
+
+def test_offline_replay_requires_reviewed_zip_bytes_and_owned_members(tmp_path):
+    from scripts.objc3c_implementation_assurance.replay import reviewed_zip
+
+    path = tmp_path / '1.zip'
+    with ZipFile(path, 'w') as archive:
+        archive.writestr('plan.json', '{}')
+    with reviewed_zip(tmp_path, 1, evidence.digest(path)) as archive:
+        assert archive.read('plan.json') == b'{}'
+    with pytest.raises(ValueError, match='differs from the reviewed archive'):
+        reviewed_zip(tmp_path, 1, '0'*64)
+    with ZipFile(path, 'w') as archive:
+        archive.writestr('../unowned', 'data')
+    with pytest.raises(ValueError, match='unowned or excessive'):
+        reviewed_zip(tmp_path, 1, evidence.digest(path))
 
 
 @pytest.mark.parametrize('mutation', ['required', 'path', 'digest'])
