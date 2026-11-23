@@ -24,6 +24,11 @@ frontend/runtime variants, standalone runtime variants and all maintained
 patch-touched Clang implementation TUs; test/vendor/generated-only exclusions
 are reported explicitly.
 
+The empty baseline is enforced before analysis starts. A `NOLINT` directive in
+first-party implementation or headers, or added to a maintained Clang library or
+header, fails review with its repository path and line. The check covers the
+maintained patches' added text.
+
 The preparation queue now holds at most twice the worker count and harvests
 completed native actions before preparing more PCH/TU work. Each unit persists
 its result, diagnostics and raw command independently; preparation or worker

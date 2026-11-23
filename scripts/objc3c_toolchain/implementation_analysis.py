@@ -25,6 +25,8 @@ from .analysis_scheduling import execute_jobs
 from .analysis_partition import partition_spec, partition_rows
 
 SUFFIXES = {'.cpp', '.cc', '.c', '.mm', '.m'}
+HEADER_SUFFIXES = {'.h', '.hh', '.hpp', '.inc', '.def', '.tcc'}
+TIDY_SUPPRESSION = re.compile(r'\bNOLINT(?:NEXTLINE|BEGIN|END)?\b')
 NATIVE_TIMEOUT_UNITS = {
     'native/objc3c/src/clang_foundation/interface_emission_features.cpp',
     'native/objc3c/src/clang_foundation/interface_emission_identity.cpp',
@@ -41,6 +43,29 @@ def checker_configuration(repo, source, policy):
 def patch_units(repo):
     return {value for patch in (repo / 'toolchains/llvm/patches').glob('*.patch')
         for value in re.findall(r'^\+\+\+ b/(clang/lib/.*\.cpp)$', patch.read_text(), re.M)}
+
+
+def check_owned_suppressions(repo: Path) -> dict:
+    """Enforce the empty suppression baseline on maintained implementation text."""
+    native = sorted(path for path in (repo / 'native/objc3c/src').rglob('*')
+                    if path.is_file() and path.suffix in SUFFIXES | HEADER_SUFFIXES)
+    patches = sorted((repo / 'toolchains/llvm/patches').glob('*.patch'))
+    if not native or not patches:
+        raise ValueError('analysis suppression check requires the owned implementation and patch inventories')
+    for path in native:
+        for index, line in enumerate(path.read_text().splitlines(), 1):
+            if TIDY_SUPPRESSION.search(line):
+                raise ValueError(f'{path.relative_to(repo)}:{index}: unreviewed clang-tidy suppression')
+    for path in patches:
+        implementation = False
+        for index, line in enumerate(path.read_text().splitlines(), 1):
+            if line.startswith('diff --git '):
+                implementation = False
+            elif line.startswith('+++ '):
+                implementation = line.startswith(('+++ b/clang/lib/', '+++ b/clang/include/'))
+            elif implementation and line.startswith('+') and TIDY_SUPPRESSION.search(line):
+                raise ValueError(f'{path.relative_to(repo)}:{index}: unreviewed clang-tidy suppression')
+    return {'status': 'PASS', 'native_sources': len(native), 'patches': len(patches)}
 
 
 def validate_timeout_overrides(policy, maintained_units):
@@ -374,6 +399,7 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
     executor = Execution(output, environment, report, timeout=600)
     run = executor.run
     try:
+        report['source_suppressions'] = check_owned_suppressions(repo)
         run('configure-tool', tool_arguments)
         run('build-tool', [plan['host_environment']['cmake_path'], '--build', tool_build, '--parallel', '2'])
         tool = tool_build / policy['tool']
@@ -593,6 +619,8 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
             raise ValueError('implementation analysis contains findings or incomplete translation units')
         if any(digest(Path(path)) != value for path, value in report['inputs'].items()):
             raise ValueError('implementation analysis inputs changed')
+        if check_owned_suppressions(repo) != report['source_suppressions']:
+            raise ValueError('implementation analysis suppression inventory changed')
         report.update(status='PASS', analyzed_variants=len(report['results']), inventory_variants=len(report['inventory']))
         report['fresh_native_executions'] = sum(not row.get('execution_reused', False) for row in report['results'])
         report['verified_checkpoint_actions'] = sum(row.get('execution_reused', False) for row in report['results'])

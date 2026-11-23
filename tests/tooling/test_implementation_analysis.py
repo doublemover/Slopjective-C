@@ -7,9 +7,30 @@ import subprocess
 import pytest
 
 from scripts.objc3c_toolchain.implementation_analysis import (
-    dependencies, dependency_arguments, inventory, matched_pch_arguments, owner_changes,
+    check_owned_suppressions, dependencies, dependency_arguments, inventory, matched_pch_arguments, owner_changes,
     selected_variants, textual_pch,
 )
+
+
+def test_owned_suppression_check_rejects_header_and_patch_additions(tmp_path):
+    native = tmp_path / 'native/objc3c/src/runtime/public/owned.hpp'
+    native.parent.mkdir(parents=True)
+    native.write_text('int owned();\n')
+    patch = tmp_path / 'toolchains/llvm/patches/0001.patch'
+    patch.parent.mkdir(parents=True)
+    patch.write_text('+++ b/clang/lib/Sema.cpp\n int inherited(); // NOLINT\n+int owned();\n'
+                     '+++ b/clang/test/ignored.cpp\n+int test(); // NOLINTNEXTLINE\n')
+    assert check_owned_suppressions(tmp_path) == {'status': 'PASS', 'native_sources': 1, 'patches': 1}
+    original = patch.read_text()
+    for marker in ('NOLINT', 'NOLINTNEXTLINE(bugprone-use-after-move)', 'NOLINTBEGIN', 'NOLINTEND'):
+        native.write_text(f'int owned(); // {marker}\n')
+        with pytest.raises(ValueError, match='owned.hpp:1: unreviewed clang-tidy suppression'):
+            check_owned_suppressions(tmp_path)
+        native.write_text('int owned();\n')
+        patch.write_text(original.replace('+int owned();', f'+int owned(); // {marker}'))
+        with pytest.raises(ValueError, match='0001.patch:3: unreviewed clang-tidy suppression'):
+            check_owned_suppressions(tmp_path)
+        patch.write_text(original)
 
 
 def test_pending_window_publishes_native_results_before_preparing_more(tmp_path):
