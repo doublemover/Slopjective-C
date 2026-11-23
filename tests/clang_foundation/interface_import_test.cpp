@@ -699,6 +699,17 @@ void TestInterfaceThreadStorageReexportLocks() {
     assert(through_relay(ordinary_relay, false).success);
     const auto tls = emit_leaf("extern _Thread_local int counter;");
     assert(tls.semantic_fingerprint != ordinary.semantic_fingerprint);
+    std::ifstream source_file(leaf_path);
+    std::ifstream sidecar_file(leaf_path.string() + ".json");
+    const std::string source((std::istreambuf_iterator<char>(source_file)), {});
+    const std::string json((std::istreambuf_iterator<char>(sidecar_file)), {});
+    const auto semantics = SupportedSemanticInterfaceCapabilities();
+    auto decoded = DecodeSemanticInterfaceSidecar(json, source, semantics);
+    assert(decoded);
+    assert(std::erase(decoded->required_semantics, "objc3.native-ownership-contracts.v1") == 1);
+    auto incomplete = EncodeSemanticInterfaceSidecar(*decoded, semantics);
+    assert(!incomplete);
+    llvm::consumeError(incomplete.takeError());
     rejects_stale_lock(through_relay(ordinary_relay, false));
     if (objc) rejects_stale_lock(through_relay(ordinary_relay, true));
     const auto tls_relay = emit_relay(tls);
@@ -777,6 +788,23 @@ void free_bits(Bits *bits) { object_dispose(bits); }
       assert(result.success && result.interface_artifact);
       return result.interface_artifact->identity;
     };
+    auto publish_reexport = [&](const InterfaceModuleIdentity &identity) {
+      auto relay = provider;
+      relay.module_name = "test.Layout";
+      relay.source_text = "int layout_version(void);";
+      relay.emit = EmitKind::Syntax;
+      relay.output_path.clear();
+      relay.interface_output_path = (root / "Layout.objc3i").string();
+      auto edge = ImportOf(interface_path, identity);
+      edge.reexported = true;
+      relay.imported_interfaces = {std::move(edge)};
+      const auto result = Compile(relay);
+      test::ReportFailure(result);
+      assert(result.success && result.interface_artifact);
+      assert(result.resolved_interface_dependencies.size() == 1);
+      assert(result.resolved_interface_dependencies.front().module.semantic_fingerprint == identity.semantic_fingerprint);
+      return result.interface_artifact->identity;
+    };
     auto consumer = provider;
     consumer.input_path = (root / (cxx ? "consumer.mm" : "consumer.m")).string();
     consumer.module_name.clear();
@@ -821,17 +849,21 @@ int main(void) {
       assert(llvm::sys::ExecuteAndWait(executable, {executable}) == 0);
     };
     const auto narrow = publish(1);
+    const auto narrow_closure = publish_reexport(narrow);
     run_matching(narrow, 1, false);
     const auto wide = publish(2);
     assert(wide.semantic_fingerprint != narrow.semantic_fingerprint);
-    for (const bool search : {false, true}) {
-      const auto stale = compile(narrow, 1, search);
+    for (const auto &[identity, search] : {std::pair{&narrow, false}, std::pair{&narrow, true},
+                                          std::pair{&narrow_closure, true}}) {
+      const auto stale = compile(*identity, 1, search);
       assert(!stale.success && stale.imported_declarations.empty() && !fs::exists(consumer_object));
       assert(std::ranges::any_of(stale.interface_import_diagnostics, [](const auto &diagnostic) {
         return diagnostic.code == "O3IFC134";
       }));
     }
-    run_matching(wide, 2, true);
+    const auto wide_closure = publish_reexport(wide);
+    assert(wide_closure.semantic_fingerprint != narrow_closure.semantic_fingerprint);
+    run_matching(wide_closure, 2, true);
   }
   fs::remove_all(root);
 }
