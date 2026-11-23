@@ -597,6 +597,123 @@ void TestInterfaceThreadStorageReexportLocks() {
   fs::remove_all(root);
 }
 
+void TestLinkedObjectiveCIvarWidths() {
+  const auto root = fs::temp_directory_path() / "objc3-linked-ivar-widths";
+  fs::remove_all(root);
+  fs::create_directories(root);
+  const auto interface_path = root / "Bits.objc3i";
+  const auto provider_object = (root / "provider.o").string();
+  const auto consumer_object = (root / "consumer.o").string();
+  const auto executable = (root / "ivar-widths").string();
+  const auto runtime_directory = fs::path(OBJC3_INTERFACE_TEST_OBJC_LIBRARY).parent_path();
+  const std::string rpath = "-Wl,-rpath," + runtime_directory.string();
+  for (const bool cxx : {false, true}) {
+    auto provider = ModuleRequest(root / (cxx ? "provider.mm" : "provider.m"), "test.Bits", "");
+    provider.language = cxx ? BaseLanguage::ObjectiveCxx : BaseLanguage::ObjectiveC;
+    provider.arguments = {cxx ? "-std=c++20" : "-std=c17"};
+    provider.emit = EmitKind::Object;
+    provider.output_path = provider_object;
+    provider.interface_output_path = interface_path.string();
+    auto publish = [&](unsigned width) {
+      provider.source_text = "#define FIRST_WIDTH " + std::to_string(width) + R"objc(
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern id class_createInstance(Class, __SIZE_TYPE__);
+extern Class objc_getClass(const char *);
+extern id object_dispose(id);
+#ifdef __cplusplus
+}
+#endif
+__attribute__((objc_root_class))
+@interface Bits {
+@private Class isa;
+@public
+  unsigned flag : FIRST_WIDTH;
+  unsigned neighbor : 3;
+  unsigned tail : 4;
+}
+@end
+@implementation Bits
+@end
+Bits *make_bits(void) {
+  Bits *bits = (Bits *)class_createInstance(objc_getClass("Bits"), 0);
+  if (bits) {
+    bits->flag = (1u << FIRST_WIDTH) - 1;
+    bits->neighbor = 5;
+    bits->tail = 10;
+  }
+  return bits;
+}
+int check_bits(Bits *bits) {
+  return bits->flag == 0 && bits->neighbor == 5 && bits->tail == 8;
+}
+void free_bits(Bits *bits) { object_dispose(bits); }
+)objc";
+      const auto result = Compile(provider);
+      test::ReportFailure(result);
+      assert(result.success && result.interface_artifact);
+      return result.interface_artifact->identity;
+    };
+    auto consumer = provider;
+    consumer.input_path = (root / (cxx ? "consumer.mm" : "consumer.m")).string();
+    consumer.module_name.clear();
+    consumer.package_identity.clear();
+    consumer.emit_semantic_interface = false;
+    consumer.interface_output_path.clear();
+    consumer.output_path = consumer_object;
+    auto compile = [&](const InterfaceModuleIdentity &identity, unsigned width, bool search) {
+      auto request = consumer;
+      request.source_text = "#define FIRST_WIDTH " + std::to_string(width) + R"objc(
+int main(void) {
+  Bits *bits = make_bits();
+  if (!bits) return 1;
+  int before = bits->flag == (1u << FIRST_WIDTH) - 1 && bits->neighbor == 5 && bits->tail == 10;
+  bits->flag = 0;
+  bits->tail = 8;
+  int after = check_bits(bits);
+  free_bits(bits);
+  return !(before && after);
+}
+)objc";
+      if (search) {
+        InterfaceModuleRequest locked;
+        locked.canonical_name = identity.canonical_name;
+        locked.locked_identity = identity;
+        request.module_imports = {std::move(locked)};
+        request.interface_search_paths = {root.string()};
+      } else {
+        request.imported_interfaces = {ImportOf(interface_path, identity)};
+      }
+      fs::remove(request.output_path);
+      return Compile(request);
+    };
+    auto run_matching = [&](const InterfaceModuleIdentity &identity, unsigned width, bool search) {
+      const auto result = compile(identity, width, search);
+      test::ReportFailure(result);
+      assert(result.success && HasImported(result, "Bits"));
+      const auto &driver = result.compiler_driver_path;
+      const std::vector<llvm::StringRef> link = {driver, provider_object, consumer_object,
+          OBJC3_INTERFACE_TEST_OBJC_LIBRARY, rpath, "-o", executable};
+      assert(llvm::sys::ExecuteAndWait(driver, link) == 0);
+      assert(llvm::sys::ExecuteAndWait(executable, {executable}) == 0);
+    };
+    const auto narrow = publish(1);
+    run_matching(narrow, 1, false);
+    const auto wide = publish(2);
+    assert(wide.semantic_fingerprint != narrow.semantic_fingerprint);
+    for (const bool search : {false, true}) {
+      const auto stale = compile(narrow, 1, search);
+      assert(!stale.success && stale.imported_declarations.empty() && !fs::exists(consumer_object));
+      assert(std::ranges::any_of(stale.interface_import_diagnostics, [](const auto &diagnostic) {
+        return diagnostic.code == "O3IFC134";
+      }));
+    }
+    run_matching(wide, 2, true);
+  }
+  fs::remove_all(root);
+}
+
 void TestBadLockAndMissingTransitiveArtifactFailBeforeImport() {
   const auto root = fs::temp_directory_path() / "objc3-interface-import-invalid-test";
   fs::remove_all(root);
@@ -1158,6 +1275,7 @@ int main() {
   cases.Run("TestSourceFreeObjectiveCContractLocks", TestSourceFreeObjectiveCContractLocks);
   cases.Run("TestInterfaceThreadStorageExecution", TestInterfaceThreadStorageExecution);
   cases.Run("TestInterfaceThreadStorageReexportLocks", TestInterfaceThreadStorageReexportLocks);
+  cases.Run("TestLinkedObjectiveCIvarWidths", TestLinkedObjectiveCIvarWidths);
   cases.Run("TestDuplicateLookupNamesAreRejected", TestDuplicateLookupNamesAreRejected);
   cases.Run("TestCompleteExportIdentitiesAndPrivateDirectLookup", TestCompleteExportIdentitiesAndPrivateDirectLookup);
   cases.Run("TestRelativeArtifactsAndResponseFileLayoutFlags", TestRelativeArtifactsAndResponseFileLayoutFlags);
