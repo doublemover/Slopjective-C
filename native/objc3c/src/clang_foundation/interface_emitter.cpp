@@ -1143,6 +1143,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kBorrowedInteriorStorageSemantic);
     if (HasBorrowedCallableOwnerIdentity(declaration))
       sidecar.required_semantics.push_back(kBorrowedCallableOwnerSemantic);
+    if (HasBorrowedCallableParametersIdentity(declaration))
+      sidecar.required_semantics.push_back(kBorrowedCallableParametersSemantic);
     if (HasAsyncConsumedOwnershipIdentity(declaration))
       sidecar.required_semantics.push_back(kAsyncConsumedOwnershipSemantic);
     if (HasDependentKeyPathTypeIdentity(declaration))

@@ -501,6 +501,12 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool borrowed_callable_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kBorrowedCallableOwnerSemantic) != sidecar.required_semantics.end();
   if (borrowed_callables != borrowed_callable_capability)
     Add(result,"O3IFC104","borrowed callable owner identity and required capability must agree",expected.canonical_name);
+  const bool borrowed_parameters = std::ranges::any_of(sidecar.declarations, HasBorrowedCallableParametersIdentity);
+  const bool borrowed_parameters_capability = std::ranges::find(sidecar.required_semantics, kBorrowedCallableParametersSemantic) !=
+                                             sidecar.required_semantics.end();
+  if (borrowed_parameters != borrowed_parameters_capability)
+    Add(result, "O3IFC104", "borrowed callable parameter identity and required capability must agree",
+        expected.canonical_name);
   const bool consuming = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasAsyncConsumedOwnershipIdentity);
   const bool consuming_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kAsyncConsumedOwnershipSemantic) != sidecar.required_semantics.end();
   if (consuming != consuming_capability)

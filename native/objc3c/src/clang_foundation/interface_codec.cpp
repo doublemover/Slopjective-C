@@ -87,6 +87,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     kBorrowedReceiverResultSemantic,
     kBorrowedInteriorStorageSemantic,
     kBorrowedCallableOwnerSemantic,
+    kBorrowedCallableParametersSemantic,
     kDependentKeyPathTypeSemantic,
     "objc3.async-entry-abi.v5",
     "objc3.direct-dispatch.v1",
@@ -691,6 +692,11 @@ llvm::Error ValidateForEncoding(
   const bool borrowed_callable_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kBorrowedCallableOwnerSemantic) != sidecar.required_semantics.end();
   if (borrowed_callables != borrowed_callable_capability)
     return Invalid("borrowed callable owner identity and required capability must agree");
+  const bool borrowed_parameters = std::ranges::any_of(sidecar.declarations, HasBorrowedCallableParametersIdentity);
+  const bool borrowed_parameters_capability = std::ranges::find(sidecar.required_semantics, kBorrowedCallableParametersSemantic) !=
+                                             sidecar.required_semantics.end();
+  if (borrowed_parameters != borrowed_parameters_capability)
+    return Invalid("borrowed callable parameter identity and required capability must agree");
   const bool consuming = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasAsyncConsumedOwnershipIdentity);
   const bool consuming_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kAsyncConsumedOwnershipSemantic) != sidecar.required_semantics.end();
   if (consuming != consuming_capability)

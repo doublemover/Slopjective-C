@@ -8,6 +8,7 @@
 #include "clang_foundation/module_names.h"
 #include "clang_foundation/interface_codec.h"
 #include "clang_foundation/interface_emitter.h"
+#include "clang_foundation/native_contract_identity.h"
 #include "clang_foundation/runtime_interface_types.h"
 #include "clang_foundation/standard_coroutine_types.h"
 #include "clang_foundation/standard_library_headers.h"
@@ -2606,6 +2607,123 @@ void TestBorrowedCallableOwnerCapability() {
       changed.replace(index,std::string("owner_index=0").size(),"owner_index=1");
       auto second=emit(changed,"second-owner.m",{"CallbackBytes","GetterFirst"});
       assert(first.identity.semantic_fingerprint!=second.identity.semantic_fingerprint);
+    }
+  }
+}
+
+void TestCanonicalBorrowedCallbackInterfaceReplay() {
+  llvm::SmallString<128> temporary;
+  assert(!llvm::sys::fs::createUniqueDirectory("objc3-canonical-borrowed-callback", temporary));
+  const std::filesystem::path root(temporary.c_str());
+  auto cleanup = llvm::scope_exit([&] { std::filesystem::remove_all(root); });
+  const auto path = root / "Callback.objc3i";
+  const bool has_canonical_parameters = []<class Info> {
+    return requires(Info info) { info.isObjC3Borrowed(); };
+  }.operator()<clang::FunctionProtoType::ExtParameterInfo>();
+  const std::string declarations = R"objc(
+using Callback = void (*)(borrowed const char *);
+using Raw = void (*)(const char *);
+template<class Call> Call adapt(Call callback) { return callback; }
+using Deduced = decltype(adapt(static_cast<Callback>(nullptr)));
+using Explicit = decltype(adapt<Callback>(static_cast<Callback>(nullptr)));
+template<class T> int body_contract(T value) {
+  using Local = void (*)(borrowed const char *);
+  Local callback = nullptr;
+  return value + (callback != nullptr);
+}
+)objc";
+  for (const char *standard : {"c++20", "c++23"}) {
+    for (const bool arc : {false, true}) {
+      CompileRequest provider;
+      provider.input_path = (root / "provider.mm").string();
+      provider.source_text = declarations;
+      provider.language = BaseLanguage::ObjectiveCxx;
+      provider.objc3 = true;
+      provider.arc = arc;
+      provider.profile = SemanticProfile::StrictSystem;
+      provider.objc_runtime = "gnustep-2.2";
+      provider.target_triple = OBJC3_TEST_NATIVE_LINUX_TARGET;
+      provider.arguments = {std::string("-std=") + standard};
+      provider.emit_semantic_interface = true;
+      provider.module_name = "fixture.Callback";
+      provider.package_identity = "callback";
+      provider.interface_output_path = path.string();
+      const auto published = Compile(provider);
+      test::ReportFailure(published);
+      assert(published.success && published.interface_artifact);
+      const auto &artifact = *published.interface_artifact;
+      auto flags = test::NativeToolArguments({"-x", "objective-c++", std::string("-std=") + standard,
+          "-fobjc-version=3", "-fobjc3-profile=strict-system", "-fobjc-runtime=gnustep-2.2",
+          arc ? "-fobjc-arc" : "-fno-objc-arc"});
+      const auto ast = clang::tooling::buildASTFromCodeWithArgs(artifact.source_bytes, flags, "replay.mm");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      unsigned checked = 0;
+      const auto &context = ast->getASTContext();
+      for (const auto *decl : context.getTranslationUnitDecl()->decls()) {
+        const auto *alias = llvm::dyn_cast<clang::TypeAliasDecl>(decl);
+        if (!alias || (alias->getName() != "Deduced" && alias->getName() != "Explicit" && alias->getName() != "Raw"))
+          continue;
+        const auto type = alias->getUnderlyingType().getCanonicalType();
+        const auto *callback = type->getPointeeType()->castAs<clang::FunctionProtoType>();
+        assert(!clang::isObjC3BorrowedType(context, callback->getParamType(0)));
+        assert(IsCanonicalBorrowedParameter(callback->getExtParameterInfo(0)) ==
+               (has_canonical_parameters && alias->getName() != "Raw"));
+        ++checked;
+      }
+      assert(checked == 3);
+      const auto supported = CurrentReaderSemantics();
+      auto decoded = DecodeSemanticInterfaceSidecar(artifact.sidecar_json, artifact.source_bytes, supported);
+      assert(decoded);
+      assert((std::ranges::find(decoded->required_semantics, kBorrowedCallableParametersSemantic) !=
+             decoded->required_semantics.end()) == has_canonical_parameters);
+      for (const auto *name : {"Callback", "Deduced", "Explicit", "Raw", "body_contract"}) {
+        const auto row = std::ranges::find_if(decoded->declarations, [&](const auto &declaration) {
+          return declaration.qualified_name == name;
+        });
+        assert(row != decoded->declarations.end());
+        assert(HasBorrowedCallableParametersIdentity(*row) ==
+               (has_canonical_parameters && llvm::StringRef(name) != "Raw"));
+        if (has_canonical_parameters && llvm::StringRef(name) != "Raw" &&
+            llvm::StringRef(name) != "body_contract")
+          assert(row->effects.ownership_identity.find("type.pointee.parameter[0]:borrowed") != std::string::npos);
+      }
+      if (has_canonical_parameters) {
+        auto older = supported;
+        std::erase(older, kBorrowedCallableParametersSemantic);
+        auto unsupported = DecodeSemanticInterfaceSidecar(artifact.sidecar_json, artifact.source_bytes, older);
+        assert(!unsupported);
+        llvm::consumeError(unsupported.takeError());
+        std::erase(decoded->required_semantics, kBorrowedCallableParametersSemantic);
+        auto missing = EncodeSemanticInterfaceSidecar(*decoded, supported);
+        assert(!missing);
+        llvm::consumeError(missing.takeError());
+      }
+
+      auto consumer = provider;
+      consumer.input_path = (root / "consumer.mm").string();
+      consumer.source_text = R"objc(
+static_assert(__is_same(Deduced, Explicit));
+void inspect(borrowed const char *value) { (void)*value; }
+int use(void) {
+  const char bytes[] = {'x', '\0'};
+  Deduced deduced = adapt(&inspect);
+  Explicit explicit_type = adapt<Callback>(&inspect);
+  deduced(bytes);
+  explicit_type(bytes);
+  return body_contract(42);
+}
+)objc";
+      consumer.emit_semantic_interface = false;
+      consumer.module_name.clear();
+      consumer.package_identity.clear();
+      consumer.interface_output_path.clear();
+      InterfaceImportInput import;
+      import.source_path = path.string();
+      import.locked_identity = artifact.identity;
+      consumer.imported_interfaces = {std::move(import)};
+      const auto replayed = Compile(consumer);
+      test::ReportFailure(replayed);
+      assert(replayed.success);
     }
   }
 }
@@ -12971,6 +13089,7 @@ int main(int argc,char **argv) {
   cases.Run("TestInlineClosureObjectStorage", TestInlineClosureObjectStorage);
   cases.Run("TestBorrowedStaticStorageReplay", TestBorrowedStaticStorageReplay);
   cases.Run("TestBorrowedCallableOwnerCapability", TestBorrowedCallableOwnerCapability);
+  cases.Run("TestCanonicalBorrowedCallbackInterfaceReplay", TestCanonicalBorrowedCallbackInterfaceReplay);
   cases.Run("TestAutomaticOwnerUnwindReplay", TestAutomaticOwnerUnwindReplay);
   cases.Run("TestBlockMutationPackageReplay", TestBlockMutationPackageReplay);
   cases.Run("TestBlockProducerTransferReplay", TestBlockProducerTransferReplay);

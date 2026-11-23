@@ -404,6 +404,12 @@ inline bool HasBorrowedCallableOwnerIdentity(const InterfaceDeclarationIdentity 
   return d.canonical_type_identity.find(";borrowed-callable-owners:v1;") != std::string::npos ||
          d.effects.ownership_identity.find(";borrowed-callable-owners:v1;") != std::string::npos;
 }
+inline constexpr const char *kBorrowedCallableParametersSemantic = "objc3.borrowed-callable-parameters.v1";
+inline constexpr const char *kBorrowedCallableParametersMarker = ";borrowed-callable-parameters:v1;";
+inline bool HasBorrowedCallableParametersIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(kBorrowedCallableParametersMarker) != std::string::npos ||
+         d.effects.ownership_identity.find(kBorrowedCallableParametersMarker) != std::string::npos;
+}
 inline constexpr const char *kAsyncConsumedOwnershipSemantic = "objc3.async-consuming-ownership.v3";
 inline bool HasAsyncConsumedOwnershipIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";async-consuming-ownership:v3;") != std::string::npos ||

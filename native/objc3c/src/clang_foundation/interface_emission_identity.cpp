@@ -3419,8 +3419,11 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity += ";borrowed-receiver-results:v1;";
   if (HasDeclarationBorrowedInteriorStorage(representative))
     identity.canonical_type_identity += ";borrowed-interior-storage:v1;";
-  if (HasDeclarationBorrowedCallableOwner(representative))
+  const auto borrowed_callables = ReadPublishedBorrowedCallableContracts(representative);
+  if (borrowed_callables.result)
     identity.canonical_type_identity += ";borrowed-callable-owners:v1;";
+  if (borrowed_callables.parameters)
+    identity.canonical_type_identity += kBorrowedCallableParametersMarker;
   if (HasDeclarationAsyncConsumedOwnership(representative))
     identity.canonical_type_identity += ";async-consuming-ownership:v3;";
   if (HasDeclarationDependentKeyPathTypeBody(representative))

@@ -249,7 +249,11 @@ bool HasDeclarationNativeFinally(const clang::NamedDecl *declaration);
 bool HasDeclarationManagedRuntimeScope(const clang::NamedDecl *declaration);
 bool HasDeclarationBorrowedReceiverResult(const clang::NamedDecl *declaration);
 bool HasDeclarationBorrowedInteriorStorage(const clang::NamedDecl *declaration);
-bool HasDeclarationBorrowedCallableOwner(const clang::NamedDecl *declaration);
+struct PublishedBorrowedCallableContracts {
+  bool result = false;
+  bool parameters = false;
+};
+PublishedBorrowedCallableContracts ReadPublishedBorrowedCallableContracts(const clang::NamedDecl *declaration);
 bool HasDeclarationAsyncConsumedOwnership(const clang::NamedDecl *declaration);
 
 bool HasDeclarationTemplateTemplateParameters(const clang::NamedDecl *declaration);
