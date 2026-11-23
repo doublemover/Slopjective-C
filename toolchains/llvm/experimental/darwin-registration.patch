@@ -1,0 +1,241 @@
+diff --git a/clang/lib/CodeGen/CGObjCGNU.cpp b/clang/lib/CodeGen/CGObjCGNU.cpp
+index dc61dffce..44fe879f7 100644
+--- a/clang/lib/CodeGen/CGObjCGNU.cpp
++++ b/clang/lib/CodeGen/CGObjCGNU.cpp
+@@ -48,6 +48,26 @@ using namespace CodeGen;
+ 
+ namespace {
+ 
++static bool isObjC3DarwinRegistration(CodeGenModule &CGM) {
++  const auto &Runtime = CGM.getLangOpts().ObjCRuntime;
++  StringRef Arch = CGM.getTriple().getArchName();
++  return CGM.getLangOpts().ObjC3 && !CGM.getLangOpts().ObjCAutoRefCount &&
++         CGM.getTriple().isMacOSX() &&
++         (Arch == "arm64" || Arch == "aarch64") &&
++         Runtime.getKind() == ObjCRuntime::GNUstep &&
++         Runtime.getVersion() == VersionTuple(2, 99);
++}
++
++static bool isDarwinRegistrationMethod(const ObjCMethodDecl *Method) {
++  if (!Method || !Method->isClassMethod() || Method->isDirectMethod() ||
++      Method->isVariadic() || Method->param_size() ||
++      Method->getObjC3FunctionEffects().Async ||
++      !Method->getReturnType()->isSpecificBuiltinType(BuiltinType::Int))
++    return false;
++  std::string Selector = Method->getSelector().getAsString();
++  return Selector != "load" && Selector != "initialize";
++}
++
+ /// Class that lazily initialises the runtime function.  Avoids inserting the
+ /// types and the function declaration into a module if they're not used, and
+ /// avoids constructing the type more than once if it's used more than once.
+@@ -956,6 +976,7 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+   };
+   static const char *const SectionsBaseNames[8];
+   static const char *const PECOFFSectionsBaseNames[8];
++  SmallVector<llvm::Constant *, 4> DarwinClasses;
+   template<SectionKind K>
+   std::string sectionName() {
+     if (CGM.getTriple().isOSBinFormatCOFF()) {
+@@ -1013,6 +1034,9 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+   }
+ 
+   ConstantAddress GenerateConstantString(const StringLiteral *SL) override {
++    if (isObjC3DarwinRegistration(CGM))
++      CGM.Error(SL->getBeginLoc(),
++                "experimental Darwin registration has no Objective-C string literals");
+ 
+     auto Str = SL->getString();
+     CharUnits Align = CGM.getPointerAlign();
+@@ -1483,6 +1507,8 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+     return MangledTypes;
+   }
+   llvm::Constant  *GetTypeString(llvm::StringRef TypeEncoding) {
++    if (isObjC3DarwinRegistration(CGM))
++      return MakeConstantString(TypeEncoding);
+     if (TypeEncoding.empty())
+       return NULLPtr;
+     std::string MangledTypes =
+@@ -1509,14 +1535,18 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+       return GV;
+     ConstantInitBuilder builder(CGM);
+     auto SelBuilder = builder.beginStruct();
+-    SelBuilder.add(ExportUniqueString(Sel.getAsString(), ".objc_sel_name_",
+-          true));
++    bool DarwinRegistration = isObjC3DarwinRegistration(CGM);
++    SelBuilder.add(DarwinRegistration
++                       ? MakeConstantString(Sel.getAsString())
++                       : ExportUniqueString(Sel.getAsString(), ".objc_sel_name_", true));
+     SelBuilder.add(GetTypeString(TypeEncoding));
+     auto *GV = SelBuilder.finishAndCreateGlobal(SelVarName,
+         CGM.getPointerAlign(), false, llvm::GlobalValue::LinkOnceODRLinkage);
+-    GV->setComdat(TheModule.getOrInsertComdat(SelVarName));
++    if (!DarwinRegistration) {
++      GV->setComdat(TheModule.getOrInsertComdat(SelVarName));
++      GV->setSection(sectionName<SelectorSection>());
++    }
+     GV->setVisibility(llvm::GlobalValue::HiddenVisibility);
+-    GV->setSection(sectionName<SelectorSection>());
+     return GV;
+   }
+   llvm::StructType *emptyStruct = nullptr;
+@@ -1565,7 +1595,53 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+   CatchTypeInfo getCatchAllTypeInfo() override {
+     return CGM.getCXXABI().getCatchAllTypeInfo();
+   }
++  llvm::Function *EmitDarwinRegistration() {
++    if (!Categories.empty() || !ClassAliases.empty() || EmittedProtocol ||
++        EmittedProtocolRef) {
++      CGM.Error(SourceLocation(),
++                "experimental Darwin registration supports only root classes");
++      return nullptr;
++    }
++    if (DarwinClasses.empty())
++      return nullptr;
++
++    // A translation unit passes its own class records. LLVM emits the standard
++    // Mach-O initializer, and archive selection follows the class reference.
++    auto *TableType = llvm::ArrayType::get(PtrTy, DarwinClasses.size());
++    auto *Table = new llvm::GlobalVariable(
++        TheModule, TableType, true, llvm::GlobalValue::InternalLinkage,
++        llvm::ConstantArray::get(TableType, DarwinClasses), ".objc3_classes");
++    auto *Ctor = llvm::Function::Create(
++        llvm::FunctionType::get(llvm::Type::getVoidTy(VMContext), false),
++        llvm::GlobalValue::InternalLinkage, ".objc3_darwin_load", &TheModule);
++    CGBuilderTy B(CGM, VMContext);
++    B.SetInsertPoint(llvm::BasicBlock::Create(VMContext, "entry", Ctor));
++    CallRuntimeFunction(
++        B, "objc3_darwin_register_v1",
++        {Table, llvm::ConstantInt::get(SizeTy, DarwinClasses.size())});
++    B.CreateRetVoid();
++    return Ctor;
++  }
++
++  llvm::Value *LookupIMP(CodeGenFunction &CGF, llvm::Value *&Receiver,
++                        llvm::Value *Cmd, llvm::MDNode *Node,
++                        MessageSendInfo &MSI) override {
++    if (!isObjC3DarwinRegistration(CGM))
++      return CGObjCGNUstep::LookupIMP(CGF, Receiver, Cmd, Node, MSI);
++    auto *Type = llvm::FunctionType::get(IMPTy, {IdTy, SelectorTy}, false);
++    auto Lookup = CGM.CreateRuntimeFunction(Type, "objc3_darwin_lookup_v1");
++    return CGF.EmitRuntimeCallOrInvoke(Lookup, {Receiver, Cmd});
++  }
++
+   llvm::Function *ModuleInitFunction() override {
++    if (CGM.getLangOpts().ObjCRuntime.getVersion() == VersionTuple(2, 99)) {
++      if (!isObjC3DarwinRegistration(CGM)) {
++        CGM.Error(SourceLocation(),
++                  "experimental Darwin registration requires plain arm64 macOS in Objective-C 3 mode without ARC");
++        return nullptr;
++      }
++      return EmitDarwinRegistration();
++    }
+     // A COFF translation unit with no Objective-C metadata needs no runtime
+     // registration. Emitting only zero-sized section sentinels creates an
+     // entirely empty .objcrt section, which COFF linkers may discard even
+@@ -1773,6 +1849,25 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+     // Get the class name
+     ObjCInterfaceDecl *classDecl =
+         const_cast<ObjCInterfaceDecl *>(OID->getClassInterface());
++    bool DarwinRegistration = isObjC3DarwinRegistration(CGM);
++    if (DarwinRegistration) {
++      if (!classDecl->hasAttr<ObjCRootClassAttr>() || classDecl->getSuperClass() ||
++          classDecl->all_declared_ivar_begin() || !OID->instance_methods().empty() ||
++          classDecl->all_referenced_protocol_begin() !=
++              classDecl->all_referenced_protocol_end() ||
++          !classDecl->properties().empty() || !OID->property_impls().empty()) {
++        CGM.Error(OID->getLocation(),
++                  "experimental Darwin registration requires a stateless root class");
++        return;
++      }
++      for (const auto *Method : OID->class_methods()) {
++        if (!isDarwinRegistrationMethod(Method)) {
++          CGM.Error(Method->getLocation(),
++                    "experimental Darwin registration requires ordinary no-argument int class methods");
++          return;
++        }
++      }
++    }
+     std::string className = classDecl->getObjCRuntimeNameAsString().str();
+     auto *classNameConstant = MakeConstantString(className);
+ 
+@@ -2023,7 +2118,8 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+         CGM.getPointerAlign(), false, llvm::GlobalValue::ExternalLinkage);
+ 
+     auto *classRefSymbol = GetClassVar(className);
+-    classRefSymbol->setSection(sectionName<ClassReferenceSection>());
++    if (!DarwinRegistration)
++      classRefSymbol->setSection(sectionName<ClassReferenceSection>());
+     classRefSymbol->setInitializer(classStruct);
+ 
+     if (IsCOFF) {
+@@ -2063,6 +2159,11 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+     }
+     assert(classStruct->getName() == SymbolForClass(className));
+ 
++    if (DarwinRegistration) {
++      DarwinClasses.push_back(classStruct);
++      return;
++    }
++
+     auto classInitRef = new llvm::GlobalVariable(TheModule,
+         classStruct->getType(), false, llvm::GlobalValue::ExternalLinkage,
+         classStruct, ManglePublicSymbol("OBJC_INIT_CLASS_") + className);
+@@ -2947,6 +3048,10 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
+                                const ObjCInterfaceDecl *Class,
+                                const ObjCMethodDecl *Method) {
+   CGBuilderTy &Builder = CGF.Builder;
++  bool DarwinRegistration = isObjC3DarwinRegistration(CGM);
++  if (DarwinRegistration && !isDarwinRegistrationMethod(Method))
++    CGM.Error(Method ? Method->getLocation() : SourceLocation(),
++              "experimental Darwin registration requires an ordinary no-argument int class message");
+ 
+   // Strip out message sends to retain / release in GC mode
+   if (CGM.getLangOpts().getGC() == LangOptions::GCOnly) {
+@@ -3097,6 +3202,8 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
+   // If this is a direct method, just emit it here.
+   if (isDirect)
+     imp = GenerateMethod(Method, Method->getClassInterface());
++  else if (DarwinRegistration)
++    imp = LookupIMP(CGF, Receiver, cmd, node, MSI);
+   else
+     // If we have non-legacy dispatch specified, we try using the
+     // objc_msgSend() functions.  These are not supported on all platforms
+diff --git a/clang/lib/Driver/ToolChains/Clang.cpp b/clang/lib/Driver/ToolChains/Clang.cpp
+index 230fd92b3..5d4cdb790 100644
+--- a/clang/lib/Driver/ToolChains/Clang.cpp
++++ b/clang/lib/Driver/ToolChains/Clang.cpp
+@@ -8631,14 +8631,29 @@ ObjCRuntime Clang::AddObjCRuntimeArgs(const ArgList &args,
+       getToolChain().getDriver().Diag(diag::err_drv_unknown_objc_runtime)
+           << value;
+     }
+-    if ((runtime.getKind() == ObjCRuntime::GNUstep) &&
+-        (runtime.getVersion() >= VersionTuple(2, 0)))
+-      if (!getToolChain().getTriple().isOSBinFormatELF() &&
+-          !getToolChain().getTriple().isOSBinFormatCOFF()) {
++    if (runtime.getKind() == ObjCRuntime::GNUstep &&
++        runtime.getVersion() >= VersionTuple(2, 0)) {
++      const auto &Triple = getToolChain().getTriple();
++      if (runtime.getVersion() == VersionTuple(2, 99)) {
++        StringRef Arch = Triple.getArchName();
++        if (!Triple.isMacOSX() || (Arch != "arm64" && Arch != "aarch64"))
++          getToolChain().getDriver().Diag(diag::err_drv_unsupported_opt_for_target)
++              << runtimeArg->getAsString(args) << Triple.str();
++        if (args.getLastArgValue(options::OPT_fobjc_version_EQ) != "3")
++          getToolChain().getDriver().Diag(diag::err_drv_argument_not_allowed_with)
++              << runtimeArg->getAsString(args) << "Objective-C 2 mode; use -fobjc-version=3";
++        if (isObjCAutoRefCount(args))
++          getToolChain().getDriver().Diag(diag::err_drv_argument_not_allowed_with)
++              << runtimeArg->getAsString(args) << "-fobjc-arc";
++        if (args.hasArg(options::OPT_fobjc_link_runtime))
++          getToolChain().getDriver().Diag(diag::err_drv_argument_not_allowed_with)
++              << runtimeArg->getAsString(args) << "-fobjc-link-runtime";
++      } else if (!Triple.isOSBinFormatELF() && !Triple.isOSBinFormatCOFF()) {
+         getToolChain().getDriver().Diag(
+             diag::err_drv_gnustep_objc_runtime_incompatible_binary)
+           << runtime.getVersion().getMajor();
+       }
++    }
+ 
+     runtimeArg->render(args, cmdArgs);
+     return runtime;

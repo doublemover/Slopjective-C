@@ -1,0 +1,8 @@
+{
+  "schema": "objc3c.experimental-darwin-registration.v1",
+  "profile": "macos-arm64-registration-experimental",
+  "target": "arm64-apple-macos15.0",
+  "compiler_runtime_flag": "-fobjc-runtime=gnustep-2.99",
+  "runtime_abi": "objc3-darwin-registration-v1",
+  "patch_sha256": "5ebb37f9332ba408ff0ed4ad3382a34f3bbdb39293232e85cbb3ea423b6278d9"
+}

@@ -1,14 +1,24 @@
 name: Darwin arm64 bootstrap probe
 on:
   workflow_dispatch:
+    inputs:
+      runtime_registration:
+        description: Build and exercise the experimental Objective-C 3 runtime
+        type: boolean
+        default: false
   pull_request:
     paths:
       - ".github/workflows/darwin-bootstrap.yml"
       - "scripts/objc3c_toolchain/darwin_bootstrap.py"
+      - "scripts/objc3c_toolchain/darwin_registration.py"
       - "scripts/objc3c_toolchain_runtime/runtime-profile.json"
       - "scripts/objc3c_toolchain_runtime/verify_runtime_profile.py"
+      - "native/objc3c/src/runtime/platform/darwin_registration.c"
+      - "tests/clang_foundation/darwin_registration/**"
       - "tests/tooling/test_darwin_bootstrap.py"
+      - "tests/tooling/test_darwin_registration.py"
       - "toolchains/llvm/manifest.json"
+      - "toolchains/llvm/experimental/**"
 permissions:
   contents: read
 concurrency:
@@ -18,7 +28,7 @@ jobs:
   bootstrap:
     name: Probe Apple Silicon toolchain and Mach-O prerequisites
     runs-on: macos-15
-    timeout-minutes: 20
+    timeout-minutes: 215
     env:
       DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
       LLVM_ARCHIVE: LLVM-23.1.5-macOS-ARM64.tar.zst
@@ -42,6 +52,23 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 2
+      - name: Select the experimental runtime check
+        id: runtime
+        shell: bash
+        env:
+          RUN_RUNTIME: ${{ inputs.runtime_registration }}
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
+            changes=$(git diff --name-only HEAD^1 HEAD -- toolchains/llvm/experimental \
+              scripts/objc3c_toolchain/darwin_registration.py \
+              native/objc3c/src/runtime/platform/darwin_registration.c \
+              tests/clang_foundation/darwin_registration tests/tooling/test_darwin_registration.py)
+            if [[ -n "$changes" ]]; then
+              RUN_RUNTIME=true
+            fi
+          fi
+          printf 'selected=%s\n' "$RUN_RUNTIME" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.15.0"
@@ -69,6 +96,16 @@ jobs:
           python -B -m scripts.objc3c_toolchain.darwin_bootstrap \
             --llvm-root "$RUNNER_TEMP/darwin-llvm" \
             --output-dir "$evidence/result" 2>&1 | tee "$evidence/probe.log"
+      - name: Build and qualify experimental Objective-C 3 registration
+        if: steps.runtime.outputs.selected == 'true'
+        timeout-minutes: 195
+        shell: bash
+        run: |
+          evidence="$RUNNER_TEMP/darwin-bootstrap-evidence"
+          python -B -m scripts.objc3c_toolchain.darwin_registration \
+            --profile macos-arm64-registration-experimental --fetch \
+            --bootstrap-report "$evidence/result/report.json" \
+            --output-dir "$evidence/runtime" 2>&1 | tee "$evidence/runtime.log"
       - name: Preserve the probe result and diagnostics
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
