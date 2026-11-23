@@ -84,11 +84,21 @@ test("every native, quick and planning owner reuses pinned dependency caches", (
 test("native PR gate verifies the exact merge and retains failure evidence", () => {
   validateNativePR(nativePR);
   for (const edit of [
-    (workflow) => { workflow.on.pull_request = { paths: ["native/**"] }; },
-    (workflow) => { workflow.permissions.contents = "write"; },
-    (workflow) => { workflow.jobs["native-pr"]["continue-on-error"] = true; },
-    (workflow) => { workflow.jobs["native-pr"].steps.find((step) => step.id === "run").if = "false"; },
-    (workflow) => { workflow.jobs["native-pr"].steps.at(-1).with.name = "latest"; },
+    (workflow) => {
+      workflow.on.pull_request = { paths: ["native/**"] };
+    },
+    (workflow) => {
+      workflow.permissions.contents = "write";
+    },
+    (workflow) => {
+      workflow.jobs["native-pr"]["continue-on-error"] = true;
+    },
+    (workflow) => {
+      workflow.jobs["native-pr"].steps.find((step) => step.id === "run").if = "false";
+    },
+    (workflow) => {
+      workflow.jobs["native-pr"].steps.at(-1).with.name = "latest";
+    },
   ]) {
     const workflow = yaml.load(nativePR);
     edit(workflow);

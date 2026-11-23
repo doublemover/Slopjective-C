@@ -7,6 +7,11 @@ until an owned Objective-C 3 runtime and native qualification exist.
 
 ## Hosted bootstrap evidence
 
+The first hosted Apple Silicon run completed the pinned bootstrap probe with
+39 recorded commands and native static and dynamic Mach-O execution after
+relocation. The receipt records `bootstrap-verified`. Objective-C 3 support
+requires the runtime and SDK qualification below. [Hosted probe](https://github.com/doublemover/Slopjective-C/actions/runs/45281294132)
+
 The [Darwin arm64 bootstrap probe](../../.github/workflows/darwin-bootstrap.yml)
 runs on relevant pull request changes and supports manual dispatch. It selects
 the standard `macos-15` Apple Silicon runner, Xcode 16.4 build `16F6`, macOS SDK
