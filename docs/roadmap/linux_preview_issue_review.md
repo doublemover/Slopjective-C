@@ -76,6 +76,14 @@ selection retained the full CTest inventory and passed all six required
 frontend witnesses in 12.38 seconds using warmed objects. That timing covers
 the witness execution and evidence check on an existing configured build.
 
+A separate tooling-only checkout based on the preview adoption branch passed
+the complete warm PR route. It readmitted the sealed preview foundation,
+compiled and ran ten runtime and six frontend CTests, and retained 68,604 bytes
+of native evidence. The terminal verifier independently confirmed every test
+and source identity in the retained proof. The native execution took 133.84
+seconds with a fresh consumer build. The tested fixture commit was
+`05c97fcbf7a765b9842760d9fd94c3196b9f9809`.
+
 The experimental Darwin compiler now emits an owned Mach-O registration
 initializer and dispatches stateless Objective-C 3 root-class methods.
 Local cross-compilation verified arm64 object format, DWARF, and the emitted
