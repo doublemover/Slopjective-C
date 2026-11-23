@@ -76,9 +76,14 @@ def check(repo: Path) -> dict:
                 errors.append(f'showcase: missing {field} {example[field]}')
     if actual != expected or len(portfolio.get('examples', [])) != len(expected):
         errors.append('showcase: examples must use the installed SDK qualification owners')
-    if (repo / preview_support.TABLE).read_text() != preview_support.render(
-            json.loads((repo / preview_support.MANIFEST).read_bytes())):
+    preview_manifest = json.loads((repo / preview_support.MANIFEST).read_bytes())
+    if (repo / preview_support.TABLE).read_text() != preview_support.render(preview_manifest):
         errors.append('preview support table differs from the published manifest')
+    tag = preview_manifest['tag']
+    guide = (repo / 'docs/releases/linux.md').read_text()
+    if (f'{preview_support.REPOSITORY}/releases/tag/{tag}' not in guide or
+            f'objc3-sdk-{tag}-linux-$arch.tar.zst' not in guide):
+        errors.append('preview install guide must select downloads for the published manifest tag')
     authority = 'schemas/objc3-language-capabilities.json'
     contract = json.loads((repo / 'site/src/index.contract.json').read_text())
     if any(owner.get('capability_authority') != authority for owner in (portfolio, contract)):

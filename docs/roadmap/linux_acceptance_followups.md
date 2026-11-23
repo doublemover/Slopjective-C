@@ -4,7 +4,7 @@ The acceptance review at `08e5b64bd` identified seven concrete requirements in
 the previously claimed fixes. This continuation repairs six, with the focused
 evidence below. The earlier review's complete acceptance/qualification boundaries
 remain distinct from these source repairs. Issue #8282's actual-product evidence contract has since been implemented
-and source-qualified; hosted aggregate acceptance remains open.
+and source-qualified. The published preview records the later hosted runs.
 
 ## Repaired requirements
 
@@ -61,17 +61,16 @@ The managed-example witness uses a sealed development-only diagnostic prefix;
 no SDK archive is produced. The source-graph cold-host VFS repair additionally
 passes its 112-build / 32-rejection matrix at its recorded checkpoint.
 
-## Remaining acceptance work
+## Published preview
 
 **#8282:** actual-product records now bind source/command identity, log digests,
 duration and loaded routes across sanitizer owners. Campaign-relative shared
 blobs replay after ZIP relocation without private symlinks. Complete blob
 metadata is checked before verification is shared. Focused native replay and
-corruption controls pass; final exact-revision hosted acceptance is still
-accounted for under #8283.
+corruption controls passed at this checkpoint. The sanitizer and terminal
+gates later passed on both hosts for the published ABI 24 preview.
 
-Live exact-revision CI, cost measurements and administrator-required checks
-remain under #8283. The ten independent assurance/platform issues stay in the
-[implementation queue](linux_open_issue_sprint.md). Accepted SDK 2.62 is unchanged;
-these checks do not claim a replacement release archive or full profile
-conformance.
+The [release status](../releases/status.md) identifies the exact preview
+archives and hosted qualification. SDK 2.62 / ABI 21 was an earlier
+development checkpoint. The [preview issue review](linux_preview_issue_review.md)
+tracks the remaining acceptance work.

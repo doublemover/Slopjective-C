@@ -1,5 +1,8 @@
 # Linux open-issue implementation sprint
 
+This page records the development checkpoints before the public SDK. See the
+[preview issue review](linux_preview_issue_review.md) for post-release status.
+
 The 2026-10-30 repository inventory contains **51 open issues**. The
 [source-owned inventory](../support/linux_open_issue_review.json) records every
 issue, its category, body digest and implementation status. This sprint keeps
@@ -222,7 +225,7 @@ compiler misses thirteen required diagnostics in the regression control.
 
 The borrowed-pointer frontend suite also passes **four source-free producers and
 32 consumer cases**, including opaque factories and inherited template storage.
-All **37 frontend suites** pass. Accepted SDK 2.62 remains unchanged.
+All **37 frontend suites** passed at that checkpoint, when SDK 2.62 was current.
 
 ## Remaining issue queue
 
@@ -241,9 +244,9 @@ All **37 frontend suites** pass. Accepted SDK 2.62 remains unchanged.
 | [#8228](https://github.com/doublemover/Slopjective-C/issues/8228) | Linux x64 Support |
 | [#8229](https://github.com/doublemover/Slopjective-C/issues/8229) | macOS arm64 Support |
 
-Native macOS arm64 completion requires a suitable host. The accepted Linux
-SDK remains 2.62; these source changes do not qualify a replacement archive.
-Windows work and retired compatibility routes remain outside this sprint.
+Native macOS arm64 completion requires a suitable host. The later
+[public Linux preview](../releases/status.md) qualified the replacement archive
+and kept profile claims outside the release scope.
 
 ## Interface import resource policy
 

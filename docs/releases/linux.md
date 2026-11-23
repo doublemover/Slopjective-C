@@ -16,13 +16,15 @@ The installer supports a user-owned location and a system location.
 ```sh
 (
   set -eu
-  case "$(uname -m)" in
-    x86_64|aarch64) arch=$(uname -m) ;;
+  arch=$(uname -m)
+  case "$arch" in
+    x86_64|aarch64) ;;
     *) printf 'Unsupported Linux architecture\n' >&2; exit 1 ;;
   esac
   archive="objc3-sdk-v0.1.0-preview.1-linux-$arch.tar.zst"
-  test -f install-linux.sh && test -f install-sdk.py && test -f "$archive"
-  sha256sum --check --ignore-missing SHA256SUMS
+  for file in install-linux.sh install-sdk.py "$archive"; do
+    awk -v file="$file" '$2 == file { print }' SHA256SUMS | sha256sum --check --strict
+  done
   checksum=$(awk -v archive="$archive" '$2 == archive { print $1 }' SHA256SUMS)
   sh install-linux.sh --archive "$archive" --sha256 "$checksum" --root "$HOME/.local/objc3c"
 )
@@ -57,8 +59,9 @@ preparation commands use Git metadata to verify the pinned dependencies.
    both qualification run IDs and a new preview version. The workflow verifies
    the source, archive hashes, seals, and installer pair before creating a
    draft. The release manifest preserves both distributions' installation
-   receipts and image digests for each architecture. Qualification artifacts
-   expire seven days after upload. For a new qualification attempt, use
+   receipts, image digests, and the exact qualification attempt's job outcomes
+   and timings for each architecture. Bulk qualification artifacts expire seven
+   days after upload. For a new qualification attempt, use
    **Re-run all jobs** or dispatch the same revision again.
 3. Review the draft release notes, archive permissions, asset names, and
    published reporting route. Confirm the terms for distributing the combined

@@ -21,3 +21,13 @@ see the provisioning instructions in the [release guide](../releases/linux.md).
 
 Continue with the [log summary example](log_summary.md) or the
 [installed module and package walkthrough](guided_walkthrough.md).
+
+## Run the SDK smoke application
+
+The archive also ships the native qualification fixture. Compile it from the
+same working directory and check for `native Linux application`:
+
+```sh
+objc3c "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/main.objc3" -O2 -o sdk-smoke
+./sdk-smoke
+```

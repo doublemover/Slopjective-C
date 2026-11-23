@@ -67,6 +67,45 @@ def api_run(run_id):
             'run_attempt': 1, 'status': 'completed', 'conclusion': 'success'}
 
 
+def api_job(run_id, *, name=owner.TERMINAL_GATE, conclusion='success', job_id=41):
+    return {'run_id': run_id, 'run_attempt': 1, 'head_sha': REVISION, 'id': job_id,
+            'name': name, 'status': 'completed', 'conclusion': conclusion,
+            'started_at': '2026-11-21T10:00:00Z', 'completed_at': '2026-11-21T10:00:42Z'}
+
+
+@pytest.mark.parametrize('fault', [None, 'wrong-revision', 'wrong-attempt', 'missing-gate',
+                                  'duplicate-id', 'failed-job', 'missing-page'])
+def test_captures_passed_qualification_jobs(tmp_path, monkeypatch, fault):
+    run = api_run(123)
+    first = api_job(123, name='optional job', conclusion='skipped')
+    second = api_job(123, job_id=42)
+    if fault == 'wrong-revision':
+        second['head_sha'] = 'b' * 40
+    if fault == 'wrong-attempt':
+        second['run_attempt'] = 2
+    if fault == 'missing-gate':
+        second['name'] = 'some other successful job'
+    if fault == 'duplicate-id':
+        second['id'] = first['id']
+    if fault == 'failed-job':
+        second['conclusion'] = 'failure'
+    total = 3 if fault == 'missing-page' else 2
+
+    def api(command):
+        assert command == ['gh', 'api', f'repos/{REPO}/actions/runs/123/attempts/1/jobs?per_page=100',
+                           '--paginate', '--jq', '{total_count,jobs}']
+        return '\n'.join(json.dumps({'total_count': total, 'jobs': [row]}) for row in (first, second))
+
+    monkeypatch.setattr(owner.subprocess, 'check_output', api)
+    if fault:
+        with pytest.raises(ValueError, match='attempt 1'):
+            owner.qualification_jobs(REPO, run)
+    else:
+        skipped, passed = owner.qualification_jobs(REPO, run)
+        assert skipped == {'id': 41, 'name': 'optional job', 'conclusion': 'skipped'}
+        assert passed['name'] == owner.TERMINAL_GATE and passed['seconds'] == 42
+
+
 def fixture_archive(directory, host, *, changed_installer=False, extension_abi=24):
     directory.mkdir(parents=True)
     manifest = {'schema': owner.SCHEMA, 'target': owner.HOSTS[host], 'source_build_id': host,
@@ -130,8 +169,15 @@ def test_stages_two_native_archives_with_installer_and_checksums(tmp_path, monke
 
     monkeypatch.setattr(owner, 'stage_sources', stage_sources)
     hosts = {str(run): host for host, run in RUNS.items()}
-    monkeypatch.setattr(owner.subprocess, 'check_output',
-                        lambda args: json.dumps(api_run(int(args[-1].rsplit('/', 1)[1]))))
+
+    def api(command):
+        run, *tail = command[2].split('/actions/runs/', 1)[1].split('/')
+        if tail:
+            assert tail == ['attempts', '1', 'jobs?per_page=100']
+            return json.dumps({'total_count': 1, 'jobs': [api_job(int(run))]})
+        return json.dumps(api_run(int(run)))
+
+    monkeypatch.setattr(owner.subprocess, 'check_output', api)
 
     def download(command, *, check):
         assert check
@@ -182,6 +228,8 @@ def test_stages_two_native_archives_with_installer_and_checksums(tmp_path, monke
     assert {host: row['qualification_run'] for host, row in result['archives'].items()} == RUNS
     assert {row['extension_abi'] for row in result['archives'].values()} == {24}
     assert all(len(row['clean_installs']) == 2 for row in result['archives'].values())
+    assert all(row['qualification_jobs'][0]['name'] == owner.TERMINAL_GATE
+               for row in result['archives'].values())
     checksums = dict(line.split('  ')[::-1] for line in (output / 'SHA256SUMS').read_text().splitlines())
     assert set(checksums) == {p.name for p in output.iterdir()} - {'SHA256SUMS'}
     assert checksums[result['sources'][0]['file']] == result['sources'][0]['sha256']
@@ -226,7 +274,7 @@ def test_resumes_only_matching_remote_assets(tmp_path, monkeypatch, changed):
     def api(command):
         route = command[2].split(REPO + '/', 1)[1]
         return json.dumps({'git/matching-refs/tags/' + tag: [],
-                           'releases?per_page=100': [[draft]], 'releases/4/assets': assets}[route])
+                           'releases?per_page=100': draft, 'releases/4/assets': assets}[route])
 
     def upload(command, *, check):
         assert check and command == ['gh', 'release', 'upload', tag, '--repo', REPO, str(installer)]
@@ -242,3 +290,44 @@ def test_resumes_only_matching_remote_assets(tmp_path, monkeypatch, changed):
     else:
         owner.publish_draft(bundle, repo=REPO, tag=tag, revision=REVISION, notes=tmp_path / 'notes')
         assert len(assets) == 2
+
+
+def test_waits_for_draft_and_asset_visibility(tmp_path, monkeypatch):
+    bundle = tmp_path / 'bundle'
+    bundle.mkdir()
+    manifest = bundle / 'linux-release.json'
+    manifest.write_text('{}\n')
+    notes = tmp_path / 'notes.md'
+    notes.write_text('Draft notes\n')
+    tag = 'v0.1.0-preview.1'
+    draft = {'id': 4, 'tag_name': tag, 'draft': True, 'prerelease': True,
+             'target_commitish': REVISION}
+    asset = {'name': manifest.name, 'size': manifest.stat().st_size,
+             'digest': f'sha256:{owner._file_hash(manifest)}'}
+    pending_lists = iter([[], [], [], [draft]])
+    pending_assets = iter([[], [], [asset]])
+    calls, slept = [], []
+
+    def api(command):
+        route = command[2].split(REPO + '/', 1)[1]
+        if route == 'releases?per_page=100':
+            return '\n'.join(map(json.dumps, next(pending_lists)))
+        if route == 'releases/4/assets':
+            return json.dumps(next(pending_assets))
+        assert route == 'git/matching-refs/tags/' + tag
+        return '[]'
+
+    def gh(command, *, check):
+        assert check and command[:2] == ['gh', 'release']
+        calls.append(command[2])
+        if command[2] == 'create':
+            draft['body'] = Path(command[-1]).read_text()
+        else:
+            assert command == ['gh', 'release', 'upload', tag, '--repo', REPO, str(manifest)]
+
+    monkeypatch.setattr(owner.subprocess, 'check_output', api)
+    monkeypatch.setattr(owner.subprocess, 'run', gh)
+    monkeypatch.setattr(owner.time, 'sleep', slept.append)
+    owner.publish_draft(bundle, repo=REPO, tag=tag, revision=REVISION, notes=notes)
+    assert calls == ['create', 'upload']
+    assert slept == [0, 1, 2, 0, 1]

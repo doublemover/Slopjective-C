@@ -124,7 +124,6 @@ const nativeOutcomes = {
   FUZZ_RESULT: "independent-native",
   COVERAGE_PRODUCER_RESULT: "coverage-producer",
   COVERAGE_PARTITIONS_RESULT: "coverage-partitions",
-  CORE_RESULT: "core-aggregate",
   COVERAGE_RESULT: "coverage-aggregate",
 };
 const releaseOutcomes = {
@@ -185,7 +184,6 @@ export function validateNativeGate(text) {
     "archive-install",
     "archive-install-aggregate",
     "asan-foundation-producer",
-    "core-aggregate",
     "coverage-aggregate",
     "coverage-partitions",
     "coverage-producer",
@@ -212,7 +210,6 @@ export function validateNativeGate(text) {
   const independent = jobs["independent-native"];
   const coverageProducer = jobs["coverage-producer"];
   const coveragePartitions = jobs["coverage-partitions"];
-  const coreAggregate = jobs["core-aggregate"];
   const coverageAggregate = jobs["coverage-aggregate"];
   const retainedAggregate = (jobs["diagnostic-coverage-aggregate"]?.steps ?? []).find((step) =>
     step.run?.includes("scripts.objc3c_assurance.coverage_matrix aggregate"),
@@ -341,26 +338,6 @@ export function validateNativeGate(text) {
   }
 
   if (
-    JSON.stringify(coreAggregate?.needs?.toSorted()) !==
-      JSON.stringify([
-        "asan-foundation-producer",
-        "instrumented-product-consumers",
-        "plan",
-        "product-consumers",
-        "product-producer",
-      ]) ||
-    !(coreAggregate?.steps ?? []).some(
-      (step) =>
-        step.run?.includes("scripts.objc3c_assurance.release_matrix aggregate") &&
-        step.run.includes("--shard core") &&
-        step.run.includes("evidence/core"),
-    ) ||
-    !(coreAggregate?.steps ?? []).some(
-      (step) =>
-        step.uses?.startsWith("actions/download-artifact@") &&
-        step.with?.pattern?.startsWith("native-partial-") &&
-        step.with?.["merge-multiple"] === true,
-    ) ||
     JSON.stringify(coverageAggregate?.needs?.toSorted()) !==
       JSON.stringify(["coverage-partitions", "coverage-producer", "plan"]) ||
     !(coverageAggregate?.steps ?? []).some(
@@ -387,6 +364,16 @@ export function validateNativeGate(text) {
     verifier.if ||
     verifier["continue-on-error"] ||
     !validatesNativeOutcomes(outcomeCheck) ||
+    !verifier.run.includes("scripts.objc3c_assurance.release_matrix aggregate") ||
+    !verifier.run.includes("--output out/native-assurance/release-evidence/core") ||
+    verifier.run.indexOf("release_matrix aggregate") > verifier.run.indexOf("verify --sharded") ||
+    !(gate.steps ?? []).some(
+      (step) =>
+        step.uses?.startsWith("actions/download-artifact@") &&
+        step.with?.pattern?.startsWith("native-partial-") &&
+        step.with?.path === "out/release-matrix/partials" &&
+        step.with?.["merge-multiple"] === true,
+    ) ||
     verifier.env?.ASSURANCE_OUTCOMES !== '{"plan":"success","native":"success"}' ||
     !(gate.steps ?? []).some(
       (step) =>
@@ -440,7 +427,6 @@ export function validateNativeGate(text) {
     "independent-native",
     "coverage-producer",
     "coverage-partitions",
-    "core-aggregate",
     "coverage-aggregate",
     "archive-install",
     "gate",

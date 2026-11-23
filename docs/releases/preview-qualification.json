@@ -1,0 +1,1057 @@
+{
+  "schema": "objc3c.preview-qualification.v1",
+  "tag": "v0.1.0-preview.1",
+  "revision": "8fe5c2fd89008d1c090a9355c11bdda01ceb9309",
+  "archives": {
+    "linux-x86_64": {
+      "file": "objc3-sdk-v0.1.0-preview.1-linux-x86_64.tar.zst",
+      "sha256": "279269c7e87b56289e11e800097f2490dd18d2124fc456306665471fab207222",
+      "seal_sha256": "d7de09cc1d27fb7add8c2f4792d34d488384300df8d248318b3539e0cfcf2fd0",
+      "qualification_run": 44865570421,
+      "qualification_attempt": 1,
+      "qualification_jobs": [
+        {
+          "id": 136728351675,
+          "name": "Current native qualification and SDK archive / Classify exact source revision",
+          "conclusion": "success",
+          "started_at": "2026-11-21T04:20:48Z",
+          "completed_at": "2026-11-21T04:21:04Z",
+          "seconds": 16
+        },
+        {
+          "id": 136728352403,
+          "name": "Current native qualification and SDK archive / Split existing artifact for bounded download (no compiler execution)",
+          "conclusion": "skipped"
+        },
+        {
+          "id": 136728378642,
+          "name": "Current native qualification and SDK archive / Reproduce retained source-coverage aggregate (no compiler execution)",
+          "conclusion": "skipped"
+        },
+        {
+          "id": 136728659535,
+          "name": "Current native qualification and SDK archive / Build and seal exact Linux SDK producer",
+          "conclusion": "success",
+          "started_at": "2026-11-21T04:21:40Z",
+          "completed_at": "2026-11-21T06:08:30Z",
+          "seconds": 6410
+        },
+        {
+          "id": 136728659540,
+          "name": "Current native qualification and SDK archive / Build exact source-coverage compiler producer",
+          "conclusion": "success",
+          "started_at": "2026-11-21T04:21:37Z",
+          "completed_at": "2026-11-21T05:44:54Z",
+          "seconds": 4997
+        },
+        {
+          "id": 136728659542,
+          "name": "Current native qualification and SDK archive / Build exact sanitizer compiler producer",
+          "conclusion": "success",
+          "started_at": "2026-11-21T04:21:43Z",
+          "completed_at": "2026-11-21T05:22:24Z",
+          "seconds": 3641
+        },
+        {
+          "id": 136728659574,
+          "name": "Current native qualification and SDK archive / Execute independent native owner (frontend-fuzz)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T04:21:47Z",
+          "completed_at": "2026-11-21T06:11:30Z",
+          "seconds": 6583
+        },
+        {
+          "id": 136728661382,
+          "name": "Current native qualification and SDK archive / Diagnose Linux compiler core",
+          "conclusion": "skipped"
+        },
+        {
+          "id": 136743954494,
+          "name": "Current native qualification and SDK archive / Fork-matched implementation release gate / Select exact implementation revision",
+          "conclusion": "success",
+          "started_at": "2026-11-21T05:33:36Z",
+          "completed_at": "2026-11-21T05:33:58Z",
+          "seconds": 22
+        },
+        {
+          "id": 136746732304,
+          "name": "Current native qualification and SDK archive / Fork-matched implementation release gate / Analyze fork-matched implementation (partition 2)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T05:36:31Z",
+          "completed_at": "2026-11-21T06:40:54Z",
+          "seconds": 3863
+        },
+        {
+          "id": 136746732308,
+          "name": "Current native qualification and SDK archive / Fork-matched implementation release gate / Analyze fork-matched implementation (partition 5)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T05:37:59Z",
+          "completed_at": "2026-11-21T06:22:23Z",
+          "seconds": 2664
+        },
+        {
+          "id": 136746732318,
+          "name": "Current native qualification and SDK archive / Fork-matched implementation release gate / Analyze fork-matched implementation (partition 0)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T05:39:25Z",
+          "completed_at": "2026-11-21T06:19:29Z",
+          "seconds": 2404
+        },
+        {
+          "id": 136746732336,
+          "name": "Current native qualification and SDK archive / Fork-matched implementation release gate / Analyze fork-matched implementation (partition 4)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T05:45:20Z",
+          "completed_at": "2026-11-21T06:45:11Z",
+          "seconds": 3591
+        },
+        {
+          "id": 136746732348,
+          "name": "Current native qualification and SDK archive / Fork-matched implementation release gate / Analyze fork-matched implementation (partition 1)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T05:48:05Z",
+          "completed_at": "2026-11-21T06:54:59Z",
+          "seconds": 4014
+        },
+        {
+          "id": 136746732362,
+          "name": "Current native qualification and SDK archive / Fork-matched implementation release gate / Analyze fork-matched implementation (partition 3)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T05:45:31Z",
+          "completed_at": "2026-11-21T06:25:07Z",
+          "seconds": 2376
+        },
+        {
+          "id": 136746732364,
+          "name": "Current native qualification and SDK archive / Fork-matched implementation release gate / Analyze fork-matched implementation (partition 6)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T05:54:13Z",
+          "completed_at": "2026-11-21T06:59:47Z",
+          "seconds": 3934
+        },
+        {
+          "id": 136746732426,
+          "name": "Current native qualification and SDK archive / Fork-matched implementation release gate / Analyze fork-matched implementation (partition 7)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T05:57:58Z",
+          "completed_at": "2026-11-21T06:33:04Z",
+          "seconds": 2106
+        },
+        {
+          "id": 136746732705,
+          "name": "Current native qualification and SDK archive / Fork-matched implementation release gate / Build the exact shared analysis compiler",
+          "conclusion": "skipped"
+        },
+        {
+          "id": 136749330838,
+          "name": "Current native qualification and SDK archive / Execute first-party source coverage (partition 7)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T05:52:30Z",
+          "completed_at": "2026-11-21T06:11:27Z",
+          "seconds": 1137
+        },
+        {
+          "id": 136749330863,
+          "name": "Current native qualification and SDK archive / Execute first-party source coverage (partition 0)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T05:45:18Z",
+          "completed_at": "2026-11-21T06:09:55Z",
+          "seconds": 1477
+        },
+        {
+          "id": 136749330867,
+          "name": "Current native qualification and SDK archive / Execute first-party source coverage (partition 2)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:13:13Z",
+          "completed_at": "2026-11-21T06:26:56Z",
+          "seconds": 823
+        },
+        {
+          "id": 136749330869,
+          "name": "Current native qualification and SDK archive / Execute first-party source coverage (partition 6)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:03:57Z",
+          "completed_at": "2026-11-21T06:27:46Z",
+          "seconds": 1429
+        },
+        {
+          "id": 136749330876,
+          "name": "Current native qualification and SDK archive / Execute first-party source coverage (partition 3)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:01:28Z",
+          "completed_at": "2026-11-21T06:14:55Z",
+          "seconds": 807
+        },
+        {
+          "id": 136749330893,
+          "name": "Current native qualification and SDK archive / Execute first-party source coverage (partition 4)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:00:51Z",
+          "completed_at": "2026-11-21T06:19:12Z",
+          "seconds": 1101
+        },
+        {
+          "id": 136749330910,
+          "name": "Current native qualification and SDK archive / Execute first-party source coverage (partition 1)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:11:32Z",
+          "completed_at": "2026-11-21T06:44:18Z",
+          "seconds": 1966
+        },
+        {
+          "id": 136749330962,
+          "name": "Current native qualification and SDK archive / Execute first-party source coverage (partition 5)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:17:59Z",
+          "completed_at": "2026-11-21T06:47:15Z",
+          "seconds": 1756
+        },
+        {
+          "id": 136754940224,
+          "name": "Current native qualification and SDK archive / Qualify exact SDK consumer (installed-sanitizers)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:19:14Z",
+          "completed_at": "2026-11-21T06:23:43Z",
+          "seconds": 269
+        },
+        {
+          "id": 136754940227,
+          "name": "Current native qualification and SDK archive / Qualify exact SDK consumer (swift)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:40:30Z",
+          "completed_at": "2026-11-21T06:43:47Z",
+          "seconds": 197
+        },
+        {
+          "id": 136754940241,
+          "name": "Current native qualification and SDK archive / Qualify exact SDK consumer (foundation)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:33:31Z",
+          "completed_at": "2026-11-21T07:31:50Z",
+          "seconds": 3499
+        },
+        {
+          "id": 136754940247,
+          "name": "Current native qualification and SDK archive / Qualify exact SDK consumer (runtime)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:47:44Z",
+          "completed_at": "2026-11-21T06:50:24Z",
+          "seconds": 160
+        },
+        {
+          "id": 136754940253,
+          "name": "Current native qualification and SDK archive / Qualify exact SDK consumer (semantic)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:47:29Z",
+          "completed_at": "2026-11-21T06:51:13Z",
+          "seconds": 224
+        },
+        {
+          "id": 136754940272,
+          "name": "Current native qualification and SDK archive / Qualify restored sanitizer consumer (runtime-schedules)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:37:32Z",
+          "completed_at": "2026-11-21T06:49:05Z",
+          "seconds": 693
+        },
+        {
+          "id": 136754940286,
+          "name": "Current native qualification and SDK archive / Qualify restored sanitizer consumer (asan-products-partition-4)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:44:25Z",
+          "completed_at": "2026-11-21T07:57:52Z",
+          "seconds": 4407
+        },
+        {
+          "id": 136754940297,
+          "name": "Current native qualification and SDK archive / Qualify restored sanitizer consumer (asan-products-partition-2)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:37:34Z",
+          "completed_at": "2026-11-21T06:56:53Z",
+          "seconds": 1159
+        },
+        {
+          "id": 136754940306,
+          "name": "Current native qualification and SDK archive / Qualify restored sanitizer consumer (asan-products-partition-3)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:45:17Z",
+          "completed_at": "2026-11-21T06:57:56Z",
+          "seconds": 759
+        },
+        {
+          "id": 136754940309,
+          "name": "Current native qualification and SDK archive / Qualify restored sanitizer consumer (asan-products-partition-1)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:55:40Z",
+          "completed_at": "2026-11-21T07:13:45Z",
+          "seconds": 1085
+        },
+        {
+          "id": 136754940311,
+          "name": "Current native qualification and SDK archive / Qualify restored sanitizer consumer (asan-products-partition-5)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:47:46Z",
+          "completed_at": "2026-11-21T08:53:29Z",
+          "seconds": 7543
+        },
+        {
+          "id": 136754940316,
+          "name": "Current native qualification and SDK archive / Qualify exact SDK consumer (frontend)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:43:48Z",
+          "completed_at": "2026-11-21T07:05:05Z",
+          "seconds": 1277
+        },
+        {
+          "id": 136754940320,
+          "name": "Current native qualification and SDK archive / Qualify restored sanitizer consumer (asan-products-partition-0)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:55:00Z",
+          "completed_at": "2026-11-21T07:04:03Z",
+          "seconds": 543
+        },
+        {
+          "id": 136754940322,
+          "name": "Current native qualification and SDK archive / Qualify restored sanitizer consumer (asan-products-partition-6)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:51:50Z",
+          "completed_at": "2026-11-21T06:59:55Z",
+          "seconds": 485
+        },
+        {
+          "id": 136754940352,
+          "name": "Current native qualification and SDK archive / Qualify restored sanitizer consumer (asan-products-partition-7)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:46:44Z",
+          "completed_at": "2026-11-21T06:57:30Z",
+          "seconds": 646
+        },
+        {
+          "id": 136754940355,
+          "name": "Current native qualification and SDK archive / Qualify restored sanitizer consumer (asan-products-partition-9)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:51:44Z",
+          "completed_at": "2026-11-21T09:08:44Z",
+          "seconds": 8220
+        },
+        {
+          "id": 136754940361,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (ubuntu:26.04, package-modules)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:00:46Z",
+          "completed_at": "2026-11-21T07:14:04Z",
+          "seconds": 798
+        },
+        {
+          "id": 136754940374,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (debian:13, carriers)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:57:58Z",
+          "completed_at": "2026-11-21T07:03:24Z",
+          "seconds": 326
+        },
+        {
+          "id": 136754940379,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (debian:13, package-modules)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:47:34Z",
+          "completed_at": "2026-11-21T07:05:58Z",
+          "seconds": 1104
+        },
+        {
+          "id": 136754940394,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (debian:13, package-build)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:57:31Z",
+          "completed_at": "2026-11-21T07:16:16Z",
+          "seconds": 1125
+        },
+        {
+          "id": 136754940406,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (debian:13, isolation)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:59:51Z",
+          "completed_at": "2026-11-21T07:21:16Z",
+          "seconds": 1285
+        },
+        {
+          "id": 136754940408,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (ubuntu:26.04, isolation)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:01:39Z",
+          "completed_at": "2026-11-21T07:31:29Z",
+          "seconds": 1790
+        },
+        {
+          "id": 136754940411,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (ubuntu:26.04, smoke)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:00:30Z",
+          "completed_at": "2026-11-21T07:01:45Z",
+          "seconds": 75
+        },
+        {
+          "id": 136754940414,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (ubuntu:26.04, package-build)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:59:56Z",
+          "completed_at": "2026-11-21T07:18:54Z",
+          "seconds": 1138
+        },
+        {
+          "id": 136754940415,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (debian:13, features)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:04:07Z",
+          "completed_at": "2026-11-21T07:10:02Z",
+          "seconds": 355
+        },
+        {
+          "id": 136754940419,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (ubuntu:26.04, carriers)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:04:08Z",
+          "completed_at": "2026-11-21T07:09:13Z",
+          "seconds": 305
+        },
+        {
+          "id": 136754940420,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (debian:13, async)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:02:06Z",
+          "completed_at": "2026-11-21T07:13:30Z",
+          "seconds": 684
+        },
+        {
+          "id": 136754940426,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (ubuntu:26.04, features)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:02:08Z",
+          "completed_at": "2026-11-21T07:06:42Z",
+          "seconds": 274
+        },
+        {
+          "id": 136754940427,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (debian:13, smoke)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:59:51Z",
+          "completed_at": "2026-11-21T07:01:47Z",
+          "seconds": 116
+        },
+        {
+          "id": 136754940431,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (debian:13, package-surface)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:06:00Z",
+          "completed_at": "2026-11-21T07:19:35Z",
+          "seconds": 815
+        },
+        {
+          "id": 136754940452,
+          "name": "Current native qualification and SDK archive / Qualify restored sanitizer consumer (asan-products-partition-8)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:50:26Z",
+          "completed_at": "2026-11-21T08:28:50Z",
+          "seconds": 5904
+        },
+        {
+          "id": 136754940464,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (ubuntu:26.04, async)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:08:03Z",
+          "completed_at": "2026-11-21T07:22:57Z",
+          "seconds": 894
+        },
+        {
+          "id": 136754940515,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (ubuntu:26.04, package-surface)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:05:06Z",
+          "completed_at": "2026-11-21T07:21:15Z",
+          "seconds": 969
+        },
+        {
+          "id": 136764381872,
+          "name": "Current native qualification and SDK archive / Merge all source-coverage partitions",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:15:33Z",
+          "completed_at": "2026-11-21T07:16:05Z",
+          "seconds": 32
+        },
+        {
+          "id": 136767271492,
+          "name": "Current native qualification and SDK archive / Fork-matched implementation release gate / Extended Linux implementation analysis gate",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:01:46Z",
+          "completed_at": "2026-11-21T07:02:05Z",
+          "seconds": 19
+        },
+        {
+          "id": 136774956412,
+          "name": "Current native qualification and SDK archive / Require every clean-install scope (ubuntu:26.04)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:53:09Z",
+          "completed_at": "2026-11-21T07:53:21Z",
+          "seconds": 12
+        },
+        {
+          "id": 136774956475,
+          "name": "Current native qualification and SDK archive / Require every clean-install scope (debian:13)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:42:50Z",
+          "completed_at": "2026-11-21T07:42:58Z",
+          "seconds": 8
+        },
+        {
+          "id": 136797913329,
+          "name": "Current native qualification and SDK archive / Merge exact SDK consumer evidence",
+          "conclusion": "success",
+          "started_at": "2026-11-21T09:08:46Z",
+          "completed_at": "2026-11-21T09:12:51Z",
+          "seconds": 245
+        },
+        {
+          "id": 136798938407,
+          "name": "Current native qualification and SDK archive / Extended Linux native assurance gate",
+          "conclusion": "success",
+          "started_at": "2026-11-21T09:12:52Z",
+          "completed_at": "2026-11-21T09:14:08Z",
+          "seconds": 76
+        },
+        {
+          "id": 136799263606,
+          "name": "Require complete native SDK release evidence",
+          "conclusion": "success",
+          "started_at": "2026-11-21T09:14:10Z",
+          "completed_at": "2026-11-21T09:14:12Z",
+          "seconds": 2
+        }
+      ]
+    },
+    "linux-aarch64": {
+      "file": "objc3-sdk-v0.1.0-preview.1-linux-aarch64.tar.zst",
+      "sha256": "390a78c403cf9e391a973abd91bbf296e0242136a43ec87eab48d017574e5ee9",
+      "seal_sha256": "05484cd8c8c9c97840900a99ebb7375540a914aeffcbacb92d61b2d83670718e",
+      "qualification_run": 44865570382,
+      "qualification_attempt": 1,
+      "qualification_jobs": [
+        {
+          "id": 136728351470,
+          "name": "Current native qualification and SDK archive / Classify exact source revision",
+          "conclusion": "success",
+          "started_at": "2026-11-21T04:20:31Z",
+          "completed_at": "2026-11-21T04:20:49Z",
+          "seconds": 18
+        },
+        {
+          "id": 136728352472,
+          "name": "Current native qualification and SDK archive / Reproduce retained source-coverage aggregate (no compiler execution)",
+          "conclusion": "skipped"
+        },
+        {
+          "id": 136728352655,
+          "name": "Current native qualification and SDK archive / Split existing artifact for bounded download (no compiler execution)",
+          "conclusion": "skipped"
+        },
+        {
+          "id": 136728593456,
+          "name": "Current native qualification and SDK archive / Build and seal exact Linux SDK producer",
+          "conclusion": "success",
+          "started_at": "2026-11-21T04:20:52Z",
+          "completed_at": "2026-11-21T06:15:03Z",
+          "seconds": 6851
+        },
+        {
+          "id": 136728593488,
+          "name": "Current native qualification and SDK archive / Build exact source-coverage compiler producer",
+          "conclusion": "success",
+          "started_at": "2026-11-21T04:21:21Z",
+          "completed_at": "2026-11-21T05:54:11Z",
+          "seconds": 5570
+        },
+        {
+          "id": 136728593500,
+          "name": "Current native qualification and SDK archive / Execute independent native owner (frontend-fuzz)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T04:21:08Z",
+          "completed_at": "2026-11-21T05:33:32Z",
+          "seconds": 4344
+        },
+        {
+          "id": 136728593505,
+          "name": "Current native qualification and SDK archive / Build exact sanitizer compiler producer",
+          "conclusion": "success",
+          "started_at": "2026-11-21T04:21:34Z",
+          "completed_at": "2026-11-21T05:18:30Z",
+          "seconds": 3416
+        },
+        {
+          "id": 136728594873,
+          "name": "Current native qualification and SDK archive / Diagnose Linux compiler core",
+          "conclusion": "skipped"
+        },
+        {
+          "id": 136742991805,
+          "name": "Current native qualification and SDK archive / Fork-matched implementation release gate / Select exact implementation revision",
+          "conclusion": "success",
+          "started_at": "2026-11-21T05:18:34Z",
+          "completed_at": "2026-11-21T05:18:51Z",
+          "seconds": 17
+        },
+        {
+          "id": 136743083911,
+          "name": "Current native qualification and SDK archive / Fork-matched implementation release gate / Analyze fork-matched implementation (partition 3)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T05:19:57Z",
+          "completed_at": "2026-11-21T06:05:23Z",
+          "seconds": 2726
+        },
+        {
+          "id": 136743083918,
+          "name": "Current native qualification and SDK archive / Fork-matched implementation release gate / Analyze fork-matched implementation (partition 4)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T05:19:57Z",
+          "completed_at": "2026-11-21T06:03:56Z",
+          "seconds": 2639
+        },
+        {
+          "id": 136743083924,
+          "name": "Current native qualification and SDK archive / Fork-matched implementation release gate / Analyze fork-matched implementation (partition 2)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T05:19:16Z",
+          "completed_at": "2026-11-21T05:56:59Z",
+          "seconds": 2263
+        },
+        {
+          "id": 136743083932,
+          "name": "Current native qualification and SDK archive / Fork-matched implementation release gate / Analyze fork-matched implementation (partition 7)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T05:21:16Z",
+          "completed_at": "2026-11-21T06:01:27Z",
+          "seconds": 2411
+        },
+        {
+          "id": 136743083940,
+          "name": "Current native qualification and SDK archive / Fork-matched implementation release gate / Analyze fork-matched implementation (partition 5)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T05:19:57Z",
+          "completed_at": "2026-11-21T05:56:48Z",
+          "seconds": 2211
+        },
+        {
+          "id": 136743083943,
+          "name": "Current native qualification and SDK archive / Fork-matched implementation release gate / Analyze fork-matched implementation (partition 6)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T05:19:57Z",
+          "completed_at": "2026-11-21T06:00:50Z",
+          "seconds": 2453
+        },
+        {
+          "id": 136743083952,
+          "name": "Current native qualification and SDK archive / Fork-matched implementation release gate / Analyze fork-matched implementation (partition 1)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T05:26:11Z",
+          "completed_at": "2026-11-21T06:31:21Z",
+          "seconds": 3910
+        },
+        {
+          "id": 136743083971,
+          "name": "Current native qualification and SDK archive / Fork-matched implementation release gate / Analyze fork-matched implementation (partition 0)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T05:22:27Z",
+          "completed_at": "2026-11-21T06:13:02Z",
+          "seconds": 3035
+        },
+        {
+          "id": 136743084843,
+          "name": "Current native qualification and SDK archive / Fork-matched implementation release gate / Build the exact shared analysis compiler",
+          "conclusion": "skipped"
+        },
+        {
+          "id": 136751505524,
+          "name": "Current native qualification and SDK archive / Execute first-party source coverage (partition 5)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:25:11Z",
+          "completed_at": "2026-11-21T06:55:38Z",
+          "seconds": 1827
+        },
+        {
+          "id": 136751505528,
+          "name": "Current native qualification and SDK archive / Execute first-party source coverage (partition 4)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:04:42Z",
+          "completed_at": "2026-11-21T06:29:47Z",
+          "seconds": 1505
+        },
+        {
+          "id": 136751505538,
+          "name": "Current native qualification and SDK archive / Execute first-party source coverage (partition 2)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:29:13Z",
+          "completed_at": "2026-11-21T06:46:43Z",
+          "seconds": 1050
+        },
+        {
+          "id": 136751505543,
+          "name": "Current native qualification and SDK archive / Execute first-party source coverage (partition 7)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:29:51Z",
+          "completed_at": "2026-11-21T06:58:48Z",
+          "seconds": 1737
+        },
+        {
+          "id": 136751505567,
+          "name": "Current native qualification and SDK archive / Execute first-party source coverage (partition 0)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:31:16Z",
+          "completed_at": "2026-11-21T06:57:47Z",
+          "seconds": 1591
+        },
+        {
+          "id": 136751505576,
+          "name": "Current native qualification and SDK archive / Execute first-party source coverage (partition 1)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:20:16Z",
+          "completed_at": "2026-11-21T06:47:28Z",
+          "seconds": 1632
+        },
+        {
+          "id": 136751505580,
+          "name": "Current native qualification and SDK archive / Execute first-party source coverage (partition 3)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:32:41Z",
+          "completed_at": "2026-11-21T06:51:43Z",
+          "seconds": 1142
+        },
+        {
+          "id": 136751505592,
+          "name": "Current native qualification and SDK archive / Execute first-party source coverage (partition 6)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:13:05Z",
+          "completed_at": "2026-11-21T06:47:18Z",
+          "seconds": 2053
+        },
+        {
+          "id": 136756540881,
+          "name": "Current native qualification and SDK archive / Qualify exact SDK consumer (semantic)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:09:17Z",
+          "completed_at": "2026-11-21T07:12:57Z",
+          "seconds": 220
+        },
+        {
+          "id": 136756540886,
+          "name": "Current native qualification and SDK archive / Qualify exact SDK consumer (swift)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:21:20Z",
+          "completed_at": "2026-11-21T07:24:40Z",
+          "seconds": 200
+        },
+        {
+          "id": 136756540890,
+          "name": "Current native qualification and SDK archive / Qualify exact SDK consumer (runtime)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:19:22Z",
+          "completed_at": "2026-11-21T07:22:48Z",
+          "seconds": 206
+        },
+        {
+          "id": 136756540909,
+          "name": "Current native qualification and SDK archive / Qualify exact SDK consumer (foundation)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:13:34Z",
+          "completed_at": "2026-11-21T07:53:07Z",
+          "seconds": 2373
+        },
+        {
+          "id": 136756540910,
+          "name": "Current native qualification and SDK archive / Qualify restored sanitizer consumer (asan-products-partition-8)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:52:22Z",
+          "completed_at": "2026-11-21T08:31:10Z",
+          "seconds": 5928
+        },
+        {
+          "id": 136756540917,
+          "name": "Current native qualification and SDK archive / Qualify restored sanitizer consumer (asan-products-partition-0)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:31:54Z",
+          "completed_at": "2026-11-21T07:42:49Z",
+          "seconds": 655
+        },
+        {
+          "id": 136756540924,
+          "name": "Current native qualification and SDK archive / Qualify restored sanitizer consumer (asan-products-partition-3)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:15:38Z",
+          "completed_at": "2026-11-21T07:32:08Z",
+          "seconds": 990
+        },
+        {
+          "id": 136756540943,
+          "name": "Current native qualification and SDK archive / Qualify restored sanitizer consumer (asan-products-partition-6)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:16:17Z",
+          "completed_at": "2026-11-21T07:26:33Z",
+          "seconds": 616
+        },
+        {
+          "id": 136756540945,
+          "name": "Current native qualification and SDK archive / Qualify restored sanitizer consumer (asan-products-partition-1)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:12:05Z",
+          "completed_at": "2026-11-21T07:35:38Z",
+          "seconds": 1413
+        },
+        {
+          "id": 136756540954,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (debian:13, isolation)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:23:01Z",
+          "completed_at": "2026-11-21T07:52:00Z",
+          "seconds": 1739
+        },
+        {
+          "id": 136756540955,
+          "name": "Current native qualification and SDK archive / Qualify restored sanitizer consumer (asan-products-partition-5)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:30:51Z",
+          "completed_at": "2026-11-21T10:47:18Z",
+          "seconds": 11787
+        },
+        {
+          "id": 136756540956,
+          "name": "Current native qualification and SDK archive / Qualify restored sanitizer consumer (asan-products-partition-9)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:17:28Z",
+          "completed_at": "2026-11-21T09:38:37Z",
+          "seconds": 8469
+        },
+        {
+          "id": 136756540959,
+          "name": "Current native qualification and SDK archive / Qualify restored sanitizer consumer (asan-products-partition-4)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:28:16Z",
+          "completed_at": "2026-11-21T09:54:02Z",
+          "seconds": 8746
+        },
+        {
+          "id": 136756540976,
+          "name": "Current native qualification and SDK archive / Qualify restored sanitizer consumer (runtime-schedules)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:27:40Z",
+          "completed_at": "2026-11-21T07:42:54Z",
+          "seconds": 914
+        },
+        {
+          "id": 136756541001,
+          "name": "Current native qualification and SDK archive / Qualify exact SDK consumer (frontend)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:51:19Z",
+          "completed_at": "2026-11-21T08:21:08Z",
+          "seconds": 1789
+        },
+        {
+          "id": 136756541006,
+          "name": "Current native qualification and SDK archive / Qualify restored sanitizer consumer (asan-products-partition-7)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:47:48Z",
+          "completed_at": "2026-11-21T07:59:38Z",
+          "seconds": 710
+        },
+        {
+          "id": 136756541018,
+          "name": "Current native qualification and SDK archive / Qualify exact SDK consumer (installed-sanitizers)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:56:22Z",
+          "completed_at": "2026-11-21T08:00:50Z",
+          "seconds": 268
+        },
+        {
+          "id": 136756541021,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (debian:13, async)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:52:33Z",
+          "completed_at": "2026-11-21T08:08:14Z",
+          "seconds": 941
+        },
+        {
+          "id": 136756541029,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (ubuntu:26.04, package-modules)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:23:12Z",
+          "completed_at": "2026-11-21T07:38:44Z",
+          "seconds": 932
+        },
+        {
+          "id": 136756541030,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (debian:13, smoke)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:48:59Z",
+          "completed_at": "2026-11-21T07:50:22Z",
+          "seconds": 83
+        },
+        {
+          "id": 136756541036,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (debian:13, carriers)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:42:58Z",
+          "completed_at": "2026-11-21T07:48:07Z",
+          "seconds": 309
+        },
+        {
+          "id": 136756541044,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (debian:13, package-build)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:24:44Z",
+          "completed_at": "2026-11-21T07:39:29Z",
+          "seconds": 885
+        },
+        {
+          "id": 136756541049,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (ubuntu:26.04, package-build)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:52:43Z",
+          "completed_at": "2026-11-21T08:06:43Z",
+          "seconds": 840
+        },
+        {
+          "id": 136756541058,
+          "name": "Current native qualification and SDK archive / Qualify restored sanitizer consumer (asan-products-partition-2)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:48:59Z",
+          "completed_at": "2026-11-21T08:11:06Z",
+          "seconds": 1327
+        },
+        {
+          "id": 136756541059,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (ubuntu:26.04, async)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:21:18Z",
+          "completed_at": "2026-11-21T07:34:52Z",
+          "seconds": 814
+        },
+        {
+          "id": 136756541069,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (debian:13, package-surface)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:35:57Z",
+          "completed_at": "2026-11-21T07:48:52Z",
+          "seconds": 775
+        },
+        {
+          "id": 136756541073,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (ubuntu:26.04, smoke)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:45:43Z",
+          "completed_at": "2026-11-21T07:46:56Z",
+          "seconds": 73
+        },
+        {
+          "id": 136756541079,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (ubuntu:26.04, features)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:46:01Z",
+          "completed_at": "2026-11-21T07:52:11Z",
+          "seconds": 370
+        },
+        {
+          "id": 136756541115,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (ubuntu:26.04, carriers)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:52:43Z",
+          "completed_at": "2026-11-21T07:58:17Z",
+          "seconds": 334
+        },
+        {
+          "id": 136756541130,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (debian:13, features)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:58:21Z",
+          "completed_at": "2026-11-21T08:05:30Z",
+          "seconds": 429
+        },
+        {
+          "id": 136756541134,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (debian:13, package-modules)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:55:20Z",
+          "completed_at": "2026-11-21T08:11:16Z",
+          "seconds": 956
+        },
+        {
+          "id": 136756541144,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (ubuntu:26.04, package-surface)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:55:24Z",
+          "completed_at": "2026-11-21T08:07:18Z",
+          "seconds": 714
+        },
+        {
+          "id": 136756541193,
+          "name": "Current native qualification and SDK archive / Install the exact Linux SDK (ubuntu:26.04, isolation)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:54:19Z",
+          "completed_at": "2026-11-21T08:20:20Z",
+          "seconds": 1561
+        },
+        {
+          "id": 136760510480,
+          "name": "Current native qualification and SDK archive / Fork-matched implementation release gate / Extended Linux implementation analysis gate",
+          "conclusion": "success",
+          "started_at": "2026-11-21T06:33:08Z",
+          "completed_at": "2026-11-21T06:33:30Z",
+          "seconds": 22
+        },
+        {
+          "id": 136767054311,
+          "name": "Current native qualification and SDK archive / Merge all source-coverage partitions",
+          "conclusion": "success",
+          "started_at": "2026-11-21T07:59:41Z",
+          "completed_at": "2026-11-21T08:00:09Z",
+          "seconds": 28
+        },
+        {
+          "id": 136786449412,
+          "name": "Current native qualification and SDK archive / Require every clean-install scope (debian:13)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T08:21:22Z",
+          "completed_at": "2026-11-21T08:21:30Z",
+          "seconds": 8
+        },
+        {
+          "id": 136786449442,
+          "name": "Current native qualification and SDK archive / Require every clean-install scope (ubuntu:26.04)",
+          "conclusion": "success",
+          "started_at": "2026-11-21T08:20:55Z",
+          "completed_at": "2026-11-21T08:21:08Z",
+          "seconds": 13
+        },
+        {
+          "id": 136821624641,
+          "name": "Current native qualification and SDK archive / Merge exact SDK consumer evidence",
+          "conclusion": "success",
+          "started_at": "2026-11-21T10:47:22Z",
+          "completed_at": "2026-11-21T10:50:59Z",
+          "seconds": 217
+        },
+        {
+          "id": 136822487355,
+          "name": "Current native qualification and SDK archive / Extended Linux native assurance gate",
+          "conclusion": "success",
+          "started_at": "2026-11-21T10:51:03Z",
+          "completed_at": "2026-11-21T10:52:13Z",
+          "seconds": 70
+        },
+        {
+          "id": 136822777376,
+          "name": "Require complete native SDK release evidence",
+          "conclusion": "success",
+          "started_at": "2026-11-21T10:52:17Z",
+          "completed_at": "2026-11-21T10:52:20Z",
+          "seconds": 3
+        }
+      ]
+    }
+  }
+}

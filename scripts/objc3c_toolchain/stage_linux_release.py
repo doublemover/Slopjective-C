@@ -2,6 +2,7 @@
 
 import argparse
 from compression import zstd
+from datetime import datetime
 import errno
 import gzip
 import json
@@ -11,6 +12,7 @@ import shutil
 import subprocess
 import tarfile
 import tempfile
+import time
 from urllib.request import urlopen
 
 from .core import ToolchainError, planned_development_identity
@@ -27,7 +29,9 @@ MANIFEST = 'objc3-sdk/objc3-sdk.json'
 ARCHIVE_LICENSE = 'objc3-sdk/share/licenses/slopjective-c/LICENSE'
 FOUNDATION = 'objc3-sdk/include/clang/Basic/ObjC3Foundation.h'
 QUALIFICATION = '.github/workflows/platform-host-evidence.yml'
+TERMINAL_GATE = 'Require complete native SDK release evidence'
 LLVM_MANIFEST = 'toolchains/llvm/manifest.json'
+RELEASE_VISIBILITY_DELAYS = (0, 1, 2, 4, 8, 15)
 
 
 def validate_run(run: dict, *, repo: str, revision: str, run_id: int) -> None:
@@ -37,6 +41,40 @@ def validate_run(run: dict, *, repo: str, revision: str, run_id: int) -> None:
             type(run.get('run_attempt')) is not int or run['run_attempt'] < 1 or
             run.get('status') != 'completed' or run.get('conclusion') != 'success'):
         raise ValueError(f'run {run_id} is not successful release qualification for {repo}@{revision}')
+
+
+def qualification_jobs(repo: str, run: dict) -> list[dict]:
+    run_id, attempt, revision = run['id'], run['run_attempt'], run['head_sha']
+    route = f'repos/{repo}/actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100'
+    pages = [json.loads(line) for line in subprocess.check_output(
+        ['gh', 'api', route, '--paginate', '--jq', '{total_count,jobs}']).splitlines()]
+    jobs = [job for page in pages for job in page['jobs']]
+    if not jobs or any(page['total_count'] != len(jobs) for page in pages):
+        raise ValueError(f'run {run_id} attempt {attempt} has an incomplete job inventory')
+    ids = set()
+    checks = []
+    for job in jobs:
+        conclusion = job.get('conclusion')
+        if (job.get('run_id') != run_id or job.get('run_attempt') != attempt or
+                job.get('head_sha') != revision or job.get('status') != 'completed' or
+                conclusion not in ('success', 'skipped') or type(job.get('id')) is not int or
+                not job.get('name') or job['id'] in ids):
+            raise ValueError(f'run {run_id} attempt {attempt} has a substituted or unsuccessful job')
+        ids.add(job['id'])
+        row = {key: job[key] for key in ('id', 'name', 'conclusion')}
+        if conclusion == 'success':
+            start = datetime.fromisoformat(job['started_at'])
+            end = datetime.fromisoformat(job['completed_at'])
+            row['started_at'] = job['started_at']
+            row['completed_at'] = job['completed_at']
+            row['seconds'] = int((end - start).total_seconds())
+            if row['seconds'] < 0:
+                raise ValueError(f'run {run_id} attempt {attempt} has invalid job timing')
+        checks.append(row)
+    gates = [row['conclusion'] for row in checks if row['name'] == TERMINAL_GATE]
+    if gates != ['success']:
+        raise ValueError(f'run {run_id} attempt {attempt} lacks the successful terminal release gate')
+    return sorted(checks, key=lambda row: row['id'])
 
 
 def clean_installs(root: Path, *, host: str, revision: str, run: int, attempt: int,
@@ -226,7 +264,8 @@ def stage(checkout: Path, *, repo: str, revision: str, tag: str,
                 pending.rename(target)
                 archive = target / relative
         admitted[host] = archive, {**record, 'qualification_attempt': attempt,
-                                   'clean_installs': installs}
+                                   'clean_installs': installs,
+                                   'qualification_jobs': qualification_jobs(repo, run)}
     source = {(record['upstream_commit'], record['patch_digest'], record['extension_abi'])
               for _, record in admitted.values()}
     if len(source) != 1:
@@ -272,8 +311,9 @@ def publish_draft(output: Path, *, repo: str, tag: str, revision: str, notes: Pa
         return json.loads(subprocess.check_output(['gh', 'api', f'repos/{repo}/{route}', *options]))
 
     def find_release():
-        pages = api('releases?per_page=100', '--paginate', '--slurp')
-        return next((row for page in pages for row in page if row['tag_name'] == tag), None)
+        rows = subprocess.check_output(['gh', 'api', f'repos/{repo}/releases?per_page=100',
+                                        '--paginate', '--jq', '.[]'])
+        return next((row for row in map(json.loads, rows.splitlines()) if row['tag_name'] == tag), None)
 
     manifest = output / 'linux-release.json'
     marker = f'<!-- objc3c-release-manifest-sha256: {_file_hash(manifest)} -->'
@@ -305,12 +345,23 @@ def publish_draft(output: Path, *, repo: str, tag: str, revision: str, notes: Pa
             subprocess.run(['gh', 'release', 'create', tag, '--repo', repo, '--target', revision,
                             '--draft', '--prerelease', '--title', f'Objective-C 3.0 Linux SDK {tag}',
                             '--notes-file', str(draft_notes)], check=True)
-        release = find_release()
+        # GitHub acknowledges draft creation before the release list can read it.
+        for delay in RELEASE_VISIBILITY_DELAYS:
+            time.sleep(delay)
+            release = find_release()
+            if release is not None:
+                break
+        else:
+            raise ValueError(f'{tag} was created but did not become visible in the release list')
     missing = missing_assets(release)
     if missing:
         subprocess.run(['gh', 'release', 'upload', tag, '--repo', repo,
                         *(str(output / name) for name in missing)], check=True)
-        if missing_assets(release):
+        for delay in RELEASE_VISIBILITY_DELAYS:
+            time.sleep(delay)
+            if not missing_assets(release):
+                break
+        else:
             raise ValueError(f'{tag} draft is missing expected assets after upload')
 
 

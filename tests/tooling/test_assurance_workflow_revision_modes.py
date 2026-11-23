@@ -96,7 +96,7 @@ python3() { "$TEST_PYTHON" "$ARGV_RECORDER" "$@"; }
                      'CONSUMERS_RESULT': 'success', 'ASAN_PRODUCER_RESULT': 'success',
                      'INSTRUMENTED_CONSUMERS_RESULT': 'success', 'FUZZ_RESULT': 'success',
                      'COVERAGE_PRODUCER_RESULT': 'success',
-                     'COVERAGE_PARTITIONS_RESULT': 'success', 'CORE_RESULT': 'success',
+                     'COVERAGE_PARTITIONS_RESULT': 'success',
                      'COVERAGE_RESULT': 'success'},
                 timeout=15)
             recorded = [json.loads(line) for line in output.read_text().splitlines()]

@@ -175,9 +175,10 @@ def test_workflow_enrolls_every_partition_and_the_existing_schedule_owner():
     groups = [value.strip() for value in line.removeprefix('group: [').removesuffix(']').split(',')]
     assert groups == [*GROUPS, 'runtime-schedules']
     assert 'fail-fast: true' in consumer
-    core = workflow.split('  core-aggregate:', 1)[1].split('\n  coverage-aggregate:', 1)[0]
-    assert 'instrumented-product-consumers' in core
-    assert "needs.instrumented-product-consumers.result == 'success'" in core
+    gate = workflow.split('  gate:', 1)[1]
+    assert 'instrumented-product-consumers' in gate
+    assert "INSTRUMENTED_CONSUMERS_RESULT: ${{ needs.instrumented-product-consumers.result }}" in gate
+    assert gate.index('release_matrix aggregate') < gate.index('verify --sharded')
 
 
 def test_campaign_sources_cannot_claim_a_different_checkout(tmp_path):

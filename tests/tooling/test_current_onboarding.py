@@ -10,16 +10,16 @@ ROOT = Path(__file__).resolve().parents[2]
 
 @pytest.fixture
 def reader_tree(tmp_path):
-    for directory in ('docs/tutorials', 'showcase', 'site'):
+    for directory in ('docs/tutorials', 'docs/releases', 'showcase', 'site'):
         shutil.copytree(ROOT / directory, tmp_path / directory,
                         ignore=shutil.ignore_patterns('_site'))
     # External source owners are read-only; mutate only the copied reader pages.
     for directory in ('schemas', 'tests', 'native', 'toolchains', 'spec', 'scripts', 'stdlib'):
         (tmp_path / directory).symlink_to(ROOT / directory, target_is_directory=True)
     for path in (ROOT / 'docs').iterdir():
-        if path.name not in ('tutorials', 'runbooks'):
+        if path.name not in ('tutorials', 'releases', 'runbooks'):
             (tmp_path / 'docs' / path.name).symlink_to(path, target_is_directory=path.is_dir())
-    for name in ('README.md', 'LICENSE'):
+    for name in ('README.md', 'LICENSE', 'SECURITY.md'):
         (tmp_path / name).symlink_to(ROOT / name)
     shutil.copyfile(ROOT / 'CONTRIBUTING.md', tmp_path / 'CONTRIBUTING.md')
     (tmp_path / 'docs/runbooks').mkdir()
@@ -58,6 +58,20 @@ def test_rejects_generated_site_drift(reader_tree):
     page = reader_tree / 'site/index.md'
     page.write_text(page.read_text() + '\nManual edit\n')
     with pytest.raises(ValueError, match='generated output drift'):
+        check(reader_tree)
+
+
+def test_rejects_preview_platform_or_abi_drift(reader_tree):
+    page = reader_tree / 'docs/releases/preview-support.md'
+    page.write_text(page.read_text().replace('2.41', '2.40'))
+    with pytest.raises(ValueError, match='preview support table differs from the published manifest'):
+        check(reader_tree)
+
+
+def test_rejects_preview_install_tag_drift(reader_tree):
+    page = reader_tree / 'docs/releases/linux.md'
+    page.write_text(page.read_text().replace('objc3-sdk-v0.1.0-preview.1', 'objc3-sdk-v0.1.0-preview.2'))
+    with pytest.raises(ValueError, match='published manifest tag'):
         check(reader_tree)
 
 

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import errno
 import json
 from pathlib import Path
 import shutil
@@ -152,7 +153,12 @@ def aggregate_core(repo: Path, plan: dict, partials: Path, output: Path) -> dict
                     raise ValueError('release matrix suite artifact changed: '+name)
                 target = output / saved['path']
                 target.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(source, target)
+                try:
+                    target.hardlink_to(source)
+                except OSError as error:
+                    if error.errno != errno.EXDEV:
+                        raise
+                    shutil.copyfile(source, target)
                 if artifact(output, target) != saved:
                     raise ValueError('release matrix suite artifact changed while merging: '+name)
             records[name] = {**row, 'artifacts': [artifact(output, output / saved['path'])

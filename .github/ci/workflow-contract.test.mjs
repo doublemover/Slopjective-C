@@ -190,6 +190,21 @@ test("extended native workflow retains its full receipt-verifying aggregate", ()
   validateNativeGate(native);
 });
 
+test("native terminal gate merges owner evidence before verifying every shard", () => {
+  const missingOwners = yaml.load(native);
+  missingOwners.jobs.gate.steps = missingOwners.jobs.gate.steps.filter(
+    (step) => step.name !== "Download exact core owner evidence",
+  );
+  assert.throws(() => validateNativeGate(yaml.dump(missingOwners)), /incomplete receipts/);
+
+  const missingMerge = yaml.load(native);
+  const verifier = missingMerge.jobs.gate.steps.find((step) =>
+    step.run?.includes("verify --sharded"),
+  );
+  verifier.run = verifier.run.replace("release_matrix aggregate", "release_matrix skipped");
+  assert.throws(() => validateNativeGate(yaml.dump(missingMerge)), /incomplete receipts/);
+});
+
 for (const fault of [
   "missing partition",
   "duplicate partition",
