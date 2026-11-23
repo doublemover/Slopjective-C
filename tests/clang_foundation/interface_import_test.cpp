@@ -243,6 +243,77 @@ void TestPrimitiveABIProfilesRejectMismatchedConsumers() {
   fs::remove_all(root);
 }
 
+void TestLinkedWCharInterfaceABI() {
+  const auto root = fs::temp_directory_path() / "objc3-linked-wchar-abi";
+  fs::remove_all(root);
+  fs::create_directories(root);
+  const auto path = root / "Wide.objc3i";
+  const auto provider_object = (root / "provider.o").string();
+  const auto consumer_object = (root / "consumer.o").string();
+  const auto executable = (root / "wchar-abi").string();
+  const auto runtime_directory = fs::path(OBJC3_INTERFACE_TEST_OBJC_LIBRARY).parent_path();
+  const std::string rpath = "-Wl,-rpath," + runtime_directory.string();
+  for (const bool objc : {false, true}) {
+    auto provider = ModuleRequest(root / (objc ? "provider.mm" : "provider.cpp"), "test.Wide",
+        "extern \"C\" unsigned second(const wchar_t *values) { return values[1] + sizeof(wchar_t); }");
+    provider.language = objc ? BaseLanguage::ObjectiveCxx : BaseLanguage::Cxx;
+    provider.objc3 = objc;
+    if (!objc) provider.objc_runtime.clear();
+    provider.arguments = {"-std=c++20"};
+    provider.emit = EmitKind::Object;
+    provider.output_path = provider_object;
+    provider.interface_output_path = path.string();
+    auto publish = [&](bool short_wchar) {
+      auto request = provider;
+      if (short_wchar) request.arguments.push_back("-fshort-wchar");
+      const auto result = Compile(request);
+      test::ReportFailure(result);
+      assert(result.success && result.interface_artifact);
+      return result.interface_artifact->identity;
+    };
+    auto compile = [&](const InterfaceModuleIdentity &identity, bool short_wchar) {
+      auto consumer = provider;
+      consumer.input_path = (root / (objc ? "consumer.mm" : "consumer.cpp")).string();
+      consumer.module_name.clear();
+      consumer.package_identity.clear();
+      consumer.emit_semantic_interface = false;
+      consumer.interface_output_path.clear();
+      consumer.output_path = consumer_object;
+      consumer.source_text = "int main(void) { const wchar_t values[] = {12, 40}; "
+          "return second(values) != 40 + sizeof(wchar_t); }";
+      if (short_wchar) consumer.arguments.push_back("-fshort-wchar");
+      consumer.imported_interfaces = {ImportOf(path, identity)};
+      fs::remove(consumer_object);
+      return Compile(consumer);
+    };
+    auto rejects = [&](const CompileResult &result, const char *code) {
+      assert(!result.success && result.imported_declarations.empty() && !fs::exists(consumer_object));
+      assert(std::ranges::any_of(result.interface_import_diagnostics, [&](const auto &diagnostic) {
+        return diagnostic.code == code;
+      }));
+    };
+    auto run_matching = [&](const InterfaceModuleIdentity &identity, bool short_wchar) {
+      const auto result = compile(identity, short_wchar);
+      test::ReportFailure(result);
+      assert(result.success && HasImported(result, "second"));
+      const auto &driver = result.compiler_driver_path;
+      std::vector<llvm::StringRef> link = {driver, provider_object, consumer_object, "-o", executable};
+      if (objc) link.insert(link.end(), {OBJC3_INTERFACE_TEST_OBJC_LIBRARY, rpath});
+      assert(llvm::sys::ExecuteAndWait(driver, link) == 0);
+      assert(llvm::sys::ExecuteAndWait(executable, {executable}) == 0);
+    };
+    const auto regular = publish(false);
+    rejects(compile(regular, true), "O3IFC135");
+    run_matching(regular, false);
+    const auto short_wchar = publish(true);
+    assert(short_wchar.semantic_fingerprint != regular.semantic_fingerprint);
+    rejects(compile(regular, false), "O3IFC134");
+    rejects(compile(short_wchar, false), "O3IFC135");
+    run_matching(short_wchar, true);
+  }
+  fs::remove_all(root);
+}
+
 void TestThreeModuleSemanticLookupAndIdentity() {
   const auto root = fs::temp_directory_path() / "objc3-interface-import-test";
   fs::remove_all(root);
@@ -441,6 +512,57 @@ __attribute__((objc_root_class)) @interface Root @end
           const std::string ir((std::istreambuf_iterator<char>(output)), {});
           assert(ir.find(witness.selector) != std::string::npos);
         }
+      }
+    }
+  }
+  fs::remove_all(root);
+}
+
+void TestImportedObjectiveCContractDiagnostics() {
+  const auto root = fs::temp_directory_path() / "objc3-imported-contract-diagnostics";
+  fs::remove_all(root);
+  fs::create_directories(root);
+  const auto path = root / "Contract.objc3i";
+  for (const bool cxx : {false, true}) {
+    auto provider = ModuleRequest(root / (cxx ? "provider.mm" : "provider.m"), "test.Contract", "");
+    provider.language = cxx ? BaseLanguage::ObjectiveCxx : BaseLanguage::ObjectiveC;
+    provider.arguments = {cxx ? "-std=c++20" : "-std=c17"};
+    provider.interface_output_path = path.string();
+    auto consumer = provider;
+    consumer.input_path = (root / (cxx ? "consumer.mm" : "consumer.m")).string();
+    consumer.module_name.clear();
+    consumer.package_identity.clear();
+    consumer.emit_semantic_interface = false;
+    consumer.interface_output_path.clear();
+    consumer.arguments.insert(consumer.arguments.end(), {"-Werror=nullable-to-nonnull-conversion",
+                                                           "-Werror=objc-protocol-property-synthesis"});
+    const auto use = [&](const InterfaceModuleIdentity &identity, const char *source) {
+      consumer.imported_interfaces = {ImportOf(path, identity)};
+      consumer.source_text = source;
+      return Compile(consumer);
+    };
+    for (const bool reject : {false, true}) {
+      provider.source_text = std::string("__attribute__((objc_root_class)) @interface Widget\n") +
+          "- (int * " + (reject ? "_Nullable" : "_Nonnull") + ")pointer;\n@end\n" +
+          "@protocol Reading\n" + (reject ? "@required" : "@optional") +
+          "\n@property(nonatomic, readonly) int value;\n@end\n";
+      const auto published = Compile(provider);
+      test::ReportFailure(published);
+      assert(published.success && published.interface_artifact);
+      const auto &identity = published.interface_artifact->identity;
+      const auto nullable = use(identity, "void require_pointer(int * _Nonnull);\n"
+          "void use(Widget *widget) { require_pointer([widget pointer]); }\n");
+      const auto required = use(identity, "@interface Reader : Widget <Reading> @end\n"
+          "@implementation Reader @end\n");
+      assert(nullable.success == !reject && required.success == !reject);
+      if (reject) {
+        assert(nullable.interface_import_diagnostics.empty() && required.interface_import_diagnostics.empty());
+        assert(std::ranges::any_of(nullable.diagnostics, [](const auto &diagnostic) {
+          return diagnostic.message.find("conversion from nullable pointer") != std::string::npos;
+        }));
+        assert(std::ranges::any_of(required.diagnostics, [](const auto &diagnostic) {
+          return diagnostic.message.find("will not synthesize property 'value'") != std::string::npos;
+        }));
       }
     }
   }
@@ -1263,6 +1385,7 @@ int main() {
   cases.Run("TestAArch64ReplayUsesEffectiveDriverTarget", TestAArch64ReplayUsesEffectiveDriverTarget);
   cases.Run("TestPreparedImportBudgets", TestPreparedImportBudgets);
   cases.Run("TestPrimitiveABIProfilesRejectMismatchedConsumers", TestPrimitiveABIProfilesRejectMismatchedConsumers);
+  cases.Run("TestLinkedWCharInterfaceABI", TestLinkedWCharInterfaceABI);
   cases.Run("TestThreeModuleSemanticLookupAndIdentity", TestThreeModuleSemanticLookupAndIdentity);
   cases.Run("TestPinnedRuntimeTypesSurvivePreparedImport", TestPinnedRuntimeTypesSurvivePreparedImport);
   cases.Run("TestCompilerVarargsMembersAreReused", TestCompilerVarargsMembersAreReused);
@@ -1273,6 +1396,7 @@ int main() {
   cases.Run("TestBadLockAndMissingTransitiveArtifactFailBeforeImport", TestBadLockAndMissingTransitiveArtifactFailBeforeImport);
   cases.Run("TestCarrierPayloadNullabilityRejectsStaleLocks", TestCarrierPayloadNullabilityRejectsStaleLocks);
   cases.Run("TestSourceFreeObjectiveCContractLocks", TestSourceFreeObjectiveCContractLocks);
+  cases.Run("TestImportedObjectiveCContractDiagnostics", TestImportedObjectiveCContractDiagnostics);
   cases.Run("TestInterfaceThreadStorageExecution", TestInterfaceThreadStorageExecution);
   cases.Run("TestInterfaceThreadStorageReexportLocks", TestInterfaceThreadStorageReexportLocks);
   cases.Run("TestLinkedObjectiveCIvarWidths", TestLinkedObjectiveCIvarWidths);
