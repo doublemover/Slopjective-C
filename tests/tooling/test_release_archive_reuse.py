@@ -22,7 +22,10 @@ def cached_release(tmp_path, monkeypatch):
     verifier.parent.mkdir(parents=True)
     shutil.copyfile(package.__file__, verifier)
     package.normalize_permissions(foundation)
-    data = {'schema': package.SCHEMA, 'source_build_id': 'test-release', 'target': native_target(),
+    recipe = {'upstream_commit': 'test-upstream', 'patch_digest': 'test-patches',
+              'build_config_digest': 'test-configuration'}
+    data = {**recipe, 'schema': package.SCHEMA, 'source_build_id': 'test-release', 'target': native_target(),
+            'linux_abi': {'glibc_minimum': '2.17', 'libstdcxx_symbol_minimum': 'GLIBCXX_3.4'},
             'files': package.inventory(foundation)}
     data['seal_sha256'] = package._digest(data)
     (foundation / package.MANIFEST).write_text(json.dumps(data))
@@ -33,12 +36,12 @@ def cached_release(tmp_path, monkeypatch):
             tar.add(foundation, arcname='objc3-sdk')
     directory = repo / 'out/toolchains/linux-sdk-builds/current-inputs'
     directory.mkdir(parents=True)
-    receipt = {'status': 'PASS', 'build_prefix': str(directory / 'prefix'),
+    receipt = {'status': 'PASS', 'build_prefix': str(directory / 'prefix'), 'input_identity': 'current-inputs',
                'archive': str(archive), 'archive_sha256': file_hash(archive),
                'seal_sha256': data['seal_sha256'], 'source_build_id': 'test-release'}
     (directory / 'release.json').write_text(json.dumps(receipt))
     monkeypatch.setenv('OBJC3C_BOOTSTRAP_LLVM_ROOT', str(foundation))
-    monkeypatch.setattr(linux_sdk, 'verify_development', lambda _: {'build_id': 'test-release'})
+    monkeypatch.setattr(linux_sdk, 'verify_development', lambda _: {**recipe, 'build_id': 'test-release'})
     monkeypatch.setattr(linux_sdk, 'input_identity', lambda *args: {'sha256': 'current-inputs'})
     return repo, foundation, receipt
 

@@ -208,20 +208,29 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
         raise ValueError('set OBJC3C_BOOTSTRAP_LLVM_ROOT to the pinned bootstrap LLVM SDK')
     os.environ['OBJC3C_BOOTSTRAP_LLVM_ROOT'] = str(Path(bootstrap).resolve())
     sdk = repo / ('out/toolchains/objc3-development/stage-' + native_linux_host())
+    development = None
     if foundation_sdk is None and (install_root / 'current/objc3-sdk.json').is_file():
         active = (install_root / 'current').resolve()
         try:
-            current_build = verify_development(repo)['build_id']
+            development = verify_development(repo)
         except FoundationConfigurationChanged:
-            current_build = None
-        if current_build is not None and json.loads((active / 'objc3-sdk.json').read_text())['source_build_id'] == current_build:
+            pass
+        if (development is not None and
+                json.loads((active / 'objc3-sdk.json').read_text())['source_build_id'] == development['build_id']):
             foundation_sdk = active
     if foundation_sdk is not None:
         sdk = foundation_sdk.resolve()
         cached = verify_sdk(sdk)
-        if (cached['source_build_id'] != verify_development(repo)['build_id'] or
-                cached.get('target') != native_target()):
-            raise ValueError('cached SDK foundation differs from the current source and build configuration')
+        development = development if development is not None else verify_development(repo)
+        if cached.get('target') != native_target():
+            raise ValueError('cached SDK foundation targets a different machine')
+        for key in ('upstream_commit', 'patch_digest'):
+            if cached.get(key) != development[key]:
+                raise ValueError('cached SDK foundation source differs at ' + key)
+        if cached.get('build_config_digest') != development['build_config_digest']:
+            raise ValueError('cached SDK foundation build configuration differs')
+        if cached.get('source_build_id') != development['build_id']:
+            raise ValueError('cached SDK foundation build identity differs')
         foundation = {'status': 'passed', 'cache_hit': True, 'prefix': str(sdk),
                       'source_identity': cached['source_build_id'], 'seal_sha256': cached['seal_sha256']}
     else:

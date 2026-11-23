@@ -9,6 +9,9 @@ import pytest
 from scripts.objc3c_toolchain.linux_sdk import copy_foundation, foundation_identity
 from scripts.objc3c_toolchain.linux_host import native_linux_host, native_target
 
+FOUNDATION_RECIPE = {'upstream_commit': 'upstream', 'patch_digest': 'patches',
+                     'build_config_digest': 'configuration'}
+
 
 @pytest.fixture(autouse=True)
 def independent_runtime_dependency(tmp_path, monkeypatch):
@@ -177,8 +180,9 @@ def test_packaging_input_edit_prevents_installation(tmp_path, monkeypatch):
     sdk.mkdir()
     monkeypatch.setenv('OBJC3C_BOOTSTRAP_LLVM_ROOT', str(sdk))
     monkeypatch.setattr(linux_sdk, 'verify_sdk', lambda *a: {
+        **FOUNDATION_RECIPE,
         'source_build_id': 'llvm-build', 'seal_sha256': 'seal', 'target': native_target()})
-    monkeypatch.setattr(linux_sdk, 'verify_development', lambda *a: {'build_id': 'llvm-build'})
+    monkeypatch.setattr(linux_sdk, 'verify_development', lambda *a: {**FOUNDATION_RECIPE, 'build_id': 'llvm-build'})
     changed = False
     monkeypatch.setattr(linux_sdk, 'input_identity', lambda *a: {
         'sha256': 'edited' if changed else 'qualified', 'foundation_contents': 'foundation',
@@ -321,8 +325,9 @@ def test_native_test_edit_enters_fresh_qualification_instead_of_installing_old_r
     original_receipt.write_text(json.dumps({'status': 'PASS', 'input_identity': original['sha256'],
         'archive': 'expected.tar.zst', 'archive_sha256': 'archive'}))
     monkeypatch.setattr(linux_sdk, 'verify_sdk', lambda *_: {
+        **FOUNDATION_RECIPE,
         'source_build_id': 'llvm-build', 'seal_sha256': 'seal', 'target': native_target()})
-    monkeypatch.setattr(linux_sdk, 'verify_development', lambda *_: {'build_id': 'llvm-build'})
+    monkeypatch.setattr(linux_sdk, 'verify_development', lambda *_: {**FOUNDATION_RECIPE, 'build_id': 'llvm-build'})
     installations, candidates = [], []
     monkeypatch.setattr(linux_sdk, 'install', lambda *args: installations.append(args) or {})
 
@@ -369,6 +374,24 @@ def test_changed_recipe_routes_active_sdk_to_the_foundation_builder(tmp_path, mo
     monkeypatch.setattr(linux_sdk, 'build_foundation', rebuild)
     with pytest.raises(RuntimeError, match='entered current foundation build'):
         linux_sdk.build_sdk(repo, install_root=install_root)
+
+
+@pytest.mark.parametrize('field,diagnostic', [('build_config_digest', 'build configuration differs'),
+                                              ('patch_digest', 'source differs at patch_digest'),
+                                              ('target', 'targets a different machine')])
+def test_a_matching_display_id_cannot_override_full_foundation_identity(tmp_path, monkeypatch, field, diagnostic):
+    from scripts.objc3c_toolchain import linux_sdk
+
+    prefix = tmp_path / 'sdk'
+    prefix.mkdir()
+    candidate = {**FOUNDATION_RECIPE, 'source_build_id': 'llvm-build', 'seal_sha256': 'seal',
+                 'target': native_target()}
+    candidate[field] = 'different'
+    monkeypatch.setattr(linux_sdk, 'verify_sdk', lambda *_: candidate)
+    monkeypatch.setattr(linux_sdk, 'verify_development', lambda *_: {**FOUNDATION_RECIPE, 'build_id': 'llvm-build'})
+    monkeypatch.setattr(linux_sdk, 'input_identity', lambda *_: pytest.fail('ineligible foundation was admitted'))
+    with pytest.raises(ValueError, match=diagnostic):
+        linux_sdk.build_sdk(tmp_path / 'repo', foundation_sdk=prefix)
 
 
 @pytest.mark.parametrize('source_directory', ['native/objc3c/tests', 'tests/clang_foundation'])
@@ -502,8 +525,9 @@ def test_cache_hit_requires_a_pass_receipt_for_the_selected_identity(
     directory.mkdir(parents=True)
     prefix = sdk(tmp_path / 'foundation')
     monkeypatch.setattr(linux_sdk, 'verify_sdk', lambda *_: {
+        **FOUNDATION_RECIPE,
         'source_build_id': 'llvm-build', 'seal_sha256': 'seal', 'target': native_target()})
-    monkeypatch.setattr(linux_sdk, 'verify_development', lambda *_: {'build_id': 'llvm-build'})
+    monkeypatch.setattr(linux_sdk, 'verify_development', lambda *_: {**FOUNDATION_RECIPE, 'build_id': 'llvm-build'})
     monkeypatch.setattr(linux_sdk, 'input_identity', lambda *_: {'sha256': 'qualified'})
     installations = []
     monkeypatch.setattr(linux_sdk, 'install', lambda *args: installations.append(args) or {})

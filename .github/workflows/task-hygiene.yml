@@ -97,6 +97,7 @@ jobs:
           tests/tooling/test_stage_linux_release.py
           tests/tooling/test_workspace_cleanup.py
           tests/tooling/test_linux_sdk_reuse.py
+          tests/tooling/test_release_archive_reuse.py
           tests/tooling/test_frontend_serial_tests.py
           tests/tooling/test_native_assertion_policy.py
           tests/tooling/test_frontend_runtime_dependency.py
