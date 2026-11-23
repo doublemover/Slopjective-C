@@ -219,7 +219,8 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
                     executions.extend(lit(result) if result.suffix == '.json' else junit(result))
             if foundation['status'] != 'passed' or not executions:
                 raise ValueError('foundation has no passing native execution evidence')
-            report.setdefault('product', product_identity(sdk))
+            if product_sdk is not None and 'product' not in report:
+                report['product'] = product_identity(sdk)
             return executions
         if name == 'runtime':
             try:
