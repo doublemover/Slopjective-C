@@ -197,6 +197,30 @@ for (const fault of ["ambiguous default", "default skipped", "cache overlaps com
   });
 }
 
+for (const [command, fault] of [
+  ["scripts.objc3c_toolchain.llvm_installed_ir", "missing seal admission"],
+  ["scripts.objc3c_toolchain.semantic_source_feedback", "missing coverage qualification"],
+  [
+    "scripts.objc3c_toolchain.compiler_instrumentation",
+    "missing instrumentation graph verification",
+  ],
+]) {
+  test(`manual LLVM dispatch rejects ${fault}`, () => {
+    const workflow = yaml.load(llvmOptional);
+    const job = command.endsWith("llvm_installed_ir") ? "installed-preview" : "llvm-assurance";
+    const step = workflow.jobs[job].steps.find(({ run }) => run?.includes(command));
+    step.run = step.run.replace(
+      fault === "missing seal admission"
+        ? "--seal-sha256"
+        : fault === "missing coverage qualification"
+          ? "--coverage-qualification"
+          : command,
+      "changed-command",
+    );
+    assert.throws(() => validateOptionalLLVM(yaml.dump(workflow)));
+  });
+}
+
 for (const fault of [
   "missing PR",
   "unbounded time",

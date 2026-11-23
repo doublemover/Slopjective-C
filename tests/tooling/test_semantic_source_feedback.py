@@ -119,6 +119,26 @@ def test_source_feedback_requires_the_matching_full_model_baseline(tmp_path, mon
         feedback.admit_baseline(tmp_path, prior, services, runtime)
 
 
+def test_existing_coverage_product_requires_exact_source_object_and_binary_identity():
+    owner = SimpleNamespace(plan={'source_build_id': 'current', 'build_config_digest': 'config',
+                                  'instrumentation': {'test_binaries': ['tools/NativeTests']}},
+        eligible={'clang/lib/AST/Types.cpp': 'source-bytes'},
+        objects=[{'object': 'Types.o', 'sha256': 'object-bytes'}], owner_id='shared-clang-build-id')
+    revision = 'a'*40
+    prior = {'schema': compiler.SCHEMA, 'status': 'PASS', 'profile': compiler.PROFILE, 'revision': revision,
+        'source_build_id': 'current', 'build_config_digest': 'config',
+        'coverage_owner': 'shared-clang-cpp-patched-implementation',
+        'suites': [{'name': name, 'status': 'PASS'} for name in ('ObjC3-lit', 'NativeTests')],
+        'eligible': owner.eligible, 'objects': owner.objects,
+        'source_coverage': {'clang/lib/AST/Types.cpp': {'state': 'executed'}},
+        'covered_binary_ids': {'/sdk/lib/libclang-cpp.so': owner.owner_id}}
+    feedback.admit_coverage_qualification(prior, owner, revision)
+    for key in ('status', 'revision', 'source_build_id', 'objects', 'suites', 'covered_binary_ids', 'source_coverage'):
+        changed = {**prior, key: {}}
+        with pytest.raises(ValueError, match='current compiler source coverage qualification'):
+            feedback.admit_coverage_qualification(changed, owner, revision)
+
+
 def test_every_strategy_command_obeys_one_shared_cpu_and_wall_deadline(monkeypatch):
     clock = {'wall': 10, 'cpu': 20}
     monkeypatch.setattr(feedback.time, 'monotonic', lambda: clock['wall'])

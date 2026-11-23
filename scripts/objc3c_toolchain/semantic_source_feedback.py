@@ -6,6 +6,7 @@ from .linux_host import native_linux_host
 import argparse
 from dataclasses import asdict
 import gzip
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -13,12 +14,14 @@ import random
 import re
 import shutil
 import statistics
+import subprocess
 import tempfile
 import time
 
 from .binary_packages import digest, installed_shared_library, write_json
 from .compiler_source_coverage import (
-    EXPORT_FLAGS, PROFILE, compile_inventory, compiler_raw_profiles, inspect_objects, patched_inventory,
+    EXPORT_FLAGS, PROFILE, RECEIPT_LIMIT, SCHEMA as COVERAGE_SCHEMA,
+    compile_inventory, compiler_raw_profiles, inspect_objects, patched_inventory,
     require_binary_ids,
 )
 from .core import build_plans
@@ -136,6 +139,24 @@ def admit_baseline(repo: Path, prior: dict, services: Path, runtime: Path) -> di
         if prior.get('inputs', {}).get(str(path)) != digest(path):
             raise ValueError('source-feedback baseline model/runtime input changed: '+str(path))
     return normal
+
+
+def admit_coverage_qualification(prior: dict, feedback, revision: str) -> None:
+    """Reuse a passing measurement only from the exact covered compiler graph."""
+    plan = feedback.plan
+    suites = prior.get('suites', [])
+    expected_suites = {'ObjC3-lit', *(Path(name).name for name in plan['instrumentation']['test_binaries'])}
+    if (prior.get('schema') != COVERAGE_SCHEMA or prior.get('status') != 'PASS' or
+            prior.get('revision') != revision or prior.get('profile') != PROFILE or
+            prior.get('source_build_id') != plan['source_build_id'] or
+            prior.get('build_config_digest') != plan['build_config_digest'] or
+            prior.get('coverage_owner') != 'shared-clang-cpp-patched-implementation' or
+            len(suites) != len(expected_suites) or {row.get('name') for row in suites if row.get('status') == 'PASS'} != expected_suites or
+            prior.get('eligible') != feedback.eligible or prior.get('objects') != feedback.objects or
+            set(prior.get('source_coverage', {})) != set(feedback.eligible) or
+            not any(row.get('state') == 'executed' for row in prior.get('source_coverage', {}).values()) or
+            set(prior.get('covered_binary_ids', {}).values()) != {feedback.owner_id}):
+        raise ValueError('source feedback requires current compiler source coverage qualification')
 
 
 class Feedback:
@@ -258,39 +279,57 @@ def paired_summary(rows: list[dict], seeds) -> dict:
         'default_strategy': 'uniform', 'promotion': 'not-authorized-by-this-development-sample'}
 
 
-def measure(repo: Path, output: Path, baseline: Path, *, services: Path, runtime: Path,
-            seeds=(7, 19, 41), rounds=6, budget=180):
-    repo, output, baseline = repo.resolve(strict=True), output.resolve(), baseline.resolve(strict=True)
+def measure(repo: Path, output: Path, baseline: Path | None = None, *, services: Path, runtime: Path,
+            coverage_qualification: Path | None = None, seeds=(7, 19, 41), rounds=6, budget=180):
+    repo, output = repo.resolve(strict=True), output.resolve()
     services, runtime = services.resolve(strict=True), runtime.resolve(strict=True)
     if (output.exists() or not output.is_relative_to(repo / 'out') or
             type(rounds) is not int or not 3 <= rounds <= 16 or type(budget) is not int or not 30 <= budget <= 600 or
             not 3 <= len(seeds) <= 8 or len(set(seeds)) != len(seeds) or
             any(type(seed) is not int or not 0 <= seed < 2**32 for seed in seeds)):
         raise ValueError('source-feedback comparison requires fresh owned output, 3..8 seeds and bounded rounds/time')
-    prior = json.loads(baseline.read_text())
-    normal = admit_baseline(repo, prior, services, runtime)
+    if baseline is None and coverage_qualification is None:
+        raise ValueError('source feedback requires an independent-oracle baseline or exact coverage qualification')
+    receipts = {}
+    for name, value in (('semantic_baseline', baseline), ('coverage_qualification', coverage_qualification)):
+        if value is not None:
+            path = value.resolve(strict=True)
+            if not path.is_file() or path.stat().st_size > RECEIPT_LIMIT:
+                raise ValueError('source-feedback qualification receipt is not a bounded regular file')
+            raw = path.read_bytes()
+            if len(raw) > RECEIPT_LIMIT:
+                raise ValueError('source-feedback qualification receipt exceeded its bound')
+            receipts[name] = (path, json.loads(raw), hashlib.sha256(raw).hexdigest())
+    normal = (admit_baseline(repo, receipts['semantic_baseline'][1], services, runtime)
+              if baseline is not None else None)
+    revision = subprocess.check_output(['git', '-C', repo, 'rev-parse', 'HEAD'], text=True).strip()
     output.mkdir(parents=True)
     campaign, profile_root = None, None
     report = {'schema': 'objc3c.semantic-source-feedback.v1', 'status': 'RUNNING',
               'subject': 'non-promoting-paired-source-feedback-measurement'}
     try:
         campaign = Campaign(repo, output, None, services, runtime, compiler_profile=PROFILE)
-        if campaign.foundation['source_tree'] != normal['source_tree']:
+        if normal is not None and campaign.foundation['source_tree'] != normal['source_tree']:
             raise ValueError('paired source-feedback profiles refer to different compiler sources')
         report = campaign.report
         report.update(schema='objc3c.semantic-source-feedback.v1', generator_version=GENERATOR_VERSION,
             subject='non-promoting-paired-source-feedback-measurement', seeds=list(seeds), rounds=rounds,
-            baseline={'path': str(baseline), 'sha256': digest(baseline)}, measurements=[],
+            revision=revision, measurements=[],
+            baseline={'kind': 'paired-uniform-source-oracle' if normal is None else 'independent-semantic-qualification'},
+            qualification_receipts={name: {'path': str(path), 'sha256': sha256}
+                                    for name, (path, _, sha256) in receipts.items()},
             adaptive_generation_enabled=False,
             comparison_limits='Bounded paired development sample with counterbalanced order; default generation is unchanged. No promotion from this sample alone.')
         for name in ('semantic_source_feedback.py', 'compiler_source_coverage.py', 'semantic_generation.py'):
             path = Path(__file__).with_name(name);campaign.inputs[str(path)] = digest(path)
-        campaign.inputs[str(baseline)] = digest(baseline)
+        campaign.inputs.update({str(path): sha256 for path, _, sha256 in receipts.values()})
         profile_root = Path(tempfile.mkdtemp(prefix='objc3-generation-coverage-', dir='/tmp'))
         if shutil.disk_usage(profile_root).free < 3 * 1024**3:
             raise ValueError('source-feedback comparison needs 3 GiB of temporary profile storage')
         report['temporary_profile_root'] = str(profile_root)
         feedback = Feedback(campaign, profile_root)
+        if coverage_qualification is not None:
+            admit_coverage_qualification(receipts['coverage_qualification'][1], feedback, revision)
         # Prove that coverage-profile execution still detects the same independent
         # wrong-code controls before considering feedback as a generation signal.
         for mutant in ('tag', 'defer', 'destructor', 'provider', 'error'):
@@ -350,8 +389,10 @@ def measure(repo: Path, output: Path, baseline: Path, *, services: Path, runtime
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--repo', type=Path, default=Path.cwd())
-    for name in ('output', 'baseline', 'services', 'runtime'):
+    for name in ('output', 'services', 'runtime'):
         parser.add_argument('--'+name, type=Path, required=True)
+    parser.add_argument('--baseline', type=Path, help='complete independent semantic-oracle receipt')
+    parser.add_argument('--coverage-qualification', type=Path, help='current qualified source-coverage receipt')
     parser.add_argument('--seeds', type=int, nargs='+', default=[7, 19, 41])
     parser.add_argument('--rounds', type=int, default=6)
     parser.add_argument('--budget', type=int, default=180)

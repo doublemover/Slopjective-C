@@ -34,6 +34,12 @@ symbolizer, strict sanitizer environment and paired ASan/UBSan/LSan controls.
 The controls load the selected instrumented LLVM/Clang libraries. The compiler
 PCH diagnostic matrix covers C++20/C++23 under ARC/MRC.
 
+The optional `compiler-instrumentation` mode in the LLVM assurance workflow runs
+both commands on the same host and reuses the producer's canonical Ninja
+objects for qualification. Stage-only transport carries the binaries for
+downstream execution. Full object, archive, and link provenance requires the
+producer's build tree. [LLVM assurance workflow](../../.github/workflows/llvm-assurance.yml)
+
 The runner reconciles transitive Ninja compilation commands against compilation
 ownership, then checks object bytes and actual instrumentation symbols. Staged LLVM/Clang
 and embedding archive members must match the exact ordered Ninja target objects

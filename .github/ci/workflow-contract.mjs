@@ -759,11 +759,23 @@ export function validateImplementationGate(text) {
 export function validateOptionalLLVM(text) {
   const workflow = yaml.load(text);
   const cacheMode = workflow.on?.workflow_dispatch?.inputs?.dependency_cache;
+  const assuranceMode = workflow.on?.workflow_dispatch?.inputs?.assurance_mode;
+  const nativeCompiler = "inputs.dependency_cache != 'any' && inputs.dependency_cache != 'warm'";
+  const job = workflow.jobs?.["llvm-assurance"];
+  const installed = workflow.jobs?.["installed-preview"];
   if (
     cacheMode?.default !== "compiler" ||
     JSON.stringify(cacheMode.options) !== JSON.stringify(["compiler", "any", "warm"]) ||
-    workflow.jobs?.["llvm-assurance"]?.if !==
-      "inputs.dependency_cache != 'any' && inputs.dependency_cache != 'warm'" ||
+    assuranceMode?.default !== "development" ||
+    JSON.stringify(assuranceMode.options) !==
+      JSON.stringify([
+        "development",
+        "installed-preview",
+        "source-feedback",
+        "compiler-instrumentation",
+      ]) ||
+    job?.if !== `${nativeCompiler} && inputs.assurance_mode != 'installed-preview'` ||
+    installed?.if !== `${nativeCompiler} && inputs.assurance_mode == 'installed-preview'` ||
     workflow.jobs?.["dependency-cache"]?.if !==
       "inputs.dependency_cache == 'any' || inputs.dependency_cache == 'warm'"
   )
@@ -775,19 +787,53 @@ export function validateOptionalLLVM(text) {
     workflow.permissions?.contents !== "read"
   )
     throw new Error("Extended LLVM campaigns must be explicitly requested");
-  const job = workflow.jobs?.["llvm-assurance"];
   validateNativeContainer(job ?? {});
+  const scopedStep = (owner, required, mode) =>
+    (owner.steps ?? []).some(
+      (step) =>
+        step.if === (mode && `inputs.assurance_mode == '${mode}'`) &&
+        !step["continue-on-error"] &&
+        required.every((command) => step.run?.includes(command)),
+    );
   if (
-    !Number.isInteger(job?.["timeout-minutes"]) ||
-    job["timeout-minutes"] > 360 ||
-    job["timeout-minutes"] <= 0 ||
-    job["continue-on-error"] ||
-    !(job.steps ?? []).some((step) =>
-      step.run?.includes("scripts.objc3c_toolchain.llvm_campaign"),
+    [
+      [job, 360],
+      [installed, 35],
+    ].some(
+      ([owner, bound]) =>
+        !Number.isInteger(owner?.["timeout-minutes"]) ||
+        owner["timeout-minutes"] > bound ||
+        owner["timeout-minutes"] <= 0 ||
+        owner["continue-on-error"],
     ) ||
-    !(job.steps ?? []).some((step) =>
-      step.run?.includes("scripts.objc3c_toolchain.semantic_oracles"),
-    )
+    !scopedStep(job, ["scripts.objc3c_toolchain.llvm_campaign"], "development") ||
+    !scopedStep(job, ["scripts.objc3c_toolchain.semantic_oracles"], "development") ||
+    !scopedStep(
+      job,
+      [
+        "--instrumentation-profile compiler-source-coverage",
+        "scripts.objc3c_toolchain.compiler_source_coverage",
+      ],
+      "source-feedback",
+    ) ||
+    !scopedStep(
+      job,
+      ["scripts.objc3c_toolchain.semantic_source_feedback", "--coverage-qualification"],
+      "source-feedback",
+    ) ||
+    !scopedStep(
+      job,
+      [
+        "--instrumentation-profile compiler-asan-ubsan",
+        "scripts.objc3c_toolchain.compiler_instrumentation",
+      ],
+      "compiler-instrumentation",
+    ) ||
+    !scopedStep(installed, [
+      "scripts.objc3c_assurance.preview_download",
+      "scripts.objc3c_toolchain.llvm_installed_ir",
+      "--seal-sha256",
+    ])
   )
     throw new Error("Optional LLVM campaigns must retain their bounded real owners");
 }
