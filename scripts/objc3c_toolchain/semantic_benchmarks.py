@@ -19,6 +19,7 @@ from .binary_packages import digest, find_installed_shared_library, write_json
 from .package import SCHEMA, _digest, inventory, verify_sdk
 import shutil
 from .compiler_instrumentation import loaded_graph
+from .collection_scaling import collection_scaling_inputs, measure_collection_scaling
 from .semantic_runtime_oracles import (CURRENT_WORKLOAD_VERSION, FAMILIES, OWNERSHIP_FAMILIES,
     GENERATED_TASK_FAMILIES, TASK_FRAME_MUTATIONS, completed_task_count, expected_work,
     ownership_flags, runtime_workload_result, task_frame_control_result)
@@ -237,7 +238,8 @@ def prepare_prefix(stage, prefix, *, source_build_id, target, imports=False, ser
     return verify_sdk(prefix)
 
 
-def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_runtime=False):
+def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3,
+            extended_runtime=False, collection_scaling=False):
     repo, output = repo.resolve(strict=True), output.resolve()
     if (platform.system() != 'Linux' or platform.machine().lower() not in ('x86_64', 'amd64', 'aarch64', 'arm64') or
             type(repetitions) is not int or not 3 <= repetitions <= 15 or
@@ -250,6 +252,8 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
     output.mkdir(parents=True)
     fixture = repo / 'tests/benchmarks/collections.cpp'
     fixtures = [Path(__file__), fixture]
+    if collection_scaling:
+        fixtures += collection_scaling_inputs(repo)
     if extended_runtime:
         fixtures += [repo / 'tests/benchmarks/runtime_workloads.cpp',
                      repo / 'tests/benchmarks/ownership_workloads.mm',
@@ -296,6 +300,7 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
             resources = [path for path in (prefix / 'lib/clang').iterdir() if path.is_dir()]
             if len(resources) != 1:
                 raise ValueError('benchmark requires one explicit compiler resource root')
+            state['resource_dir'] = resources[0]
             compiler = prefix / 'bin/clang++'
             flags = ['--no-default-config', '-resource-dir', resources[0], '-std=c++20', '-O2']
             # Record sanitizer markers in both implementation and runtime inputs.
@@ -461,6 +466,11 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
                     report['task_frame_controls'].append({'family': family, 'fault': fault, 'status': 'PASS',
                         'classification': 'semantic-mismatch', 'sample': row['name'], 'semantic_result': result,
                         'source_sha256': digest(source)})
+        if collection_scaling:
+            scaling = measure_collection_scaling(repo, states, repetitions, run, summarize)
+            for graph in scaling['loaders']:
+                frozen.update(graph['loader']['libraries'])
+            report['collection_scaling'] = scaling
         report['summaries'] = [{
             'sdk_index': state['index'], 'workload': name,
             'wall': summarize([row for row in report['samples'] if row.get('workload') == name and
@@ -504,6 +514,8 @@ def main():
     parser.add_argument('--baseline-sdk', type=Path)
     parser.add_argument('--repetitions', type=int, default=3)
     parser.add_argument('--extended-runtime', action='store_true')
+    parser.add_argument('--collection-scaling', action='store_true',
+                        help='measure concrete map and set phases and allocation requests')
     result = measure(**vars(parser.parse_args()))
     print(json.dumps({'status': result['status'], 'timing_decision': result['timing_decision']}))
 

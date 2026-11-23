@@ -96,6 +96,16 @@ python3 -B -m scripts.objc3c_toolchain.semantic_benchmarks \
   --output out/semantic-workload-measurement --repetitions 3
 ```
 
+Add `--collection-scaling` to measure concrete i32 maps and sets at 1, 32, 128,
+512 and 2,048 entries. The optional `collection_scaling` receipt section retains
+raw samples and phase summaries for construction, mixed hit/miss lookup,
+duplicate insertion or replacement, ordered iteration, removal and teardown.
+Each phase checks its operation count and any applicable checksum.
+
+An independent executable records cumulative allocation requests and requested
+bytes for vectors, indexes and handles. These are allocation-traffic measures.
+The ordinary executable measures phase times separately.
+
 A bounded same-input delay control must preserve semantic results and show its
 minimum intended timing effect. Zero/partial work, incorrect checksums, absent
 samples, process failure/timeout and concurrent SDK mutation fail. Distribution
