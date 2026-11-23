@@ -100,12 +100,36 @@ def test_baseline_compares_hits_and_exposes_denominator_changes():
     assert result['comparable_files'] == ['same.cpp']
     assert result['hit_deltas']['same.cpp']['changed_region_entries'] == 1
     assert result['hit_deltas']['same.cpp']['changed_branch_arms'] == 1
+    assert result['gained_branch_arms'] == {'same.cpp': [
+        {'start': [2, 1], 'end': [2, 2], 'arm': 'false', 'occurrences': 1}]}
+    assert result['lost_branch_arms'] == {}
     del baseline['source_coverage']['same.cpp']['changed_branches']
     result = compare_coverage(baseline, current)
     assert result['missing_branch_baseline'] == ['same.cpp']
     assert 'changed_branch_arms' not in result['hit_deltas']['same.cpp']
     with pytest.raises(ValueError, match='complete patched-compiler report'):
         compare_coverage({**baseline, 'host': 'linux-aarch64'}, current)
+
+
+def test_baseline_reports_a_lost_branch_arm_with_the_same_aggregate():
+    name = 'clang/lib/Sema/SemaObjC3.cpp'
+    ranges = [[2, 2]]
+    old = changed_branches([[2, 1, 2, 4, 10, 0, 0, 0, 4]], ranges)
+    new = changed_branches([[2, 1, 2, 4, 0, 15, 0, 0, 4]], ranges)
+    row = {'summary': {kind: {'count': 2, 'covered': 1}
+                       for kind in ('functions', 'regions', 'branches', 'lines')},
+           'changed_lines': ranges, 'changed_region_entries': 1,
+           'covered_changed_region_entries': 1}
+    baseline = {'schema': SCHEMA, 'profile': PROFILE, 'status': 'PASS', 'revision': 'a' * 40,
+                'host': 'linux-x86_64', 'coverage_owner': 'shared-clang-cpp-patched-implementation',
+                'eligible': {name: 'same'}, 'source_coverage': {name: {**row, 'changed_branches': old}}}
+    current = {**baseline, 'revision': 'b' * 40, 'source_coverage': {name: {**row, 'changed_branches': new}}}
+    result = compare_coverage(baseline, current)
+    assert result['comparable_files'] == [name]
+    assert result['hit_deltas'] == {}
+    point = {'start': [2, 1], 'end': [2, 4], 'occurrences': 1}
+    assert result['lost_branch_arms'] == {name: [{**point, 'arm': 'true'}]}
+    assert result['gained_branch_arms'] == {name: [{**point, 'arm': 'false'}]}
 
 
 def test_reviewed_baseline_binds_archive_receipt_and_architecture(tmp_path):

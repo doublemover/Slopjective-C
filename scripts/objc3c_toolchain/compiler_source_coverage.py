@@ -285,6 +285,23 @@ def coverage_baseline(repo: Path, path: Path) -> tuple[dict, dict]:
     return {**prior, 'host': host}, {'sha256': signature, **reviewed}
 
 
+def covered_arms(decisions: list[dict]) -> Counter:
+    """Count covered decision arms at stable source coordinates."""
+    return Counter(
+        (tuple(row['start']), tuple(row['end']), arm)
+        for row in decisions
+        for arm in ('true', 'false')
+        if row[arm + '_count'] > 0
+    )
+
+
+def arm_changes(delta: Counter) -> list[dict]:
+    return [
+        {'start': list(start), 'end': list(end), 'arm': arm, 'occurrences': count}
+        for (start, end, arm), count in sorted(delta.items())
+    ]
+
+
 def compare_coverage(previous: dict, current: dict) -> dict:
     """Compare comparable source units and expose every changed denominator."""
     if (previous.get('schema') != SCHEMA or previous.get('status') != 'PASS' or
@@ -300,6 +317,7 @@ def compare_coverage(previous: dict, current: dict) -> dict:
               'added_files': sorted(after.keys() - before.keys()),
               'removed_files': sorted(before.keys() - after.keys()),
               'changed_files': {}, 'comparable_files': [], 'hit_deltas': {},
+              'lost_branch_arms': {}, 'gained_branch_arms': {},
               'missing_branch_baseline': []}
     for name in sorted(before.keys() & after.keys()):
         old, new = previous['source_coverage'][name], current['source_coverage'][name]
@@ -331,6 +349,12 @@ def compare_coverage(previous: dict, current: dict) -> dict:
             delta = {key: new_summary[key]['covered'] - old_summary[key]['covered'] for key in COVERAGE_KINDS}
             delta['changed_region_entries'] = new['covered_changed_region_entries'] - old['covered_changed_region_entries']
             if have_branches:
+                before_arms = covered_arms(old_branches['decisions'])
+                after_arms = covered_arms(new_branches['decisions'])
+                if lost := arm_changes(before_arms - after_arms):
+                    result['lost_branch_arms'][name] = lost
+                if gained := arm_changes(after_arms - before_arms):
+                    result['gained_branch_arms'][name] = gained
                 delta['changed_branch_arms'] = new_branches['covered_arms'] - old_branches['covered_arms']
             else:
                 result['missing_branch_baseline'].append(name)
