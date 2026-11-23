@@ -512,6 +512,91 @@ int main(void) {
   fs::remove_all(root);
 }
 
+void TestInterfaceThreadStorageReexportLocks() {
+  const auto root = fs::temp_directory_path() / "objc3-thread-storage-reexports";
+  fs::remove_all(root);
+  fs::create_directories(root);
+  const auto leaf_path = root / "Storage.objc3i";
+  const auto relay_path = root / "Relay.objc3i";
+  auto rejects_stale_lock = [](const CompileResult &result) {
+    assert(!result.success && result.imported_declarations.empty());
+    assert(std::ranges::any_of(result.interface_import_diagnostics, [](const auto &diagnostic) {
+      return diagnostic.code == "O3IFC134";
+    }));
+  };
+  for (const bool objc : {false, true}) {
+    auto leaf = ModuleRequest(root / (objc ? "leaf.m" : "leaf.c"), "test.Storage", "");
+    leaf.language = objc ? BaseLanguage::ObjectiveC : BaseLanguage::C;
+    leaf.objc3 = objc;
+    if (!objc) leaf.objc_runtime.clear();
+    leaf.interface_output_path = leaf_path.string();
+    auto emit_leaf = [&](const char *storage) {
+      leaf.source_text = storage;
+      const auto result = Compile(leaf);
+      test::ReportFailure(result);
+      assert(result.success && result.interface_artifact);
+      return result.interface_artifact->identity;
+    };
+    auto emit_relay = [&](const InterfaceModuleIdentity &identity) {
+      auto relay = leaf;
+      relay.module_name = "test.Relay";
+      relay.source_text = "int value(void);";
+      relay.interface_output_path = relay_path.string();
+      auto edge = ImportOf(leaf_path, identity);
+      edge.reexported = true;
+      relay.imported_interfaces = {std::move(edge)};
+      const auto result = Compile(relay);
+      test::ReportFailure(result);
+      assert(result.success && result.interface_artifact);
+      assert(result.resolved_interface_dependencies.size() == 1);
+      const auto &dependency = result.resolved_interface_dependencies.front();
+      assert(dependency.public_import && dependency.reexported);
+      assert(dependency.module.semantic_fingerprint == identity.semantic_fingerprint);
+      return result.interface_artifact->identity;
+    };
+    auto consumer = leaf;
+    consumer.module_name.clear();
+    consumer.package_identity.clear();
+    consumer.emit_semantic_interface = false;
+    consumer.interface_output_path.clear();
+    consumer.interface_search_paths = {root.string()};
+    consumer.source_text = "int use(void) { return ++counter; }";
+    auto through_relay = [&](const InterfaceModuleIdentity &identity, bool directed) {
+      auto request = consumer;
+      request.source_directed_imports = directed;
+      if (directed) request.source_text->insert(0, "@import test.Relay;\n");
+      InterfaceModuleRequest locked;
+      locked.canonical_name = identity.canonical_name;
+      locked.locked_identity = identity;
+      locked.initially_visible = !directed;
+      request.module_imports = {std::move(locked)};
+      return Compile(request);
+    };
+    const auto ordinary = emit_leaf("extern int counter;");
+    const auto ordinary_relay = emit_relay(ordinary);
+    assert(through_relay(ordinary_relay, false).success);
+    const auto tls = emit_leaf("extern _Thread_local int counter;");
+    assert(tls.semantic_fingerprint != ordinary.semantic_fingerprint);
+    rejects_stale_lock(through_relay(ordinary_relay, false));
+    if (objc) rejects_stale_lock(through_relay(ordinary_relay, true));
+    const auto tls_relay = emit_relay(tls);
+    assert(tls_relay.semantic_fingerprint != ordinary_relay.semantic_fingerprint);
+    for (const bool directed : {false, true}) {
+      if (directed && !objc) continue;
+      const auto admitted = through_relay(tls_relay, directed);
+      test::ReportFailure(admitted);
+      assert(admitted.success && HasImported(admitted, "counter"));
+    }
+    assert(emit_leaf("extern int counter;").semantic_fingerprint == ordinary.semantic_fingerprint);
+    rejects_stale_lock(through_relay(tls_relay, false));
+    if (objc) rejects_stale_lock(through_relay(tls_relay, true));
+    consumer.interface_search_paths.clear();
+    consumer.imported_interfaces = {ImportOf(leaf_path, tls)};
+    rejects_stale_lock(Compile(consumer));
+  }
+  fs::remove_all(root);
+}
+
 void TestBadLockAndMissingTransitiveArtifactFailBeforeImport() {
   const auto root = fs::temp_directory_path() / "objc3-interface-import-invalid-test";
   fs::remove_all(root);
@@ -1072,6 +1157,7 @@ int main() {
   cases.Run("TestCarrierPayloadNullabilityRejectsStaleLocks", TestCarrierPayloadNullabilityRejectsStaleLocks);
   cases.Run("TestSourceFreeObjectiveCContractLocks", TestSourceFreeObjectiveCContractLocks);
   cases.Run("TestInterfaceThreadStorageExecution", TestInterfaceThreadStorageExecution);
+  cases.Run("TestInterfaceThreadStorageReexportLocks", TestInterfaceThreadStorageReexportLocks);
   cases.Run("TestDuplicateLookupNamesAreRejected", TestDuplicateLookupNamesAreRejected);
   cases.Run("TestCompleteExportIdentitiesAndPrivateDirectLookup", TestCompleteExportIdentitiesAndPrivateDirectLookup);
   cases.Run("TestRelativeArtifactsAndResponseFileLayoutFlags", TestRelativeArtifactsAndResponseFileLayoutFlags);
