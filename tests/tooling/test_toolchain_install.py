@@ -93,6 +93,23 @@ def test_abi_is_readmitted_before_activation_of_existing_generation(tmp_path, mo
     assert not list(root.glob('.install-*'))
 
 
+def test_public_installer_updates_and_rolls_back_between_verified_archives(tmp_path):
+    context = [release(tmp_path / name, name, admission=True) for name in ('first', 'second')]
+    root = tmp_path / 'installed'
+    launcher = Path(__file__).resolve().parents[2] / 'scripts/install_objc3c_linux.sh'
+    admitted = []
+    for archive, digest in (*context, context[0]):
+        result = subprocess.run(['sh', str(launcher), '--archive', str(archive), '--sha256', digest,
+                                 '--root', str(root)], capture_output=True, text=True, timeout=15, check=True)
+        report = json.loads(result.stdout)
+        assert report['activated'] is True
+        assert selected_by_shell(root) == Path(report['prefix'])
+        admitted.append(report)
+    assert admitted[0]['seal_sha256'] != admitted[1]['seal_sha256']
+    assert admitted[2]['seal_sha256'] == admitted[0]['seal_sha256']
+    assert admitted[2]['cost']['prefix_reused'] is True
+
+
 def test_archive_publication_resumes_and_reuses_without_extraction(tmp_path, monkeypatch):
     from scripts.objc3c_toolchain import install_sdk
 

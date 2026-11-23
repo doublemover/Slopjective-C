@@ -50,3 +50,30 @@ The [published native x86-64 run](https://github.com/doublemover/Slopjective-C/a
 and [AArch64 run](https://github.com/doublemover/Slopjective-C/actions/runs/44865570382)
 qualify the release archives. Native AArch64 replay with the updated installer
 belongs to the next dual-architecture release rehearsal.
+
+## Linux x86-64 support issue
+
+The [published x86-64 qualification](https://github.com/doublemover/Slopjective-C/actions/runs/44865570421)
+builds and packages the pinned compiler and runtime and installs the archive
+on Debian 13 and Ubuntu 26.04. Its installed owners exercise package build
+and import, dispatch, errors, async and tasks, text and collections, and debug
+inspection. The [public Linux support table](../releases/preview-support.md)
+records the host scope from those release receipts.
+
+The exact x86-64 archive also emitted `elf64-x86-64` and ran the shipped
+`main.objc3` fixture in a local replay. The verified seal supplied `bin/objc3c`,
+`bin/ld.lld`, `bin/llvm-ar`, `bin/llvm-readobj` and `bin/llvm-dwarfdump` from
+LLVM 23.1.5. The linked executable needed `libobjc.so.4.6` from the SDK's
+`lib/` directory, and `llvm-ar` listed 19 members in
+`lib/libobjc3_runtime_services.a`. `llvm-dwarfdump --verify` found no errors.
+
+The [installer regressions](../../tests/tooling/test_toolchain_install.py)
+exercise activation from two verified generations, reactivation, permissions,
+relocation, and failure during publication. The release guide describes
+[update, rollback and removal](../releases/linux.md#update-roll-back-and-remove).
+Separate Linux bootstrap controls reject a missing linker and an ELF tool with
+the wrong LLVM version before configuration. [Host-tool regressions](../../tests/tooling/test_toolchain_host_tools.py)
+
+The published preview series currently has one tagged binary SDK. A
+two-release update replay belongs to a later release rehearsal. The original
+Windows-first capability matrix is [historical](linux_historical_documentation.md).

@@ -44,6 +44,25 @@ uses the published x86-64 archive with the updated installer.
 After activating the SDK, follow [Getting started](../tutorials/getting_started.md)
 to compile your first program from a fresh working directory.
 
+## Update, roll back, and remove
+
+Use the same `--root` and run the verified installer with the new release
+archive and checksum. It verifies the new generation before atomically changing
+`current`. When a shell sources `activate.sh`, it selects one concrete SDK
+generation. Source the script again to select the updated SDK in an existing
+shell.
+
+To roll back, run the installer with the earlier verified release archive and
+checksum at the same root. Keep that archive and checksum for as long as you
+need its generation. If verification or host admission fails, the selected
+generation stays active.
+
+To remove the SDK, close shells using it and remove the dedicated installation
+directory chosen with `--root`. That directory contains `activate.sh`, the
+`current` symlink, every SDK generation under `sdks/`, and the installation
+lock. Dependencies installed through `--provision` are distribution packages
+and can be used by other software.
+
 ## License and source
 
 The release includes the [GPLv2 project license](../../LICENSE).

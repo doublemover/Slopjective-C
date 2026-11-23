@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import shutil
+import sys
 from types import SimpleNamespace
 
 import pytest
@@ -102,3 +103,20 @@ def test_bootstrap_queries_do_not_load_an_activated_product_llvm(monkeypatch, tm
         return 'matching bootstrap\n'
     monkeypatch.setattr(host.subprocess, 'check_output', query)
     assert host._output(['/bootstrap/bin/clang', '--version'], library_root=tmp_path) == 'matching bootstrap'
+
+
+@pytest.mark.skipif(sys.platform != 'linux', reason='native Linux bootstrap admission')
+def test_native_bootstrap_rejects_missing_linker_and_incompatible_llvm(monkeypatch, tmp_path):
+    manifest = json.loads((ROOT / 'toolchains/llvm/manifest.json').read_text())
+    version = manifest['upstream']['tag'].removeprefix('llvmorg-')
+    monkeypatch.setenv('OBJC3C_BOOTSTRAP_LLVM_ROOT', str(tmp_path))
+    tools = tmp_path / 'bin'
+    tools.mkdir()
+    native_executable = Path(sys.executable).resolve()
+    for name in ('clang', 'clang++', 'llvm-config'):
+        (tools / name).symlink_to(native_executable)
+    with pytest.raises(ValueError, match=f'requires ld.lld from LLVM {version}'):
+        host.linux_environment(manifest)
+    (tools / 'ld.lld').symlink_to(native_executable)
+    with pytest.raises(ValueError, match=f'bootstrap LLVM must be exactly {version}'):
+        host.linux_environment(manifest)
