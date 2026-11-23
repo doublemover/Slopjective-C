@@ -236,6 +236,7 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
             runtime = json.loads((directory / 'runtime.json').read_text())
             if runtime['status'] != 'passed':
                 raise ValueError('native runtime build did not pass')
+            shared['runtime_stage'] = runtime['stage']
             build = repo / 'out/native-assurance-runtime'
             root = repo / 'out/toolchains/libobjc2-v2.3'
             command('configure', ['cmake', '-S', repo / 'tests/clang_foundation/native_runtime',
@@ -251,6 +252,8 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
             build = repo / ('out/toolchains/objc3-facade/build-' + native_linux_host())
             command('configure', ['cmake', '-S', repo / 'native/objc3c', '-B', build, '-G', 'Ninja',
                 f'-DOBJC3C_CLANG_FOUNDATION_ROOT={sdk}', f'-DCMAKE_CXX_COMPILER={bootstrap / "bin/clang++"}',
+                *([f'-DOBJC3_LIBOBJC2_BUILD_DIR={shared["runtime_stage"]}']
+                  if 'runtime_stage' in shared else []),
                 f'-DPython3_EXECUTABLE={sys.executable}',
                 '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
                 '-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
