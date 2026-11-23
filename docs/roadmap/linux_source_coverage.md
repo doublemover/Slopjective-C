@@ -86,11 +86,18 @@ python3 -B -m scripts.objc3c_toolchain.compiler_source_coverage \
   --output out/compiler-source-coverage
 ```
 
-For a reviewed comparison, pass `--baseline out/previous/qualification.json`.
-The new report binds that baseline by digest. It records added and removed files,
-source and mapping changes, and hit deltas for comparable files. Earlier reports
-without changed-branch data identify that evidence gap. The comparison carries
-no percentage threshold.
+The [reviewed baseline index](../../toolchains/llvm/source-coverage-baselines.json)
+binds the compiler receipt and archive digest for each published host. Both
+reports retain 268 eligible files, including five mapped files with zero hits and
+29 files without emitted mappings. The x86-64 report covers 138,215 of 353,164
+whole-file branch arms, and AArch64 covers 138,578 of 353,168. Both report 35,505
+covered patch-hunk region entries out of 44,734. [x86-64 archive](https://github.com/doublemover/Slopjective-C/actions/runs/44865570421/artifacts/14697446144) · [AArch64 archive](https://github.com/doublemover/Slopjective-C/actions/runs/44865570382/artifacts/14698955958)
+
+Pass a verified release ZIP or a qualified local report with `--baseline`.
+Use `--compare-current` to compare retained receipts without rebuilding LLVM.
+The comparison records eligible-file additions and removals, source and mapping
+changes, and hit deltas for comparable files. The published receipts predate the
+changed-branch metric, so comparisons against them identify that missing data.
 
 The existing native assurance lane selects reader controls, first-party coverage
 and patched-compiler coverage together when required. The source-coverage merge

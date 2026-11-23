@@ -1,0 +1,21 @@
+{
+  "schema": "objc3c.reviewed-source-coverage-baselines.v1",
+  "revision": "8fe5c2fd89008d1c090a9355c11bdda01ceb9309",
+  "compiler_receipt": "source-coverage/source-coverage/compiler/qualification.json",
+  "hosts": {
+    "linux-x86_64": {
+      "run_id": 44865570421,
+      "artifact_id": 14697446144,
+      "archive_sha256": "ee3f3dc0aef86ca2c0b43ff4f703abd95a1e6d074c968be2f447e95edbc21976",
+      "receipt_sha256": "e067ef724ebbaaa918c1f278bdd35f24a3f0915b2dcaead8abb61284ec0c6cf4",
+      "shared_clang_build_id": "f3d5ad8f38b6fa080d19810fc4e45e704d94ce63"
+    },
+    "linux-aarch64": {
+      "run_id": 44865570382,
+      "artifact_id": 14698955958,
+      "archive_sha256": "d9b135cc919b0e1d5e312d1a4860475f5ed1ae61ef3118fa55e71d4e35e48e8f",
+      "receipt_sha256": "1c720dc38b7d43894003270bbc9a2728f671856e869ae88979d179fea7a4786b",
+      "shared_clang_build_id": "72b6fc1c7801003eb106d83bf1c673ea9407f14f"
+    }
+  }
+}

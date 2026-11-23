@@ -15,6 +15,7 @@ import shutil
 import subprocess
 import tempfile
 import time
+from zipfile import ZipFile
 
 from .binary_packages import digest, installed_shared_library, write_json
 from .core import build_plans
@@ -25,6 +26,7 @@ SCHEMA = 'objc3c.compiler-source-coverage.v1'
 FLAGS = ('-fprofile-instr-generate', '-fcoverage-mapping', '-fprofile-update=atomic')
 EXPORT_FLAGS = ('--check-binary-ids', '--skip-expansions', '--skip-functions')
 COVERAGE_KINDS = ('functions', 'regions', 'branches', 'lines')
+RECEIPT_LIMIT = 64 * 1024**2
 PATCH_FILE = re.compile(r'^\+\+\+ b/((?:clang|llvm)/\S+)$')
 HUNK = re.compile(r'^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@')
 
@@ -252,6 +254,37 @@ def read_export(path: Path, *, source: Path, eligible: dict, changed: dict) -> d
     return result
 
 
+def coverage_baseline(repo: Path, path: Path) -> tuple[dict, dict]:
+    """Read a bounded receipt or the exact artifact from a reviewed release."""
+    path = path.resolve(strict=True)
+    if not path.is_file() or path.stat().st_size > RECEIPT_LIMIT:
+        raise ValueError('compiler coverage baseline must be a bounded regular file')
+    signature = digest(path)
+    if path.suffix != '.zip':
+        if not path.is_relative_to(repo / 'out'):
+            raise ValueError('local compiler coverage baseline must be stored under out')
+        return json.loads(path.read_text()), {'sha256': signature}
+
+    policy = json.loads((repo / 'toolchains/llvm/source-coverage-baselines.json').read_text())
+    matches = [(host, row) for host, row in policy['hosts'].items() if row['archive_sha256'] == signature]
+    if len(matches) != 1 or policy.get('schema') != 'objc3c.reviewed-source-coverage-baselines.v1':
+        raise ValueError('coverage baseline ZIP differs from the reviewed release artifact')
+    host, reviewed = matches[0]
+    name = policy['compiler_receipt']
+    with ZipFile(path) as archive:
+        members = [entry for entry in archive.infolist() if entry.filename == name]
+        if len(members) != 1 or members[0].file_size > RECEIPT_LIMIT:
+            raise ValueError('reviewed coverage archive omitted its bounded compiler receipt')
+        raw = archive.read(members[0])
+    prior = json.loads(raw)
+    if (hashlib.sha256(raw).hexdigest() != reviewed['receipt_sha256'] or
+            prior.get('revision') != policy['revision'] or
+            set(prior.get('covered_binary_ids', {}).values()) != {reviewed['shared_clang_build_id']} or
+            prior.get('host', host) != host):
+        raise ValueError('reviewed coverage archive contains a different release receipt')
+    return {**prior, 'host': host}, {'sha256': signature, **reviewed}
+
+
 def compare_coverage(previous: dict, current: dict) -> dict:
     """Compare comparable source units and expose every changed denominator."""
     if (previous.get('schema') != SCHEMA or previous.get('status') != 'PASS' or
@@ -286,8 +319,9 @@ def compare_coverage(previous: dict, current: dict) -> dict:
             if not old_summary:
                 result['comparable_files'].append(name)
                 continue
-            old_branches, new_branches = old.get('changed_branches'), new['changed_branches']
-            if old_branches is not None:
+            old_branches, new_branches = old.get('changed_branches'), new.get('changed_branches')
+            have_branches = old_branches is not None and new_branches is not None
+            if have_branches:
                 old_points = sorted((row['start'], row['end']) for row in old_branches['decisions'])
                 new_points = sorted((row['start'], row['end']) for row in new_branches['decisions'])
                 if old_points != new_points:
@@ -296,7 +330,7 @@ def compare_coverage(previous: dict, current: dict) -> dict:
             result['comparable_files'].append(name)
             delta = {key: new_summary[key]['covered'] - old_summary[key]['covered'] for key in COVERAGE_KINDS}
             delta['changed_region_entries'] = new['covered_changed_region_entries'] - old['covered_changed_region_entries']
-            if old_branches is not None:
+            if have_branches:
                 delta['changed_branch_arms'] = new_branches['covered_arms'] - old_branches['covered_arms']
             else:
                 result['missing_branch_baseline'].append(name)
@@ -323,11 +357,7 @@ def qualify(repo: Path, output: Path, *, jobs=2, baseline: Path | None = None) -
         raise ValueError('compiler source coverage requires fresh owned output and bounded jobs')
     if baseline is not None:
         baseline = baseline.resolve(strict=True)
-        if (not baseline.is_relative_to(repo / 'out') or not baseline.is_file() or
-                baseline.stat().st_size > 64 * 1024**2):
-            raise ValueError('compiler coverage baseline must be bounded and stored under out')
-        baseline_hash = digest(baseline)
-        prior = json.loads(baseline.read_text())
+        prior, baseline_identity = coverage_baseline(repo, baseline)
     host = native_linux_host()
     plan = build_plans(repo, host=host, instrumentation_profile=PROFILE)['configure']
     build, stage, source = (Path(plan['paths'][key]).resolve(strict=True) for key in ('build', 'stage', 'source'))
@@ -482,9 +512,9 @@ def qualify(repo: Path, output: Path, *, jobs=2, baseline: Path | None = None) -
         report['source_coverage'] = read_export(export, source=source, eligible=eligible, changed=changed)
         report['indexed_export'] = reclaim_indexed_export(export)
         if baseline is not None:
-            if digest(baseline) != baseline_hash:
+            if digest(baseline) != baseline_identity['sha256']:
                 raise ValueError('compiler coverage baseline changed during execution')
-            report['baseline_comparison'] = {'sha256': baseline_hash, **compare_coverage(prior, report)}
+            report['baseline_comparison'] = {**baseline_identity, **compare_coverage(prior, report)}
         if not any(row['state'] == 'executed' for row in report['source_coverage'].values()):
             raise ValueError('patched compiler coverage has no executed source')
         if any(digest(Path(path)) != value for path, value in before.items()):
@@ -518,8 +548,24 @@ def main():
     parser.add_argument('--repo', type=Path, default=Path.cwd())
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--jobs', type=int, choices=(1, 2, 3, 4), default=2)
-    parser.add_argument('--baseline', type=Path, help='optional previously qualified report under out/')
-    result = qualify(**vars(parser.parse_args()))
+    parser.add_argument('--baseline', type=Path, help='optional reviewed release ZIP or qualified report under out/')
+    parser.add_argument('--compare-current', type=Path, help='compare retained passing reports without executing LLVM')
+    args = parser.parse_args()
+    if args.compare_current:
+        if not args.baseline or args.output.exists():
+            parser.error('--compare-current needs --baseline and fresh output')
+        repo = args.repo.resolve(strict=True)
+        previous, baseline_identity = coverage_baseline(repo, args.baseline)
+        current, current_identity = coverage_baseline(repo, args.compare_current)
+        if current.get('status') != 'PASS' or current.get('schema') != SCHEMA or current.get('profile') != PROFILE:
+            raise ValueError('current compiler coverage report is incomplete')
+        result = {'schema': 'objc3c.compiler-source-coverage-comparison.v1', 'status': 'PASS',
+                  'baseline': baseline_identity, 'current': current_identity, **compare_coverage(previous, current)}
+        args.output.mkdir(parents=True)
+        write_json(args.output / 'comparison.json', result)
+        print(json.dumps({'status': result['status'], 'comparable_files': len(result['comparable_files'])}))
+        return
+    result = qualify(args.repo, args.output, baseline=args.baseline, jobs=args.jobs)
     print(json.dumps({'status': result['status'], 'eligible': len(result['eligible']),
                       'suites': len(result['suites'])}))
 

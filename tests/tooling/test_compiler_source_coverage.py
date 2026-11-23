@@ -3,15 +3,17 @@ import json
 import os
 from pathlib import Path
 import subprocess
+from zipfile import ZipFile
 
 import pytest
 
 from scripts.objc3c_toolchain.compiler_source_coverage import (
-    EXPORT_FLAGS, FLAGS, PROFILE, SCHEMA, changed_branches, compare_coverage, compile_inventory,
+    EXPORT_FLAGS, FLAGS, PROFILE, SCHEMA, changed_branches, compare_coverage, compile_inventory, coverage_baseline,
     inspect_objects, merged_ranges, patched_inventory, read_export,
     require_binary_ids, select_coverage_profiles, unique_binary_paths,
 )
 from scripts.objc3c_toolchain.source_coverage import COVERAGE_SECTIONS, coverage_section_command
+from scripts.objc3c_toolchain.binary_packages import digest
 
 
 def fixture(tmp_path):
@@ -104,6 +106,34 @@ def test_baseline_compares_hits_and_exposes_denominator_changes():
     assert 'changed_branch_arms' not in result['hit_deltas']['same.cpp']
     with pytest.raises(ValueError, match='complete patched-compiler report'):
         compare_coverage({**baseline, 'host': 'linux-aarch64'}, current)
+
+
+def test_reviewed_baseline_binds_archive_receipt_and_architecture(tmp_path):
+    report = {'revision': 'a'*40, 'covered_binary_ids': {'/sdk/libclang.so': 'b'*40}}
+    receipt = tmp_path / 'receipt.json'
+    receipt.write_text(json.dumps(report))
+    archive = tmp_path / 'known.zip'
+    name = 'source-coverage/compiler/qualification.json'
+    with ZipFile(archive, 'w') as zipped:
+        zipped.write(receipt, name)
+    rule = {'archive_sha256': digest(archive), 'receipt_sha256': digest(receipt),
+            'shared_clang_build_id': 'b'*40, 'run_id': 1, 'artifact_id': 2}
+    policy = {'schema': 'objc3c.reviewed-source-coverage-baselines.v1', 'revision': 'a'*40,
+              'compiler_receipt': name, 'hosts': {'linux-x86_64': rule}}
+    config = tmp_path / 'toolchains/llvm/source-coverage-baselines.json'
+    config.parent.mkdir(parents=True)
+    config.write_text(json.dumps(policy))
+    admitted, provenance = coverage_baseline(tmp_path, archive)
+    assert admitted == {**report, 'host': 'linux-x86_64'}
+    assert provenance['artifact_id'] == 2 and provenance['sha256'] == digest(archive)
+    archive.write_bytes(archive.read_bytes()+b'altered')
+    with pytest.raises(ValueError, match='reviewed release artifact'):
+        coverage_baseline(tmp_path, archive)
+    rule['archive_sha256'] = digest(archive)
+    rule['receipt_sha256'] = 'd'*64
+    config.write_text(json.dumps(policy))
+    with pytest.raises(ValueError, match='different release receipt'):
+        coverage_baseline(tmp_path, archive)
 
 
 def test_object_instrumentation_is_verified_even_if_database_flags_stay_identical(tmp_path):
