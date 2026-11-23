@@ -163,10 +163,19 @@ python3 -B -m scripts.objc3c_toolchain.semantic_benchmark_calibration \
 The [Calibrate Linux preview workloads](../../.github/workflows/linux-preview-calibration.yml)
 workflow installs the published SDK on a native x86-64 or AArch64 runner,
 takes two complete observations on the same host, and retains the raw and pooled
-receipts. Each deliberate delay is measured alongside a same-input control, in
-alternating order. The delay is ten milliseconds per workload round. Ordinary
-workload samples retain separate timing and memory observations. Calibration
-remains advisory until an explicit performance budget is reviewed.
+receipts. Select the `collection_scaling` dispatch input to include the
+collection and text phases in both observations. Each deliberate delay is
+measured alongside a same-input control, in alternating order. The delay is ten
+milliseconds per workload round. Ordinary samples retain separate timing and
+memory observations. Calibration remains advisory until a performance budget is
+reviewed.
+
+For collection-enabled artifacts, keep each observation's raw `.log` files
+beside its `qualification.json` when pooling across runs. Calibration verifies
+their digests, phase results, and monotonic command order before pooling. The
+optional pooled section retains per-receipt phase medians and raw timeline,
+allocation, retained index, and other diagnostic samples. Compatible runs use
+the same workload sources, executable bytes, loaded libraries and SDK.
 
 Calibration rejects duplicate receipts and different host, SDK, workload,
 instrumentation or repetition contexts. It recomputes every summary from raw

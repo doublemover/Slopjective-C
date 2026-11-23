@@ -7,9 +7,13 @@ import hashlib
 import json
 import math
 from pathlib import Path
+import re
 import statistics
 
 from .binary_packages import write_json
+from .collection_scaling import (COLLECTION_EVIDENCE_SCOPE, COLLECTION_METRICS, collection_cases,
+    collection_phase_timing, collection_sample_cases, collection_scaling_inputs,
+    collection_scaling_result)
 from .semantic_benchmarks import SCALES, semantic_result, summarize, workload_inventory, workload_names
 from .semantic_runtime_oracles import (CURRENT_WORKLOAD_VERSION, completed_task_count,
     validate_delay_controls, validate_task_frame_controls)
@@ -60,16 +64,147 @@ def _workload_inputs(report):
                      'tests/benchmarks/ownership_workloads.mm',
                      'tests/benchmarks/task_frame_workloads.cpp',
                      'scripts/objc3c_toolchain/semantic_runtime_oracles.py'}
+    if 'collection_scaling' in report:
+        required |= {path.as_posix() for path in collection_scaling_inputs(Path('.'))}
     for path, value in report.get('inputs', {}).items():
         normalized = str(path).replace('\\', '/')
         for suffix in required:
             if normalized.endswith(suffix):
+                if 'collection_scaling' in report and not _sha256(value):
+                    raise ValueError('semantic benchmark workload input has an invalid digest')
                 if suffix in selected and selected[suffix] != value:
                     raise ValueError('semantic benchmark receipt has conflicting workload inputs')
                 selected[suffix] = value
     if set(selected) != required:
         raise ValueError('semantic benchmark receipt omitted its workload implementation identity')
     return selected
+
+
+def _sha256(value):
+    return isinstance(value, str) and re.fullmatch(r'[a-f0-9]{64}', value) is not None
+
+
+def _collection_loaders(records):
+    binaries, context = {}, {}
+    if not isinstance(records, list) or len(records) != len(COLLECTION_METRICS):
+        raise ValueError('collection calibration omitted the measurement loaders')
+    for record in records:
+        if not isinstance(record, dict) or not isinstance(record.get('loader'), dict):
+            raise ValueError('collection calibration has an invalid measurement loader')
+        metric, loader = record.get('metric'), record.get('loader', {})
+        binary, libraries = loader.get('binary'), loader.get('libraries')
+        build_ids = loader.get('build_ids')
+        if (metric not in COLLECTION_METRICS or metric in binaries or record.get('sdk_index') != 0 or
+                not isinstance(binary, str) or not Path(binary).is_absolute() or
+                Path(binary).name != 'collection-scaling-'+metric or not _sha256(loader.get('sha256')) or
+                not isinstance(libraries, dict) or not libraries or
+                not all(Path(name).is_absolute() and _sha256(digest) for name, digest in libraries.items()) or
+                not isinstance(build_ids, dict) or set(build_ids) != set(libraries)):
+            raise ValueError('collection calibration has an invalid measurement loader')
+        binaries[metric] = binary
+        context[metric] = {field: loader[field] for field in ('sha256', 'libraries', 'build_ids')}
+    return binaries, context
+
+
+def _admit_collection(path, report, repetitions):
+    extension = report['collection_scaling']
+    if (not isinstance(extension, dict) or extension.get('status') != 'PASS' or
+            any(extension.get(key) != scope for key, scope in COLLECTION_EVIDENCE_SCOPE.items())):
+        raise ValueError('collection calibration has a different measurement scope')
+    binaries, context = _collection_loaders(extension.get('loaders'))
+    expected = [(f'{repetition}-sdk-0-collection-scaling-{metric}-{family}-{scale}',
+                 repetition, metric, family, scale, rounds)
+                for repetition in range(repetitions + 1) for metric in COLLECTION_METRICS
+                for family, scale, rounds in collection_sample_cases(metric)]
+    samples = extension.get('samples')
+    commands = [row for row in report['samples']
+                if re.match(r'^[0-9]+-sdk-[0-9]+-collection-scaling-', row.get('name', ''))]
+    names = [case[0] for case in expected]
+    if (not isinstance(samples, list) or not all(isinstance(sample, dict) for sample in samples) or
+            [sample.get('sample') for sample in samples] != names or
+            [row['name'] for row in commands] != names):
+        raise ValueError('collection calibration omitted or reordered raw samples')
+    timeline_end = 0
+    timed, diagnostics, retained = {}, {}, []
+    for sample, command, (name, repetition, metric, family, scale, rounds) in zip(samples, commands, expected):
+        start, end = sample.get('start_ns'), sample.get('end_ns')
+        wall, cpu, rss = (command.get(key) for key in ('wall_seconds', 'cpu_seconds', 'peak_process_rss_kib'))
+        argv = [binaries[metric], family, str(scale), str(rounds)]
+        log_name = name+'.log'
+        if (sample.get('sdk_index') != 0 or sample.get('metric') != metric or
+                sample.get('family') != family or sample.get('scale') != scale or
+                sample.get('rounds') != rounds or sample.get('warmup') is not (repetition == 0) or
+                type(start) is not int or type(end) is not int or start < timeline_end or end <= start or
+                command.get('sdk_index') != 0 or command.get('argv') != argv or
+                command.get('exit_code') != 0 or command.get('timed_out') is not False or
+                not isinstance(command.get('log'), str) or Path(command['log']).name != log_name or
+                type(wall) not in (int, float) or not math.isfinite(wall) or not 0 < wall <= (end - start)/1e9 or
+                type(cpu) not in (int, float) or not math.isfinite(cpu) or cpu < 0 or
+                type(rss) is not int or rss <= 0):
+            raise ValueError('collection calibration has invalid command or timeline evidence: '+name)
+        timeline_end = end
+        try:
+            log, digest, _ = _read(Path(path).parent / log_name)
+        except (OSError, ValueError) as error:
+            raise ValueError('collection calibration could not read its raw log: '+name) from error
+        if digest != command.get('log_sha256') or log != sample.get('phases'):
+            raise ValueError('collection calibration log differs from its receipt: '+name)
+        phases = collection_scaling_result(json.dumps(log), family, scale, metric, rounds)
+        retained.append({**sample, 'log': log_name, 'log_sha256': digest, 'wall_seconds': wall,
+                         'cpu_seconds': cpu, 'peak_process_rss_kib': rss})
+        if repetition == 0:
+            continue
+        if metric == 'time':
+            timed.setdefault((family, scale), []).append(collection_phase_timing(family, scale, phases))
+        else:
+            diagnostics.setdefault((family, scale, metric), []).append(phases)
+    summaries = [{'sdk_index': 0, 'family': family, 'scale': scale, 'rounds': rounds,
+                  'phase_seconds': {phase: summarize(timed[family, scale], phase)
+                                    for phase in timed[family, scale][0]}}
+                 for family, scale, rounds in collection_cases()]
+    if extension.get('summaries') != summaries:
+        raise ValueError('collection calibration summary differs from its raw timings')
+    signature = hashlib.sha256(json.dumps([
+        sample['log_sha256'] for sample in retained if sample['metric'] == 'time'
+    ]).encode()).hexdigest()
+    return {'context': context, 'identity': signature, 'timed': timed, 'diagnostics': diagnostics,
+            'samples': retained}
+
+
+def _collection_calibration(admitted, labels):
+    observations = [row['collection_scaling'] for row in admitted]
+    if all(row is None for row in observations):
+        return None
+    if (any(row is None for row in observations) or
+            any(row['context'] != observations[0]['context'] for row in observations[1:])):
+        raise ValueError('semantic calibration receipts have different collection contexts')
+    if len({row['identity'] for row in observations}) != len(observations):
+        raise ValueError('semantic calibration cannot count duplicate collection timings twice')
+    pooled = []
+    for family, scale, rounds in collection_cases():
+        per_receipt = [row['timed'][family, scale] for row in observations]
+        timings = {}
+        for phase in per_receipt[0][0]:
+            medians = [statistics.median(sample[phase] for sample in rows) for rows in per_receipt]
+            timings[phase] = {'pooled': summarize([sample for rows in per_receipt for sample in rows], phase),
+                'receipt_medians': medians, 'between_receipt_median_range_seconds': max(medians)-min(medians)}
+        diagnostics = {}
+        for metric in ('allocations', 'service-diagnostics'):
+            key = family, scale, metric
+            records = [record for row in observations for record in row['diagnostics'].get(key, ())]
+            if records:
+                diagnostics[metric] = {
+                    phase: {field: {'median': statistics.median(record[phase][field] for record in records),
+                                    'minimum': min(record[phase][field] for record in records),
+                                    'maximum': max(record[phase][field] for record in records)}
+                            for field in values if field not in ('completed_operations', 'checksum')}
+                    for phase, values in records[0].items()}
+        pooled.append({'family': family, 'scale': scale, 'rounds': rounds, 'phase_seconds': timings,
+                       'diagnostics': diagnostics})
+    return {**COLLECTION_EVIDENCE_SCOPE, 'decision': 'observed-runner-variance-only',
+            'loaders': observations[0]['context'], 'observations': pooled,
+            'source_samples': [{'label': label, 'samples': row['samples']}
+                               for label, row in zip(labels, observations)]}
 
 
 def _admit(path):
@@ -126,10 +261,11 @@ def _admit(path):
             not isinstance(sdk.get('instrumentation'), dict)):
         raise ValueError('semantic benchmark receipt omitted its SDK identity')
     receipt_identity = hashlib.sha256(json.dumps(report, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+    collections = _admit_collection(path, report, repetitions) if 'collection_scaling' in report else None
     return {'sha256': sha256, 'identity': receipt_identity, 'bytes': byte_count,
             'report': report, 'host': _host_identity(report), 'inputs': _workload_inputs(report),
             'sdk': {key: sdk.get(key) for key in ('seal_sha256', 'source_build_id', 'instrumentation')},
-            'observations': observations}
+            'observations': observations, 'collection_scaling': collections}
 
 
 def _apply_review(report, policy_path, admitted):
@@ -262,6 +398,9 @@ def calibrate(repo, receipts, output, *, labels=(), policy=None):
             'wall_seconds': sum(row.get('wall_seconds', 0) for row in all_samples),
             'cpu_seconds': sum(row.get('cpu_seconds', 0) for row in all_samples),
             'receipt_bytes': sum(row['bytes'] for row in admitted)}}
+    collections = _collection_calibration(admitted, labels)
+    if collections is not None:
+        report['collection_scaling'] = collections
     if policy is not None:
         _apply_review(report, policy, admitted)
     output.mkdir(parents=True)

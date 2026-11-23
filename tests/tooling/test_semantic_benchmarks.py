@@ -1,6 +1,7 @@
 """Defend current semantic benchmark work counts, sampling and failure bounds."""
 import json
 import errno
+import hashlib
 import os
 import sys
 from pathlib import Path
@@ -84,6 +85,119 @@ def calibration_receipt(path, *, offset=0.0, version=1):
                     'classification': 'semantic-mismatch', 'sample': name, 'semantic_result': result})
     path.write_text(json.dumps(report))
     return report
+
+
+@pytest.fixture
+def collection_observations(tmp_path, monkeypatch):
+    from scripts.objc3c_toolchain import semantic_benchmark_calibration as calibration
+    from scripts.objc3c_toolchain.collection_scaling import (COLLECTION_EVIDENCE_SCOPE,
+        COLLECTION_METRICS, collection_phase_timing, collection_scaling_inputs,
+        expected_collection_phases)
+
+    case = ('map', 32, 16)
+    monkeypatch.setattr(calibration, 'collection_cases', lambda: [case])
+    monkeypatch.setattr(calibration, 'collection_sample_cases', lambda metric: [case])
+    repo = tmp_path / 'checkout'
+    repo.mkdir()
+
+    def observation(name, *, offset):
+        root = tmp_path / name
+        root.mkdir()
+        receipt = root / 'qualification.json'
+        report = calibration_receipt(receipt, offset=offset/1e9)
+        report['inputs'].update({str(path): 'e'*64 for path in collection_scaling_inputs(repo)})
+        loader_path = '/usr/lib/libstdc++.so'
+        binaries = {metric: f'/hosted/{name}/sdk-0/collection-scaling-{metric}'
+                    for metric in COLLECTION_METRICS}
+        samples, timing = [], []
+        for iteration in range(4):
+            for metric in COLLECTION_METRICS:
+                phases = expected_collection_phases(*case)
+                for phase, values in phases.items():
+                    if metric == 'time':
+                        values['nanoseconds'] = offset + 100_000 + iteration*1_000
+                    else:
+                        values.update(allocations=1, allocated_bytes=96)
+                    if metric == 'service-diagnostics' and phase in ('construct', 'remove', 'teardown'):
+                        before, retained = {'construct': (0, 1296), 'remove': (1296, 1104),
+                                            'teardown': (1104, 0)}[phase]
+                        values.update(index_bytes_before=before, retained_index_bytes=retained)
+                if metric == 'time' and iteration:
+                    timing.append(collection_phase_timing(*case[:2], phases))
+                command = f'{iteration}-sdk-0-collection-scaling-{metric}-map-32'
+                log = root / (command+'.log')
+                log.write_text(json.dumps(phases))
+                start = len(samples)*2_000_000
+                samples.append({'sdk_index': 0, 'metric': metric, 'family': case[0],
+                    'scale': case[1], 'rounds': case[2], 'warmup': iteration == 0, 'sample': command,
+                    'start_ns': start, 'end_ns': start+2_000_000, 'phases': phases})
+                report['samples'].append({'name': command, 'sdk_index': 0, 'exit_code': 0,
+                    'timed_out': False, 'argv': [binaries[metric], 'map', '32', '16'],
+                    'wall_seconds': .001, 'cpu_seconds': .0005, 'peak_process_rss_kib': 1024,
+                    'log': f'/hosted/{name}/{log.name}', 'log_sha256': hashlib.sha256(log.read_bytes()).hexdigest()})
+        report['collection_scaling'] = {'status': 'PASS', **COLLECTION_EVIDENCE_SCOPE,
+            'samples': samples, 'summaries': [{'sdk_index': 0, 'family': case[0], 'scale': case[1],
+                'rounds': case[2], 'phase_seconds': {phase: summarize(timing, phase) for phase in timing[0]}}],
+            'loaders': [{'metric': metric, 'sdk_index': 0,
+                'loader': {'binary': binary, 'sha256': 'a'*64, 'libraries': {loader_path: 'b'*64},
+                           'build_ids': {loader_path: 'host-library'}}}
+                for metric, binary in binaries.items()]}
+        receipt.write_text(json.dumps(report))
+        return receipt
+
+    return calibration, repo, observation
+
+
+def test_collection_calibration_pools_phase_times_and_keeps_raw_diagnostics(collection_observations):
+    calibration, repo, observation = collection_observations
+    first = observation('first', offset=0)
+    second = observation('second', offset=1000)
+    report = calibration.calibrate(repo, [first, second], repo / 'out/calibration', labels=['a', 'b'])
+    scaling = report['collection_scaling']
+    assert report['decision'] == 'calibrated-observation-advisory'
+    assert scaling['decision'] == 'observed-runner-variance-only'
+    assert len(scaling['source_samples']) == 2
+    raw = scaling['source_samples'][0]['samples']
+    assert len(raw) == 12 and raw[0]['warmup']
+    assert raw[0]['start_ns'] == 0 and raw[0]['end_ns'] == 2_000_000
+    assert raw[0]['log'] == '0-sdk-0-collection-scaling-time-map-32.log'
+    row = scaling['observations'][0]
+    assert row['phase_seconds']['remove']['pooled']['samples'] == 6
+    assert row['diagnostics']['service-diagnostics']['remove']['retained_index_bytes'] == {
+        'median': 1104, 'minimum': 1104, 'maximum': 1104}
+    assert row['diagnostics']['allocations']['construct']['allocated_bytes']['maximum'] == 96
+
+
+@pytest.mark.parametrize(('mutation', 'reason'), [
+    ('replay', 'duplicate collection timings'), ('loader', 'different collection contexts'),
+    ('log', 'log differs'), ('missing-log', 'could not read its raw log'),
+    ('timeline', 'invalid command or timeline evidence'), ('summary', 'summary differs'),
+    ('inventory', 'omitted or reordered raw samples'), ('input', 'different inputs contexts'),
+])
+def test_collection_calibration_rejects_incompatible_or_corrupted_evidence(collection_observations, mutation, reason):
+    calibration, repo, observation = collection_observations
+    first = observation('first', offset=0)
+    second = observation('second', offset=0 if mutation == 'replay' else 1000)
+    report = json.loads(second.read_text())
+    scaling = report['collection_scaling']
+    log = second.parent / (scaling['samples'][0]['sample']+'.log')
+    if mutation == 'loader':
+        scaling['loaders'][0]['loader']['libraries']['/usr/lib/libstdc++.so'] = 'f'*64
+    elif mutation == 'log':
+        log.write_text(log.read_text()+'\n')
+    elif mutation == 'missing-log':
+        log.unlink()
+    elif mutation == 'timeline':
+        scaling['samples'][1]['start_ns'] = 0
+    elif mutation == 'summary':
+        scaling['summaries'][0]['phase_seconds']['remove']['median'] = 0
+    elif mutation == 'inventory':
+        scaling['samples'].pop()
+    elif mutation == 'input':
+        report['inputs'][str(repo / 'tests/benchmarks/collection_scaling.cpp')] = 'f'*64
+    second.write_text(json.dumps(report))
+    with pytest.raises(ValueError, match=reason):
+        calibration.calibrate(repo, [first, second], repo / 'out/calibration')
 
 
 @pytest.mark.parametrize('scale', SCALES)

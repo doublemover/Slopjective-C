@@ -7,6 +7,10 @@ on:
         type: choice
         options: [linux-x86_64, linux-aarch64]
         default: linux-x86_64
+      collection_scaling:
+        description: Include phased collection, text, and allocator observations
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -37,11 +41,17 @@ jobs:
       - name: Measure two complete observations on one admitted host
         id: measure
         shell: bash
+        env:
+          COLLECTION_SCALING: ${{ inputs.collection_scaling }}
         run: |
           sdk="$RUNNER_TEMP/objc3-calibration/sdk/current"
+          extra=()
+          if [[ "$COLLECTION_SCALING" == true ]]; then
+            extra+=(--collection-scaling)
+          fi
           for repeat in 1 2; do
             python3 -B -m scripts.objc3c_toolchain.semantic_benchmarks --sdk "$sdk" \
-              --extended-runtime --repetitions 3 --output "out/calibration/observation-$repeat"
+              --extended-runtime --repetitions 3 --output "out/calibration/observation-$repeat" "${extra[@]}"
           done
           python3 -B -m scripts.objc3c_toolchain.semantic_benchmark_calibration \
             --receipt out/calibration/observation-1/qualification.json --label "${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-1" \

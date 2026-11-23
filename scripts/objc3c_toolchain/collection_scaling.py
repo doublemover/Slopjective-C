@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import time
 
 from .compiler_instrumentation import loaded_graph
 from .linux_host import native_loader
@@ -21,11 +22,21 @@ DIAGNOSTIC_DEFINITIONS = ('OBJC3_RUNTIME_I32_INDEX_MEMORY_TESTING',
                           'OBJC3_TEXT_CONSTRUCTION_TESTING')
 DIAGNOSTIC_UNITS = ('collections_service.cpp', 'generic_collection_service.cpp',
                     'text_service.cpp')
+COLLECTION_EVIDENCE_SCOPE = {
+    'allocation_scope': 'Ordinary and aligned nothrow operator new requests in a separate executable.',
+    'timing_scope': 'Single-threaded SDK archive phase timings with separate teardown.',
+    'diagnostic_scope': ('Candidate compiler with three instrumented service units from the checkout. '
+        'Index bytes sum the index object and live allocator requests across rounds, '
+        'including nodes and buckets, on the measured standard library. '
+        'Payload peak bytes include runtime-owned object storage and string buffer capacities.'),
+    'timeline_scope': 'Monotonic offsets around each command and its receipt write within one observation.',
+}
 
 
 def collection_scaling_inputs(repo):
     runtime = repo / 'native/objc3c/src/runtime'
-    return [repo / 'tests/benchmarks/collection_scaling.cpp', Path(__file__),
+    return [repo / 'tests/benchmarks/collection_scaling.cpp',
+            repo / 'scripts/objc3c_toolchain/collection_scaling.py',
             *(runtime / 'stdlib' / name for name in DIAGNOSTIC_UNITS),
             *(runtime / directory / name for directory, name in (
                 ('stdlib', 'opaque_service_storage.h'), ('stdlib', 'stdlib_service_contract.h'),
@@ -41,6 +52,21 @@ def collection_cases():
                 (GENERIC_FAMILIES, COLLECTION_SCALES, MANAGED_ROUNDS),
                 (TEXT_FAMILIES, TEXT_SCALES, MANAGED_ROUNDS))
             for family in families for scale in scales]
+
+
+def collection_sample_cases(metric):
+    return [case for case in collection_cases()
+            if metric != 'service-diagnostics' or not case[0].startswith('generic-')]
+
+
+def collection_phase_timing(family, scale, phases):
+    timing = {phase: phases[phase]['nanoseconds'] / 1e9
+              for phase in expected_collection_phases(family, scale)}
+    if family.startswith('generic-'):
+        for shape in _associative_shapes(scale):
+            timing[shape+'-create-and-release'] = (
+                phases[shape+'-create']['nanoseconds'] + phases[shape+'-release']['nanoseconds']) / 1e9
+    return timing
 
 
 def _concrete_work(family, scale):
@@ -258,12 +284,14 @@ def measure_collection_scaling(repo, states, repetitions, run, summarize):
             label = f'sdk-{index}-collection-scaling-{metric}'
             run(label+'-build', [compiler, '--no-default-config', '-resource-dir',
                 state['resource_dir'], '-std=c++20', '-O2', '-I'+str(prefix / 'include'),
+                '-ffile-prefix-map='+str(repo)+'=.', '-ffile-prefix-map='+str(root)+'=.',
                 source, *binary_flags, prefix / 'lib/libobjc3_runtime_services.a', '-pthread',
                 '-fuse-ld=lld', '-Wl,--threads=1', '-o', binary], state)
             graph = loaded_graph(binary, native_loader(), [],
                 run=lambda name, argv: Path(run(label+'-'+name, argv, state)['log']).read_text())
             graphs.append({'sdk_index': index, 'metric': metric, 'loader': graph})
             binaries[index, metric] = binary
+    origin_ns = time.monotonic_ns()
     for iteration in range(repetitions + 1):
         ordered = states if iteration % 2 == 0 else list(reversed(states))
         for state in ordered:
@@ -272,39 +300,26 @@ def measure_collection_scaling(repo, states, repetitions, run, summarize):
                 binary = binaries.get((index, metric))
                 if binary is None:
                     continue
-                for family, scale, rounds in cases:
-                    if metric == 'service-diagnostics' and family.startswith('generic-'):
-                        continue
+                for family, scale, rounds in collection_sample_cases(metric):
                     label = f'{iteration}-sdk-{index}-collection-scaling-{metric}-{family}-{scale}'
+                    start_ns = time.monotonic_ns() - origin_ns
                     row = run(label, [binary, family, str(scale), str(rounds)], state)
+                    end_ns = time.monotonic_ns() - origin_ns
                     result = collection_scaling_result(Path(row['log']).read_text(),
                         family, scale, metric, rounds, candidate=state is states[-1])
                     samples.append({'sdk_index': index, 'metric': metric, 'family': family,
                         'scale': scale, 'rounds': rounds, 'warmup': iteration == 0,
-                        'sample': row['name'], 'phases': result})
+                        'sample': row['name'], 'phases': result, 'start_ns': start_ns, 'end_ns': end_ns})
     summaries = []
     for state in states:
         index = state['index']
         for family, scale, rounds in cases:
-            rows = [row['phases'] for row in samples if row['sdk_index'] == index
+            rows = [collection_phase_timing(family, scale, row['phases'])
+                    for row in samples if row['sdk_index'] == index
                     and row['metric'] == 'time' and row['family'] == family
                     and row['scale'] == scale and not row['warmup']]
-            phases = {phase: summarize([{'wall_seconds': row[phase]['nanoseconds'] / 1e9}
-                                        for row in rows])
-                      for phase in expected_collection_phases(family, scale, rounds)}
-            if family.startswith('generic-'):
-                for shape in _associative_shapes(scale):
-                    phases[shape+'-create-and-release'] = summarize([{
-                        'wall_seconds': (row[shape+'-create']['nanoseconds'] +
-                                         row[shape+'-release']['nanoseconds']) / 1e9}
-                        for row in rows])
+            phases = {phase: summarize(rows, phase) for phase in rows[0]}
             summaries.append({'sdk_index': index, 'family': family, 'scale': scale,
                               'rounds': rounds, 'phase_seconds': phases})
-    return {'status': 'PASS',
-            'allocation_scope': 'Ordinary and aligned nothrow operator new requests in a separate executable.',
-            'timing_scope': 'Single-threaded SDK archive phase timings with separate teardown.',
-            'diagnostic_scope': ('Candidate compiler with three instrumented service units from the checkout. '
-                'Index bytes sum the index object and live allocator requests across rounds, '
-                'including nodes and buckets, on the measured standard library. '
-                'Payload peak bytes include runtime-owned object storage and string buffer capacities.'),
+    return {'status': 'PASS', **COLLECTION_EVIDENCE_SCOPE,
             'samples': samples, 'summaries': summaries, 'loaders': graphs}
