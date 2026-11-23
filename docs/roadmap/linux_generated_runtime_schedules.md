@@ -43,6 +43,44 @@ trial/time limits and reports its actual minimality boundary. `--replay` uses th
 requested validated history and keeps the negative controls on their fixed
 witness history.
 
+## Optional split-epoch exploration
+
+Add `--explore` to the command above and select a fresh output directory for a
+larger periodic or manual campaign. The release invocation retains its eight
+fixed histories. Exploration considers seeds 64 through 127 and selects at
+most twelve histories. `--explore-limit` accepts one through twelve for a smaller
+run. Twelve histories allow at most 144 native executions across both
+optimizations, both sanitizer configurations, and the three replay backends.
+The exploration runs the generated fixture and sanitizer detector controls.
+The fixed release invocation owns the maintained fixtures and semantic mutants.
+
+Each history advances the first admitted task either before or after its group
+registration. The second worker gate enters only after the first task's native
+frame cleanup. Later tasks and actor jobs stay gated until the ordinary drain.
+The model checks terminal observation and waiter delivery before that final
+drain. Selection covers both gate placements, then prefers new transition
+labels, adjacent pairs, and combinations of gate placement, group cancellation,
+and actor cancellation. Ties use increasing seed order. The receipt records
+selected and rejected seeds, rejection reasons, the native execution budget,
+coverage gains over the fixed histories, and reviewed combinations left open by
+the budget.
+
+An exploration history records the gate operation in the replay protocol and
+retains the history and protocol SHA-256 digests. Replay it with `--replay
+out/runtime-schedules-explore/work/history-0.json` and a fresh output directory.
+The version-3 history selects the split-epoch campaign and preserves the original
+gate position. The version-2 release histories retain their original digests and
+execution matrix.
+
+The local x86-64 campaign selected seeds 64 and 65 and passed all 24 native
+executions. It exercised both gate placements and added two transition labels
+and six adjacent pairs relative to the fixed histories. The receipt identifies
+the 62 budget exclusions and six gate/cancellation combinations left for a
+larger pass. A fresh replay of seed 65 passed all twelve cases with matching
+history, protocol, and observation digests.
+
+## Receipts and maintained checks
+
 Receipts bind model/generator versions, exact JSON histories and native input
 protocols, compile/link/execution commands, source/header closures, tool/resource
 and runtime identities, effective sanitizer controls, diagnostics, observations

@@ -102,6 +102,10 @@ void barrier_callback(void *context) {
   std::lock_guard lock(gate.mutex);
   gate.barrier = true;gate.changed.notify_all();
 }
+void await_gate_entry(Gate &gate) {
+  std::unique_lock lock(gate.mutex);
+  assert(gate.changed.wait_for(lock, std::chrono::seconds(10), [&] { return gate.entered; }));
+}
 void next_probe_resume(objc3_task_t *task, void *context) {
   auto &probe = *static_cast<NextProbe *>(context);
   if (++probe.resumes == 1) {
@@ -185,20 +189,20 @@ int main(int argc, char **argv) {
   assert(objc3_executor_create(manual, &executor) == OBJC3_SERVICE_OK);
   assert(objc3_actor_create(executor, &actor) == OBJC3_SERVICE_OK);
   assert(objc3_task_group_create(nullptr, &group) == OBJC3_SERVICE_OK);
-  Gate gate;
+  std::array<Gate, 2> gates;
+  auto *gate = &gates.front();
   if (!manual) {
-    assert(objc3_executor_enqueue(executor, gate_callback, &gate) == OBJC3_SERVICE_OK);
-    std::unique_lock lock(gate.mutex);
-    assert(gate.changed.wait_for(lock, std::chrono::seconds(10), [&] { return gate.entered; }));
+    assert(objc3_executor_enqueue(executor, gate_callback, gate) == OBJC3_SERVICE_OK);
+    await_gate_entry(*gate);
   }
-  const std::array<const char *, 16> operations = {"task", "waiter", "retain-task", "release-task", "add", "close-group",
+  const std::array<const char *, 17> operations = {"task", "waiter", "retain-task", "release-task", "add", "close-group",
       "cancel-group", "actor-job", "close-actor", "cancel-actor", "drain", "join-group", "join-actor", "next", "observe",
-      "next-mismatched-type"};
+      "next-mismatched-type", "advance-first-task"};
   std::ifstream input(argv[2]);assert(input);
   char delimiter = 0;
   input >> delimiter;assert(delimiter == '[');
   unsigned id = 0, count = 0;
-  bool drained = false;
+  bool drained = false, advanced_first_task = false;
   for (;;) {
     input >> delimiter;
     if (delimiter == ']') break;
@@ -240,6 +244,25 @@ int main(int argc, char **argv) {
         assert(facts.actor_identity == 0xfeed);
         ++jobs[id].counts[2];destroy_job(&jobs[id]);
       }
+    } else if (operation == "advance-first-task") {
+      assert(!advanced_first_task && !drained && id == 0 && state.handle);
+      advanced_first_task = true;
+      if (manual) {
+        uint32_t executed = 0;
+        assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK && executed == 1);
+      } else {
+        auto &next = gates.back();
+        // The second gate follows the lone submitted task in the serial
+        // queue. Its entry proves that task's callback and cleanup finished.
+        assert(objc3_executor_enqueue(executor, gate_callback, &next) == OBJC3_SERVICE_OK);
+        {
+          std::lock_guard lock(gate->mutex);
+          gate->open = true;
+          gate->changed.notify_all();
+        }
+        await_gate_entry(next);
+        gate = &next;
+      }
     } else if (operation == "drain") {
       assert(!drained);drained = true;
       if (manual) {
@@ -251,9 +274,9 @@ int main(int argc, char **argv) {
           if (!executed) break;
         }
       } else {
-        assert(objc3_executor_enqueue(executor, barrier_callback, &gate) == OBJC3_SERVICE_OK);
-        std::unique_lock lock(gate.mutex);gate.open = true;gate.changed.notify_all();
-        assert(gate.changed.wait_for(lock, std::chrono::seconds(10), [&] { return gate.barrier; }));
+        assert(objc3_executor_enqueue(executor, barrier_callback, gate) == OBJC3_SERVICE_OK);
+        std::unique_lock lock(gate->mutex);gate->open = true;gate->changed.notify_all();
+        assert(gate->changed.wait_for(lock, std::chrono::seconds(10), [&] { return gate->barrier; }));
       }
       // A worker barrier covers direct submissions. Actor mailboxes can
       // enqueue later turns and invoke discard destructors after that barrier.

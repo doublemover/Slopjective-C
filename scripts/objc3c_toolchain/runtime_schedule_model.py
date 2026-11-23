@@ -7,12 +7,14 @@ import random
 import time
 
 VERSION = 2
+SPLIT_EPOCH_VERSION = 3
+SPLIT_EPOCH_SCHEDULE = 'advance the first task, then hold later work until drain'
 LIMITS = {'operations': 96, 'tasks': 8, 'next_probe_tasks': 1, 'jobs': 8,
     'groups': 1, 'actors': 1, 'worker_threads': 1}
 OK, NOT_READY, CLOSED, CANCELLED, TYPE_MISMATCH = 0, 5, 6, 7, 9
 OPCODES = ('task', 'waiter', 'retain-task', 'release-task', 'add', 'close-group',
     'cancel-group', 'actor-job', 'close-actor', 'cancel-actor', 'drain',
-    'join-group', 'join-actor', 'next', 'observe', 'next-mismatched-type')
+    'join-group', 'join-actor', 'next', 'observe', 'next-mismatched-type', 'advance-first-task')
 
 
 def protocol(value):
@@ -62,15 +64,33 @@ def generate(seed):
     return value
 
 
+def generate_split_epoch(seed):
+    history = generate(seed)
+    operations = history['operations']
+    # Cover both sides of group and waiter registration with a worker that
+    # settles exactly one task before the bulk admission/cancellation epoch.
+    gate = operations.index(['task', 1]) if seed % 2 else 1
+    operations[gate:gate] = [['advance-first-task', 0], ['observe', 0], ['waiter', 0]]
+    history.update(model_version=SPLIT_EPOCH_VERSION, schedule=SPLIT_EPOCH_SCHEDULE)
+    validate(history)
+    return history
+
+
 def validate(value):
+    version = value.get('model_version')
+    operations = value.get('operations', [])
     if (value.get('schema') != 'objc3c.runtime-schedule-history.v1' or
-            value.get('model_version') != VERSION or value.get('limits') != LIMITS or
+            type(version) is not int or version not in (VERSION, SPLIT_EPOCH_VERSION) or value.get('limits') != LIMITS or
             not isinstance(value.get('seed'), int) or isinstance(value['seed'], bool) or
-            not 0 < len(value.get('operations', [])) <= LIMITS['operations']):
+            not isinstance(operations, list) or not 0 < len(operations) <= LIMITS['operations']):
         raise ValueError('unreviewed or unbounded runtime schedule history')
+    gates = operations.count(['advance-first-task', 0])
+    if (gates != int(version == SPLIT_EPOCH_VERSION) or
+            (version == SPLIT_EPOCH_VERSION and value.get('schedule') != SPLIT_EPOCH_SCHEDULE)):
+        raise ValueError('runtime history does not match its worker gate schedule')
     # Evaluate the full history before any native compile/execution. A removed
     # producer or unsafe release invalidates a shrink candidate.
-    Model().run(value['operations'])
+    Model().run(operations)
 
 
 def signature(value):
@@ -86,13 +106,19 @@ class Model:
         self.drained = False
         self.transitions = set();self.pairs = set();self.previous = None
 
+    @staticmethod
+    def _complete(task):
+        task['terminal'] = True
+        task['counts'] = [1, 1, 1, task['waiters'], int(task['cancel'])]
+
     def step(self, name, index, *, selected=None):
         if type(index) is not int or not 0 <= index < 8:
             raise ValueError('runtime schedule index escaped bounded logical slots')
         status, output = OK, -1
         if name == 'task':
             if index in self.tasks or self.drained: raise ValueError('task create order/lifetime is invalid')
-            self.tasks[index] = {'references': 1, 'waiters': 0, 'cancel': False, 'counts': [0, 0, 0, 0, 0]}
+            self.tasks[index] = {'references': 1, 'waiters': 0, 'cancel': False,
+                                 'terminal': False, 'counts': [0, 0, 0, 0, 0]}
         elif name in ('waiter', 'retain-task', 'release-task', 'add', 'observe'):
             if index not in self.tasks or not self.tasks[index]['references']:
                 raise ValueError('runtime history accesses an unretained task')
@@ -103,14 +129,14 @@ class Model:
                 task['references'] -= 1
             elif name == 'waiter':
                 task['waiters'] += 1
-                if self.drained: task['counts'][3] += 1
+                if task['terminal']: task['counts'][3] += 1
             elif name == 'add':
                 if index in self.group: raise ValueError('duplicate registration is outside this pilot')
                 if self.group_closed: status = CLOSED
                 else:
                     self.group.add(index)
-                    if self.group_cancelled: task['cancel'] = True
-            else: status = OK if self.drained else NOT_READY
+                    if self.group_cancelled and not task['terminal']: task['cancel'] = True
+            else: status = OK if task['terminal'] else NOT_READY
         elif name == 'actor-job':
             if index in self.jobs: raise ValueError('duplicate logical actor context')
             rejected = self.actor_closed
@@ -119,16 +145,21 @@ class Model:
         elif name == 'close-group': self.group_closed = True
         elif name == 'cancel-group':
             self.group_cancelled = True
-            if not self.drained:
-                for task in self.group: self.tasks[task]['cancel'] = True
+            for task in self.group:
+                if not self.tasks[task]['terminal']: self.tasks[task]['cancel'] = True
         elif name == 'close-actor': self.actor_closed = True
         elif name == 'cancel-actor': self.actor_closed = self.actor_cancelled = True
+        elif name == 'advance-first-task':
+            if (index != 0 or self.drained or self.group_closed or self.group_cancelled or self.actor_closed or
+                    self.tasks.keys() != {0} or self.jobs or self.tasks[0]['terminal']):
+                raise ValueError('early worker gate requires only one pending task before group or actor shutdown')
+            self._complete(self.tasks[0])
         elif name == 'drain':
             if self.drained or not self.group_closed or not self.actor_closed:
                 raise ValueError('pilot requires one explicitly closed epoch')
             self.drained = True
             for task in self.tasks.values():
-                task['counts'] = [1, 1, 1, task['waiters'], int(task['cancel'])]
+                if not task['terminal']: self._complete(task)
             for job in self.jobs.values():
                 if not job[2]: job[:2] = [int(not self.actor_cancelled), 1]
         elif name in ('join-group', 'join-actor'):

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -10,11 +11,14 @@ import time
 from .binary_packages import digest, write_json
 from .product_evidence import ProductCommands
 from .runtime_instrumentation import RuntimeProfiles, used_receipts
-from .runtime_schedule_model import OPCODES, check, coverage_domain, generate, protocol, signature, shrink, validate
+from .runtime_schedule_model import (OPCODES, SPLIT_EPOCH_VERSION, Model, check, coverage_domain,
+    generate, generate_split_epoch, protocol, signature, shrink, validate)
 from .sanitizer_policy import SanitizerQualification
 
 
 DEFAULT_SEEDS = (0, 1, 2, 3, 7, 19, 41, 63)
+EXPLORATION_SEEDS = range(64, 128)
+EXPLORATION_LIMIT = 12
 SCHEMA = 'objc3c.generated-runtime-schedules.v2'
 BACKENDS = ('manual', 'manual-repeat', 'worker')
 SANITIZERS = ('address,undefined', 'thread')
@@ -88,17 +92,85 @@ def watchdog_snapshot(command, argv):
             'pending_operation': pending, 'last_events': completed[-3:]}
 
 
-def qualify(repo, compiler_root, resource_root, output, *, seeds=DEFAULT_SEEDS, replay=None):
+def select_exploration(limit):
+    if type(limit) is not int or not 1 <= limit <= EXPLORATION_LIMIT:
+        raise ValueError(f'exploration history budget must be between 1 and {EXPLORATION_LIMIT}')
+    fixed_transitions, fixed_pairs = coverage_domain()
+    candidates, rejected, protocols = [], [], set()
+    candidate_transitions, candidate_pairs, candidate_cells = set(), set(), set()
+    for seed in EXPLORATION_SEEDS:
+        history = generate_split_epoch(seed)
+        gate = 'before-registration' if seed % 2 == 0 else 'after-registration'
+        encoded = protocol(history).encode()
+        protocol_sha256 = hashlib.sha256(encoded).hexdigest()
+        identity = {'seed': seed, 'gate': gate, 'history_sha256': signature(history),
+                    'group_cancellation': ['cancel-group', 0] in history['operations'],
+                    'actor_cancellation': ['cancel-actor', 0] in history['operations'],
+                    'protocol_sha256': protocol_sha256, 'operations': len(history['operations'])}
+        if protocol_sha256 in protocols:
+            rejected.append({**identity, 'reason': 'duplicate-operation-protocol'})
+            continue
+        protocols.add(protocol_sha256)
+        model = Model()
+        model.run(history['operations'])
+        candidate_transitions.update(model.transitions)
+        candidate_pairs.update(model.pairs)
+        cell = (gate, identity['group_cancellation'], identity['actor_cancellation'])
+        candidate_cells.add(cell)
+        candidates.append((identity, history, model.transitions, model.pairs, cell))
+
+    transitions, pairs, gates, cells = set(fixed_transitions), set(fixed_pairs), set(), set()
+    histories, selected = [], []
+    while len(histories) < limit and candidates:
+        def rank(candidate):
+            identity, _, labels, adjacent, cell = candidate
+            return (identity['gate'] not in gates, len(labels - transitions),
+                    len(adjacent - pairs), cell not in cells, -identity['seed'])
+
+        winner = max(candidates, key=rank)
+        candidates.remove(winner)
+        identity, history, labels, adjacent, cell = winner
+        selected.append({**identity, 'added_transitions': sorted(labels - transitions),
+                         'added_pairs': sorted(map(list, adjacent - pairs))})
+        histories.append(history)
+        gates.add(identity['gate'])
+        cells.add(cell)
+        transitions.update(labels)
+        pairs.update(adjacent)
+    rejected.extend({**identity, 'reason': 'history-budget'} for identity, *_ in candidates)
+    return histories, {
+        'mode': 'bounded-split-epoch',
+        'budget': {'candidate_seeds': [EXPLORATION_SEEDS.start, EXPLORATION_SEEDS.stop - 1],
+                   'candidates': len(EXPLORATION_SEEDS), 'histories': limit,
+                   'native_cases': limit * len(SANITIZERS) * len(OPTIMIZATIONS) * len(BACKENDS)},
+        'selected': selected, 'rejected': sorted(rejected, key=lambda row: row['seed']),
+        'candidate_coverage': {'transitions': sorted(candidate_transitions),
+                               'pairs': sorted(map(list, candidate_pairs)),
+                               'gate_and_cancellation_combinations': sorted(map(list, candidate_cells))},
+    }
+
+
+def qualify(repo, compiler_root, resource_root, output, *, seeds=DEFAULT_SEEDS, replay=None,
+            explore=False, explore_limit=None):
     import resource
 
     repo, compiler_root, resource_root = (path.resolve(strict=True) for path in (repo, compiler_root, resource_root))
     output = output.resolve()
     if output.exists() or not output.is_relative_to(repo / 'out'):
         raise ValueError('runtime schedule qualification requires fresh owned evidence')
-    histories = [json.loads(replay.read_text())] if replay else [generate(seed) for seed in seeds]
+    if (explore and (replay or seeds != DEFAULT_SEEDS)) or (explore_limit is not None and not explore):
+        raise ValueError('use exploration, fixed seeds, or replay as separate selections')
+    exploration = None
+    if explore:
+        histories, exploration = select_exploration(EXPLORATION_LIMIT if explore_limit is None else explore_limit)
+    else:
+        histories = [json.loads(replay.read_text())] if replay else [generate(seed) for seed in seeds]
     for value in histories: validate(value)
     if not histories or len(histories) > 16 or len({signature(h) for h in histories}) != len(histories):
         raise ValueError('runtime schedule selection must be bounded, nonempty and unique')
+    generated_only = explore or bool(replay and histories[0]['model_version'] == SPLIT_EPOCH_VERSION)
+    if generated_only and replay:
+        exploration = {'mode': 'split-epoch-replay', 'original_history_sha256': signature(histories[0])}
     output.mkdir(parents=True)
     work = output / 'work';work.mkdir()
     fixture = repo / 'tests/clang_foundation/runtime_schedules/history.cpp'
@@ -113,25 +185,34 @@ def qualify(repo, compiler_root, resource_root, output, *, seeds=DEFAULT_SEEDS, 
         actor_fixtures / 'provider.cpp', actor_fixtures / 'provider.h',
         actor_fixtures / 'actor_lifetime_control.mm', lifetime)
     model_source = Path(__file__).with_name('runtime_schedule_model.py')
+    protocol_hashes = []
     for index, history in enumerate(histories):
         write_json(work / ('history-'+str(index)+'.json'), history)
-        (work / ('protocol-'+str(index)+'.json')).write_text(protocol(history))
+        native_protocol = work / ('protocol-'+str(index)+'.json')
+        native_protocol.write_text(protocol(history))
+        protocol_hashes.append(digest(native_protocol))
     # A valid user replay may omit the transition that a particular mutant
     # exercises. Keep the negative controls on their known witness history.
-    control_history = generate(DEFAULT_SEEDS[0])
     control_protocol = work / 'control-protocol.json'
-    write_json(work / 'control-history.json', control_history)
-    control_protocol.write_text(protocol(control_history))
+    if not generated_only:
+        control_history = generate(DEFAULT_SEEDS[0])
+        write_json(work / 'control-history.json', control_history)
+        control_protocol.write_text(protocol(control_history))
     products = profiles = None
     report = {'schema': SCHEMA, 'status': 'running', 'commands': [],
         'histories': histories, 'history_hashes': list(map(signature, histories)), 'cases': [], 'controls': [],
-        'control_history_hash': signature(control_history),
-        'scope': 'Bounded generated public-C histories plus current public-contract scenario fixtures. Manual/gated replay is complemented by unforced worker/global-pool executions; this is not exhaustive scheduler or memory-model verification.',
-        'scenario_inventory': SCENARIO_INVENTORY,
+        'scope': ('Bounded split-epoch generated public-C histories.' if generated_only else
+                  'Bounded generated public-C histories plus current public-contract scenario fixtures. Manual/gated replay is complemented by unforced worker/global-pool executions; this is not exhaustive scheduler or memory-model verification.'),
+        'scenario_inventory': {} if generated_only else SCENARIO_INVENTORY,
         'bounds': {'generated_operations': 96, 'generated_tasks': 8, 'next_probe_tasks': 1, 'generated_actors': 1,
                    'overlap_control_threads': 1, 'history_timeout_seconds': 30,
                    'worker_fixture_timeout_seconds': 90, 'native_reduction_trials': 32},
         'child_rss_before_kib': resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss}
+    if generated_only:
+        report.update(exploration=exploration, protocol_hashes=protocol_hashes)
+        report['bounds']['worker_gates'] = 2
+    else:
+        report['control_history_hash'] = signature(control_history)
     tick = time.monotonic()
     def save():
         report['seconds'] = round(time.monotonic()-tick, 6)
@@ -147,7 +228,8 @@ def qualify(repo, compiler_root, resource_root, output, *, seeds=DEFAULT_SEEDS, 
             raise
         return Path(row['log']).read_text(errors='replace')
     try:
-        products = ProductCommands(output / 'product-evidence', sources=(fixture, model_source, Path(__file__), work, *scenario_sources))
+        products = ProductCommands(output / 'product-evidence',
+            sources=(fixture, model_source, Path(__file__), work, *(() if generated_only else scenario_sources)))
         profiles = RuntimeProfiles(repo, compiler_root, resource_root, output / 'runtime-profiles')
         transition_hits, pair_hits = set(), set()
         for sanitizer in SANITIZERS:
@@ -194,10 +276,15 @@ def qualify(repo, compiler_root, resource_root, output, *, seeds=DEFAULT_SEEDS, 
                         elif backend == 'manual-repeat' and observed != manual:
                             raise ValueError('manual runtime schedule replay changed its logical trace')
                         transition_hits.update(result['transitions']);pair_hits.update(map(tuple, result['adjacent_pairs']))
-                        report['cases'].append({'name': name, 'status': 'PASS', 'history': signature(history),
+                        report['cases'].append({'name': name, 'status': 'PASS', 'history': report['history_hashes'][index],
                             'backend': backend, 'sanitizer': sanitizer, 'client_optimization': optimization,
                             'service_optimization': 'O1', 'observation_sha256': digest(Path(report['commands'][-1]['log'])), **result})
+                        if generated_only:
+                            report['cases'][-1]['protocol_sha256'] = protocol_hashes[index]
                         save()
+                if generated_only:
+                    report.setdefault('sanitizer_policy', {})[label] = policy.finalize()
+                    continue
                 if sanitizer == 'address,undefined' and optimization == 'O0':
                     for mutant, (kind, expected_failure) in SEMANTIC_CONTROLS.items():
                         bad = build(label+'-mutant-'+str(mutant), mutant)
@@ -274,7 +361,9 @@ def qualify(repo, compiler_root, resource_root, output, *, seeds=DEFAULT_SEEDS, 
                     save()
                 report.setdefault('sanitizer_policy', {})[label] = policy.finalize()
         configurations = len(SANITIZERS)*len(OPTIMIZATIONS)
-        if (len(report['cases']) != len(histories)*configurations*len(BACKENDS) or
+        if len(report['cases']) != len(histories)*configurations*len(BACKENDS):
+            raise ValueError('generated runtime schedule inventory is incomplete')
+        if not generated_only and (
                 len(report['controls']) != len(SEMANTIC_CONTROLS) or
                 len(report.get('scenario_cases', [])) != configurations*len(set(SCENARIO_INVENTORY.values())) or
                 {scenario for row in report['scenario_cases'] for scenario in row['scenarios']} !=
@@ -285,8 +374,25 @@ def qualify(repo, compiler_root, resource_root, output, *, seeds=DEFAULT_SEEDS, 
             'transition_domain': sorted(domain), 'pair_domain': sorted(map(list, pair_domain)),
             'missing_transitions': sorted(domain-transition_hits),
             'missing_pairs': sorted(map(list, pair_domain-pair_hits))}
-        if not replay and (domain-transition_hits or pair_domain-pair_hits):
+        if not replay and not generated_only and (domain-transition_hits or pair_domain-pair_hits):
             raise ValueError('fixed runtime schedule seeds omitted reviewed grammar transitions/pairs')
+        if generated_only:
+            report['exploration']['coverage'] = {
+                'fixed_transition_count': len(domain), 'fixed_pair_count': len(pair_domain),
+                'fixed_history_hashes': [signature(generate(seed)) for seed in DEFAULT_SEEDS],
+                'added_transitions': sorted(transition_hits - domain),
+                'added_pairs': sorted(map(list, pair_hits - pair_domain)),
+            }
+            if explore:
+                candidate = exploration['candidate_coverage']
+                visited = {(row['gate'], row['group_cancellation'], row['actor_cancellation'])
+                           for row in exploration['selected']}
+                report['exploration']['coverage'].update(
+                    unvisited_candidate_transitions=sorted(set(candidate['transitions']) - transition_hits),
+                    unvisited_candidate_pairs=sorted(map(list, set(map(tuple, candidate['pairs'])) - pair_hits)),
+                    visited_gate_and_cancellation_combinations=sorted(map(list, visited)),
+                    unvisited_gate_and_cancellation_combinations=sorted(map(list,
+                        set(map(tuple, candidate['gate_and_cancellation_combinations'])) - visited)))
         report.update(status='PASS', runtime_profiles=used_receipts(profiles, ('O1',)),
             transitions=sorted(transition_hits), adjacent_pairs=sorted(map(list, pair_hits)),
             product_evidence=products.finalize())
@@ -301,7 +407,10 @@ def main():
     parser.add_argument('--repo', type=Path, default=Path.cwd())
     for name in ('compiler-root', 'resource-root', 'output'):
         parser.add_argument('--'+name, type=Path, required=True)
-    parser.add_argument('--replay', type=Path)
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument('--replay', type=Path)
+    selection.add_argument('--explore', action='store_true', help='run bounded additional split-epoch histories')
+    parser.add_argument('--explore-limit', type=int, help='cap exploration at 1 to 12 selected histories')
     result = qualify(**vars(parser.parse_args()))
     print(json.dumps({'status': result['status'], 'cases': len(result['cases'])}))
 

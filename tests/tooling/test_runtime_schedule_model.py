@@ -4,9 +4,9 @@ import json
 
 import pytest
 
-from scripts.objc3c_toolchain.runtime_schedule_model import (Model, OPCODES, TYPE_MISMATCH, check, coverage_domain, generate,
-    protocol, signature, shrink, validate)
-from scripts.objc3c_toolchain.runtime_schedules import observations, watchdog_snapshot
+from scripts.objc3c_toolchain.runtime_schedule_model import (Model, OPCODES, TYPE_MISMATCH, VERSION, check,
+    coverage_domain, generate, generate_split_epoch, protocol, signature, shrink, validate)
+from scripts.objc3c_toolchain.runtime_schedules import observations, select_exploration, watchdog_snapshot
 
 
 @pytest.mark.parametrize('seed', range(64))
@@ -58,6 +58,42 @@ def test_fixed_seeds_cover_the_reviewed_grammar_without_claiming_scheduler_exhau
         model = Model();model.run(generate(seed)['operations'])
         observed.update(model.transitions);adjacent.update(model.pairs)
     assert observed == transitions and adjacent == pairs
+
+
+def test_exploration_budgets_and_selection_have_stable_replay_identities():
+    histories, selection = select_exploration(12)
+    assert (histories, selection) == select_exploration(12)
+    assert len(histories) == len(selection['selected']) == selection['budget']['histories'] == 12
+    assert {row['seed'] for row in selection['selected'] + selection['rejected']} == set(range(64, 128))
+    assert all(row['reason'] in ('history-budget', 'duplicate-operation-protocol') for row in selection['rejected'])
+    prefix, prefix_selection = select_exploration(2)
+    assert prefix == histories[:2]
+    assert {row['gate'] for row in prefix_selection['selected']} == {'before-registration', 'after-registration'}
+    assert len({(row['gate'], row['group_cancellation'], row['actor_cancellation'])
+                for row in selection['selected']}) == len(selection['candidate_coverage']['gate_and_cancellation_combinations']) == 8
+    assert {signature(history) for history in histories} == {row['history_sha256'] for row in selection['selected']}
+    for invalid in (0, 13, True):
+        with pytest.raises(ValueError, match='history budget'):
+            select_exploration(invalid)
+
+
+@pytest.mark.parametrize('seed', (64, 65))
+def test_split_epoch_settles_only_the_first_task_and_delivers_late_waiters(seed):
+    value = generate_split_epoch(seed)
+    trace = Model().run(value['operations'])
+    step = next(i for i, row in enumerate(trace) if row['operation'] == 'advance-first-task')
+    assert trace[step]['tasks'][0][:3] == [1, 1, 1]
+    assert sum(sum(task) for task in trace[step]['tasks'][1:]) == 0
+    assert trace[step+1]['status'] == 0 and trace[step+2]['tasks'][0][3] == trace[step]['tasks'][0][3]+1
+    assert trace[-1]['tasks'][0][4] == 0
+    assert check(value, trace)['status'] == 'PASS'
+    with pytest.raises(ValueError, match='worker gate'):
+        validate(dict(value, model_version=VERSION))
+    wrong_order = copy.deepcopy(value)
+    gate = wrong_order['operations'].pop(step)
+    wrong_order['operations'].insert(0, gate)
+    with pytest.raises(ValueError, match='one pending task'):
+        validate(wrong_order)
 
 
 def test_mismatched_next_wait_leaves_the_result_unconsumed():
