@@ -20513,10 +20513,10 @@ index 000000000..c62eaf20d
 +#endif
 diff --git a/clang/test/ObjC3/Sema/Inputs/callable-borrowed-template.h b/clang/test/ObjC3/Sema/Inputs/callable-borrowed-template.h
 new file mode 100644
-index 000000000..6ba1abe3b
+index 000000000..578a6fc78
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/Inputs/callable-borrowed-template.h
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,55 @@
 +typedef borrowed const char *Bytes;
 +typedef void (*BorrowedCallback)(Bytes);
 +typedef void (*RawCallback)(const char *);
@@ -20547,12 +20547,37 @@ index 000000000..6ba1abe3b
 +template<class Arg> struct ContractKind<void (*)(BorrowedArgument<Arg>)> {
 +  enum { Value = 1 };
 +};
++
++typedef Bytes (*ReturningCallback)(void *, Bytes)
++    __attribute__((objc_returns_borrowed(owner_index=0)));
++typedef Bytes (^ReturningBlock)(void *, Bytes)
++    __attribute__((objc_returns_borrowed(owner_index=0)));
++
++template<class Callback>
++Bytes forward_owner(Callback callback, void *owner, Bytes value)
++    __attribute__((objc_returns_borrowed(owner_index=1))) {
++  return callback(owner, value);
++}
++
++__attribute__((ms_abi, objc_returns_borrowed(owner_index=0)))
++Bytes adjusted(void *owner, Bytes value);
++__attribute__((objc_returns_borrowed(owner_index=0)))
++Bytes adjusted(void *owner, Bytes value);
++using Adjusted = Bytes (__attribute__((ms_abi, objc_returns_borrowed(owner_index=0)))
++                         *)(void *, Bytes);
++
++void swift_borrow(Bytes __attribute__((swift_context))) __attribute__((swiftcall));
++void swift_raw(const char * __attribute__((swift_context))) __attribute__((swiftcall));
++void swift_without_context(Bytes) __attribute__((swiftcall));
++using SwiftBorrowed = decltype(&swift_borrow);
++using SwiftRaw = decltype(&swift_raw);
++using SwiftWithoutContext = decltype(&swift_without_context);
 diff --git a/clang/test/ObjC3/Sema/callable-borrowed-template.mm b/clang/test/ObjC3/Sema/callable-borrowed-template.mm
 new file mode 100644
-index 000000000..14cd52d2e
+index 000000000..eff96784b
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/callable-borrowed-template.mm
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,97 @@
 +// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -fblocks -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -fblocks -fsyntax-only -verify -DREJECT_UNKNOWN=1 %s
 +// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -fblocks -emit-pch %S/Inputs/callable-borrowed-template.h -o %t.20.mrc.pch
@@ -20613,4 +20638,40 @@ index 000000000..14cd52d2e
 +// expected-note@Inputs/callable-borrowed-template.h:10 {{candidate function not viable}}
 +#else
 +// expected-no-diagnostics
++#endif
++
++static_assert(__is_same(decltype(&adjusted), Adjusted));
++
++__attribute__((objc_returns_borrowed(owner_index=2)))
++Bytes forward_result(ReturningCallback callback, ReturningBlock block,
++                     void *owner, Bytes value, bool choose) {
++  if (choose)
++    return forward_owner(callback, owner, value);
++  return forward_owner<ReturningBlock>(block, owner, value);
++}
++
++__attribute__((objc_returns_borrowed(owner_index=0)))
++Bytes forward_adjusted(void *owner, Bytes value) {
++  return forward_owner(adjusted, owner, value);
++}
++
++void weaker_swift_callback(SwiftBorrowed callback, Bytes value) {
++  SwiftRaw weaker = callback;
++  (void)weaker;
++  callback(value);
++}
++
++#if REJECT_UNKNOWN
++void observe_uncontracted(const char *);
++void returning_callback_must_not_escape(ReturningCallback callback, void *owner,
++                                        Bytes value) {
++  observe_uncontracted(forward_owner(callback, owner, value)); // expected-error {{borrowed pointer escapes through an argument without a non-escaping lifetime contract}}
++}
++
++void preserve_swift_call_contracts(SwiftBorrowed callback, SwiftRaw raw) {
++  SwiftBorrowed fabricated = raw; // expected-error {{cannot initialize a variable of type 'SwiftBorrowed'}}
++  SwiftWithoutContext missing = callback; // expected-error {{cannot initialize a variable of type 'SwiftWithoutContext'}}
++  (void)fabricated;
++  (void)missing;
++}
 +#endif

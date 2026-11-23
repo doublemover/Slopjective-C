@@ -1415,7 +1415,7 @@ index e2168d0a0..85db4c91f 100644
    }]>;
  }
 diff --git a/clang/lib/AST/ASTContext.cpp b/clang/lib/AST/ASTContext.cpp
-index 222881154..f728159d8 100644
+index 222881154..9e5ecbbbe 100644
 --- a/clang/lib/AST/ASTContext.cpp
 +++ b/clang/lib/AST/ASTContext.cpp
 @@ -11,6 +11,8 @@
@@ -1521,7 +1521,26 @@ index 222881154..f728159d8 100644
    case Type::Record: {
      const RecordDecl *RD = T->castAsCanonical<RecordType>()->getDecl();
      const IdentifierInfo *II = RD->getIdentifier();
-@@ -3968,6 +4004,215 @@ QualType ASTContext::getComplexType(QualType T) const {
+@@ -3898,9 +3934,16 @@ bool ASTContext::hasSameFunctionTypeIgnoringPtrSizes(QualType T, QualType U) {
+ }
+ 
+ QualType ASTContext::getFunctionTypeWithoutParamABIs(QualType T) const {
+-  if (const auto *Proto = T->getAs<FunctionProtoType>()) {
++  if (const auto *Proto = T->getAs<FunctionProtoType>();
++      Proto && Proto->hasExtParameterInfos()) {
++    SmallVector<FunctionProtoType::ExtParameterInfo, 8> Infos;
++    bool NeedParamInfo = false;
++    for (auto Info : Proto->getExtParameterInfos()) {
++      Infos.push_back(Info.withABI(ParameterABI::Ordinary));
++      NeedParamInfo |= Infos.back().getOpaqueValue() != 0;
++    }
+     FunctionProtoType::ExtProtoInfo EPI = Proto->getExtProtoInfo();
+-    EPI.ExtParameterInfos = nullptr;
++    EPI.ExtParameterInfos = NeedParamInfo ? Infos.data() : nullptr;
+     return getFunctionType(Proto->getReturnType(), Proto->param_types(), EPI);
+   }
+   return T;
+@@ -3968,6 +4011,215 @@ QualType ASTContext::getComplexType(QualType T) const {
    return QualType(New, 0);
  }
  
@@ -1737,7 +1756,7 @@ index 222881154..f728159d8 100644
  /// getPointerType - Return the uniqued reference to the type for a pointer to
  /// the specified type.
  QualType ASTContext::getPointerType(QualType T) const {
-@@ -4359,12 +4604,16 @@ QualType ASTContext::getVariableArrayDecayedType(QualType type) const {
+@@ -4359,12 +4611,16 @@ QualType ASTContext::getVariableArrayDecayedType(QualType type) const {
      llvm_unreachable("type should never be variably-modified");
  
    // These types can be variably-modified but should never need to
@@ -1755,7 +1774,7 @@ index 222881154..f728159d8 100644
      return type;
  
    // These types can be variably-modified.  All these modifications
-@@ -4965,6 +5214,8 @@ static bool isCanonicalResultType(QualType T) {
+@@ -4965,6 +5221,8 @@ static bool isCanonicalResultType(QualType T) {
  QualType
  ASTContext::getFunctionNoProtoType(QualType ResultTy,
                                     const FunctionType::ExtInfo &Info) const {
@@ -1764,7 +1783,7 @@ index 222881154..f728159d8 100644
    // FIXME: This assertion cannot be enabled (yet) because the ObjC rewriter
    // functionality creates a function without a prototype regardless of
    // language mode (so it makes them even in C++). Once the rewriter has been
-@@ -5052,6 +5303,43 @@ static bool isCanonicalExceptionSpecification(
+@@ -5052,6 +5310,43 @@ static bool isCanonicalExceptionSpecification(
  QualType ASTContext::getFunctionTypeInternal(
      QualType ResultTy, ArrayRef<QualType> ArgArray,
      const FunctionProtoType::ExtProtoInfo &EPI, bool OnlyWantCanonical) const {
@@ -1808,7 +1827,7 @@ index 222881154..f728159d8 100644
    size_t NumArgs = ArgArray.size();
  
    // Unique functions, to guarantee there is only one function of a particular
-@@ -5090,7 +5378,10 @@ QualType ASTContext::getFunctionTypeInternal(
+@@ -5090,7 +5385,10 @@ QualType ASTContext::getFunctionTypeInternal(
  
    // Determine whether the type being created is already canonical or not.
    bool isCanonical = !Unique && IsCanonicalExceptionSpec &&
@@ -1820,7 +1839,7 @@ index 222881154..f728159d8 100644
    for (unsigned i = 0; i != NumArgs && isCanonical; ++i)
      if (!ArgArray[i].isCanonicalAsParam())
        isCanonical = false;
-@@ -5111,6 +5402,9 @@ QualType ASTContext::getFunctionTypeInternal(
+@@ -5111,6 +5409,9 @@ QualType ASTContext::getFunctionTypeInternal(
      llvm::SmallVector<QualType, 8> ExceptionTypeStorage;
      FunctionProtoType::ExtProtoInfo CanonicalEPI = EPI;
      CanonicalEPI.HasTrailingReturn = false;
@@ -1830,7 +1849,7 @@ index 222881154..f728159d8 100644
  
      if (IsCanonicalExceptionSpec) {
        // Exception spec is already OK.
-@@ -5176,14 +5470,15 @@ QualType ASTContext::getFunctionTypeInternal(
+@@ -5176,14 +5477,15 @@ QualType ASTContext::getFunctionTypeInternal(
        FunctionType::FunctionTypeExtraAttributeInfo,
        FunctionType::FunctionTypeArmAttributes, FunctionType::ExceptionType,
        Expr *, FunctionDecl *, FunctionProtoType::ExtParameterInfo, Qualifiers,
@@ -1848,7 +1867,7 @@ index 222881154..f728159d8 100644
  
    auto *FTP = (FunctionProtoType *)Allocate(Size, alignof(FunctionProtoType));
    FunctionProtoType::ExtProtoInfo newEPI = EPI;
-@@ -8751,6 +9046,7 @@ LangAS ASTContext::getOpenCLTypeAddrSpace(const Type *T) const {
+@@ -8751,6 +9053,7 @@ LangAS ASTContext::getOpenCLTypeAddrSpace(const Type *T) const {
  /// in buildByrefHelpers.
  bool ASTContext::BlockRequiresCopying(QualType Ty,
                                        const VarDecl *D) {
@@ -1856,7 +1875,7 @@ index 222881154..f728159d8 100644
    if (const CXXRecordDecl *record = Ty->getAsCXXRecordDecl()) {
      const Expr *copyExpr = getBlockVarCopyInit(D).getCopyExpr();
      if (!copyExpr && record->hasTrivialDestructor()) return false;
-@@ -8907,6 +9203,13 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
+@@ -8907,6 +9210,13 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
    QualType BlockTy =
        Expr->getType()->castAs<BlockPointerType>()->getPointeeType();
    QualType BlockReturnTy = BlockTy->castAs<FunctionType>()->getReturnType();
@@ -1870,7 +1889,7 @@ index 222881154..f728159d8 100644
    // Encode result type.
    if (getLangOpts().EncodeExtendedBlockSig)
      getObjCEncodingForMethodParameter(Decl::OBJC_TQ_None, BlockReturnTy, S,
-@@ -8926,6 +9229,8 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
+@@ -8926,6 +9236,8 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
      assert(sz.isPositive() && "BlockExpr - Incomplete param type");
      ParmOffset += sz;
    }
@@ -1879,7 +1898,7 @@ index 222881154..f728159d8 100644
    // Size of the argument frame
    S += charUnitsToString(ParmOffset);
    // Block pointer and offset.
-@@ -8952,6 +9257,10 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
+@@ -8952,6 +9264,10 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
      ParmOffset += getObjCEncodingTypeSize(PType);
    }
  
@@ -1890,7 +1909,7 @@ index 222881154..f728159d8 100644
    return S;
  }
  
-@@ -9019,8 +9328,15 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
+@@ -9019,8 +9335,15 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
    // FIXME: This is not very efficient.
    // Encode return type.
    std::string S;
@@ -1908,7 +1927,7 @@ index 222881154..f728159d8 100644
    // Compute size of all parameters.
    // Start with computing size of a pointer in number of bytes.
    // FIXME: There might(should) be a better way of doing this computation!
-@@ -9039,6 +9355,8 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
+@@ -9039,6 +9362,8 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
             "getObjCEncodingForMethodDecl - Incomplete param type");
      ParmOffset += sz;
    }
@@ -1917,7 +1936,7 @@ index 222881154..f728159d8 100644
    S += charUnitsToString(ParmOffset);
    S += "@0:";
    S += charUnitsToString(PtrSize);
-@@ -9062,6 +9380,10 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
+@@ -9062,6 +9387,10 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
      S += charUnitsToString(ParmOffset);
      ParmOffset += getObjCEncodingTypeSize(PType);
    }
@@ -1928,7 +1947,7 @@ index 222881154..f728159d8 100644
  
    return S;
  }
-@@ -9764,6 +10086,16 @@ void ASTContext::getObjCEncodingForTypeImpl(QualType T, std::string &S,
+@@ -9764,6 +10093,16 @@ void ASTContext::getObjCEncodingForTypeImpl(QualType T, std::string &S,
        *NotEncodedT = T;
      return;
  
@@ -1945,7 +1964,7 @@ index 222881154..f728159d8 100644
    // We could see an undeduced auto type here during error recovery.
    // Just ignore it.
    case Type::Auto:
-@@ -11642,6 +11974,8 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
+@@ -11642,6 +11981,8 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
    if (lbaseInfo.getRegParm() != rbaseInfo.getRegParm())
      return {};
  
@@ -1954,7 +1973,7 @@ index 222881154..f728159d8 100644
    if (lbaseInfo.getProducesResult() != rbaseInfo.getProducesResult())
      return {};
    if (lbaseInfo.getNoCallerSavedRegs() != rbaseInfo.getNoCallerSavedRegs())
-@@ -11694,6 +12028,19 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
+@@ -11694,6 +12035,19 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
      if (lproto->getMethodQuals() != rproto->getMethodQuals())
        return {};
  
@@ -1974,7 +1993,7 @@ index 222881154..f728159d8 100644
      // Function protos with different 'cfi_salt' values aren't compatible.
      if (lproto->getExtraAttributeInfo().CFISalt !=
          rproto->getExtraAttributeInfo().CFISalt)
-@@ -11772,6 +12119,11 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
+@@ -11772,6 +12126,11 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
    const FunctionProtoType *proto = lproto ? lproto : rproto;
    if (proto) {
      assert((AllowCXX || !proto->hasExceptionSpec()) && "C++ shouldn't be here");
@@ -1986,7 +2005,7 @@ index 222881154..f728159d8 100644
      if (proto->isVariadic())
        return {};
      // Check that the types are compatible with the types that
-@@ -12047,6 +12399,13 @@ QualType ASTContext::mergeTypes(QualType LHS, QualType RHS, bool OfBlockPointer,
+@@ -12047,6 +12406,13 @@ QualType ASTContext::mergeTypes(QualType LHS, QualType RHS, bool OfBlockPointer,
    case Type::OverflowBehavior:
      llvm_unreachable("Types are eliminated above");
  
@@ -2000,7 +2019,7 @@ index 222881154..f728159d8 100644
    case Type::Pointer:
    {
      // Merge two pointer types, while trying to preserve typedef info
-@@ -14464,6 +14823,33 @@ static QualType getCommonNonSugarTypeNode(const ASTContext &Ctx, const Type *X,
+@@ -14464,6 +14830,33 @@ static QualType getCommonNonSugarTypeNode(const ASTContext &Ctx, const Type *X,
          getCommonSizeModifier(AX, AY), getCommonIndexTypeCVRQualifiers(AX, AY));
      return Ctx.getArrayParameterType(ArrayTy);
    }
@@ -2034,7 +2053,7 @@ index 222881154..f728159d8 100644
    case Type::Atomic: {
      const auto *AX = cast<AtomicType>(X), *AY = cast<AtomicType>(Y);
      return Ctx.getAtomicType(
-@@ -14743,6 +15129,8 @@ static QualType getCommonSugarTypeNode(const ASTContext &Ctx, const Type *X,
+@@ -14743,6 +15136,8 @@ static QualType getCommonSugarTypeNode(const ASTContext &Ctx, const Type *X,
      CANONICAL_TYPE(HLSLInlineSpirv)
      CANONICAL_TYPE(LValueReference)
      CANONICAL_TYPE(ObjCInterface)
@@ -20321,10 +20340,10 @@ index 0a6f256af..81d89af12 100644
  
 diff --git a/clang/include/clang/AST/ObjC3Borrowed.h b/clang/include/clang/AST/ObjC3Borrowed.h
 new file mode 100644
-index 000000000..cff88dc89
+index 000000000..99dcd145d
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3Borrowed.h
-@@ -0,0 +1,264 @@
+@@ -0,0 +1,272 @@
 +//===--- ObjC3Borrowed.h - Borrowed pointer type contracts --------*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_AST_OBJC3BORROWED_H
@@ -20522,8 +20541,16 @@ index 000000000..cff88dc89
 +             Compare(RA->getErrorType(), RB->getErrorType());
 +  if (const auto *FA = dyn_cast<FunctionType>(A.getTypePtr()))
 +    if (const auto *FB = dyn_cast<FunctionType>(B.getTypePtr())) {
-+      if (FA->hasObjC3BorrowedResult() != FB->hasObjC3BorrowedResult()) return false;
-+      if (!Compare(FA->getReturnType(), FB->getReturnType()))
++      bool BorrowedResult = FA->hasObjC3BorrowedResult();
++      if (BorrowedResult != FB->hasObjC3BorrowedResult())
++        return false;
++      QualType L = FA->getReturnType(), R = FB->getReturnType();
++      if (BorrowedResult) {
++        // The result bit also represents the borrowing spelled on its type.
++        L = Peel(AContext, L);
++        R = Peel(BContext, R);
++      }
++      if (!Compare(L, R))
 +        return false;
 +      const auto *PA = dyn_cast<FunctionProtoType>(FA);
 +      const auto *PB = dyn_cast<FunctionProtoType>(FB);
@@ -21308,10 +21335,10 @@ index 3b50b8115..6bf8ee9c4 100644
  }
 diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
 new file mode 100644
-index 000000000..f4a62f4dc
+index 000000000..76658f8f5
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,4412 @@
+@@ -0,0 +1,4462 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -25723,6 +25750,56 @@ index 000000000..f4a62f4dc
 +    EXPECT_EQ(Borrowed ? "loan" : "owned", Reference->getDecl()->getName());
 +    EXPECT_EQ(Borrowed, isObjC3BorrowedType(Context, Reference->getType()));
 +  }
++}
++
++TEST(ObjC3ASTInfrastructure, StrippingParameterABIPreservesBorrowedContracts) {
++  constexpr llvm::StringLiteral Code = R"(
++    typedef borrowed const char *Bytes;
++    __attribute__((swiftcall, objc_returns_borrowed(owner_index=0)))
++    Bytes contextual(void *owner, Bytes context
++        __attribute__((swift_context, noescape)));
++    __attribute__((swiftcall, objc_returns_borrowed(owner_index=0)))
++    Bytes ordinary(void *owner, Bytes context __attribute__((noescape)));
++    __attribute__((swiftcall, objc_returns_borrowed(owner_index=0)))
++    Bytes unqualified(void *owner,
++        const char *context __attribute__((noescape)));
++  )";
++  auto AST = tooling::buildASTFromCodeWithArgs(
++      Code, {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3",
++             "-fobjc3-profile=strict-system", "-target",
++             "x86_64-unknown-linux-gnu"}, "swift-contract.mm");
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  ASTContext &Context = AST->getASTContext();
++  auto Find = [&](StringRef Name) {
++    return selectFirst<FunctionDecl>(
++        "function", match(functionDecl(hasName(Name)).bind("function"),
++                          Context));
++  };
++  const auto *Contextual = Find("contextual");
++  const auto *Ordinary = Find("ordinary");
++  const auto *Unqualified = Find("unqualified");
++  ASSERT_TRUE(Contextual && Ordinary && Unqualified);
++
++  const auto Original = Contextual->getType().getCanonicalType();
++  const auto *Proto = Original->castAs<FunctionProtoType>();
++  EXPECT_EQ(ParameterABI::SwiftContext, Proto->getExtParameterInfo(1).getABI());
++  EXPECT_TRUE(Proto->getExtParameterInfo(1).isObjC3Borrowed());
++  EXPECT_TRUE(Proto->getExtParameterInfo(1).isNoEscape());
++  EXPECT_TRUE(sameObjC3BorrowedType(
++      Context, Original, Context, Contextual->getType()));
++
++  QualType Stripped = Context.getFunctionTypeWithoutParamABIs(Original);
++  Proto = Stripped->castAs<FunctionProtoType>();
++  EXPECT_EQ(ParameterABI::Ordinary, Proto->getExtParameterInfo(1).getABI());
++  EXPECT_TRUE(Proto->getExtParameterInfo(1).isObjC3Borrowed());
++  EXPECT_TRUE(Proto->getExtParameterInfo(1).isNoEscape());
++  EXPECT_TRUE(Proto->hasObjC3BorrowedResult());
++  EXPECT_EQ(1u, Proto->getObjC3BorrowedOwner());
++  EXPECT_TRUE(Context.hasSameFunctionTypeIgnoringParamABI(
++      Original, Ordinary->getType().getCanonicalType()));
++  EXPECT_FALSE(Context.hasSameFunctionTypeIgnoringParamABI(
++      Original, Unqualified->getType().getCanonicalType()));
 +}
 diff --git a/clang/include/clang/AST/DeclTemplate.h b/clang/include/clang/AST/DeclTemplate.h
 index ed1a51724..c7a0cadc6 100644

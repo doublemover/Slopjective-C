@@ -23,7 +23,7 @@
     },
     {
       "file": "0004-objc3-ast.patch",
-      "sha256": "6cb6e72f57470ee005f5469e4aed36ed831e26399711fd024fe8b18987eb0060"
+      "sha256": "39f936bbe548d6eb5f7ae5bec64b488c14a81a7b360077c52fefde7ee9c8fcfc"
     },
     {
       "file": "0004-objc3-ast-and-parser-tests.patch",
@@ -55,7 +55,7 @@
     },
     {
       "file": "0004-objc3-sema-tests.patch",
-      "sha256": "6237cd9fc64f1efefb4ba30455e570dc762a5aecddc53908a1af376846b6c932"
+      "sha256": "0b62f4ea997b0d0447f9618ca1914a177b920c52330e415f2af1d79654b2b020"
     },
     {
       "file": "0004-objc3-serialization.patch",
@@ -83,7 +83,7 @@
     },
     {
       "file": "0005-objc3-codegen-tests.patch",
-      "sha256": "e90aff9a2eec65b6e5006cf882bf4fcbcd5e86d2844141f55a64f75a94a363ab"
+      "sha256": "6adb17e8a805e065bac0ebbdd051c77f6ed1cb116b0d043d8da4635c846f2ea5"
     },
     {
       "file": "0006-objc3-native-carrier-expressions.patch",
