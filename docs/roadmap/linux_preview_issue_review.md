@@ -28,6 +28,12 @@ delivery and Darwin bootstrap ran separately. Assurance and integration used
 the published SDK for bounded native checks and reserve refreshed SDK builds
 for the integrated changes.
 
+The current pass closed the Linux x86-64 support issue, the sanitizer policy
+issue, the runtime lifetime and collection findings, and optimized Python
+qualification. The scheduler receipt contains 96 generated executions, 24
+maintained scenarios, five semantic controls, and a fresh reduced replay.
+It identifies the exact source revision and all runtime profiles.
+
 | Batch                                    | Issues                            | Verified work and remaining acceptance                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | ---------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Clang ownership and lowering             | #8306–#8309, #8314–#8317          | Added source, PCH, installed, and async witnesses for callable ownership, inherited and statement-expression borrows, pool cleanup, Boolean conditions, and record bit-fields. The guard matrix ran 24 configurations, the async matrix ran 48, and the record qualifier ran 17 executions and eight rejections. A relinked Clang object verified the new underaligned weak storage diagnostic on x86-64 and the AArch64 target. The compiler now retains borrowed callable parameters in canonical template types. Source, PCH, and interface replay passed with the relinked compiler. The full SDK build still needs to qualify the change.                                                                                                                |
@@ -61,6 +67,20 @@ qualification steps. An unchanged patched tree can now refresh its source seal
 when the configuration alone changes before a new build. A missing or
 inconsistent configuration seal fails admission. Configuration changes after
 build start still invalidate the result.
+
+The local native PR suite reused the published foundation. All ten
+runtime CTests and 104 of 105 frontend CTests passed. The full run exposed a
+SPI test with an obsolete capability list. The corrected test passed using
+the current capability catalog in a separate native replay. The tooling-only
+selection retained the full CTest inventory and passed all six required
+frontend witnesses in 12.38 seconds using warmed objects. That timing covers
+the witness execution and evidence check on an existing configured build.
+
+The experimental Darwin compiler now emits an owned Mach-O registration
+initializer and dispatches stateless Objective-C 3 root-class methods.
+Local cross-compilation verified arm64 object format, DWARF, and the emitted
+defer operation. Native Apple Silicon registration qualification and the full
+Darwin runtime and SDK remain separate milestones.
 
 ## Release CI cost
 
