@@ -199,6 +199,11 @@ def dependency_query(ninja, build, outputs):
 
 def selected_variants(rows, headers, changed):
     """No changed-line filter: header edits select their complete dependent TUs."""
+    outputs = {row['output'] for row in rows}
+    if (len(outputs) != len(rows) or headers.keys() != outputs or
+            any(not isinstance(headers[row['output']], (list, tuple)) or
+                row['file'] not in headers[row['output']] for row in rows)):
+        raise ValueError('implementation analysis requires a complete dependency closure for every variant')
     if not changed:
         return rows
     paths = {str(Path(path).resolve()) for path in changed}
@@ -206,7 +211,21 @@ def selected_variants(rows, headers, changed):
     # Configuration/unknown/new/deleted inputs conservatively select everything.
     if not paths <= known:
         return rows
-    return [row for row in rows if row['file'] in paths or paths.intersection(headers.get(row['output'], []))]
+    return [row for row in rows if paths.intersection(headers[row['output']])]
+
+
+def select_owner_variants(repo, owner, rows, headers, changed):
+    """Use source ownership to scope unknown edits and actual dependencies for known edits."""
+    scoped = owner_changes(repo, owner, changed)
+    if scoped == ():
+        return selected_variants(rows, headers, ())
+    # An observed dependency can cross a directory boundary. An absent path
+    # still widens selection when it belongs to this owner's source scope.
+    observed = {path for values in headers.values() for path in values}
+    candidates = set(scoped or ()) | {Path(path).resolve() for path in changed
+                                        if str(Path(path).resolve()) in observed}
+    selected = selected_variants(rows, headers, candidates)
+    return selected if candidates else []
 
 
 def owner_changes(repo, owner, changed):
@@ -338,6 +357,19 @@ def dependency_arguments(row, depfile):
             query.append(args[index])
         index += 1
     return [*query, '-M', '-MF', str(depfile), '-MT', 'implementation-analysis']
+
+
+def discover_variant_dependencies(row, depfile, *, name, run):
+    """Read a fresh closure using the variant's original compiler and flags."""
+    directory = Path(row['directory'])
+    run(name, dependency_arguments(row, depfile), cwd=directory, outputs=[depfile])
+    paths = set(header_dependencies(depfile, directory))
+    if Path(row['file']) not in paths or any(not path.is_file() for path in paths):
+        raise ValueError('implementation variant lacks its actual header dependency closure')
+    _, projections = textual_pch(row, include_identity=False)
+    for projection in projections:
+        paths.update(Path(projection[key]) for key in ('bootstrap_pch', 'textual_wrapper'))
+    return sorted(map(str, paths))
 
 
 def tool_configuration(repo, tool_build, plan):
@@ -524,11 +556,19 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
             # A CMake regeneration can update commands while generating maps.
             graph = run(label+'-effective-graph', [ninja, '-C', root, '-t', 'commands'])
             rows = inventory(database, graph, units)
-            deps = dependencies(run(label+'-headers', [ninja, '-C', root, '-t', 'deps',
+            fresh = bool(changed) and label != 'maintained-clang'
+            deps = {} if fresh else dependencies(run(label+'-headers', [ninja, '-C', root, '-t', 'deps',
                 *(str(Path(row['output']).relative_to(root)) for row in rows)]),
                 build=root, selected_outputs={row['output'] for row in rows})
             pch_headers = {}
             for row in rows:
+                if fresh:
+                    key = label+'-fresh-headers-'+identity(row['output'])[:16]
+                    depfile = output / (key+'.d')
+                    deps[row['output']] = discover_variant_dependencies(row, depfile, name=key, run=run)
+                    row['dependency_origin'] = 'fresh-original-compiler-preprocessing'
+                    row['dependency_scan'] = key
+                    continue
                 _, projections = textual_pch(row)
                 # Object dependency records may stop at the serialized PCH.
                 # Follow its separate Ninja record so a shared-header edit also
@@ -561,9 +601,7 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
                         pch, projection['textual_wrapper']]))
                 if row['file'] not in deps[row['output']]:
                     raise ValueError('implementation variant lacks its actual header dependency closure')
-            scoped_changes = owner_changes(repo, label, changed)
-            chosen = ([] if scoped_changes is None else
-                      selected_variants(rows, deps, scoped_changes))
+            chosen = select_owner_variants(repo, label, rows, deps, changed)
             report['inputs'][str(database)] = digest(database)
             for row in rows:
                 row['owner'] = label

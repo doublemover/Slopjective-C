@@ -12,6 +12,7 @@ from scripts.objc3c_implementation_assurance.plan import select, validate
 from scripts.objc3c_toolchain.analysis_checkpoint import analysis_argv
 from scripts.objc3c_toolchain.analysis_partition import FULL_PARTITIONS
 from scripts.objc3c_toolchain.implementation_analysis import checker_configuration
+from scripts.objc3c_toolchain.llvm_tools import identity
 
 REV = dict(head='a'*40, base='b'*40, tested='c'*40)
 
@@ -26,6 +27,31 @@ def test_selection_is_scoped_dependency_aware_and_periodically_complete():
     assert periodic['required'] and periodic['analysis_paths'] == []
     assert periodic['selection'] == 'complete-owned-tu-inventory'
     assert select([], **REV)['required'] and select(None, **REV)['required']
+
+
+def test_manual_comparison_uses_the_tested_commit_and_exact_ancestor(tmp_path):
+    from scripts.objc3c_implementation_assurance.__main__ import main
+
+    def git(*args):
+        return subprocess.check_output(['git', '-C', tmp_path, '-c', 'user.name=Fixture',
+            '-c', 'user.email=fixture@example.test', *args], text=True).strip()
+
+    git('init', '--quiet')
+    git('commit', '--quiet', '--allow-empty', '-m', 'base')
+    base = git('rev-parse', 'HEAD')
+    header = tmp_path / 'native/objc3c/src/runtime/public/header.h'
+    header.parent.mkdir(parents=True)
+    header.write_text('#pragma once\n')
+    git('add', '.')
+    git('commit', '--quiet', '-m', 'native header')
+    tested = git('rev-parse', 'HEAD')
+    destination = tmp_path / 'out/plan.json'
+    assert main(['plan', '--repo', str(tmp_path), '--plan', str(destination),
+                 '--periodic-sha', tested, '--comparison-base', base]) == 0
+    result = json.loads(destination.read_text())
+    assert result['revision'] == {'head': tested, 'tested': tested, 'base': base}
+    assert result['periodic'] is False and result['analysis_partitions'] == 1
+    assert result['analysis_paths'] == ['native/objc3c/src/runtime/public/header.h']
 
 
 @pytest.mark.parametrize('mutation', ['required', 'path', 'digest'])
@@ -85,6 +111,16 @@ def passing_bundle(tmp_path, *, periodic=False, partition=None):
     ]
     commands = list(controls)
     for row in inventory:
+        if not periodic and row['owner'] != 'maintained-clang':
+            key = row['owner']+'-fresh-headers-'+identity(row['output'])[:16]
+            raw = analysis / (key+'.d')
+            raw.write_text('implementation-analysis: '+row['file']+'\n')
+            dependency_file = str(producer / raw.name)
+            row.update(dependency_origin='fresh-original-compiler-preprocessing', dependency_scan=key)
+            commands.append({'name': key, 'status': 'PASS', 'exit_code': 0, 'expected_exit_code': 0,
+                'timed_out': False, 'cwd': row['directory'],
+                'argv': ['clang++', row['file'], '-M', '-MF', dependency_file, '-MT', 'implementation-analysis'],
+                'outputs': {dependency_file: evidence.digest(raw)}})
         if not row['selected']:
             continue
         name = row['owner']+'-'+row['identity'][:16]
@@ -166,7 +202,7 @@ def test_partitioned_analysis_uses_one_evidence_budget_per_worker(tmp_path, monk
     assert result['artifact_bytes'] == sum(sizes) and result['partitions'] == 8
 
 
-@pytest.mark.parametrize('fault', ['cleanup', 'artifact', 'control', 'finding', 'outcome'])
+@pytest.mark.parametrize('fault', ['cleanup', 'artifact', 'control', 'finding', 'outcome', 'dependency'])
 def test_incomplete_analysis_bundle_fails_closed(tmp_path, fault):
     plan, report = passing_bundle(tmp_path)
     inner_path = tmp_path / 'analysis/qualification.json'
@@ -176,9 +212,10 @@ def test_incomplete_analysis_bundle_fails_closed(tmp_path, fault):
     elif fault == 'artifact': report['artifacts'][0]['sha256'] = '0'*64
     elif fault == 'control': inner['commands'][1]['exit_code'] = 0
     elif fault == 'finding': inner['results'][0]['diagnostics'] = [{'check': 'blocker'}]
+    elif fault == 'dependency': next((tmp_path / 'analysis').glob('*.d')).write_text('edited dependency output')
     else: outcomes['analysis'] = 'failure'
     inner_path.write_text(json.dumps(inner))
-    if fault in ('control', 'finding'):
+    if fault in ('control', 'finding', 'dependency'):
         report['artifacts'] = [evidence.artifact(tmp_path, path)
                                for path in evidence.evidence_files(tmp_path)]
     (tmp_path / 'result.json').write_text(json.dumps(report))
@@ -191,6 +228,7 @@ def test_workflow_has_periodic_full_gate_and_automatic_cleanup():
     workflow = (root / '.github/workflows/implementation-analysis.yml').read_text()
     assert 'schedule:' in workflow and 'workflow_dispatch:' in workflow
     assert 'workflow_call:' in workflow
+    assert 'comparison_base:' in workflow and 'results/**/*.d' in workflow
     assert 'Linux implementation analysis gate' in workflow
     assert 'needs: [plan, foundation]' in workflow
     assert 'needs: [plan, foundation, analysis]' in workflow

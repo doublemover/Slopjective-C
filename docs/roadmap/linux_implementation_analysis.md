@@ -130,6 +130,14 @@ job log. A second job admits only the exact
 revision, canonical plan, complete per-TU inventory, paired detector controls,
 clean diagnostics and content-hashed retained evidence.
 
+Manual dispatch accepts an optional `comparison_base` ancestor SHA to run the
+matched analyzer only on the selected compilation variants. The runner uses
+fresh preprocessing with the actual frontend and runtime compile commands for
+every native variant. An unchanged translation unit may be selected through a
+transitive header even when that header belongs to a different owner directory.
+Missing dependencies fail selection, and the gate checks the retained depfile
+digests. The full scheduled and release scans use the complete owned inventory.
+
 Compiler sources, instrumented build/stage products and temporary analyzer,
 frontend and runtime build trees are deleted before a passing receipt is
 written. The retained artifact contains identities, commands, compilation

@@ -8,7 +8,8 @@ import re
 
 from scripts.objc3c_toolchain.analysis_checkpoint import analysis_argv, tidy_diagnostics
 from scripts.objc3c_toolchain.implementation_analysis import (
-    checker_configuration, owner_changes, selected_variants, translation_unit_timeout)
+    checker_configuration, select_owner_variants, translation_unit_timeout)
+from scripts.objc3c_toolchain.llvm_tools import identity
 from scripts.objc3c_toolchain.sanitizer_policy import require_clean_diagnostic
 from scripts.objc3c_assurance.evidence import junit, lit
 
@@ -29,7 +30,7 @@ def evidence_files(root: Path) -> list[Path]:
     if root.is_symlink() or any(path.is_symlink() for path in root.rglob('*')):
         raise ValueError('implementation assurance evidence contains a symlink')
     return sorted(path for path in root.rglob('*') if path.is_file() and
-                  path != root / 'result.json' and path.suffix in ('.json', '.log', '.xml', '.yaml'))
+                  path != root / 'result.json' and path.suffix in ('.json', '.log', '.xml', '.yaml', '.d'))
 
 
 def artifact(root: Path, path: Path) -> dict:
@@ -131,8 +132,18 @@ def verify_analysis_proof(root: Path, receipt: dict) -> None:
     for owner in ('frontend', 'standalone-runtime', 'maintained-clang'):
         rows = [row for row in receipt['inventory'] if row['owner'] == owner]
         headers = {row['output']: row['dependencies'] for row in rows}
-        scoped = owner_changes(repo, owner, changed)
-        selected = [] if scoped is None else selected_variants(rows, headers, scoped)
+        if changed and owner != 'maintained-clang':
+            for row in rows:
+                name = owner+'-fresh-headers-'+identity(row['output'])[:16]
+                dependency_file = str(original_root / (name+'.d'))
+                command = by_name.get(name)
+                if (row.get('dependency_scan') != name or
+                        row.get('dependency_origin') != 'fresh-original-compiler-preprocessing' or
+                        not command or command.get('cwd') != row['directory'] or
+                        command.get('argv', [])[-5:] != ['-M', '-MF', dependency_file, '-MT', 'implementation-analysis'] or
+                        command.get('outputs') != {dependency_file: digest(retained_path(root, original_root, dependency_file))}):
+                    raise ValueError('implementation variant lacks fresh compiler dependency evidence')
+        selected = select_owner_variants(repo, owner, rows, headers, changed)
         selected = partition_rows(selected, receipt.get('partition'), seconds=receipt['policy']['partition_seconds'])
         ids = {row['identity'] for row in selected}
         expected_ids.update(ids)
@@ -311,9 +322,8 @@ def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str) -> dict:
             for owner in ('frontend','standalone-runtime','maintained-clang'):
                 rows = [row for row in common if row['owner']==owner]
                 headers = {row['output']:row['dependencies'] for row in rows}
-                scoped = owner_changes(repo, owner, inner['changed_paths'])
-                if scoped is not None:
-                    variants.extend(row['identity'] for row in selected_variants(rows,headers,scoped))
+                variants.extend(row['identity'] for row in
+                                select_owner_variants(repo, owner, rows, headers, inner['changed_paths']))
     if (indices != set(range(count)) or len(signatures)!=1 or
             len(results)!=len(set(results)) or set(results)!=set(variants)):
         raise ValueError('implementation partitions do not cover the complete selected inventory once')

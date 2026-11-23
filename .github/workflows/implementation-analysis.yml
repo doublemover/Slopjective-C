@@ -9,6 +9,10 @@ on:
         type: choice
         options: [linux-x86_64, linux-aarch64]
         default: linux-x86_64
+      comparison_base:
+        description: Optional ancestor commit SHA for dependency-selected analysis
+        type: string
+        default: ''
   workflow_call:
     inputs:
       linux_host:
@@ -24,6 +28,7 @@ on:
         default: ''
 env:
   OBJC3C_REQUESTED_HOST: ${{ inputs.linux_host || 'linux-x86_64' }}
+  OBJC3C_ANALYSIS_COMPARISON_BASE: ${{ inputs.comparison_base || '' }}
 permissions:
   contents: read
 concurrency:
@@ -206,6 +211,7 @@ jobs:
             out/implementation-assurance/results/**/*.xml
             out/implementation-assurance/results/**/*.log
             out/implementation-assurance/results/**/*.yaml
+            out/implementation-assurance/results/**/*.d
             !out/implementation-assurance/results/**/build/**
           if-no-files-found: error
           retention-days: 7
