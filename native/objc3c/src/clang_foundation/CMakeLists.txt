@@ -373,6 +373,8 @@ if (BUILD_TESTING)
   endif()
   find_library(_c_inline_objc_runtime NAMES objc
     PATHS ${_c_inline_runtime_paths} NO_DEFAULT_PATH NO_CACHE REQUIRED)
+  target_compile_definitions(objc3_interface_import_test PRIVATE
+    OBJC3_INTERFACE_TEST_OBJC_LIBRARY="${_c_inline_objc_runtime}")
   set(_c_inline_link_flags "${CMAKE_CXX_FLAGS} ${CMAKE_EXE_LINKER_FLAGS}")
   string(REPLACE "\\" "\\\\" _c_inline_link_flags "${_c_inline_link_flags}")
   string(REPLACE "\"" "\\\"" _c_inline_link_flags "${_c_inline_link_flags}")

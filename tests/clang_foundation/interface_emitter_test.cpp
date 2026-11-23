@@ -80,12 +80,21 @@ void TestPrimitiveAndObjectiveCContractIdentity() {
   auto unsigned_byte = emit(byte, unsigned_flags);
   assert(signed_byte.identity.semantic_fingerprint != unsigned_byte.identity.semantic_fingerprint);
   assert(signed_byte.identity.language_profile != unsigned_byte.identity.language_profile);
+  auto default_byte = emit("\n/* API */  char api_byte( void );\n", c);
+  assert(default_byte.identity.semantic_fingerprint ==
+         (test::NativeAArch64 ? unsigned_byte : signed_byte).identity.semantic_fingerprint);
   auto cpp = std::vector<std::string>{"-x", "c++", "-std=c++20"};
   const std::string wide = "extern \"C\" unsigned second(const wchar_t *);\n";
-  auto normal_wide = emit(wide, cpp);
-  cpp.push_back("-fshort-wchar");
-  auto short_wide = emit(wide, cpp);
-  assert(normal_wide.identity.semantic_fingerprint != short_wide.identity.semantic_fingerprint);
+  for (auto flags : {cpp, std::vector<std::string>{"-x", "objective-c++", "-std=c++20", "-fobjc-runtime=gnustep-2.2"}}) {
+    auto normal_wide = emit(wide, flags);
+    auto same = flags;
+    same.insert(same.end(), {"-Xclang", "-fwchar-type=int", "-Xclang",
+        test::NativeAArch64 ? "-fno-signed-wchar" : "-fsigned-wchar"});
+    assert(emit(wide, same).identity.semantic_fingerprint == normal_wide.identity.semantic_fingerprint);
+    flags.push_back("-fshort-wchar");
+    auto short_wide = emit(wide, flags);
+    assert(normal_wide.identity.semantic_fingerprint != short_wide.identity.semantic_fingerprint);
+  }
   for (const auto &flags : {c, objc}) {
     auto ordinary = emit("extern int counter;\n", flags);
     auto tls = emit("extern _Thread_local int counter;\n", flags);
@@ -102,6 +111,17 @@ void TestPrimitiveAndObjectiveCContractIdentity() {
       auto nonnull = emit(nonnull_source, flags);
       assert(nullable.identity.semantic_fingerprint != nonnull.identity.semantic_fingerprint);
     }
+  }
+  for (const auto &flags : {c, objc, cpp, std::vector<std::string>{"-x", "objective-c++", "-std=c++20", "-fobjc-runtime=gnustep-2.2"}}) {
+    const auto contracted = emit("typedef int * _Nonnull Pointer; Pointer value(void);", flags);
+    const auto spelled = emit("typedef int * _Nonnull Pointer; int * _Nonnull value(void);", flags);
+    const auto nested = emit("void store(int * _Nonnull * _Nullable value);", flags);
+    const auto moved = emit("void store(int * _Nullable * _Nonnull value);", flags);
+    const auto unannotated = emit("int *value(void);", flags);
+    const auto unspecified = emit("int * _Null_unspecified value(void);", flags);
+    assert(contracted.identity.semantic_fingerprint == spelled.identity.semantic_fingerprint);
+    assert(nested.identity.semantic_fingerprint != moved.identity.semantic_fingerprint);
+    assert(unannotated.identity.semantic_fingerprint != unspecified.identity.semantic_fingerprint);
   }
   for (const std::string standard : {"c17", "c++20", "c++23"}) {
     const std::vector<std::string> flags = {
@@ -145,6 +165,11 @@ void TestPrimitiveAndObjectiveCContractIdentity() {
   auto required = emit("@protocol P\n@required\n@property(nonatomic) int value;\n@end\n", objc);
   auto optional = emit("@protocol P\n@optional\n@property(nonatomic) int value;\n@end\n", objc);
   assert(required.identity.semantic_fingerprint != optional.identity.semantic_fingerprint);
+  auto implicitly_required = emit("@protocol P\n@property(nonatomic) int value;\n@end\n", objc);
+  assert(required.identity.semantic_fingerprint == implicitly_required.identity.semantic_fingerprint);
+  auto default_accessors = emit(object + "@interface Widget : Object\n@property(nonatomic) int value;\n@end\n", objc);
+  auto explicit_defaults = emit(object + "@interface Widget : Object\n@property(nonatomic,getter=value,setter=setValue:) int value;\n@end\n", objc);
+  assert(default_accessors.identity.semantic_fingerprint == explicit_defaults.identity.semantic_fingerprint);
   const auto protocols = "@protocol P @end\n@protocol Q @end\n";
   auto adopts_p = emit(object + protocols + "@interface Object (Extra) <P> @end\n", objc);
   auto adopts_q = emit(object + protocols + "@interface Object (Extra) <Q> @end\n", objc);
@@ -207,6 +232,126 @@ void TestCanonicalInterfaceIncludeGuards() {
   const auto right_at=different.source_bytes.find("#ifndef __OBJC3_INTERFACE_");assert(right_at!=std::string::npos);
   assert(left!=different.source_bytes.substr(right_at,different.source_bytes.find('\n',right_at)-right_at));
  }
+}
+
+void TestObjectiveCInterfaceSemanticFacts() {
+  const std::string source = R"objc(
+__attribute__((objc_root_class)) @interface Root @end
+@protocol Ancestor @end
+@protocol P <Ancestor> @end
+@protocol Q
+@optional
+@property(class, readonly) int defaultValue;
+@end
+@interface Box<__covariant Element : Root *> : Root @end
+@interface Widget : Box<Root *> {
+  @public
+  unsigned flag : 1;
+  unsigned neighbor : 2;
+}
+- (int * _Nullable)pointer;
+- (int)readValue;
+- (void)replaceValue:(int)value;
+@property(nonatomic, getter=readValue, setter=replaceValue:) int value;
+@end
+@interface Widget (Extra) <P, Q> @end
+)objc";
+  auto inspect = [](clang::ASTContext &context, std::vector<std::string> expected_protocols) {
+    unsigned checked = 0;
+    for (const auto *decl : context.getTranslationUnitDecl()->decls()) {
+      if (const auto *protocol = llvm::dyn_cast<clang::ObjCProtocolDecl>(decl);
+          protocol && protocol->isThisDeclarationADefinition() && protocol->getName() == "Q") {
+        const auto property = protocol->prop_begin();
+        assert(property != protocol->prop_end() && (*property)->getName() == "defaultValue");
+        assert((*property)->isOptional() && (*property)->isClassProperty() && (*property)->isReadOnly());
+        ++checked;
+      }
+      if (const auto *category = llvm::dyn_cast<clang::ObjCCategoryDecl>(decl);
+          category && category->getName() == "Extra") {
+        std::vector<std::string> names;
+        for (const auto *protocol : category->protocols()) names.push_back(protocol->getNameAsString());
+        assert(names == expected_protocols);
+        ++checked;
+      }
+      const auto *object = llvm::dyn_cast<clang::ObjCInterfaceDecl>(decl);
+      if (!object || !object->isThisDeclarationADefinition()) continue;
+      if (object->getName() == "Box") {
+        const auto *parameters = object->getTypeParamList();
+        assert(parameters && parameters->size() == 1);
+        const auto *parameter = *parameters->begin();
+        assert(parameter->getIndex() == 0 && parameter->getVariance() == clang::ObjCTypeParamVariance::Covariant);
+        assert(parameter->getUnderlyingType()->castAs<clang::ObjCObjectPointerType>()->getInterfaceDecl()->getName() == "Root");
+        ++checked;
+      }
+      if (object->getName() != "Widget") continue;
+      const auto *base = object->getSuperClassType();
+      assert(base && base->isSpecialized() && base->getTypeArgs().size() == 1);
+      assert(base->getTypeArgs()[0]->castAs<clang::ObjCObjectPointerType>()->getInterfaceDecl()->getName() == "Root");
+      auto ivar = object->ivar_begin();
+      for (const auto &[name, width] : std::initializer_list<std::pair<llvm::StringRef, unsigned>>{
+               {"flag", 1}, {"neighbor", 2}}) {
+        assert(ivar != object->ivar_end() && (*ivar)->getName() == name);
+        assert((*ivar)->getAccessControl() == clang::ObjCIvarDecl::Public);
+        assert((*ivar)->isBitField() && (*ivar)->getBitWidthValue() == width);
+        ++ivar;
+      }
+      assert(ivar != object->ivar_end() && !(*ivar)->getIdentifier());
+      assert((*ivar)->isBitField() && (*ivar)->getBitWidthValue() == 0);
+      const auto property = object->prop_begin();
+      assert(property != object->prop_end() && (*property)->getName() == "value");
+      assert((*property)->getGetterName().getAsString() == "readValue");
+      assert((*property)->getSetterName().getAsString() == "replaceValue:");
+      const auto method = std::find_if(object->instmeth_begin(), object->instmeth_end(), [](const auto *method) {
+        return method->getSelector().getAsString() == "pointer";
+      });
+      assert(method != object->instmeth_end());
+      assert((*method)->getReturnType()->getNullability() == clang::NullabilityKind::Nullable);
+      ++checked;
+    }
+    assert(checked == 4);
+  };
+  for (const bool cxx : {false, true}) {
+    for (const bool arc : {false, true}) {
+      auto flags = test::NativeToolArguments({"-x", cxx ? "objective-c++" : "objective-c",
+          cxx ? "-std=c++20" : "-std=c17", "-fobjc-version=3", "-fobjc-runtime=gnustep-2.2",
+          arc ? "-fobjc-arc" : "-fno-objc-arc"});
+      auto parse = [&](llvm::StringRef code) {
+        auto ast = clang::tooling::buildASTFromCodeWithArgs(code, flags, "semantic-facts.mm");
+        assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+        return ast;
+      };
+      auto original = parse(source);
+      inspect(original->getASTContext(), {"P", "Q"});
+      const auto artifact = EmitSemanticInterface(original->getASTContext(), "fixture.Facts", "facts");
+      assert(artifact.success);
+      auto replay = parse(artifact.source_bytes);
+      inspect(replay->getASTContext(), {"P", "Q"});
+      auto imported = parse("");
+      clang::ASTImporter importer(imported->getASTContext(), imported->getFileManager(),
+                                  replay->getASTContext(), replay->getFileManager(), false);
+      for (auto *declaration : replay->getASTContext().getTranslationUnitDecl()->decls()) {
+        if (declaration->isImplicit()) continue;
+        auto result = importer.Import(declaration);
+        assert(result);
+      }
+      inspect(imported->getASTContext(), {"P", "Q"});
+
+      const auto supported = CurrentReaderSemantics();
+      for (const auto *capability : {kObjCPropertySemantic, kObjCCategoryProtocolsSemantic,
+                                     kObjCGenericSignaturesSemantic}) {
+        auto decoded = DecodeSemanticInterfaceSidecar(artifact.sidecar_json, artifact.source_bytes, supported);
+        assert(decoded && std::erase(decoded->required_semantics, capability) == 1);
+        auto rejected = EncodeSemanticInterfaceSidecar(*decoded, supported);
+        assert(!rejected);
+        llvm::consumeError(rejected.takeError());
+      }
+      auto omitted = artifact.source_bytes;
+      const auto adoption = omitted.find("<P, Q>");
+      assert(adoption != std::string::npos);
+      omitted.erase(adoption, std::string_view("<P, Q>").size());
+      inspect(parse(omitted)->getASTContext(), {});
+    }
+  }
 }
 
 void TestObjCGenericParameterReferences() {
@@ -319,6 +464,28 @@ __attribute__((objc_root_class)) @interface Object @end
             [](const auto &diag) { return diag.code == "O3IFC134"; }));
       }
     }
+
+    const auto base_path = root / "GenericReferences.objc3i";
+    std::ofstream(base_path) << original.source_bytes;
+    std::ofstream(base_path.string() + ".json") << original.sidecar_json;
+    auto specialized = request;
+    specialized.module_name = "fixture.Specialized";
+    specialized.package_identity = "specialized";
+    specialized.source_text = "@interface Fixed : Box<Dog *, Animal *> @end";
+    specialized.emit_semantic_interface = true;
+    InterfaceImportInput base_import;
+    base_import.source_path = base_path.string();
+    base_import.locked_identity = original.identity;
+    base_import.public_import = true;
+    specialized.imported_interfaces = {std::move(base_import)};
+    const auto fixed = Compile(specialized);
+    test::ReportFailure(fixed);
+    assert(fixed.success && fixed.interface_artifact && fixed.interface_artifact->success);
+    auto decoded_fixed = DecodeSemanticInterfaceSidecar(fixed.interface_artifact->sidecar_json,
+                                                         fixed.interface_artifact->source_bytes, supported);
+    assert(decoded_fixed && decoded_fixed->declarations.size() == 1);
+    assert(std::ranges::find(decoded_fixed->required_semantics, kObjCGenericSignaturesSemantic) !=
+           decoded_fixed->required_semantics.end());
   }
 }
 
@@ -12689,6 +12856,7 @@ int main(int argc,char **argv) {
   cases.Run("TestIndependentCxxAndObjCExceptionModes",TestIndependentCxxAndObjCExceptionModes);
   cases.Run("TestPrimitiveAndObjectiveCContractIdentity", TestPrimitiveAndObjectiveCContractIdentity);
   cases.Run("TestCanonicalInterfaceIncludeGuards", TestCanonicalInterfaceIncludeGuards);
+  cases.Run("TestObjectiveCInterfaceSemanticFacts", TestObjectiveCInterfaceSemanticFacts);
   cases.Run("TestObjCGenericParameterReferences", TestObjCGenericParameterReferences);
   cases.Run("TestOrdinaryCDeclarationsRoundTrip", TestOrdinaryCDeclarationsRoundTrip);
   cases.Run("TestStandardLibraryImportsAndInstancetype", TestStandardLibraryImportsAndInstancetype);

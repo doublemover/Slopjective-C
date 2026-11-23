@@ -11,6 +11,7 @@
 #include "clang/Tooling/Tooling.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/ArrayRef.h"
+#include "llvm/Support/Program.h"
 
 #include <algorithm>
 #include <cassert>
@@ -209,19 +210,35 @@ void TestPrimitiveABIProfilesRejectMismatchedConsumers() {
     auto consumer = ModuleRequest(root / "consumer.m", "",
                                   "int use(void) { return byte_value() + counter; }");
     consumer.emit_semantic_interface = false;
-    consumer.imported_interfaces = {ImportOf(path, emitted.interface_artifact->identity)};
-    if (baseline) consumer.arguments.push_back(baseline);
-    auto rejected = Compile(consumer);
-    assert(!rejected.success && rejected.imported_declarations.empty());
-    assert(std::any_of(rejected.interface_import_diagnostics.begin(),
-                       rejected.interface_import_diagnostics.end(),
-                       [](const auto &d) { return d.code == "O3IFC135"; }));
-    if (baseline) consumer.arguments.back() = flag;
-    else consumer.arguments.push_back(flag);
-    auto admitted = Compile(consumer);
-    for (const auto &d : admitted.interface_import_diagnostics)
-      std::fprintf(stderr, "%s: %s\n", d.code.c_str(), d.message.c_str());
-    assert(admitted.success && HasImported(admitted, "byte_value"));
+    consumer.emit = EmitKind::LLVM;
+    consumer.output_path = (root / "consumer.ll").string();
+    for (const auto route : {0, 1, 2}) {
+      auto request = consumer;
+      if (route == 0) {
+        request.imported_interfaces = {ImportOf(path, emitted.interface_artifact->identity)};
+      } else {
+        InterfaceModuleRequest import;
+        import.canonical_name = emitted.interface_artifact->identity.canonical_name;
+        import.locked_identity = emitted.interface_artifact->identity;
+        import.initially_visible = route == 1;
+        request.interface_search_paths = {root.string()};
+        request.module_imports = {std::move(import)};
+        request.source_directed_imports = route == 2;
+        if (request.source_directed_imports) request.source_text->insert(0, "@import fixture.abi;\n");
+      }
+      fs::remove(request.output_path);
+      if (baseline) request.arguments.push_back(baseline);
+      auto rejected = Compile(request);
+      assert(!rejected.success && rejected.imported_declarations.empty() && !fs::exists(request.output_path));
+      assert(std::any_of(rejected.interface_import_diagnostics.begin(),
+                         rejected.interface_import_diagnostics.end(),
+                         [](const auto &d) { return d.code == "O3IFC135"; }));
+      if (baseline) request.arguments.back() = flag;
+      else request.arguments.push_back(flag);
+      auto admitted = Compile(request);
+      test::ReportFailure(admitted);
+      assert(admitted.success && HasImported(admitted, "byte_value") && fs::file_size(request.output_path) > 0);
+    }
   }
   fs::remove_all(root);
 }
@@ -324,6 +341,173 @@ void TestCarrierPayloadNullabilityRejectsStaleLocks() {
     consumer.imported_interfaces = {ImportOf(path, current.interface_artifact->identity)};
     auto fresh = Compile(consumer);
     assert(fresh.success && HasImported(fresh, "value"));
+  }
+  fs::remove_all(root);
+}
+
+void TestSourceFreeObjectiveCContractLocks() {
+  const auto root = fs::temp_directory_path() / "objc3-objective-c-contract-locks";
+  fs::remove_all(root);
+  fs::create_directories(root);
+  const auto path = root / "Provider.objc3i";
+  const std::string declarations = R"objc(
+__attribute__((objc_root_class)) @interface Root @end
+@protocol P @end
+@protocol Q @end
+)objc";
+  struct Witness {
+    std::string before;
+    std::string after;
+    const char *consumer;
+    const char *selector = nullptr;
+  };
+  const Witness witnesses[] = {
+      {"extern int counter;", "extern _Thread_local int counter;",
+       "int use(void) { return ++counter; }"},
+      {"@interface Widget : Root\n- (int * _Nonnull)pointer;\n@end",
+       "@interface Widget : Root\n- (int * _Nullable)pointer;\n@end",
+       "int use(Widget *widget) { return [widget pointer] != 0; }"},
+      {"@interface Widget : Root @end\n@interface Widget (Extra) <Q> @end",
+       "@interface Widget : Root @end\n@interface Widget (Extra) <P> @end",
+       "id<P> use(Widget *widget) { return widget; }"},
+      {"@interface Widget : Root { @public unsigned flag : 1; } @end",
+       "@interface Widget : Root { @public unsigned flag : 2; } @end",
+       "unsigned use(Widget *widget) { return widget->flag; }"},
+      {"@interface Widget : Root\n- (int)first; - (int)second;\n"
+       "@property(nonatomic, readonly, getter=first) int value;\n@end",
+       "@interface Widget : Root\n- (int)first; - (int)second;\n"
+       "@property(nonatomic, readonly, getter=second) int value;\n@end",
+       "int use(Widget *widget) { return widget.value; }", ".objc_selector_second_"},
+      {"@interface Widget : Root\n- (void)first:(int)value; - (void)second:(int)value;\n"
+       "@property(nonatomic, setter=first:) int value;\n@end",
+       "@interface Widget : Root\n- (void)first:(int)value; - (void)second:(int)value;\n"
+       "@property(nonatomic, setter=second:) int value;\n@end",
+       "void use(Widget *widget) { widget.value = 42; }", ".objc_selector_second:"}};
+  for (const bool cxx : {false, true}) {
+    auto provider = ModuleRequest(root / (cxx ? "provider.mm" : "provider.m"),
+                                  "test.Provider", "");
+    provider.language = cxx ? BaseLanguage::ObjectiveCxx : BaseLanguage::ObjectiveC;
+    provider.arguments = {cxx ? "-std=c++20" : "-std=c17", "-Werror=incompatible-pointer-types"};
+    provider.interface_output_path = path.string();
+    for (const auto &witness : witnesses) {
+      provider.source_text = declarations + witness.before;
+      const auto original = Compile(provider);
+      test::ReportFailure(original);
+      assert(original.success && original.interface_artifact);
+      provider.source_text = declarations + witness.after;
+      const auto current = Compile(provider);
+      test::ReportFailure(current);
+      assert(current.success && current.interface_artifact);
+      assert(original.interface_artifact->identity.semantic_fingerprint !=
+             current.interface_artifact->identity.semantic_fingerprint);
+      for (const bool directed : {false, true}) {
+        auto client = provider;
+        client.input_path = (root / (cxx ? "consumer.mm" : "consumer.m")).string();
+        client.emit_semantic_interface = false;
+        client.module_name.clear();
+        client.package_identity.clear();
+        client.interface_output_path.clear();
+        client.source_text = witness.consumer;
+        client.emit = EmitKind::LLVM;
+        client.output_path = (root / "consumer.ll").string();
+        fs::remove(client.output_path);
+        if (directed) {
+          client.source_text->insert(0, "@import test.Provider;\n");
+          client.source_directed_imports = true;
+          client.interface_search_paths = {root.string()};
+        }
+        auto use = [&](const InterfaceModuleIdentity &identity) {
+          if (directed) {
+            InterfaceModuleRequest import;
+            import.canonical_name = identity.canonical_name;
+            import.locked_identity = identity;
+            import.initially_visible = false;
+            client.module_imports = {std::move(import)};
+          } else {
+            client.imported_interfaces = {ImportOf(path, identity)};
+          }
+          return Compile(client);
+        };
+        const auto stale = use(original.interface_artifact->identity);
+        assert(!stale.success && stale.imported_declarations.empty() && !fs::exists(client.output_path));
+        assert(std::ranges::any_of(stale.interface_import_diagnostics, [](const auto &diagnostic) {
+          return diagnostic.code == "O3IFC134";
+        }));
+        const auto fresh = use(current.interface_artifact->identity);
+        test::ReportFailure(fresh);
+        assert(fresh.success && fs::file_size(client.output_path) > 0);
+        if (witness.selector) {
+          std::ifstream output(client.output_path);
+          const std::string ir((std::istreambuf_iterator<char>(output)), {});
+          assert(ir.find(witness.selector) != std::string::npos);
+        }
+      }
+    }
+  }
+  fs::remove_all(root);
+}
+
+void TestInterfaceThreadStorageExecution() {
+  const auto root = fs::temp_directory_path() / "objc3-interface-thread-storage-execution";
+  fs::remove_all(root);
+  fs::create_directories(root);
+  const auto interface_path = root / "ThreadStorage.objc3i";
+  const auto provider_object = (root / "provider.o").string();
+  const auto consumer_object = (root / "consumer.o").string();
+  const auto executable = (root / "thread-storage").string();
+  const auto runtime_path = fs::path(OBJC3_INTERFACE_TEST_OBJC_LIBRARY);
+  const std::string rpath = "-Wl,-rpath," + runtime_path.parent_path().string();
+  for (const bool objc : {false, true}) {
+    for (const bool tls : {false, true}) {
+      auto provider = ModuleRequest(root / (objc ? "provider.m" : "provider.c"),
+                                    "test.ThreadStorage", "");
+      provider.language = objc ? BaseLanguage::ObjectiveC : BaseLanguage::C;
+      provider.objc3 = objc;
+      if (!objc) provider.objc_runtime.clear();
+      provider.arguments.insert(provider.arguments.end(), {"-funsigned-char", "-pthread"});
+      provider.source_text = std::string(tls ? "_Thread_local " : "") +
+          "int counter = 10;\nchar api_byte(void) { return (char)255; }";
+      provider.emit = EmitKind::Object;
+      provider.output_path = provider_object;
+      provider.interface_output_path = interface_path.string();
+      const auto published = Compile(provider);
+      test::ReportFailure(published);
+      assert(published.success && published.interface_artifact);
+
+      auto consumer = provider;
+      consumer.input_path = (root / (objc ? "consumer.m" : "consumer.c")).string();
+      consumer.module_name.clear();
+      consumer.package_identity.clear();
+      consumer.emit_semantic_interface = false;
+      consumer.interface_output_path.clear();
+      consumer.output_path = consumer_object;
+      consumer.imported_interfaces = {ImportOf(interface_path, published.interface_artifact->identity)};
+      consumer.source_text = std::string(tls ? "#define THREAD_LOCAL 1\n" : "#define THREAD_LOCAL 0\n") + R"c(
+#include <pthread.h>
+static void *worker(void *unused) {
+  (void)unused;
+  if (counter != (THREAD_LOCAL ? 10 : 11)) return &counter;
+  counter = 39;
+  return 0;
+}
+int main(void) {
+  if (counter != 10 || api_byte() != 255) return 1;
+  counter = 11;
+  pthread_t thread;
+  void *status;
+  if (pthread_create(&thread, 0, worker, 0) || pthread_join(thread, &status) || status) return 2;
+  return counter != (THREAD_LOCAL ? 11 : 39);
+}
+)c";
+      const auto imported = Compile(consumer);
+      test::ReportFailure(imported);
+      assert(imported.success && HasImported(imported, "counter"));
+      const auto &driver = imported.compiler_driver_path;
+      std::vector<llvm::StringRef> link = {driver, "-pthread", provider_object, consumer_object, "-o", executable};
+      if (objc) link.insert(link.end(), {OBJC3_INTERFACE_TEST_OBJC_LIBRARY, rpath});
+      assert(llvm::sys::ExecuteAndWait(driver, link) == 0);
+      assert(llvm::sys::ExecuteAndWait(executable, {executable}) == 0);
+    }
   }
   fs::remove_all(root);
 }
@@ -886,6 +1070,8 @@ int main() {
   cases.Run("TestUnnamedTemplateProjectionImports", TestUnnamedTemplateProjectionImports);
   cases.Run("TestBadLockAndMissingTransitiveArtifactFailBeforeImport", TestBadLockAndMissingTransitiveArtifactFailBeforeImport);
   cases.Run("TestCarrierPayloadNullabilityRejectsStaleLocks", TestCarrierPayloadNullabilityRejectsStaleLocks);
+  cases.Run("TestSourceFreeObjectiveCContractLocks", TestSourceFreeObjectiveCContractLocks);
+  cases.Run("TestInterfaceThreadStorageExecution", TestInterfaceThreadStorageExecution);
   cases.Run("TestDuplicateLookupNamesAreRejected", TestDuplicateLookupNamesAreRejected);
   cases.Run("TestCompleteExportIdentitiesAndPrivateDirectLookup", TestCompleteExportIdentitiesAndPrivateDirectLookup);
   cases.Run("TestRelativeArtifactsAndResponseFileLayoutFlags", TestRelativeArtifactsAndResponseFileLayoutFlags);
