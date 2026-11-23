@@ -6,7 +6,8 @@ from pathlib import Path
 import pytest
 
 from scripts.objc3c_toolchain.semantic_model import (OPERATIONS, EligibilityFailure, Operation as Op,
-    coverage, eligibility, generate, interpret, mismatch, transform, transition_domain, validate)
+    coverage, eligibility, generate, interpret, mismatch, transform, transition_domain,
+    transition_witnesses, validate)
 from scripts.objc3c_toolchain.semantic_oracles import replay, seed_bank, shrink, source_bundle
 from scripts.objc3c_toolchain.semantic_sources import consumer
 from scripts.objc3c_toolchain.semantic_generation import program as strategy_program
@@ -29,6 +30,34 @@ def test_logical_owner_model_keeps_a_shared_object_until_its_last_owner_leaves()
     assert [row[8:] for row in result['states']] == [
         [1, 0, 1, 0], [1, 1, 1, 0], [0, 1, 1, 0], [0, 0, 0, 1], [0, 0, 0, 1]]
     assert result['events'] == []
+
+
+@pytest.mark.parametrize('seed', [0, 7, 19, 41, 42, 256, 2**32-1])
+def test_reviewed_witnesses_guarantee_transition_coverage_independently_of_seed_tail(seed):
+    witnesses = transition_witnesses()
+    for program in witnesses.values():
+        validate(program)
+    report = coverage([generate(seed), *witnesses.values()], qualification=True)
+    assert set(report['transition_ids']) == transition_domain()
+    assert report['ownership_pairs_covered'] == report['ownership_pairs_supported'] == 9
+    with pytest.raises(ValueError, match='lost reviewed transition or ownership pair coverage'):
+        coverage([generate(seed), witnesses['carrier-transitions']], qualification=True)
+
+
+def test_reviewed_ownership_witness_tracks_overwritten_shared_and_sole_owners_exactly():
+    witness = transition_witnesses()['owner-transitions']
+    states = interpret(witness)['states']
+    assert [row[8:10] for row in states] == [
+        [0, 0], [0, 0], [1, 0], [2, 0], [2, 0], [2, 2], [2, 2],
+        [3, 2], [2, 2], [2, 0], [0, 0], [0, 4], [0, 0], [0, 0], [0, 0],
+    ]
+    assert [row[11::2] for row in states] == [
+        [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [1, 0, 0, 0], [1, 0, 0, 0],
+        [1, 0, 0, 0], [1, 0, 0, 0], [1, 0, 0, 0], [1, 0, 1, 0], [1, 0, 1, 0],
+        [1, 1, 1, 0], [1, 1, 1, 0], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1],
+    ]
+    for row in states:
+        assert row[10::2] == [int(key in row[8:10]) for key in (1, 2, 3, 4)]
 
 
 def test_scalar_success_and_error_transport_are_independent_of_lowering():
