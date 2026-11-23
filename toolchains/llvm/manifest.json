@@ -23,7 +23,7 @@
     },
     {
       "file": "0004-objc3-ast.patch",
-      "sha256": "1d625bbabf9d486ecd6e1ddef092c21d3e1dec05c4605cb9a24ab4f1ce4a274f"
+      "sha256": "d10584f7c47d32996302bb444b12515a942fb16ee867138ba4c9ecc48af50437"
     },
     {
       "file": "0004-objc3-ast-and-parser-tests.patch",
