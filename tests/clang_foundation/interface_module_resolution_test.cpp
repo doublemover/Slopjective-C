@@ -59,7 +59,8 @@ bool CompileV3Consumer(const std::filesystem::path &root,
                        const InterfaceModuleIdentity &identity,
                        std::string source, bool source_imports = false,
                        const InterfaceModuleIdentity *second = nullptr,
-                       bool objective_cxx = false) {
+                       bool objective_cxx = false,
+                       const std::vector<const char *> &compiler_arguments = {}) {
   const std::string search_path = root.string();
   const char *search_paths[] = {search_path.c_str()};
   std::vector<objc3c_frontend_v3_import> imports(second ? 2 : 1);
@@ -82,6 +83,8 @@ bool CompileV3Consumer(const std::filesystem::path &root,
   options.base.source = source.data();
   options.base.source_size = source.size();
   options.base.target_triple = OBJC3_TEST_NATIVE_LINUX_TARGET;
+  options.base.arguments = compiler_arguments.data();
+  options.base.argument_count = compiler_arguments.size();
   options.base.language = objective_cxx ? 3 : 2;
   options.base.emit = 0;
   options.base.profile = 0;
@@ -128,6 +131,37 @@ void WriteArtifact(const InterfaceEmissionArtifact &artifact,
                    const std::filesystem::path &path) {
   const auto written = WriteSemanticInterfaceArtifact(artifact, path.string());
   assert(written.success);
+}
+
+void TestV3EffectiveAbiAdmission(const std::filesystem::path &root) {
+  const auto directory = root / "v3-abi";
+  std::filesystem::create_directories(directory);
+  auto producer = Producer("byte-provider.m", "abi.Byte", "byte", "char api_byte(void);");
+  auto publish = [&](const char *flag) {
+    auto request = producer;
+    request.arguments.push_back(flag);
+    const auto result = Compile(request);
+    assert(result.success && result.interface_artifact);
+    WriteArtifact(*result.interface_artifact, directory / "Byte.objc3i");
+    return result.interface_artifact->identity;
+  };
+  auto use = [&](const InterfaceModuleIdentity &identity, const char *flag, bool directed) {
+    const std::string client = std::string(directed ? "@import abi.Byte;\n" : "") +
+        "int read_byte(void) { return api_byte(); }";
+    return CompileV3Consumer(directory, identity, client, directed, nullptr, false, {flag});
+  };
+  const auto signed_byte = publish("-fsigned-char");
+  for (const bool directed : {false, true}) {
+    assert(use(signed_byte, "-fsigned-char", directed));
+    assert(!use(signed_byte, "-funsigned-char", directed));
+  }
+  const auto unsigned_byte = publish("-funsigned-char");
+  assert(unsigned_byte.semantic_fingerprint != signed_byte.semantic_fingerprint);
+  for (const bool directed : {false, true}) {
+    assert(!use(signed_byte, "-fsigned-char", directed));
+    assert(use(unsigned_byte, "-funsigned-char", directed));
+  }
+  std::filesystem::remove_all(directory);
 }
 
 void TestRelocatedCategoryProtocolClosure(const std::filesystem::path &root) {
@@ -356,6 +390,7 @@ int main() {
       "objc3c-module-resolution-three-module";
   std::filesystem::remove_all(root);
   std::filesystem::create_directories(root);
+  TestV3EffectiveAbiAdmission(root);
   TestRelocatedCategoryProtocolClosure(root);
 
   auto a = Compile(Producer("provider-a.m", "fixture.A", "pkg-A",
