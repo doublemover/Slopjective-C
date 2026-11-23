@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import platform
 import re
+import shlex
 import shutil
 import signal
 import subprocess
@@ -58,6 +59,62 @@ def compile_jobs(cpu_count: int, memory_bytes: int) -> int:
     return max(1, min(cpu_count, (memory_bytes - 2 * gib) // (2 * gib)))
 
 
+def xcode_cxx_headers(transcript: str, developer_dir: Path) -> Path:
+    """Select the default libc++ include directory reported by Apple Clang."""
+    developer_dir = developer_dir.resolve(strict=True)
+    for line in transcript.splitlines():
+        value = line.strip()
+        if value.startswith('/') and value.endswith('/include/c++/v1'):
+            candidate = Path(value).resolve(strict=True)
+            if candidate.is_relative_to(developer_dir) and (candidate / '__config').is_file():
+                return candidate
+    raise ValueError('Apple Clang did not report libc++ headers from the selected Xcode or Command Line Tools')
+
+
+def _qualify_xcode_cxx(run, host: dict, stage0_cxx: Path, target: str, output: Path) -> dict:
+    sdk = Path(host['platform_identity']['sdk_path'])
+    developer_dir = Path(host['platform_identity']['developer_dir'])
+    linker = host['apple_toolchain']['paths']['ld']
+    apple = Path(run('/usr/bin/xcrun', '--sdk', 'macosx', '--find', 'clang++', label='xcode-clangxx'))
+    if not apple.resolve(strict=True).is_relative_to(developer_dir.resolve(strict=True)):
+        raise ValueError(f'Apple Clang++ escaped the selected developer directory: {apple}')
+    target_flags = ['--target=' + target, '-isysroot', str(sdk)]
+    search = run(apple, *target_flags, '-stdlib=libc++', '-E', '-v', '-x', 'c++', '/dev/null', '-o', '/dev/null',
+                 label='xcode-cxx-search')
+    headers = xcode_cxx_headers(search, developer_dir)
+    library_stub = sdk / 'usr/lib/libc++.tbd'
+    if not library_stub.is_file():
+        raise ValueError(f'the selected macOS SDK has no libc++ link stub: {library_stub}')
+    # LLVM's archive also includes libc++ headers. The native runtime resolves
+    # the Apple SDK dylib, so both native build stages must use Xcode headers.
+    flags = ['-stdlib=libc++', '-nostdinc++', '-isystem', str(headers)]
+    source = output / 'xcode-cxx-hash.cpp'
+    source.write_text('''#include <cstdio>
+#include <functional>
+#include <string>
+int main(int argc, char **argv) {
+  if (argc != 3 || std::hash<std::string>{}(argv[1]) != std::hash<std::string>{}(argv[2]))
+    return 1;
+  std::printf("Xcode libc++ %d\\n", _LIBCPP_VERSION);
+  return 0;
+}
+''')
+    binary = output / 'xcode-cxx-hash'
+    run(stage0_cxx, *target_flags, *flags, '--ld-path=' + linker, '-std=c++17', '-O1', source, '-o', binary,
+        label='xcode-libcxx-hash-link')
+    artifact = verify_macho(binary, 'executable')
+    libraries = [line.strip().split(' (', 1)[0]
+                 for line in run('/usr/bin/otool', '-L', binary, label='xcode-libcxx-hash-load-paths').splitlines()[1:]]
+    if sorted(libraries) != ['/usr/lib/libSystem.B.dylib', '/usr/lib/libc++.1.dylib']:
+        raise ValueError(f'unexpected Xcode libc++ probe dependencies: {libraries}')
+    version = run(binary, 'stable-hash-input', 'stable-hash-input', label='xcode-libcxx-hash-native')
+    if not re.fullmatch(r'Xcode libc\+\+ [0-9]+', version):
+        raise ValueError('the native libc++ hash probe did not report its header identity')
+    return {'headers': str(headers), 'header_config_sha256': file_digest(headers / '__config'), 'flags': flags,
+            'library_stub': str(library_stub), 'library_stub_sha256': file_digest(library_stub),
+            'reported_version': version, 'hash_probe': {**artifact, 'load_paths': libraries}}
+
+
 def qualify(bootstrap_report: Path, output: Path, *, fetch: bool) -> dict:
     require_apple_silicon()
     profile, patch = load_profile()
@@ -65,8 +122,11 @@ def qualify(bootstrap_report: Path, output: Path, *, fetch: bool) -> dict:
     output.mkdir(parents=True)
     report = {'schema': 'objc3c.darwin-registration-qualification.v1', 'status': 'FAIL',
               'support_truth': False, 'profile': profile, 'commands': []}
+    compiler_overrides = ('SDKROOT', 'MACOSX_DEPLOYMENT_TARGET', 'CPATH', 'C_INCLUDE_PATH',
+                          'CPLUS_INCLUDE_PATH', 'OBJC_INCLUDE_PATH', 'LIBRARY_PATH',
+                          'CPPFLAGS', 'CFLAGS', 'CXXFLAGS', 'LDFLAGS')
     env = {key: value for key, value in os.environ.items()
-           if not key.startswith('DYLD_') and key not in ('SDKROOT', 'MACOSX_DEPLOYMENT_TARGET')}
+           if not key.startswith('DYLD_') and key not in compiler_overrides}
     env['LC_ALL'] = 'C'
 
     def run(*argv, label=None, rejects=None, rejection_status=(1, 2), timeout=60) -> str:
@@ -115,6 +175,7 @@ def qualify(bootstrap_report: Path, output: Path, *, fetch: bool) -> dict:
                       platform_identity=host['platform_identity'], llvm_identity=host['llvm_identity'],
                       runtime_source_sha256=file_digest(RUNTIME),
                       fixtures={path.name: file_digest(path) for path in sorted(FIXTURES.iterdir())})
+        report['cxx_toolchain'] = _qualify_xcode_cxx(run, host, stage0_cxx, profile['target'], output)
         memory = int(run('/usr/sbin/sysctl', '-n', 'hw.memsize'))
         cpus = os.cpu_count() or 1
         jobs = compile_jobs(cpus, memory)
@@ -136,9 +197,13 @@ def qualify(bootstrap_report: Path, output: Path, *, fetch: bool) -> dict:
             run('/usr/bin/git', '-C', source, 'apply', patch, label='apply-patch')
             patch_digest = hashlib.sha256(bytes.fromhex(base['patch_digest']) +
                                          bytes.fromhex(profile['patch_sha256'])).hexdigest()
+            cxx_flags = shlex.join(report['cxx_toolchain']['flags'])
+            linker_flag = shlex.quote('--ld-path=' + linker)
             configure = [
                 '-G', 'Ninja', f'-DCMAKE_MAKE_PROGRAM={ninja}', '-DCMAKE_BUILD_TYPE=Release',
                 f'-DCMAKE_C_COMPILER={stage0_c}', f'-DCMAKE_CXX_COMPILER={stage0_cxx}',
+                f'-DCMAKE_CXX_FLAGS={cxx_flags}', f'-DCMAKE_EXE_LINKER_FLAGS={linker_flag}',
+                f'-DCMAKE_SHARED_LINKER_FLAGS={linker_flag}', f'-DCMAKE_MODULE_LINKER_FLAGS={linker_flag}',
                 '-DCMAKE_CXX_FLAGS_RELEASE=-O1 -DNDEBUG', f'-DCMAKE_OSX_SYSROOT={sdk}',
                 '-DCMAKE_OSX_ARCHITECTURES=arm64', f'-DCMAKE_OSX_DEPLOYMENT_TARGET={DEPLOYMENT_TARGET}',
                 '-DLLVM_TARGETS_TO_BUILD=AArch64', '-DLLVM_ENABLE_PROJECTS=clang',
@@ -266,17 +331,18 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
     finally:
         hidden.rename(library)
     report.update(artifacts=artifacts, installation_root=str(layout))
-    report['portable_services'] = _exercise_portable_services(run, defaults, linker, stages, layout)
+    report['portable_services'] = _exercise_portable_services(
+        run, defaults, linker, stages, layout, cxx_flags=report['cxx_toolchain']['flags'])
 
 
-def _exercise_portable_services(run, defaults, linker: str, stages: Path, layout: Path) -> dict:
+def _exercise_portable_services(run, defaults, linker: str, stages: Path, layout: Path, *, cxx_flags: list[str]) -> dict:
     pairs = {label: (NATIVE / 'src/runtime/stdlib' / (service+'.cpp'),
                      NATIVE / 'tests' / (fixture+'.cpp'))
              for label, (service, fixture) in PORTABLE_SERVICES.items()}
     sources = {path for pair in pairs.values() for path in pair}
     sources.update(NATIVE / header for header in PORTABLE_HEADERS)
     inputs = {str(path.relative_to(ROOT)): file_digest(path) for path in sorted(sources)}
-    cxx = [*defaults, '--driver-mode=g++', '-stdlib=libc++']
+    cxx = [*defaults, '--driver-mode=g++', *cxx_flags]
     compile_options = ['-std=c++20', '-O2', '-Wall', '-Wextra', '-Werror', '-I', NATIVE / 'src']
     portable = {}
     for label, (service, fixture) in pairs.items():

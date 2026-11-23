@@ -26,6 +26,48 @@ def test_experimental_driver_rejects_other_hosts_before_build(monkeypatch, tmp_p
     assert not (tmp_path / 'output').exists()
 
 
+def test_xcode_cxx_preflight_requires_selected_headers_and_sdk_libcxx(monkeypatch, tmp_path):
+    developer = tmp_path / 'Xcode Developer'
+    headers = developer / 'Toolchains/Selected/usr/include/c++/v1'
+    bundled = tmp_path / 'LLVM Archive/include/c++/v1'
+    apple = developer / 'Toolchains/Selected/usr/bin/clang++'
+    sdk = developer / 'Platforms/MacOSX/SDKs/MacOSX.sdk'
+    library_stub = sdk / 'usr/lib/libc++.tbd'
+    for path in (headers / '__config', bundled / '__config', apple, library_stub):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(path.name)
+    with pytest.raises(ValueError, match=r'Apple Clang did not report libc\+\+ headers'):
+        darwin_registration.xcode_cxx_headers(str(bundled), developer)
+
+    commands = {}
+    emitted = tmp_path / 'xcode-cxx-hash'
+    def run(*args, label):
+        commands[label] = list(map(str, args))
+        if label == 'xcode-libcxx-hash-link':
+            emitted.write_text('mock executable')
+        return {
+            'xcode-clangxx': str(apple),
+            'xcode-cxx-search': f'#include <...> search starts here:\n {bundled}\n {headers}\nEnd of search list.',
+            'xcode-libcxx-hash-load-paths': (
+                f'{emitted}:\n /usr/lib/libc++.1.dylib (compatibility version 1.0.0)\n'
+                ' /usr/lib/libSystem.B.dylib (compatibility version 1.0.0)'),
+            'xcode-libcxx-hash-native': 'Xcode libc++ 190100',
+        }.get(label, '')
+
+    monkeypatch.setattr(darwin_registration, 'verify_macho', lambda path, kind: {'path': str(path), 'kind': kind})
+    host = {'platform_identity': {'sdk_path': str(sdk), 'developer_dir': str(developer)},
+            'apple_toolchain': {'paths': {'ld': '/xcode/ld'}}}
+    result = darwin_registration._qualify_xcode_cxx(run, host, Path('/llvm/clang++'), 'arm64-apple-macos15.0', tmp_path)
+    assert result['headers'] == str(headers)
+    assert result['header_config_sha256'] == darwin_registration.file_digest(headers / '__config')
+    assert result['library_stub_sha256'] == darwin_registration.file_digest(library_stub)
+    assert result['flags'] == ['-stdlib=libc++', '-nostdinc++', '-isystem', str(headers)]
+    assert all(flag in commands['xcode-libcxx-hash-link'] for flag in result['flags'])
+    assert str(bundled) not in commands['xcode-libcxx-hash-link']
+    assert commands['xcode-libcxx-hash-native'] == [str(emitted), 'stable-hash-input', 'stable-hash-input']
+    assert 'std::hash<std::string>' in (tmp_path / 'xcode-cxx-hash.cpp').read_text()
+
+
 @pytest.mark.parametrize('extra_library', ['', '/usr/lib/libobjc.A.dylib'])
 def test_portable_services_link_current_sources_and_run_after_relocation(monkeypatch, tmp_path, extra_library):
     stages = tmp_path / 'build'
@@ -52,12 +94,13 @@ def test_portable_services_link_current_sources_and_run_after_relocation(monkeyp
 
     monkeypatch.setattr(darwin_registration, 'verify_macho', verify_macho)
     defaults = ['/owned/clang', '--target=arm64-apple-macos15.0', '-isysroot', '/owned/SDK']
+    cxx_flags = ['-stdlib=libc++', '-nostdinc++', '-isystem', '/xcode/include/c++/v1']
     if extra_library:
         with pytest.raises(ValueError, match='unexpected portable Darwin service dependencies'):
-            darwin_registration._exercise_portable_services(run, defaults, '/owned/ld', stages, layout)
+            darwin_registration._exercise_portable_services(run, defaults, '/owned/ld', stages, layout, cxx_flags=cxx_flags)
         assert 'stdlib-map-count-native' not in commands
         return
-    report = darwin_registration._exercise_portable_services(run, defaults, '/owned/ld', stages, layout)
+    report = darwin_registration._exercise_portable_services(run, defaults, '/owned/ld', stages, layout, cxx_flags=cxx_flags)
     assert report['status'] == 'PASS'
     assert set(report['suites']) == {'stdlib-map-count', 'text-scalar-boundary'}
     for label, unit, fixture in (
@@ -74,7 +117,7 @@ def test_portable_services_link_current_sources_and_run_after_relocation(monkeyp
         assert str(stages / (unit+'.o')) in commands[label+'-link']
         assert str(stages / (fixture+'.o')) in commands[label+'-link']
         assert all('--driver-mode=g++' in commands[label+'-'+step] for step in ('service', 'fixture', 'link'))
-        assert '-stdlib=libc++' in commands[label+'-link']
+        assert all(all(flag in commands[label+'-'+step] for flag in cxx_flags) for step in ('service', 'fixture', 'link'))
         assert commands[label+'-native'] == [str(layout / 'bin' / label)]
 
 

@@ -76,8 +76,12 @@ python3 -B -m scripts.objc3c_toolchain.darwin_registration \
 ```
 
 The command builds a native patched Clang with an AArch64 backend and limits
-the compile pool to the host CPU and memory budget. The receipts bind the
-bootstrap toolchain, compiler inputs, runtime source, fixtures and outputs. The
+the compile pool to the host CPU and memory budget. It selects the active
+Xcode libc++ headers and SDK link stub, then compiles, links and runs a
+`std::hash<std::string>` probe before building Clang. The compiler build and
+the native C++ service fixtures share that header and runtime pairing. The
+receipts bind the bootstrap toolchain, compiler inputs, runtime source,
+fixtures and outputs. The
 native fixtures cover a stateless root class with Objective-C 3 `defer`, two
 live instances, same-named class and instance methods, a nil send and nested
 `self` dispatch. The provider's sibling class registers from the same archive
@@ -107,6 +111,12 @@ Native execution evidence for this step is pending. The receipt has
 `support_truth: false`, and the release profile still requires SDK packaging,
 installation and native execution qualification. Loaded experimental libraries
 must remain resident for the lifetime of their registered class records.
+
+The first hosted runtime build reached `clang-tblgen` and failed at link.
+The compiler used upstream LLVM's bundled libc++ headers, which requested
+`std::__1::__hash_memory` from the selected Xcode SDK libc++. The repaired
+preflight checks the matching Xcode headers and SDK runtime before configuration.
+[Failed hosted attempt](https://github.com/doublemover/Slopjective-C/actions/runs/45289344512/job/138093814031)
 
 ### Instance lifetime and the next ABI boundary
 
