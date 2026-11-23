@@ -2352,8 +2352,10 @@ std::string ObjCContainerIdentity(const clang::NamedDecl *declaration,
                 CanonicalType(parameter->getUnderlyingType(), context);
       }
     }
-    if (const auto *superclass = interface->getSuperClassType())
+    if (const auto *superclass = interface->getSuperClassType()) {
+      if (superclass->isSpecialized()) text += ";objc-specialized-superclass:v1;";
       text += ";super-type=" + CanonicalType(clang::QualType(superclass, 0), context);
+    }
     return text;
   }
   if (const auto *protocol = llvm::dyn_cast<clang::ObjCProtocolDecl>(declaration)) {
@@ -2368,6 +2370,7 @@ std::string ObjCContainerIdentity(const clang::NamedDecl *declaration,
                 ? category->getClassInterface()->getNameAsString()
                 : std::string("<missing-class>")) +
            '(' + category->getNameAsString() + ')';
+    if (!category->protocols().empty()) text += kObjCCategoryProtocolsMarker;
     for (const auto *protocol : category->protocols())
       text += ";protocol=" + protocol->getNameAsString();
     return text;

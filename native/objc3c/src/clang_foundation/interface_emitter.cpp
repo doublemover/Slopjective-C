@@ -824,7 +824,7 @@ std::vector<std::string> RoundTripArguments(const clang::ASTContext &context,
     const char *underlying = lang.WCharSize == 1 ? "char" : lang.WCharSize == 2 ? "short" : "int";
     args.insert(args.end(), {"-Xclang", std::string("-fwchar-type=") + underlying});
   }
-  if (!lang.WCharIsSigned) args.insert(args.end(), {"-Xclang", "-fno-signed-wchar"});
+  args.insert(args.end(), {"-Xclang", lang.WCharIsSigned ? "-fsigned-wchar" : "-fno-signed-wchar"});
   switch (lang.getClangABICompat()) {
 #define ABI_VER_MAJOR_MINOR(Major, Minor) \
   case clang::LangOptions::ClangABI::Ver##Major##_##Minor: \
@@ -1191,6 +1191,10 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kNativeObjectExpressionSemantic);
     if (HasObjCGenericSignatureIdentity(declaration))
       sidecar.required_semantics.push_back(kObjCGenericSignaturesSemantic);
+    if (HasObjCPropertyContractIdentity(declaration))
+      sidecar.required_semantics.push_back(kObjCPropertySemantic);
+    if (HasObjCCategoryProtocolsIdentity(declaration))
+      sidecar.required_semantics.push_back(kObjCCategoryProtocolsSemantic);
     if(HasNativeFunctionPolicyIdentity(declaration))
       sidecar.required_semantics.push_back(kNativeFunctionPolicySemantic);
     if(HasNativeControlFlowIdentity(declaration))
@@ -1466,6 +1470,15 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   if (!roundtrip || roundtrip->getDiagnostics().hasErrorOccurred()) {
     AddDiagnostic(result, "O3IFC121",
                   "Clang rejected the generated interface when reparsed with the original language, target, runtime, and ARC settings",
+                  canonical_module_name);
+    result.source_bytes.clear();
+    return result;
+  }
+  if (ReadInterfaceLanguageProfile(roundtrip->getASTContext(),
+                                   roundtrip->getCodeGenOpts().getInlineAsmDialect()) !=
+      result.identity.language_profile) {
+    AddDiagnostic(result, "O3IFC121",
+                  "canonical interface reparse did not reproduce the effective producer ABI and language profile",
                   canonical_module_name);
     result.source_bytes.clear();
     return result;

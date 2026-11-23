@@ -49,6 +49,8 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     kNativeObjectPolicySemantic,
     kNativeObjectExpressionSemantic,
     kObjCGenericSignaturesSemantic,
+    kObjCPropertySemantic,
+    kObjCCategoryProtocolsSemantic,
     kNativeFunctionEffectSemantic,
     kNativeUnnamedEnumSemantic,
     kNativeStorageLifetimeSemantic,
@@ -810,6 +812,13 @@ llvm::Error ValidateForEncoding(
                                       sidecar.required_semantics.end();
   if (objc_generic_signatures != objc_generic_capability)
     return Invalid("Objective-C generic signature identity and required capability must agree");
+  for (const auto &[capability, has_identity] : {
+           std::pair{kObjCPropertySemantic, &HasObjCPropertyContractIdentity},
+           std::pair{kObjCCategoryProtocolsSemantic, &HasObjCCategoryProtocolsIdentity}})
+    if (std::ranges::any_of(sidecar.declarations, has_identity) !=
+        (std::ranges::find(sidecar.required_semantics, capability) != sidecar.required_semantics.end()))
+      return Invalid("Objective-C declaration identity and required capability must agree: " +
+                     std::string(capability));
   const bool external_bindings=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeExternalBindingIdentity);
   const bool external_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeExternalBindingSemantic)!=sidecar.required_semantics.end();
   const bool external_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),

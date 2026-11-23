@@ -309,6 +309,8 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
     AppendNativeContractField(out, position + ":nsobject-storage");
     AppendNativeContractField(out, ";nsobject-storage:v1;");
   }
+  // Record effective qualifiers before stripping sugar. An unannotated
+  // position contributes no field. Explicit _Null_unspecified remains visible.
   if (const auto nullability = type->getNullability()) {
     AppendNativeContractField(out, position + ":nullability");
     AppendNativeContractField(out, std::to_string(static_cast<unsigned>(*nullability)));
@@ -468,9 +470,14 @@ inline void ReadNativeDeclarationContracts(const clang::NamedDecl *declaration,
   if (const auto *type = llvm::dyn_cast<clang::TypeDecl>(declaration))
     AppendNativeTypeContracts(ownership, context.getTypeDeclType(type), context,
                               "type");
-  if (const auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration))
-    AppendNativeTypeContracts(ownership, method->getObjC3FunctionType(),
-                              context, "type", 0, true);
+  if (const auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration)) {
+    const auto callable = method->getObjC3FunctionType();
+    if (callable.isNull())
+      AppendNativeTypeContracts(ownership, method->getReturnType(), context,
+                                "type.return");
+    else
+      AppendNativeTypeContracts(ownership, callable, context, "type", 0, true);
+  }
   if (const auto *property =
           llvm::dyn_cast<clang::ObjCPropertyDecl>(declaration))
     AppendNativeTypeContracts(ownership, property->getType(), context, "type");
