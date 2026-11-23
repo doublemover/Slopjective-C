@@ -40,6 +40,11 @@ objects for qualification. Stage-only transport carries the binaries for
 downstream execution. Full object, archive, and link provenance requires the
 producer's build tree. [LLVM assurance workflow](../../.github/workflows/llvm-assurance.yml)
 
+Both retained preview producer receipts at `8fe5c2fd8` record ten successful
+foundation phases and the exact staged Clang and LLVM shared-library ELF build
+IDs. The full object-and-link qualification requires execution of the optional
+mode at the chosen source revision. [x86-64 producer](https://github.com/doublemover/Slopjective-C/actions/runs/44865570421/artifacts/14693129425) · [AArch64 producer](https://github.com/doublemover/Slopjective-C/actions/runs/44865570382/artifacts/14693123879)
+
 The runner reconciles transitive Ninja compilation commands against compilation
 ownership, then checks object bytes and actual instrumentation symbols. Staged LLVM/Clang
 and embedding archive members must match the exact ordered Ninja target objects

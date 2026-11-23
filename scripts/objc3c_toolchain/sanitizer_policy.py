@@ -80,7 +80,8 @@ def require_clean_diagnostic(diagnostic: str):
 class SanitizerQualification:
     """Run controls once per optimization within an immutable qualification job."""
     def __init__(self, compiler: Path, resource: Path, output: Path, sanitizer: str,
-                 *, libraries=(), additional_inputs=(), symbolizer: Path | None = None, base_environment=None):
+                 *, libraries=(), additional_inputs=(), runtime_library_dirs=(),
+                 symbolizer: Path | None = None, base_environment=None):
         if sanitizer not in ('address,undefined', 'thread', 'address'):
             raise ValueError('unsupported promoting sanitizer configuration')
         self.compiler, self.resource = compiler.resolve(strict=True), resource.resolve(strict=True)
@@ -109,6 +110,10 @@ class SanitizerQualification:
         if (self.compiler.parent.name == 'bin' and compiler_library.is_dir() and
                 compiler_library not in library_dirs):
             library_dirs.append(compiler_library)
+        runtime_library_dirs = tuple(Path(path).resolve(strict=True) for path in runtime_library_dirs)
+        if any(not path.is_dir() for path in runtime_library_dirs):
+            raise ValueError('sanitizer runtime search inputs must be directories')
+        library_dirs.extend(runtime_library_dirs)
         self.environment = strict_environment(self.compiler, self.symbolizer,
             library_dirs=library_dirs, base=base_environment)
         if any(self.environment.get(name) != value for name, value in OPTIONS.items()):

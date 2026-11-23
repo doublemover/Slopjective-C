@@ -5,6 +5,7 @@ from .linux_host import native_linux_host, native_target
 
 
 import argparse
+from collections import Counter
 import hashlib
 from datetime import datetime, timezone
 import json
@@ -502,10 +503,14 @@ def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = 
         raise ValueError('compiler evidence must be disjoint from implementation inputs')
     foundation_report = build / 'foundation-build-report.json'
     completed = json.loads(foundation_report.read_text())
+    expected_phases = {phase: 1 + len(plans[phase].get('follow_up_commands', []))
+                       for phase in ('configure', 'build', 'test', 'stage')}
     if (completed.get('status') != 'passed' or completed.get('source_identity') != plan['source_build_id'] or
-            {phase['phase'] for phase in completed['phases']} != {'configure', 'build', 'test', 'stage'} or
-            any(phase['exit_code'] for phase in completed['phases'])):
+            Counter(phase.get('phase') for phase in completed.get('phases', [])) != expected_phases or
+            any(phase.get('exit_code') != 0 for phase in completed['phases'])):
         raise ValueError('compiler instrumentation requires a current complete foundation build/test/stage')
+    from .build import verify_effective_configuration
+    verify_effective_configuration(plan)
     bootstrap = Path(plan['host_environment']['bootstrap_root'])
     facade = output / 'facade'
     if embedding_build is not None:
@@ -527,16 +532,6 @@ def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = 
             raise ValueError('reused embedding foundation/profile/bootstrap differs: host_environment')
     libraries = [installed_shared_library(stage / 'lib', name)
                  for name in ('libclang-cpp.so', 'libLLVM.so')]
-    policy = SanitizerQualification(bootstrap / 'bin/clang++', bootstrap / 'lib/clang/23',
-        output / 'detectors', 'address,undefined', libraries=libraries,
-        additional_inputs=[foundation_report, Path(__file__),
-            *(repo / name for name in plan['configuration_inputs']),
-            *(path for tree in ('native/objc3c', 'tests/clang_foundation', 'tests/tooling/fixtures/clang_foundation')
-              for path in (repo / tree).rglob('*')
-              if path.is_file() and (path.suffix in ('.cpp', '.h', '.hpp', '.cmake', '.in') or path.name == 'CMakeLists.txt'))])
-    environment = dict(policy.environment)
-    for key in ('cmake_path', 'ninja_path'):
-        environment['PATH'] = str(Path(plan['host_environment'][key]).parent)+os.pathsep+environment['PATH']
     output.mkdir(parents=True)
     receipt = output / 'qualification.json'
     report = {'schema': 'objc3c.compiler-implementation-instrumentation.v1', 'status': 'running',
@@ -590,12 +585,20 @@ def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = 
         from .test_runtime import prepare as prepare_runtime
         dependency = prepare_runtime(repo, bootstrap, output / 'objc-runtime', fetch=True, jobs=jobs)
         report['test_objc_runtime'] = dependency
-        policy.inputs[dependency['library']] = dependency['library_sha256']
-        policy.inputs[dependency['receipt']] = dependency['receipt_sha256']
-        policy.inputs[str(Path(__file__).with_name('test_runtime.py'))] = digest(Path(__file__).with_name('test_runtime.py'))
-        for selected_environment in (environment, policy.environment):
-            selected_environment['LD_LIBRARY_PATH'] = os.pathsep.join(filter(None, (
-                selected_environment.get('LD_LIBRARY_PATH'), str(Path(dependency['root']) / 'lib'))))
+        policy = SanitizerQualification(bootstrap / 'bin/clang++', bootstrap / 'lib/clang/23',
+            output / 'detectors', 'address,undefined', libraries=libraries,
+            runtime_library_dirs=(Path(dependency['root']) / 'lib',),
+            additional_inputs=[foundation_report, Path(__file__), Path(__file__).with_name('test_runtime.py'),
+                Path(dependency['library']), Path(dependency['receipt']),
+                *(repo / name for name in plan['configuration_inputs']),
+                *(path for tree in ('native/objc3c', 'tests/clang_foundation', 'tests/tooling/fixtures/clang_foundation')
+                  for path in (repo / tree).rglob('*')
+                  if path.is_file() and (path.suffix in ('.cpp', '.h', '.hpp', '.cmake', '.in') or path.name == 'CMakeLists.txt'))])
+        if any(policy.inputs[dependency[key]] != dependency[key+'_sha256'] for key in ('library', 'receipt')):
+            raise ValueError('compiler instrumentation runtime inputs changed during admission')
+        environment = dict(policy.environment)
+        for key in ('cmake_path', 'ninja_path'):
+            environment['PATH'] = str(Path(plan['host_environment'][key]).parent)+os.pathsep+environment['PATH']
         policy.ensure_controls('O1')
         llvm_library = libraries[1].resolve(strict=True)
         report['loaded_graphs']['foundation-clang'] = loaded_graph(stage / 'bin/clang',

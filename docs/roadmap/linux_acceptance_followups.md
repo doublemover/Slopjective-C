@@ -70,6 +70,13 @@ metadata is checked before verification is shared. Focused native replay and
 corruption controls passed at this checkpoint. The sanitizer and terminal
 gates later passed on both hosts for the published ABI 24 preview.
 
+The retained installed and structured product-partition receipts from both hosts
+contain 32 detecting/corrected pairs. Their diagnostic bytes, configured exits,
+symbolized source frames, and effective strict options verify against the recorded
+digests. The same receipts retain 16 actual runtime executables with matching
+loader records and clean outcomes. Each recorded O0/O2 runtime profile contains
+19 objects and 19 archive members. [x86-64 installed](https://github.com/doublemover/Slopjective-C/actions/runs/44865570421/artifacts/14695617338) · [x86-64 structured product](https://github.com/doublemover/Slopjective-C/actions/runs/44865570421/artifacts/14696682106) · [AArch64 installed](https://github.com/doublemover/Slopjective-C/actions/runs/44865570382/artifacts/14698722034) · [AArch64 structured product](https://github.com/doublemover/Slopjective-C/actions/runs/44865570382/artifacts/14698466609)
+
 The [release status](../releases/status.md) identifies the exact preview
 archives and hosted qualification. SDK 2.62 / ABI 21 was an earlier
 development checkpoint. The [preview issue review](linux_preview_issue_review.md)
