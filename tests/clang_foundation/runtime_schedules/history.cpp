@@ -29,9 +29,22 @@ struct Gate {
   std::condition_variable changed;
   bool entered = false, open = false, barrier = false;
 };
+struct NextProbe {
+  explicit NextProbe(objc3_task_group_t *owner) : group(owner) {}
+  objc3_task_group_t *group;
+  objc3_task_t *result = nullptr;
+  objc3_service_status status = OBJC3_SERVICE_FAILED;
+  unsigned resumes = 0, destroyed = 0;
+  std::mutex mutex;
+  std::condition_variable changed;
+};
 std::array<Task, 8> tasks;
 std::array<Job, 8> jobs;
 std::atomic<unsigned> active{0}, overlap{0};
+constexpr char void_identity[] = "objc3.async.v1:_ZTSv";
+constexpr objc3_async_result_type void_result_type{sizeof(void_result_type),
+    OBJC3_ASYNC_ABI_VERSION, 0, 1, OBJC3_ASYNC_VOID, 0, void_identity,
+    sizeof(void_identity) - 1, nullptr};
 
 void resume(objc3_task_t *task, void *context) {
   auto &state = *static_cast<Task *>(context);
@@ -41,6 +54,7 @@ void resume(objc3_task_t *task, void *context) {
   completion.version = OBJC3_SERVICE_ABI_VERSION;
   completion.kind = objc3_task_is_cancel_requested(task)
                         ? OBJC3_COMPLETION_CANCELLED : OBJC3_COMPLETION_SUCCESS;
+  if (completion.kind == OBJC3_COMPLETION_SUCCESS) completion.result_type = &void_result_type;
   assert(objc3_task_complete(task, &completion) == OBJC3_SERVICE_OK);
 }
 void destroy_frame(void *context) {
@@ -56,7 +70,8 @@ void waiter(void *context, const objc3_completion *) {
   static_cast<Task *>(context)->counts[3] += SCHEDULE_MUTANT == 2 ? 2 : 1;
 }
 void actor_job(void *context) {
-  if (active.fetch_add(1) != 0) ++overlap;
+  const auto running = active.fetch_add(1);
+  if (running != 0 || SCHEDULE_MUTANT == 4) ++overlap;
   ++static_cast<Job *>(context)->counts[0];
   assert(active.fetch_sub(1) == 1);
 }
@@ -74,6 +89,58 @@ void barrier_callback(void *context) {
   std::lock_guard lock(gate.mutex);
   gate.barrier = true;gate.changed.notify_all();
 }
+void next_probe_resume(objc3_task_t *task, void *context) {
+  auto &probe = *static_cast<NextProbe *>(context);
+  if (++probe.resumes == 1) {
+    constexpr char identity[] = "objc3.async.v1:_ZTSi";
+    const objc3_async_result_type expected{sizeof(expected), OBJC3_ASYNC_ABI_VERSION,
+        sizeof(int), alignof(int), OBJC3_ASYNC_VALUE, 0, identity,
+        sizeof(identity) - 1, nullptr};
+    assert(objc3_task_group_await_next(probe.group, task, &expected, &probe.status,
+                                      &probe.result) == OBJC3_SERVICE_OK);
+    return;
+  }
+  const objc3_completion finished{sizeof(finished), OBJC3_SERVICE_ABI_VERSION,
+      OBJC3_COMPLETION_SUCCESS, 0, nullptr, nullptr, nullptr, nullptr};
+  assert(objc3_task_complete(task, &finished) == OBJC3_SERVICE_OK);
+}
+objc3_service_status next_mismatched_type(objc3_task_group_t *group,
+                                         objc3_executor_t *executor, bool manual) {
+  NextProbe probe{group};
+  objc3_task_start_options options{};
+  options.struct_size = sizeof(options);
+  options.version = OBJC3_SERVICE_ABI_VERSION;
+  options.executor = executor;
+  options.frame = &probe;
+  options.resume = next_probe_resume;
+  options.destroy = [](void *context) {
+    auto &state = *static_cast<NextProbe *>(context);
+    std::lock_guard lock(state.mutex);
+    ++state.destroyed;
+    state.changed.notify_one();
+  };
+  objc3_task_t *task = nullptr;
+  assert(objc3_task_start(&options, &task) == OBJC3_SERVICE_OK);
+  if (manual) {
+    uint32_t executed = 0;
+    assert(objc3_executor_pump(executor, 2, &executed) == OBJC3_SERVICE_OK && executed == 2);
+  }
+  {
+    std::unique_lock lock(probe.mutex);
+    assert(probe.changed.wait_for(lock, std::chrono::seconds(10), [&] { return probe.destroyed; }));
+    assert(probe.resumes == 2 && probe.destroyed == 1 && !probe.result);
+  }
+  objc3_task_release(task);
+  if constexpr (SCHEDULE_MUTANT == 5) {
+    // Simulate a typed reservation that reports mismatch but advances the queue.
+    if (probe.status == OBJC3_SERVICE_TYPE_MISMATCH) {
+      objc3_task_t *lost = nullptr;
+      assert(objc3_task_group_next(group, &lost) == OBJC3_SERVICE_OK && lost);
+      objc3_task_release(lost);
+    }
+  }
+  return probe.status;
+}
 void trace(const std::string &operation, unsigned id, int status, int output) {
   std::printf("{\"operation\":\"%s\",\"id\":%u,\"status\":%d,\"output\":%d,\"tasks\":[",
       operation.c_str(), id, status, output);
@@ -90,8 +157,7 @@ void trace(const std::string &operation, unsigned id, int status, int output) {
       std::printf("%s%u", j ? "," : "", jobs[i].counts[j].load());
     std::printf("]");
   }
-  std::printf("],\"actor_overlap\":%u}\n",
-              overlap.load() + (SCHEDULE_MUTANT == 4 ? 1 : 0));
+  std::printf("],\"actor_overlap\":%u}\n", overlap.load());
   std::fflush(stdout);
 }
 } // namespace
@@ -112,8 +178,9 @@ int main(int argc, char **argv) {
     std::unique_lock lock(gate.mutex);
     assert(gate.changed.wait_for(lock, std::chrono::seconds(10), [&] { return gate.entered; }));
   }
-  const std::array<const char *, 15> operations = {"task", "waiter", "retain-task", "release-task", "add", "close-group",
-      "cancel-group", "actor-job", "close-actor", "cancel-actor", "drain", "join-group", "join-actor", "next", "observe"};
+  const std::array<const char *, 16> operations = {"task", "waiter", "retain-task", "release-task", "add", "close-group",
+      "cancel-group", "actor-job", "close-actor", "cancel-actor", "drain", "join-group", "join-actor", "next", "observe",
+      "next-mismatched-type"};
   std::ifstream input(argv[2]);assert(input);
   char delimiter = 0;
   input >> delimiter;assert(delimiter == '[');
@@ -136,6 +203,7 @@ int main(int argc, char **argv) {
       options.executor = executor;options.frame = &state;
       options.resume = resume;options.destroy = destroy_frame;
       options.completion = complete;options.completion_context = &state;
+      options.result_type = &void_result_type;
       status = objc3_task_start(&options, &state.handle);
       assert(status == OBJC3_SERVICE_OK);state.references = 1;
     } else if (operation == "waiter") {
@@ -182,6 +250,9 @@ int main(int argc, char **argv) {
       assert(drained);status = objc3_task_group_join(group);
     } else if (operation == "join-actor") {
       assert(drained);status = objc3_actor_join(actor);
+    } else if (operation == "next-mismatched-type") {
+      assert(drained);
+      status = next_mismatched_type(group, executor, manual);
     } else if (operation == "next") {
       assert(drained);
       objc3_task_t *selected = nullptr;
@@ -199,13 +270,6 @@ int main(int argc, char **argv) {
     if constexpr (SCHEDULE_MUTANT == 3) {
       if (operation == "drain")
         for (auto &task : tasks) task.counts[1] = 0;
-    }
-    if constexpr (SCHEDULE_MUTANT == 5) {
-      static int first_next = -1;
-      if (operation == "next" && output >= 0) {
-        if (first_next < 0) first_next = output;
-        else output = first_next;
-      }
     }
     trace(operation, id, status, output);
     input >> delimiter;

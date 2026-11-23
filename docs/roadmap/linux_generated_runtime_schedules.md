@@ -1,12 +1,11 @@
 # Generated public-runtime histories
 
-Issue [#8289](https://github.com/doublemover/Slopjective-C/issues/8289) now has a
-bounded manual-scheduler and gated serial-worker pilot. An independent Python
+Issue [#8289](https://github.com/doublemover/Slopjective-C/issues/8289) has a
+bounded manual-scheduler and gated serial-worker campaign. An independent Python
 model owns logical task/frame/context IDs, caller references, cancellation,
 waiter delivery, actor admission/destruction and group-result consumption.
-It does not inspect production runtime structs or compute expected counters
-from native observations. Completion-order selection is checked against an
-allowed unconsumed set rather than imposing an unspecified global order.
+The public C API defines the model's expected outcomes. Completion-order
+selection is checked against the set of available results.
 
 ```sh
 python3 -B -m scripts.objc3c_toolchain.runtime_schedules \
@@ -16,12 +15,13 @@ python3 -B -m scripts.objc3c_toolchain.runtime_schedules \
 ```
 
 Eight fixed seeds select legal histories from a reviewed 64-seed grammar.
-They cover all twenty modeled transition labels and thirty-three adjacent
-pairs in that grammar. These are explicit model denominators, not source
-coverage or every state of the public runtime. Histories have at most ninety-six
-operations, eight tasks, eight actor contexts, one group, one actor and one
-worker. Each native command has a deadline; worker gates use bounded condition
-variables. There are no sleep-based schedule choices.
+They cover all twenty-one modeled transition labels and thirty-four adjacent
+pairs in that grammar. Histories have at most ninety-six operations, eight main
+tasks, one typed next-result probe, eight actor contexts, one group, one actor
+and one worker. Native commands have deadlines and worker gates use bounded
+condition variables. The typed probe registers from an active resume, retains
+its output slots through frame destruction, and checks that a mismatch leaves
+the result available to a later consumer.
 
 Both manual replay and one gated worker epoch run at client O0/O2 under separate
 ASan/UBSan and TSan configurations. Canonical service profiles use O1 and matching
@@ -33,35 +33,51 @@ admission failure preserves caller ownership and hop-output facts. Task frames
 must be destroyed once, registered waiters delivered once, actor jobs serialized
 and group results consumed once. Manual runs repeat and require identical traces.
 
-The initial native checkpoint passes ninety-six executions. Two test-owned
-wrong-code controls omit logical frame destruction or duplicate waiter delivery;
-both exit cleanly under the sanitizer and fail the semantic oracle. The expanded
-runner also shrinks a missing-destruction history through valid operation-range
-deletions, preserves its failure class and executes a fresh reduced replay.
+The campaign executes ninety-six generated histories across the backends and
+instrumentation configurations. The runner shrinks a missing-destruction
+history through valid operation-range deletions, preserves its failure class and
+executes a fresh reduced replay.
 Invalid producer removal, unsafe release, missing closure/quiescence and resource
 bound violations are rejected before native execution. Reduction has explicit
-trial/time limits and reports its actual minimality boundary.
+trial/time limits and reports its actual minimality boundary. `--replay` uses the
+requested validated history and keeps the negative controls on their fixed
+witness history.
 
 Receipts bind model/generator versions, exact JSON histories and native input
 protocols, compile/link/execution commands, source/header closures, tool/resource
 and runtime identities, effective sanitizer controls, diagnostics, observations
-and compressed product bytes. The existing product-evidence CLI can restore and
-execute retained clients; the independent model remains the semantic oracle.
+and compressed product bytes. The product-evidence CLI can restore and execute
+retained clients. The independent model checks their observations.
 
-The integrated owner extends this original generated pilot with three maintained
-public-contract fixtures in each of the four sanitizer/client-optimization
-configurations. They cover concurrent registration/cancellation/publication,
+The integrated owner runs four maintained public-contract fixtures in each of
+the four sanitizer/client-optimization configurations. They cover concurrent
+registration/cancellation/publication,
 global-pool multi-actor exclusion, queued discard and named-binding retirement,
 nested/last-owner abandoned awaits, nonconsuming typed next-result mismatch,
-allocation/publication/copy failure injection and unforced worker stress.
-These twelve scenario executions supplement the generated model; they do not
-expand its twenty-transition denominator or imply deterministic stress traces.
+allocation/publication/copy failure injection, unforced worker stress and the
+focused lifetime cases. The lifetime fixture checks worker release cycles and
+queued drain, reentrant C++ result extraction, malformed callable frames, group
+depth rejection, and dependency wake failures at queue saturation and actor
+closure. The sixteen scenario executions have their own fixture inventory.
 
-Five sanitizer-clean semantic mutants are now mandatory: missing frame
-destruction, duplicate waiter delivery, premature quiescence, overlapping actor
-jobs and consuming a type-mismatched next result. Exact reduction/replay remains
-attached to the generated destruction control. The existing native assurance
-lane selects this complete bounded owner; no new schedule is introduced.
-Expanded hosted execution and acceptance remain open under #8289/#8283. No
-exhaustive scheduler, memory-model, compiler async, Swift concurrency or public
-actor-language claim follows.
+Five sanitizer-clean controls exercise missing frame destruction, duplicate
+waiter delivery, premature quiescence, overlapping actor jobs and consuming a
+type-mismatched next result. The typed-next control removes an actual group
+result after the probe reports a mismatch. The semantic model detects its absence
+in the following consumption sequence. The owner requires each control's
+expected failure class and retains a fresh replay of the reduced destruction
+history.
+
+The owner in published preview revision `8fe5c2fd89008d1c090a9355c11bdda01ceb9309`
+passed on both release hosts. That owner ran ninety-six generated histories,
+twelve maintained scenarios and five semantic controls against the twenty-label
+grammar. The expanded fixture, typed operation and receipt checks described here
+postdate those hosted runs. [Linux x86-64 job](https://github.com/doublemover/Slopjective-C/actions/runs/44865570421/job/136754940272) · [Linux AArch64 job](https://github.com/doublemover/Slopjective-C/actions/runs/44865570382/job/136756540976)
+
+Local Linux x86-64 validation used the published SDK compiler, pinned LLVM
+23.1.5 sanitizer resources and freshly instrumented runtime services and GNUstep.
+The expanded owner completed ninety-six generated executions, sixteen maintained
+fixture executions, five controls and a fresh reduced replay. A focused native
+pass repeated the matrix with the declared-type group result and required all
+five precise control diagnostics. The updated matrix still awaits hosted
+AArch64 execution.

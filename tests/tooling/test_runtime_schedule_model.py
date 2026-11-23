@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from scripts.objc3c_toolchain.runtime_schedule_model import (Model, OPCODES, check, coverage_domain, generate,
+from scripts.objc3c_toolchain.runtime_schedule_model import (Model, OPCODES, TYPE_MISMATCH, check, coverage_domain, generate,
     protocol, signature, shrink, validate)
 from scripts.objc3c_toolchain.runtime_schedules import observations
 
@@ -58,6 +58,20 @@ def test_fixed_seeds_cover_the_reviewed_grammar_without_claiming_scheduler_exhau
         model = Model();model.run(generate(seed)['operations'])
         observed.update(model.transitions);adjacent.update(model.pairs)
     assert observed == transitions and adjacent == pairs
+
+
+def test_mismatched_next_wait_leaves_the_result_unconsumed():
+    value = generate(0)
+    model = Model()
+    trace = model.run(value['operations'])
+    probe = next(row for row in trace if row['operation'] == 'next-mismatched-type')
+    assert probe['status'] == TYPE_MISMATCH and probe['output'] == -1
+    assert {row['output'] for row in trace if row['operation'] == 'next' and row['status'] == 0} == model.group
+    premature_end = next(row for row in trace if row['operation'] == 'next' and row['status'] != 0)
+    final_result = [row for row in trace if row['operation'] == 'next' and row['status'] == 0][-1]
+    final_result.update(status=premature_end['status'], output=-1)
+    with pytest.raises(ValueError, match='absent or consumed twice'):
+        check(value, trace)
 
 
 def test_shrinking_preserves_public_preconditions_owned_handles_and_explicit_quiescence():

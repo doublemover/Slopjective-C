@@ -82,32 +82,59 @@ def test_native_package_uses_the_sdk_pipeline_install_without_requalifying_the_a
 
 
 def test_runtime_schedule_gate_requires_each_scenario_in_each_configuration(tmp_path):
-    from scripts.objc3c_toolchain.runtime_schedules import SCENARIO_INVENTORY
+    from scripts.objc3c_toolchain.runtime_schedule_model import coverage_domain, generate, signature
+    from scripts.objc3c_toolchain.runtime_schedules import (BACKENDS, DEFAULT_SEEDS, OPTIMIZATIONS,
+        SANITIZERS, SCENARIO_INVENTORY, SCHEMA, SEMANTIC_CONTROLS)
 
+    histories = [generate(seed) for seed in DEFAULT_SEEDS]
+    signatures = list(map(signature, histories))
+    configurations = [(sanitizer, optimization) for sanitizer in SANITIZERS for optimization in OPTIMIZATIONS]
     scenarios = [{
         'fixture': fixture, 'status': 'PASS', 'service_optimization': 'O1',
         'client_optimization': optimization, 'sanitizer': sanitizer,
         'scenarios': sorted(name for name, owner in SCENARIO_INVENTORY.items() if owner == fixture),
-    } for sanitizer in ('address,undefined', 'thread') for optimization in ('O0', 'O2')
+    } for sanitizer, optimization in configurations
        for fixture in sorted(set(SCENARIO_INVENTORY.values()))]
-    report = {'status': 'PASS', 'histories': [{}]*8, 'cases': [{}]*96,
+    cases = [{
+        'history': key, 'status': 'PASS', 'service_optimization': 'O1', 'backend': backend,
+        'client_optimization': optimization, 'sanitizer': sanitizer,
+        'observation_sha256': 'a' * 64, 'operations': len(history['operations']),
+    } for sanitizer, optimization in configurations for backend in BACKENDS
+       for key, history in zip(signatures, histories)]
+    transitions, pairs = coverage_domain()
+    report = {'schema': SCHEMA, 'status': 'PASS', 'histories': histories,
+        'history_hashes': signatures, 'control_history_hash': signatures[0], 'cases': cases,
         'scenario_inventory': SCENARIO_INVENTORY, 'scenario_cases': scenarios,
-        'controls': [{'name': name} for name in ('missing-frame-destruction',
-            'duplicate-waiter-delivery', 'premature-quiescence-publication',
-            'overlapping-actor-jobs', 'type-mismatched-next-consumption')],
-        'reduction': {'status': 'PASS'}, 'sanitizer_policy': dict.fromkeys(range(4))}
+        'controls': [{'name': name, 'status': 'PASS', 'classification': 'semantic-mismatch',
+                      'native_exit': 0, 'sanitizer_clean': True, 'diagnostic': diagnostic}
+                     for name, diagnostic in SEMANTIC_CONTROLS.values()],
+        'reduction': {'status': 'PASS', 'fresh_native_replay': True, 'original': histories[0]},
+        'model_coverage': {'transition_domain': sorted(transitions), 'pair_domain': sorted(map(list, pairs)),
+                           'missing_transitions': [], 'missing_pairs': []},
+        'sanitizer_policy': {sanitizer.replace(',', '-')+'-'+optimization: {}
+                             for sanitizer, optimization in configurations}}
     receipt = tmp_path / 'runtime-schedules/campaign/qualification.json'
     receipt.parent.mkdir(parents=True)
     receipt.write_text(json.dumps(report))
-    assert len(evidence.suite_results(tmp_path, 'runtime-schedules')) == 113
-    for mutation in ('scenario', 'configuration', 'inventory'):
+    assert len(evidence.suite_results(tmp_path, 'runtime-schedules')) == 117
+    for mutation in ('scenario', 'configuration', 'inventory', 'case', 'replay', 'control', 'diagnostic', 'coverage'):
         broken = deepcopy(report)
         if mutation == 'configuration':
             broken['scenario_cases'][-1] = broken['scenario_cases'][0]
         elif mutation == 'scenario':
             broken['scenario_cases'][0]['scenarios'].pop()
-        else:
+        elif mutation == 'inventory':
             del broken['scenario_inventory']['interrupted-group-waiter-registration-retirement']
+        elif mutation == 'case':
+            broken['cases'][-1] = broken['cases'][0]
+        elif mutation == 'replay':
+            broken['cases'][0]['observation_sha256'] = 'b' * 64
+        elif mutation == 'control':
+            broken['controls'][0]['sanitizer_clean'] = False
+        elif mutation == 'diagnostic':
+            broken['controls'][0]['diagnostic'] = 'runtime trace omitted operations'
+        else:
+            del broken['model_coverage']['missing_transitions']
         receipt.write_text(json.dumps(broken))
         with pytest.raises(ValueError, match='runtime schedule matrix'):
             evidence.suite_results(tmp_path, 'runtime-schedules')
@@ -384,6 +411,8 @@ def test_periodic_and_owner_selection_include_new_native_qualification_suites():
     assert 'frontend-fuzz' in {row['id'] for row in select(['native/fuzz/FrontendTarget.cpp'], **REV)['suites']}
     assert 'runtime-schedules' in {row['id'] for row in select([
         'tests/clang_foundation/runtime_schedules/history.cpp'], **REV)['suites']}
+    assert 'runtime-schedules' in {row['id'] for row in select([
+        'native/objc3c/tests/runtime_lifetime_test.cpp'], **REV)['suites']}
     assert 'source-coverage' in {row['id'] for row in select([
         'scripts/objc3c_toolchain/compiler_source_coverage.py'], **REV)['suites']}
 

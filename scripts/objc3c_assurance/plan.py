@@ -38,6 +38,7 @@ SANITIZER_PRODUCTS = RUNTIME + PACKAGE + ('scripts/objc3c_toolchain/sanitizer_',
     'scripts/qualify_linux_ownership_sanitizers.py')
 RUNTIME_SCHEDULES = RUNTIME + ('scripts/objc3c_toolchain/runtime_schedule_',
     'scripts/objc3c_toolchain/runtime_schedules.py',
+    'native/objc3c/tests/runtime_lifetime_test.cpp',
     'tests/clang_foundation/runtime_schedules/',
     'tests/clang_foundation/async_handle_joins/')
 FUZZ = FOUNDATION + ('native/fuzz/', 'scripts/objc3c_toolchain/codec_fuzz.py',

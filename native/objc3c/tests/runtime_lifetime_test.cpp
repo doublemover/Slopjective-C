@@ -3,11 +3,14 @@
 #include <array>
 #include <barrier>
 #include <cassert>
+#include <chrono>
 #include <condition_variable>
+#include <cstdio>
 #include <functional>
 #include <mutex>
 #include <pthread.h>
 #include <stdexcept>
+#include <thread>
 #include <vector>
 
 namespace {
@@ -15,20 +18,21 @@ void cross_release(unsigned count) {
   std::array<objc3_executor_t *, 3> workers{};
   for (unsigned i = 0; i != count; ++i)
     assert(objc3_executor_create(0, &workers[i]) == OBJC3_SERVICE_OK);
-  std::barrier gate(static_cast<std::ptrdiff_t>(count));
+  std::barrier gate(static_cast<std::ptrdiff_t>(count + 1));
   std::mutex mutex;
   std::condition_variable completed;
-  unsigned done = 0;
+  unsigned done = 0, drained = 0;
   struct Context {
     objc3_executor_t *target;
     std::barrier<> *gate;
     std::mutex *mutex;
     std::condition_variable *completed;
     unsigned *done;
+    unsigned *drained;
   };
   std::array<Context, 3> contexts;
   for (unsigned i = 0; i != count; ++i) {
-    contexts[i] = {workers[(i + 1) % count], &gate, &mutex, &completed, &done};
+    contexts[i] = {workers[(i + 1) % count], &gate, &mutex, &completed, &done, &drained};
     assert(objc3_executor_enqueue(workers[i], [](void *opaque) {
       auto &context = *static_cast<Context *>(opaque);
       context.gate->arrive_and_wait();
@@ -39,9 +43,74 @@ void cross_release(unsigned count) {
       ++*context.done;
       context.completed->notify_one();
     }, &contexts[i]) == OBJC3_SERVICE_OK);
+    assert(objc3_executor_enqueue(workers[i], [](void *opaque) {
+      auto &context = *static_cast<Context *>(opaque);
+      std::lock_guard lock(*context.mutex);
+      ++*context.drained;
+      context.completed->notify_one();
+    }, &contexts[i]) == OBJC3_SERVICE_OK);
   }
+  gate.arrive_and_wait();
   std::unique_lock lock(mutex);
-  assert(completed.wait_for(lock, std::chrono::seconds(5), [&] { return done == count; }));
+  assert(completed.wait_for(lock, std::chrono::seconds(5), [&] {
+    return done == count && drained == count;
+  }));
+}
+
+void manual_and_host_release() {
+  objc3_executor_t *manual = nullptr, *worker = nullptr;
+  assert(objc3_executor_create(1, &manual) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_create(0, &worker) == OBJC3_SERVICE_OK);
+  std::mutex mutex;
+  std::condition_variable changed;
+  struct Gate {
+    std::mutex &mutex;
+    std::condition_variable &changed;
+    bool open = false, drained = false;
+  } gate{mutex, changed};
+  assert(objc3_executor_enqueue(worker, [](void *context) {
+    auto &gate = *static_cast<Gate *>(context);
+    std::unique_lock lock(gate.mutex);
+    assert(gate.changed.wait_for(lock, std::chrono::seconds(5), [&] { return gate.open; }));
+    gate.drained = true;
+    gate.changed.notify_one();
+  }, &gate) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_enqueue(manual, [](void *context) {
+    objc3_executor_release(static_cast<objc3_executor_t *>(context));
+  }, worker) == OBJC3_SERVICE_OK);
+  uint32_t executed = 0;
+  assert(objc3_executor_pump(manual, 1, &executed) == OBJC3_SERVICE_OK && executed == 1);
+  {
+    std::unique_lock lock(mutex);
+    assert(!gate.drained);
+    gate.open = true;
+    changed.notify_one();
+    assert(changed.wait_for(lock, std::chrono::seconds(5), [&] { return gate.drained; }));
+  }
+  objc3_executor_release(manual);
+
+  unsigned drained = 0;
+  assert(objc3_executor_create(0, &worker) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_enqueue(worker, [](void *context) { ++*static_cast<unsigned *>(context); },
+                                &drained) == OBJC3_SERVICE_OK);
+  objc3_executor_release(worker);
+  assert(drained == 1);
+}
+
+unsigned public_worker_capacity() {
+  std::vector<objc3_executor_t *> workers;
+  for (;;) {
+    objc3_executor_t *worker = nullptr;
+    const auto status = objc3_executor_create(0, &worker);
+    if (status == OBJC3_SERVICE_NOT_READY) {
+      assert(!worker);
+      break;
+    }
+    assert(status == OBJC3_SERVICE_OK && worker && workers.size() < 32);
+    workers.push_back(worker);
+  }
+  for (auto *worker : workers) objc3_executor_release(worker);
+  return workers.size();
 }
 
 struct Value {
@@ -66,8 +135,8 @@ struct Value {
   }
   ~Value() { if (this == payload) events.push_back(3); }
 };
-objc3::task_handle<Value> completed_value(objc3_executor_t *executor) {
-  auto *frame = new Value(42);
+objc3::task_handle<Value> completed_value(objc3_executor_t *executor, int number = 42) {
+  auto *frame = new Value(number);
   objc3_task_start_options options{sizeof(options), OBJC3_SERVICE_ABI_VERSION,
       executor, frame, [](objc3_task_t *task, void *context) {
         objc3_completion completion{sizeof(completion), OBJC3_SERVICE_ABI_VERSION,
@@ -85,6 +154,7 @@ objc3::task_handle<Value> completed_value(objc3_executor_t *executor) {
 void reentrant_result() {
   objc3_executor_t *executor = nullptr;
   assert(objc3_executor_create(1, &executor) == OBJC3_SERVICE_OK);
+  Value::events.reserve(3);
   for (bool throws : {false, true}) {
     auto handle = completed_value(executor);
     objc3_completion completion{};
@@ -102,6 +172,28 @@ void reentrant_result() {
     assert((Value::events == std::vector<int>{1, 2, 3}));
     Value::payload = nullptr;
   }
+  Value::fail = false;
+  for (bool another_owner : {false, true}) {
+    auto handle = completed_value(executor);
+    auto replacement = completed_value(executor, 17);
+    auto explicit_owner = another_owner ? handle : objc3::task_handle<Value>{};
+    objc3_completion completion{};
+    assert(objc3_task_get_completion(handle.native_handle(), &completion) == OBJC3_SERVICE_OK);
+    Value::payload = static_cast<const Value *>(completion.payload);
+    Value::events.clear();
+    Value::hook = [&] {
+      handle = std::move(replacement);
+      assert(handle.result().number == 17);
+    };
+    assert(handle.result().number == 42);
+    assert(handle.result().number == 17 && !replacement);
+    if (another_owner) {
+      assert((Value::events == std::vector<int>{1, 2}));
+      explicit_owner = {};
+    }
+    assert((Value::events == std::vector<int>{1, 2, 3}));
+    Value::payload = nullptr;
+  }
   objc3_executor_release(executor);
 }
 void invalid_callable_frames() {
@@ -115,6 +207,7 @@ void invalid_callable_frames() {
     objc3_async_frame frame;
     objc3_async_frame release_native() && { return frame; }
   };
+  auto group = objc3::task_group_handle::create();
   for (unsigned field = 0; field != 5; ++field) {
     auto invalid = valid;
     switch (field) {
@@ -126,19 +219,21 @@ void invalid_callable_frames() {
     }
     const auto expected = objc3_async_frame_validate(&invalid);
     assert(expected != OBJC3_SERVICE_OK);
-    for (bool task_like : {false, true}) {
+    auto rejected_with_status = [&](auto operation) {
       bool rejected = false;
       try {
-        if (task_like)
-          (void)objc3::task_detail::own_callable_as<objc3::task<int>>([=] { return TaskLike{invalid}; });
-        else
-          (void)objc3::task_detail::own_callable_as<objc3::task<int>>([=] { return invalid; });
+        operation();
       } catch (const objc3::service_failure &failure) {
         assert(failure.status() == expected);
         rejected = true;
       }
       assert(rejected && resumed == 0 && destroyed == 0);
-    }
+    };
+    rejected_with_status([&] { (void)objc3::task<int>::from_native(&invalid); });
+    rejected_with_status([&] { (void)group.spawn<int>([=] { return invalid; }); });
+    rejected_with_status([&] {
+      (void)objc3::task_detail::own_callable_as<objc3::task<int>>([=] { return TaskLike{invalid}; });
+    });
   }
   { auto accepted = objc3::task_detail::own_callable_as<objc3::task<int>>([=] { return valid; }); }
   assert(resumed == 0 && destroyed == 1);
@@ -150,6 +245,8 @@ void invalid_callable_frames() {
     mismatch = true;
   }
   assert(mismatch && resumed == 0 && destroyed == 2);
+  group.close();
+  group.wait();
 }
 struct SuspendedFrame {
   objc3_task_t *dependency{};
@@ -224,14 +321,15 @@ void bounded_group_tree() {
   objc3_task_group_release(root);
   objc3_executor_release(executor);
 }
-void failed_wake_chain(bool closed_actor) {
+void failed_wake_chain(bool closed_actor, unsigned length) {
   objc3_executor_t *executor = nullptr;
   assert(objc3_executor_create(1, &executor) == OBJC3_SERVICE_OK);
   objc3_actor_t *actor = nullptr;
   if (closed_actor) assert(objc3_actor_create(executor, &actor) == OBJC3_SERVICE_OK);
   unsigned destroyed = 0, resumed = 0;
   std::vector<objc3_task_t *> tasks;
-  for (unsigned i = 0; i < 4096; ++i) {
+  tasks.reserve(length);
+  for (unsigned i = 0; i < length; ++i) {
     tasks.push_back(start_suspended(executor, actor,
         new SuspendedFrame{tasks.empty() ? nullptr : tasks.back(), nullptr,
                            &destroyed, &resumed}));
@@ -249,6 +347,7 @@ void failed_wake_chain(bool closed_actor) {
   success.kind = OBJC3_COMPLETION_SUCCESS;
   assert(objc3_task_complete(tasks.front(), &success) == OBJC3_SERVICE_OK);
   assert(resumed == tasks.size() && destroyed == tasks.size());
+  assert(queued == 0);
   for (unsigned i = 0; i < tasks.size(); ++i) {
     objc3_completion completion{};
     assert(objc3_task_get_completion(tasks[i], &completion) == OBJC3_SERVICE_OK);
@@ -270,8 +369,10 @@ void bounded_stack_cleanup() {
   pthread_t thread;
   assert(pthread_create(&thread, &attributes, [](void *) -> void * {
     bounded_group_tree();
-    failed_wake_chain(false);
-    failed_wake_chain(true);
+    for (unsigned length : {2, 4096}) {
+      failed_wake_chain(false, length);
+      failed_wake_chain(true, length);
+    }
     return nullptr;
   }, nullptr) == 0);
   assert(pthread_attr_destroy(&attributes) == 0);
@@ -279,10 +380,19 @@ void bounded_stack_cleanup() {
 }
 } // namespace
 int main() {
+  const auto initial_workers = public_worker_capacity();
+  assert(initial_workers >= 3);
   cross_release(1);
   cross_release(2);
   cross_release(3);
+  manual_and_host_release();
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+  while (public_worker_capacity() != initial_workers) {
+    assert(std::chrono::steady_clock::now() < deadline);
+    std::this_thread::yield();
+  }
   reentrant_result();
   invalid_callable_frames();
   bounded_stack_cleanup();
+  std::puts("runtime lifetime: all focused checks passed");
 }

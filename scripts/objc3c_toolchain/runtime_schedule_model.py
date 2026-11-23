@@ -6,12 +6,13 @@ import json
 import random
 import time
 
-VERSION = 1
-LIMITS = {'operations': 96, 'tasks': 8, 'jobs': 8, 'groups': 1, 'actors': 1, 'worker_threads': 1}
-OK, NOT_READY, CLOSED, CANCELLED = 0, 5, 6, 7
+VERSION = 2
+LIMITS = {'operations': 96, 'tasks': 8, 'next_probe_tasks': 1, 'jobs': 8,
+    'groups': 1, 'actors': 1, 'worker_threads': 1}
+OK, NOT_READY, CLOSED, CANCELLED, TYPE_MISMATCH = 0, 5, 6, 7, 9
 OPCODES = ('task', 'waiter', 'retain-task', 'release-task', 'add', 'close-group',
     'cancel-group', 'actor-job', 'close-actor', 'cancel-actor', 'drain',
-    'join-group', 'join-actor', 'next', 'observe')
+    'join-group', 'join-actor', 'next', 'observe', 'next-mismatched-type')
 
 
 def protocol(value):
@@ -25,7 +26,7 @@ def coverage_domain():
     for seed in range(64):
         model = Model();model.run(generate(seed)['operations'])
         transitions.update(model.transitions);pairs.update(model.pairs)
-    if len(transitions) != 20 or len(pairs) != 33:
+    if len(transitions) != 21 or len(pairs) != 34:
         raise ValueError('runtime grammar domain changed; review its coverage inventory')
     return transitions, pairs
 
@@ -52,6 +53,7 @@ def generate(seed):
     # The final ID is a deliberately rejected, caller-owned context.
     add('actor-job', jobs)
     add('join-group');add('join-actor')
+    add('next-mismatched-type')
     for _ in range(tasks+1): add('next')
     value = {'schema': 'objc3c.runtime-schedule-history.v1', 'model_version': VERSION,
         'seed': seed, 'limits': LIMITS, 'schedule': 'single gated serial epoch then quiescent observations',
@@ -131,10 +133,12 @@ class Model:
                 if not job[2]: job[:2] = [int(not self.actor_cancelled), 1]
         elif name in ('join-group', 'join-actor'):
             if not self.drained: raise ValueError('worker host joins require a drained epoch')
-        elif name == 'next':
+        elif name in ('next', 'next-mismatched-type'):
             if not self.drained: raise ValueError('pilot consumes group results after drain')
             allowed = self.group-self.consumed
-            if allowed:
+            if allowed and name == 'next-mismatched-type':
+                status = TYPE_MISMATCH
+            elif allowed:
                 output = min(allowed) if selected is None else selected
                 if output not in allowed: raise ValueError('completion-order result was absent or consumed twice')
                 self.consumed.add(output)

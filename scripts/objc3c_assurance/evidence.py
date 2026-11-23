@@ -349,16 +349,38 @@ def suite_results(root: Path, name: str) -> list[dict]:
             raise ValueError('sanitizer product owner/profile matrix is incomplete')
         return sorted(rows, key=lambda row: row['name'])
     if name == 'runtime-schedules':
-        from scripts.objc3c_toolchain.runtime_schedules import SCENARIO_INVENTORY
+        from scripts.objc3c_toolchain.runtime_schedules import (BACKENDS, DEFAULT_SEEDS, OPTIMIZATIONS,
+            SANITIZERS, SCENARIO_INVENTORY, SCHEMA as SCHEDULE_SCHEMA, SEMANTIC_CONTROLS)
+        from scripts.objc3c_toolchain.runtime_schedule_model import coverage_domain, generate, signature
 
         result = read('campaign/qualification.json')
         histories, cases = result.get('histories', []), result.get('cases', [])
         scenarios, controls = result.get('scenario_cases', []), result.get('controls', [])
+        expected_histories = [generate(seed) for seed in DEFAULT_SEEDS]
+        expected_hashes = [signature(history) for history in expected_histories]
+        operations = {key: len(history['operations']) for key, history in zip(expected_hashes, expected_histories)}
+        generated = {(key, sanitizer, optimization, backend)
+                     for key in expected_hashes for sanitizer in SANITIZERS
+                     for optimization in OPTIMIZATIONS for backend in BACKENDS}
         configurations = {(sanitizer, optimization, fixture)
-                          for sanitizer in ('address,undefined', 'thread')
-                          for optimization in ('O0', 'O2')
+                          for sanitizer in SANITIZERS for optimization in OPTIMIZATIONS
                           for fixture in SCENARIO_INVENTORY.values()}
-        if (len(histories) != 8 or len(cases) != 8*2*2*3 or
+        slots = {(row.get('history'), row.get('sanitizer'), row.get('client_optimization'), row.get('backend')):
+                 row.get('observation_sha256') for row in cases if row.get('status') == 'PASS' and
+                 row.get('service_optimization') == 'O1' and row.get('history') in operations and
+                 row.get('operations') == operations[row['history']]}
+        reduction = result.get('reduction', {})
+        model = result.get('model_coverage', {})
+        transitions, pairs = coverage_domain()
+        if (result.get('schema') != SCHEDULE_SCHEMA or histories != expected_histories or
+                result.get('history_hashes') != expected_hashes or
+                result.get('control_history_hash') != expected_hashes[0] or
+                len(cases) != len(generated) or set(slots) != generated or
+                any(not isinstance(value, str) or not re.fullmatch('[a-f0-9]{64}', value)
+                    for value in slots.values()) or
+                any(slots[(key, sanitizer, optimization, 'manual')] !=
+                    slots[(key, sanitizer, optimization, 'manual-repeat')]
+                    for key in expected_hashes for sanitizer in SANITIZERS for optimization in OPTIMIZATIONS) or
                 len(scenarios) != len(configurations) or
                 result.get('scenario_inventory') != SCENARIO_INVENTORY or
                 {(row.get('sanitizer'), row.get('client_optimization'), row.get('fixture'))
@@ -366,14 +388,17 @@ def suite_results(root: Path, name: str) -> list[dict]:
                 != configurations or
                 any(row.get('scenarios') != sorted(name for name, owner in SCENARIO_INVENTORY.items()
                                                    if owner == row.get('fixture')) for row in scenarios) or
-                len(controls) != 5 or {row.get('name') for row in controls} != {
-                    'missing-frame-destruction', 'duplicate-waiter-delivery',
-                    'premature-quiescence-publication', 'overlapping-actor-jobs',
-                    'type-mismatched-next-consumption'} or
-                result.get('reduction', {}).get('status') != 'PASS' or
-                result.get('model_coverage', {}).get('missing_transitions') or
-                result.get('model_coverage', {}).get('missing_pairs') or
-                len(result.get('sanitizer_policy', {})) != 4):
+                len(controls) != len(SEMANTIC_CONTROLS) or
+                {row.get('name'): row.get('diagnostic') for row in controls if row.get('status') == 'PASS' and
+                 row.get('classification') == 'semantic-mismatch' and type(row.get('native_exit')) is int and
+                 row.get('native_exit') == 0 and row.get('sanitizer_clean') is True} != dict(SEMANTIC_CONTROLS.values()) or
+                reduction.get('status') != 'PASS' or reduction.get('fresh_native_replay') is not True or
+                reduction.get('original') != expected_histories[0] or
+                model.get('transition_domain') != sorted(transitions) or
+                model.get('pair_domain') != sorted(map(list, pairs)) or
+                model.get('missing_transitions') != [] or model.get('missing_pairs') != [] or
+                set(result.get('sanitizer_policy', {})) != {sanitizer.replace(',', '-')+'-'+optimization
+                 for sanitizer in SANITIZERS for optimization in OPTIMIZATIONS}):
             raise ValueError('generated runtime schedule matrix/controls are incomplete')
         return cases + scenarios + controls
     if name == 'frontend-fuzz':
