@@ -20675,3 +20675,71 @@ index 000000000..eff96784b
 +  (void)missing;
 +}
 +#endif
+diff --git a/clang/test/ObjC3/Sema/managed-cxx-nested-alignment.mm b/clang/test/ObjC3/Sema/managed-cxx-nested-alignment.mm
+new file mode 100644
+index 000000000..b32c1b5cb
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/managed-cxx-nested-alignment.mm
+@@ -0,0 +1,62 @@
++// REQUIRES: x86-registered-target, aarch64-registered-target
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++-header -emit-pch %s -o %t.x86_64.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++ -include %s -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++ -include %s -DREJECT -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++ -include-pch %t.x86_64.pch -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++ -include-pch %t.x86_64.pch -DREJECT -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++-header -emit-pch %s -o %t.aarch64.pch
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++ -include %s -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++ -include %s -DREJECT -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++ -include-pch %t.aarch64.pch -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++ -include-pch %t.aarch64.pch -DREJECT -fsyntax-only -verify %s
++
++#ifndef MANAGED_CXX_ALIGN_DECLS
++#define MANAGED_CXX_ALIGN_DECLS
++typedef Optional(id) Owned;
++typedef Result(id, id) OwnedResult;
++struct Payload { Owned option; OwnedResult result; };
++struct Aligned { char prefix; Payload fields[2]; };
++#pragma pack(push, 1)
++struct alignas(8) AlignedDespitePacking { Payload fields[2]; };
++struct DirectCarrierField { char prefix; Owned object; };
++struct PointerField { char prefix; Payload *view; };
++template<class T> struct Deferred { char prefix; T elements[2]; };
++#pragma pack(pop)
++#else
++static_assert(alignof(Aligned) == alignof(Payload));
++static_assert(alignof(AlignedDespitePacking) == alignof(Payload));
++static_assert(alignof(DirectCarrierField) == 1);
++static_assert(alignof(PointerField) == 1);
++void construct(const Aligned &from, AlignedDespitePacking &source,
++               const DirectCarrierField &leaf) {
++  Aligned aligned;
++  Aligned copy = from;
++  AlignedDespitePacking moved = static_cast<AlignedDespitePacking &&>(source);
++  DirectCarrierField leaf_copy = leaf;
++}
++#ifdef REJECT
++#pragma pack(push, 1)
++struct DirectNested {
++  char prefix;
++  Payload field; // expected-error {{ObjC3 nested managed C++ record 'Payload' requires 8-byte alignment at field 'field' (actual alignment 1)}}
++};
++struct NestedArray {
++  char prefix;
++  Payload elements[2]; // expected-error {{ObjC3 nested managed C++ record 'Payload' requires 8-byte alignment at field 'elements' (actual alignment 1)}}
++};
++#pragma pack(pop)
++struct PackedField {
++  char prefix;
++  Payload field __attribute__((packed)); // expected-error {{ObjC3 nested managed C++ record 'Payload' requires 8-byte alignment at field 'field' (actual alignment 1)}}
++};
++typedef Payload __attribute__((aligned(1))) PayloadAlias;
++struct AliasField {
++  char prefix;
++  PayloadAlias field; // expected-error {{requires 8-byte alignment at field 'field' (actual alignment 1)}}
++};
++int delayed = sizeof(Deferred<Payload>); // expected-note {{in instantiation of template class 'Deferred<Payload>' requested here}}
++                                         // expected-error@* {{ObjC3 nested managed C++ record 'Payload' requires 8-byte alignment at field 'elements' (actual alignment 1)}}
++#else
++// expected-no-diagnostics
++#endif
++#endif

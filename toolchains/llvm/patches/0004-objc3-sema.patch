@@ -1489,7 +1489,7 @@ diff --git a/clang/lib/Sema/SemaDecl.cpp b/clang/lib/Sema/SemaDecl.cpp
        } else if (PointerAuthQualifier Q = FT.getPointerAuth();
 
 diff --git a/clang/lib/Sema/SemaDeclCXX.cpp b/clang/lib/Sema/SemaDeclCXX.cpp
-index b0669c602..3b5c9bf01 100644
+index b0669c602..90cc20480 100644
 --- a/clang/lib/Sema/SemaDeclCXX.cpp
 +++ b/clang/lib/Sema/SemaDeclCXX.cpp
 @@ -11,8 +11,11 @@
@@ -1592,7 +1592,45 @@ index b0669c602..3b5c9bf01 100644
    auto *FieldClassDecl = FieldType->getAsCXXRecordDecl();
    if (!FieldClassDecl)
      return;
-@@ -7471,6 +7511,13 @@ void Sema::CheckCompletedCXXClass(Scope *S, CXXRecordDecl *Record) {
+@@ -7110,6 +7150,37 @@ void Sema::CheckCompletedCXXClass(Scope *S, CXXRecordDecl *Record) {
+   if (!Record)
+     return;
+ 
++  const auto &Runtime = getLangOpts().ObjCRuntime;
++  if (getLangOpts().ObjC3 && getLangOpts().ObjCAutoRefCount &&
++      Context.getTargetInfo().getTriple().isOSLinux() &&
++      Runtime.getKind() == ObjCRuntime::GNUstep &&
++      Runtime.getVersion() == VersionTuple(2, 2) &&
++      !Record->isInvalidDecl() && !Record->isDependentType()) {
++    // The native C++ member's this pointer requires its declared alignment.
++    // Direct carrier fields do not form a C++ this pointer.
++    for (const FieldDecl *Field : Record->fields()) {
++      QualType Element = Context.getBaseElementType(Field->getType());
++      if (!Element->isRecordType() ||
++          !containsObjC3CarrierManagedStorage(Element))
++        continue;
++      const ASTRecordLayout &Layout = Context.getASTRecordLayout(Record);
++      CharUnits Offset = Context.toCharUnitsFromBits(
++          Layout.getFieldOffset(Field->getFieldIndex()));
++      CharUnits Available = Layout.getAlignment().alignmentAtOffset(Offset);
++      CharUnits Required =
++          Context.getTypeAlignInChars(Element.getCanonicalType());
++      if (Available >= Required)
++        continue;
++      Diag(Field->getLocation(),
++           getDiagnostics().getCustomDiagID(
++               DiagnosticsEngine::Error,
++               "ObjC3 nested managed C++ record %0 requires %1-byte alignment "
++               "at field %2 (actual alignment %3)"))
++          << Element << Required.getQuantity() << Field->getDeclName()
++          << Available.getQuantity();
++    }
++  }
++
+   if (Record->isAbstract() && !Record->isInvalidDecl()) {
+     AbstractUsageInfo Info(*this, Record);
+     CheckAbstractClassUsage(Info, Record);
+@@ -7471,6 +7542,13 @@ void Sema::CheckCompletedCXXClass(Scope *S, CXXRecordDecl *Record) {
    else if (Record->hasNonTrivialDestructor())
      Record->setParamDestroyedInCallee(CanPass);
  
@@ -1606,7 +1644,7 @@ index b0669c602..3b5c9bf01 100644
    if (getLangOpts().ForceEmitVTables) {
      // If we want to emit all the vtables, we need to mark it as used.  This
      // is especially required for cases like vtable assumption loads.
-@@ -7685,6 +7732,12 @@ static bool defaultedSpecialMemberIsConstexpr(
+@@ -7685,6 +7763,12 @@ static bool defaultedSpecialMemberIsConstexpr(
    if (!S.getLangOpts().CPlusPlus11)
      return false;
  
@@ -1619,7 +1657,7 @@ index b0669c602..3b5c9bf01 100644
    // C++11 [dcl.constexpr]p4:
    // In the definition of a constexpr constructor [...]
    bool Ctor = true;
-@@ -9809,7 +9862,8 @@ bool SpecialMemberDeletionInfo::shouldDeleteForVariantObjCPtrMember(
+@@ -9809,7 +9893,8 @@ bool SpecialMemberDeletionInfo::shouldDeleteForVariantObjCPtrMember(
    // The defaulted special functions are defined as deleted if this is a variant
    // member with a non-trivial ownership type, e.g., ObjC __strong or __weak
    // type under ARC.
@@ -1629,7 +1667,7 @@ index b0669c602..3b5c9bf01 100644
      return false;
  
    // Don't make the defaulted default constructor defined as deleted if the
-@@ -9887,6 +9941,35 @@ bool SpecialMemberDeletionInfo::shouldDeleteForField(FieldDecl *FD) {
+@@ -9887,6 +9972,35 @@ bool SpecialMemberDeletionInfo::shouldDeleteForField(FieldDecl *FD) {
    QualType FieldType = S.Context.getBaseElementType(FD->getType());
    CXXRecordDecl *FieldRecord = FieldType->getAsCXXRecordDecl();
  
@@ -1665,7 +1703,7 @@ index b0669c602..3b5c9bf01 100644
    if (inUnion() && shouldDeleteForVariantObjCPtrMember(FD, FieldType))
      return true;
  
-@@ -10426,6 +10509,17 @@ static bool checkTrivialClassMembers(Sema &S, CXXRecordDecl *RD,
+@@ -10426,6 +10540,17 @@ static bool checkTrivialClassMembers(Sema &S, CXXRecordDecl *RD,
        return false;
      }
  
@@ -1683,7 +1721,7 @@ index b0669c602..3b5c9bf01 100644
      bool ConstRHS = ConstArg && !FI->isMutable();
      if (!checkTrivialSubobjectCall(S, FI->getLocation(), FieldType, ConstRHS,
                                     CSM, TSK_Field, TAH, Diagnose))
-@@ -10765,6 +10859,20 @@ void Sema::checkIllFormedTrivialABIStruct(CXXRecordDecl &RD) {
+@@ -10765,6 +10890,20 @@ void Sema::checkIllFormedTrivialABIStruct(CXXRecordDecl &RD) {
      // Ill-formed if the field is an ObjectiveC pointer or of a type that is
      // non-trivial for the purpose of calls.
      QualType FT = FD->getType();
@@ -1704,7 +1742,7 @@ index b0669c602..3b5c9bf01 100644
      if (FT.getObjCLifetime() == Qualifiers::OCL_Weak) {
        PrintDiagAndRemoveAttr(4);
        return;
-@@ -11172,6 +11280,13 @@ static void diagnoseInvalidDeclaratorChunks(Sema &S, Declarator &D,
+@@ -11172,6 +11311,13 @@ static void diagnoseInvalidDeclaratorChunks(Sema &S, Declarator &D,
  
  QualType Sema::CheckConstructorDeclarator(Declarator &D, QualType R,
                                            StorageClass &SC) {
@@ -1718,7 +1756,7 @@ index b0669c602..3b5c9bf01 100644
    bool isVirtual = D.getDeclSpec().isVirtualSpecified();
  
    // C++ [class.ctor]p3:
-@@ -11371,6 +11486,13 @@ bool Sema::CheckDestructor(CXXDestructorDecl *Destructor) {
+@@ -11371,6 +11517,13 @@ bool Sema::CheckDestructor(CXXDestructorDecl *Destructor) {
  
  QualType Sema::CheckDestructorDeclarator(Declarator &D, QualType R,
                                           StorageClass& SC) {
@@ -1732,7 +1770,7 @@ index b0669c602..3b5c9bf01 100644
    // C++ [class.dtor]p1:
    //   [...] A typedef-name that names a class is a class-name
    //   (7.1.3); however, a typedef-name that names a class shall not
-@@ -14149,6 +14271,32 @@ bool SpecialMemberExceptionSpecInfo::visitBase(CXXBaseSpecifier *Base) {
+@@ -14149,6 +14302,32 @@ bool SpecialMemberExceptionSpecInfo::visitBase(CXXBaseSpecifier *Base) {
  }
  
  bool SpecialMemberExceptionSpecInfo::visitField(FieldDecl *FD) {
@@ -1765,7 +1803,7 @@ index b0669c602..3b5c9bf01 100644
    if (CSM == CXXSpecialMemberKind::DefaultConstructor &&
        FD->hasInClassInitializer()) {
      Expr *E = FD->getInClassInitializer();
-@@ -14218,6 +14366,11 @@ ComputeDefaultedSpecialMemberExceptionSpec(
+@@ -14218,6 +14397,11 @@ ComputeDefaultedSpecialMemberExceptionSpec(
    //   An implicitly declared special member function (Clause 12) shall have an
    //   exception-specification. [...]
    SpecialMemberExceptionSpecInfo Info(S, MD, CSM, ICI, MD->getLocation());
@@ -1777,7 +1815,7 @@ index b0669c602..3b5c9bf01 100644
    if (ClassDecl->isInvalidDecl())
      return Info.ExceptSpec;
  
-@@ -16442,6 +16595,7 @@ ExprResult Sema::BuildCXXConstructExpr(
+@@ -16442,6 +16626,7 @@ ExprResult Sema::BuildCXXConstructExpr(
      bool HadMultipleCandidates, bool IsListInitialization,
      bool IsStdInitListInitialization, bool RequiresZeroInit,
      CXXConstructionKind ConstructKind, SourceRange ParenRange) {
@@ -1785,7 +1823,7 @@ index b0669c602..3b5c9bf01 100644
    bool Elidable = false;
  
    // C++0x [class.copy]p34:
-@@ -16507,6 +16661,7 @@ ExprResult Sema::BuildCXXConstructExpr(
+@@ -16507,6 +16692,7 @@ ExprResult Sema::BuildCXXConstructExpr(
      bool HadMultipleCandidates, bool IsListInitialization,
      bool IsStdInitListInitialization, bool RequiresZeroInit,
      CXXConstructionKind ConstructKind, SourceRange ParenRange) {
@@ -1793,7 +1831,7 @@ index b0669c602..3b5c9bf01 100644
    assert(declaresSameEntity(
               Constructor->getParent(),
               DeclInitType->getBaseElementTypeUnsafe()->getAsCXXRecordDecl()) &&
-@@ -18571,7 +18726,7 @@ NamedDecl *Sema::ActOnFriendFunctionDecl(Scope *S, Declarator &D,
+@@ -18571,7 +18757,7 @@ NamedDecl *Sema::ActOnFriendFunctionDecl(Scope *S, Declarator &D,
        return nullptr;
      }
    } else {
@@ -1802,7 +1840,7 @@ index b0669c602..3b5c9bf01 100644
      if (RC->isLambda()) {
        Diag(NameInfo.getBeginLoc(), diag::err_friend_lambda_decl);
      }
-@@ -18882,6 +19037,37 @@ bool Sema::CheckOverridingFunctionAttributes(CXXMethodDecl *New,
+@@ -18882,6 +19068,37 @@ bool Sema::CheckOverridingFunctionAttributes(CXXMethodDecl *New,
    const auto *NewFT = New->getType()->castAs<FunctionProtoType>();
    const auto *OldFT = Old->getType()->castAs<FunctionProtoType>();
  
@@ -1840,7 +1878,7 @@ index b0669c602..3b5c9bf01 100644
    if (OldFT->hasExtParameterInfos()) {
      for (unsigned I = 0, E = OldFT->getNumParams(); I != E; ++I)
        // A parameter of the overriding method should be annotated with noescape
-@@ -19001,6 +19187,17 @@ bool Sema::CheckOverridingFunctionReturnType(const CXXMethodDecl *New,
+@@ -19001,6 +19218,17 @@ bool Sema::CheckOverridingFunctionReturnType(const CXXMethodDecl *New,
        NewTy->isDependentType() || OldTy->isDependentType())
      return false;
  
