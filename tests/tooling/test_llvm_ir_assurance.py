@@ -29,6 +29,26 @@ def module(*, optnone=False):
             'attributes #0 = { '+('optnone noinline' if optnone else 'nounwind')+' }\n')
 
 
+def test_installed_ir_reuses_the_exact_sdk_and_checks_both_executable_routes(tmp_path):
+    from scripts.objc3c_toolchain.llvm_installed_ir import qualify
+
+    selected = os.environ.get('OBJC3_TEST_NATIVE_REUSE_SDK')
+    if not selected:
+        pytest.skip('requires the exact installed Linux preview')
+    sdk = Path(selected)
+    seal = json.loads((sdk / 'objc3-sdk.json').read_text())['seal_sha256']
+    with pytest.raises(ValueError, match='identity mismatch'):
+        qualify(sdk, tmp_path / 'wrong-seal', seal_sha256='0'*64)
+    assert not (tmp_path / 'wrong-seal').exists()
+    report = qualify(sdk, tmp_path / 'evidence', seal_sha256=seal)
+    assert report['status'] == 'PASS' and report['sdk']['seal_sha256'] == seal
+    assert len(report['cases']) == 6
+    for row in report['cases']:
+        assert row['routes']['driver']['observation'] == row['routes']['backend']['observation']
+    commands = [row for row in report['commands'] if '-verify-machineinstrs' in row['argv']]
+    assert len(commands) == 12 and {row['argv'][0] for row in commands} == {str(sdk.resolve() / 'bin/llc')}
+
+
 def test_corpus_keeps_authored_oracles_and_lowering_transports():
     document = corpus(ROOT)
     assert len(document['cases']) == 8

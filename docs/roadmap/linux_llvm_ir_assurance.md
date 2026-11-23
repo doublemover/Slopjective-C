@@ -152,6 +152,15 @@ The synthetic controls are not presented as frontend-generated semantic proof.
 
 ## Current limits
 
+The optional `installed-preview` workflow mode uses the published SDK identified
+in the release manifest. It captures real frontend and optimized IR for three
+generated programs at O0 and O2. The shipped `llc` verifies machine instructions,
+and the shipped `llvm-dwarfdump` checks both driver and backend objects. Executables
+from both routes must agree with the independent semantic model and load the
+runtime from the verified SDK. This mode reuses the release archive directly.
+The development lane owns pass-level verification, ThinLTO stages, debugger
+execution, and reduction.
+
 The complete bounded source/PCH/interface matrix passed: 17 configurations,
 29 translation units, 37 runtime executions and 764 recorded commands. The
 independent control campaign and real reduction also passed. Final results belong
