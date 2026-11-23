@@ -706,7 +706,9 @@ def test_release_workflow_fans_out_exact_product_and_coverage_consumers():
     assert 'needs: [plan, product-producer]' in workflow
     assert 'needs: [plan, product-producer, asan-foundation-producer]' in workflow
     assert 'needs: [plan, coverage-producer]' in workflow
-    assert 'Prove complete disjoint core union' in workflow
+    gate = workflow.split('\n  gate:', 1)[1]
+    assert 'Download exact core owner evidence' in gate
+    assert gate.index('release_matrix aggregate') < gate.index('verify --sharded')
     assert 'Prove complete disjoint coverage union' in workflow
     assert "coverage-profile-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}" in workflow
     assert '--package-release /producer/product-producer/package/release.json' in workflow

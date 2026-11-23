@@ -10,10 +10,11 @@ evidence for its executed scope. Each issue still has its own acceptance criteri
 
 ## Resolved acceptance findings
 
-| Issue                                                             | Evidence                                                                                                                                                                                                                                                                                                                                                            |
-| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [#8324](https://github.com/doublemover/Slopjective-C/issues/8324) | The direct compiler and package wrapper require ordinary diagnostic termination. The [regression controls](../../tests/tooling/test_qualification_integrity.py) reject signals, translated crashes, timeouts, unrelated errors, and zero exit. The shipped compiler and package qualification passed on both hosts.                                                 |
-| [#8326](https://github.com/doublemover/Slopjective-C/issues/8326) | The installer commits activation through one generation pointer. The [installer controls](../../tests/tooling/test_toolchain_install.py) cover interruption before and after replacement, stable activation, retries, relocation, restrictive permissions, and failure after activation. The exact downloads passed fresh install rehearsals on both architectures. |
+| Issue                                                             | Evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [#8324](https://github.com/doublemover/Slopjective-C/issues/8324) | The direct compiler and package wrapper require ordinary diagnostic termination. The [regression controls](../../tests/tooling/test_qualification_integrity.py) reject signals, translated crashes, timeouts, unrelated errors, and zero exit. The shipped compiler and package qualification passed on both hosts.                                                                                                                                              |
+| [#8325](https://github.com/doublemover/Slopjective-C/issues/8325) | Both installed build routes rediscover headers before reuse. A fresh replay with the published x86-64 SDK exercised warm reuse, an external edit with preserved size and timestamp, a nested existence-only probe, and creation and removal of a higher-priority header. The incremental and clean builds agreed on output and interface identity. The [source-graph controls](../../tests/tooling/test_source_graph.py) also exercise in-flight lookup changes. |
+| [#8326](https://github.com/doublemover/Slopjective-C/issues/8326) | The installer commits activation through one generation pointer. The [installer controls](../../tests/tooling/test_toolchain_install.py) cover interruption before and after replacement, stable activation, retries, relocation, restrictive permissions, and failure after activation. The exact downloads passed fresh install rehearsals on both architectures.                                                                                              |
 
 ## Remaining acceptance
 
@@ -39,8 +40,9 @@ variant, use that variant's receipt to close the issue.
 
 The x86-64 qualification took 4h 54m and AArch64 took 6h 32m. The longest
 instrumented consumer took 137 minutes on x86-64 (partition 9) and 196 minutes
-on AArch64 (partition 5). The ordinary SDK producers took 107 and 114 minutes,
-respectively. The complete job inventory and timings are in the
+on AArch64 (partition 5). The consumer execution step accounts for roughly 134
+and 194 minutes respectively. The ordinary SDK producers took 107 and 114
+minutes. The complete job inventory and timings are in the
 [qualification receipt](../releases/preview-qualification.json).
 
 The preview also uploaded an already merged core archive of 2.41 GB on x86-64
