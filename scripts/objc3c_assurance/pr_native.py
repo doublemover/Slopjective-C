@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import re
 
 from scripts.objc3c_toolchain.binary_packages import write_json
 from scripts.objc3c_toolchain.core import planned_development_identity
@@ -147,7 +148,15 @@ def verify(repo: Path, evidence: Path, *, head: str, base: str, tested: str, exe
         suites = SOURCE_SUITES
     elif foundation == 'current-source-build':
         built = read('checked/execution/foundation/foundation.json')
+        source = built.get('foundation_source', {})
+        expected_source = {field: planned[key] for field, key in FOUNDATION_FIELDS.items()}
+        effective = built.get('effective_configuration', {})
+        tree = source.get('source_tree')
         if (receipt.get('foundation_sdk') is not None or built.get('source_identity') != planned['build_id'] or
+                any(source.get(field) != value for field, value in expected_source.items()) or
+                not isinstance(tree, str) or not re.fullmatch(r'[0-9a-f]{40}', tree) or
+                effective.get('CLANG_OBJC3_PATCH_DIGEST') != planned['patch_digest'] or
+                effective.get('CLANG_OBJC3_CONFIG_DIGEST') != planned['build_config_digest'] or
                 built.get('cost_context', {}).get('build_config_digest') != planned['build_config_digest']):
             raise ValueError('native PR built a different foundation')
         suites = ('foundation', *SOURCE_SUITES)

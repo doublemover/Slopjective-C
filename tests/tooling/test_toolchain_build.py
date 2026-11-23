@@ -19,6 +19,7 @@ def runner(tmp_path, monkeypatch):
     def plan(repo, *, phase, **kwargs):
         return {'paths': {'build': str(directory)}, 'identity': phase + '-identity',
                 'source_build_id': 'qualified-source', 'source_tree': 'tree',
+                'upstream_commit': 'pinned-upstream', 'patch_digest': 'locked-patches',
                 'effective_configuration': {'LLVM_ENABLE_ASSERTIONS': 'ON'},
                 'build_config_digest': 'config', 'host_environment': {'compiler': 'original'},
                 'command': [phase], 'follow_up_commands': [[phase, 'follow-up']],
@@ -39,6 +40,11 @@ def test_build_runs_all_plans_with_isolated_logs_and_environment(runner):
     repo, directory, calls = runner
     report = build.build_foundation(repo, host='linux-x86_64', stage=True)
     assert report['status'] == 'passed'
+    assert report['foundation_source'] == {
+        'source_build_id': 'qualified-source', 'source_tree': 'tree',
+        'upstream_commit': 'pinned-upstream', 'patch_digest': 'locked-patches',
+        'build_config_digest': 'config',
+    }
     assert [call[0][0] for call in calls] == ['configure'] * 2 + ['build'] * 2 + ['test'] * 2 + ['stage'] * 2
     assert all(env['QUALIFIED_BUILD'] == 'yes' and env['CCACHE_COMPILERCHECK'] == 'content' for _, env in calls)
     assert len({phase['log'] for phase in report['phases']}) == 8
@@ -142,7 +148,8 @@ def test_real_ninja_inventory_admits_all_groups_without_running_commands(tmp_pat
     assert not (tmp_path / 'compiled').exists()
 
 
-@pytest.mark.parametrize("field", ["source_tree", "source_build_id", "build_config_digest", "host_environment"])
+@pytest.mark.parametrize("field", ["source_tree", "source_build_id", "upstream_commit",
+                                   "patch_digest", "build_config_digest", "host_environment"])
 def test_source_or_compiler_change_during_build_invalidates_report(runner, monkeypatch, field):
     repo, directory, _ = runner
     original = build.build_plans

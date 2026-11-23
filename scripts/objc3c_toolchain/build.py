@@ -209,9 +209,12 @@ def _build_foundation(repo: Path, *, host: str | None = None, fetch: bool = Fals
         print(f'{change}. Reconfiguring the verified LLVM source.', flush=True)
         seal_development(repo, source_dir=source)
         plans = build_plans(repo, source_dir=source, host=host, instrumentation_profile=instrumentation_profile)
-    report = {"status": "running", "source_identity": plans["configure"]["source_build_id"], "phases": [],
+    configure = plans["configure"]
+    source_fields = ("source_build_id", "source_tree", "upstream_commit", "patch_digest", "build_config_digest")
+    report = {"status": "running", "source_identity": configure["source_build_id"], "phases": [],
+              "foundation_source": {key: configure[key] for key in source_fields},
               "started_utc": datetime.now(timezone.utc).isoformat()}
-    report['cost_context'] = cost_context(plans['configure'],
+    report['cost_context'] = cost_context(configure,
         preparation_seconds=time.monotonic()-preparation_started, prepared=prepared)
     started = time.monotonic()
     report_path = None
@@ -221,8 +224,8 @@ def _build_foundation(repo: Path, *, host: str | None = None, fetch: bool = Fals
         for phase in ("configure", "build", "test", *(('stage',) if stage else ())):
             plan = plans[phase]
             if phase == "build":
-                report["effective_configuration"] = verify_effective_configuration(plans["configure"])
-                report['configured_build_targets'] = verify_build_targets(plans['configure'], plans['build'])
+                report["effective_configuration"] = verify_effective_configuration(configure)
+                report['configured_build_targets'] = verify_build_targets(configure, plans['build'])
             directory = Path(plan["paths"]["build"])
             directory.mkdir(parents=True, exist_ok=True)
             report_path = directory / "foundation-build-report.json"
@@ -284,8 +287,8 @@ def _build_foundation(repo: Path, *, host: str | None = None, fetch: bool = Fals
             if failed_tests:
                 raise ToolchainError('foundation test commands failed; see ' + ', '.join(failed_tests))
         refreshed = build_plans(repo, source_dir=source, host=host, instrumentation_profile=instrumentation_profile)["configure"]
-        for key in ("source_build_id", "source_tree", "build_config_digest", "host_environment"):
-            if refreshed[key] != plans["configure"][key]:
+        for key in (*source_fields, "host_environment"):
+            if refreshed[key] != configure[key]:
                 raise ToolchainError(f"foundation {key} changed during the build")
         report["status"] = "passed"
     except (ToolchainError, OSError) as error:

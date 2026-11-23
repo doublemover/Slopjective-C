@@ -225,6 +225,56 @@ def test_terminal_gate_accepts_explicit_prose_plan_without_native_output(checkou
     assert pr_native.verify(repo, root, execution='success', **revision)['classification'] == 'prose-only'
 
 
+@pytest.mark.parametrize('defect', [None, 'patch_digest', 'upstream_commit', 'source_tree', 'effective_patch'])
+def test_terminal_gate_checks_full_cold_foundation_identity(checkout, monkeypatch, defect):
+    repo, commit = checkout
+    revision = commit('toolchains/llvm/cmake/ObjC3LLVMCache.cmake')
+    plan = from_checkout(repo, **revision)
+    evidence = repo / 'out/native-pr'
+    foundation = {name: name + '-full' for name in pr_native.FOUNDATION_FIELDS}
+    monkeypatch.setattr(pr_native, 'planned_development_identity', lambda repo: {
+        key: foundation[name] for name, key in pr_native.FOUNDATION_FIELDS.items()})
+    suites = ('foundation', *pr_native.SOURCE_SUITES)
+    reached = []
+
+    def aggregate(plan, root, *, outcomes, tested, suite_ids, frontend_names):
+        assert plan['revision'] == revision
+        assert outcomes == {'plan': 'success', 'native': 'success'}
+        assert tested == revision['tested']
+        assert suite_ids == suites and frontend_names is None
+        reached.append(root)
+        return {'status': 'PASS'}
+
+    monkeypatch.setattr(pr_native, 'aggregate', aggregate)
+    directory = evidence / 'checked/execution/foundation'
+    directory.mkdir(parents=True)
+    for path in (evidence / 'selection.json', evidence / 'checked/plan.json'):
+        path.write_text(json.dumps(plan))
+    (evidence / 'checked/result.json').write_text(json.dumps({
+        'schema': pr_native.SCHEMA, 'status': 'PASS', 'revision': revision,
+        'plan_sha256': plan['sha256'], 'classification': 'native',
+        'foundation': 'current-source-build', 'foundation_sdk': None, 'suites': suites}))
+    source = {**foundation, 'source_tree': 'a' * 40}
+    effective = {'CLANG_OBJC3_PATCH_DIGEST': foundation['patch_digest'],
+                 'CLANG_OBJC3_CONFIG_DIGEST': foundation['build_config_digest']}
+    if defect == 'effective_patch':
+        effective['CLANG_OBJC3_PATCH_DIGEST'] = 'other-patch'
+    elif defect is not None:
+        source[defect] = 'wrong'
+    (directory / 'foundation.json').write_text(json.dumps({
+        'source_identity': foundation['source_build_id'], 'foundation_source': source,
+        'effective_configuration': effective, 'cost_context': {
+            'build_config_digest': foundation['build_config_digest']}}))
+
+    if defect is None:
+        assert pr_native.verify(repo, evidence, execution='success', **revision)['status'] == 'PASS'
+        assert reached == [directory.parent]
+    else:
+        with pytest.raises(ValueError, match='built a different foundation'):
+            pr_native.verify(repo, evidence, execution='success', **revision)
+        assert reached == []
+
+
 def test_focused_frontend_receipt_cannot_satisfy_full_suite_or_different_selection(tmp_path):
     frontend = tmp_path / 'frontend'
     proof = frontend / 'frontend-tests'
