@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -43,6 +45,7 @@ def qualify(sdk: Path, output: Path) -> dict:
     receipt.unlink(missing_ok=True)
     manifest = json.loads((sdk / 'objc3-sdk.json').read_text())
     cases = []
+    optimization_controls = None
     try:
         modes = [(*mode, 'native-async-packages', 'fixture.NativeAsync')
                  for mode in configurations()]
@@ -68,6 +71,8 @@ def qualify(sdk: Path, output: Path) -> dict:
                     raise ValueError('native async interface lost its exact SDK frame contract')
                 if language == 'objective-c++':
                     check_cpp_metadata(metadata)
+                    if optimization_controls is None and standard == 'c++23' and ownership == 'arc' and optimization == 'O2':
+                        optimization_controls = verify_metadata_modes(metadata_path)
                 else:
                     names = {row['qualified_name']: row for row in metadata['declarations']}
                     if set(names) != {'c_frame_factory', 'c_frame_destroyed', 'c_frame_scoped'}:
@@ -125,9 +130,11 @@ def qualify(sdk: Path, output: Path) -> dict:
                     'runtime_semantic': runtime_semantic,
                     'interface_sha256': interface_sha, 'package_sha256': publication['content_sha256'],
                     'source_graph': first, 'reused_graph': repeated, 'consumer': consumed})
+        if optimization_controls is None:
+            raise ValueError('native package qualification omitted metadata optimization controls')
         report = {'schema': 'objc3c.native-async-packages.v1', 'status': 'PASS',
                   'sdk_seal': manifest['seal_sha256'], 'executions': 3 * len(cases),
-                  'cases': cases}
+                  'metadata_optimization_controls': optimization_controls, 'cases': cases}
     except Exception as error:
         packages.write_json(receipt, {'schema': 'objc3c.native-async-packages.v1',
             'status': 'FAIL', 'sdk_seal': manifest['seal_sha256'], 'cases': cases,
@@ -196,8 +203,8 @@ def check_factory_metadata(metadata):
     traits=[row for row in standard_coroutines if ';cxx-coroutine-traits-specializations:v1;' in row['canonical_type_identity']]
     if not (len(traits)==2 and {row['kind'] for row in traits}=={'ClassTemplateSpecialization','ClassTemplatePartialSpecialization'}):
         raise ValueError("qualify_native_async_packages: required semantic check failed: len(traits)==2 and {row['kind'] for row in traits}=={'ClassTemplateSpecialization','ClassTemplatePartialSpecialization'}")
-    if not (all(row['export_root'].startswith('NativeStandardCoroutines::External') for row in traits)):
-        raise ValueError("qualify_native_async_packages: required semantic check failed: all(row['export_root'].startswith('NativeStandardCoroutines::External') for row in traits)")
+    if any(row.get('export_root') != 'NativeStandardCoroutines::External' for row in traits):
+        raise ValueError('C++ package lost the exact external coroutine traits owner')
     native_attributes={row['qualified_name'] for row in metadata['declarations']
                        if ';native-declaration-attributes:v6;' in row.get('canonical_type_identity','')}
     if not ('objc3.native-declaration-attributes.v6' in metadata['required_semantics']):
@@ -534,16 +541,18 @@ def check_cpp_metadata(metadata):
                          ', '.join(sorted(class_specialization_names)))
     variable_specializations=[row for row in metadata['declarations']
                  if ';cxx-variable-specializations:v1;' in row.get('canonical_type_identity','')]
+    variable_symbols = {row.get('native_symbol_name') for row in variable_specializations}
     if ('objc3.cxx-variable-specializations.v1' not in metadata['required_semantics'] or
-            len(variable_specializations)!=17 or len({row['native_symbol_name'] for row in variable_specializations})!=17):
+            len(variable_specializations)!=17 or len(variable_symbols)!=17 or not all(variable_symbols)):
         raise ValueError('explicit variable-specialization binding inventory differs: '
                          f'rows={len(variable_specializations)}, symbols='
-                         f'{len({row["native_symbol_name"] for row in variable_specializations})}, names='+
+                         f'{len(variable_symbols)}, names='+
                          ', '.join(sorted(row['qualified_name'] for row in variable_specializations)))
     specialized=[row for row in metadata['declarations']
                  if ';cxx-function-specializations:v1;' in row.get('canonical_type_identity','')]
+    function_symbols = {row.get('native_symbol_name') for row in specialized}
     if ('objc3.cxx-function-specializations.v1' not in metadata['required_semantics'] or
-            len(specialized)!=12 or len({row['native_symbol_name'] for row in specialized})!=12):
+            len(specialized)!=12 or len(function_symbols)!=12 or not all(function_symbols)):
         raise ValueError('C++ package lost exact explicit function specialization bindings')
     for capability in ('objc3.cxx-template-template-parameters.v1',
                        'objc3.cxx-nominal-alias-templates.v1'):
@@ -682,19 +691,19 @@ def check_cpp_metadata(metadata):
         ('objc3.cxx-template-deduction.v1', 'native_template_deduced_add', ';cxx-template-deduction:v1;'),
     ):
         if semantic not in metadata.get('required_semantics', []):
-            raise AssertionError('missing local expression capability: ' + semantic)
+            raise ValueError('missing local expression capability: ' + semantic)
         if marker not in names.get(name, {}).get('canonical_type_identity', ''):
-            raise AssertionError('missing local expression identity: ' + name)
+            raise ValueError('missing local expression identity: ' + name)
     if 'objc3.cxx-friends.v3' not in metadata.get('required_semantics', []):
-        raise AssertionError('missing C++ friend capability')
+        raise ValueError('missing C++ friend capability')
     for name in ('NativeFriendValue', 'native_friend_reveal', 'native_friend_external', 'native_friend_delayed'):
         if ';cxx-friends:v3;' not in names.get(name, {}).get('canonical_type_identity', ''):
-            raise AssertionError('missing C++ friend identity: ' + name)
+            raise ValueError('missing C++ friend identity: ' + name)
     if 'objc3.cxx-thread-local.v1' not in metadata.get('required_semantics', []):
-        raise AssertionError('missing C++ thread-local capability')
+        raise ValueError('missing C++ thread-local capability')
     for name in ('native_thread_value', 'native_inline_thread_value', 'NativeThreadState', 'native_local_thread_value'):
         if ';cxx-thread-local:v1;' not in names.get(name, {}).get('canonical_type_identity', ''):
-            raise AssertionError('missing C++ thread-local identity: ' + name)
+            raise ValueError('missing C++ thread-local identity: ' + name)
     if 'objc3.cxx-lambda-expressions.v2' not in metadata.get('required_semantics', []):
         raise ValueError('C++ package lost its lambda-expression capability')
     for name in ('native_closure', 'NativeClosureDefaults', 'native_closure_frame'):
@@ -751,11 +760,76 @@ def check_cpp_metadata(metadata):
         raise ValueError('native async Block interface lost checked error identity')
 
 
+def metadata_controls(metadata: dict) -> dict:
+    """Use a real provider as the positive control for single-field omissions."""
+    check_cpp_metadata(metadata)
+    outcomes = {}
+
+    def observe(label, changed):
+        try:
+            check_cpp_metadata(changed)
+        except (ValueError, KeyError) as error:
+            outcomes[label] = f'{type(error).__name__}: {error}'
+        else:
+            outcomes[label] = None
+
+    for field in ('required_semantics', 'declarations'):
+        values = metadata[field]
+        for index in range(len(values)):
+            observe(f'{field}:{index}', {**metadata, field: values[:index] + values[index+1:]})
+        if not any(error for label, error in outcomes.items() if label.startswith(field + ':')):
+            raise ValueError(f'native metadata controls exercised no required {field}')
+    rows = metadata['declarations']
+    fields = {';cxx-function-specializations:v1;': ('native_symbol_name', ''),
+              ';cxx-variable-specializations:v1;': ('native_symbol_name', ''),
+              ';cxx-coroutine-traits-specializations:v1;': ('export_root', 'NativeStandardCoroutines::ExternalOther')}
+    for marker, (field, replacement) in fields.items():
+        count = 0
+        for index, row in enumerate(rows):
+            if marker not in row.get('canonical_type_identity', ''):
+                continue
+            label = f'{field}:{index}'
+            observe(label, {**metadata, 'declarations': rows[:index] + [{**row, field: replacement}] + rows[index+1:]})
+            if outcomes[label] is None:
+                raise ValueError(f'native metadata controls accepted a substituted {field}')
+            count += 1
+        if not count:
+            raise ValueError(f'native metadata controls omitted {marker}')
+    return {'mutations': len(outcomes), 'rejections': sum(value is not None for value in outcomes.values()),
+            'outcomes_sha256': hashlib.sha256(json.dumps(outcomes, sort_keys=True).encode()).hexdigest()}
+
+
+def verify_metadata_modes(metadata_path: Path) -> dict:
+    outcomes = []
+    provider_sha256 = packages.digest(metadata_path)
+    entry = (['-m', 'scripts.objc3c_toolchain.qualify_native_async_packages']
+             if __package__ else [str(Path(__file__).resolve())])
+    for mode in (0, 1, 2):
+        result = json.loads(subprocess.check_output(
+            [sys.executable, '-B', *entry, '--metadata-controls', str(metadata_path)],
+            env={**os.environ, 'PYTHONOPTIMIZE': str(mode)}, timeout=180))
+        if result.pop('optimize') != mode:
+            raise ValueError('native metadata controls ran under a different Python optimization mode')
+        if packages.digest(metadata_path) != provider_sha256:
+            raise ValueError('native metadata provider changed during optimization controls')
+        outcomes.append(result)
+    if any(result != outcomes[0] for result in outcomes[1:]):
+        raise ValueError('native metadata rejection differs under optimized Python')
+    return {**outcomes[0], 'optimization_modes': [0, 1, 2],
+            'provider_sha256': provider_sha256}
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--sdk-root', type=Path)
-    parser.add_argument('--output-dir', type=Path, required=True)
+    selection = parser.add_mutually_exclusive_group(required=True)
+    selection.add_argument('--output-dir', type=Path)
+    selection.add_argument('--metadata-controls', type=Path)
     args = parser.parse_args(argv)
+    if args.metadata_controls:
+        print(json.dumps({**metadata_controls(json.loads(args.metadata_controls.read_bytes())),
+                          'optimize': sys.flags.optimize}))
+        return 0
     report = qualify(args.sdk_root or Path(__file__).resolve().parents[3], args.output_dir)
     print(json.dumps({'status': report['status'], 'cases': len(report['cases']),
                       'executions': report['executions']}))
