@@ -85,8 +85,8 @@ postdate those hosted runs. [Linux x86-64 job](https://github.com/doublemover/Sl
 
 Local Linux x86-64 validation used the published SDK compiler, pinned LLVM
 23.1.5 sanitizer resources and freshly instrumented runtime services and GNUstep.
-The expanded owner completed ninety-six generated executions, sixteen maintained
-fixture executions, five controls and a fresh reduced replay. A focused native
-pass repeated the matrix with the declared-type group result and required all
-five precise control diagnostics. The updated matrix still awaits hosted
-AArch64 execution.
+The expanded owner completed ninety-six generated executions, twenty-four
+maintained fixture executions, five controls and a fresh reduced replay. The four
+public callable entry points also passed the installed source fixture under
+ASan/UBSan at O0 and O2 in ARC and MRC. Hosted execution of the expanded matrix
+remains pending.
