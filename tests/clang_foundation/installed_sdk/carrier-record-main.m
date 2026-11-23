@@ -48,6 +48,101 @@ static int ordinary(void) {
   CHECK(record_destroyed(10)==1 && record_destroyed(11)==1 && record_destroyed(12)==1);
   return 0;
 }
+#ifndef __cplusplus
+struct SeparatedRecord {
+  unsigned : 0;
+  signed int negative : 4;
+  unsigned : 3;
+  RecordStrong object;
+  unsigned : 0;
+  unsigned int positive : 3;
+  RecordMixed result;
+  unsigned : 0;
+};
+struct NestedSeparatedRecord { char marker; struct SeparatedRecord records[2]; };
+struct OrdinaryBitFieldRecord {
+  signed int negative : 4;
+  RecordStrong object;
+  unsigned int positive : 3;
+};
+
+static int result_arm(RecordMixed value) {
+  match(value) {
+    case .Ok(let object): { return object ? 1 : -1; }
+    case .Err(let object): { return object ? -1 : 0; }
+  }
+  return -1;
+}
+
+static int separated_bit_fields(void) {
+  {
+    struct SeparatedRecord empty;
+    CHECK(!hasValue(empty.object));
+  }
+  {
+    struct OrdinaryBitFieldRecord plain = {-3, record_value(101), 5};
+    struct OrdinaryBitFieldRecord copy = plain;
+    plain.object = None(id);
+    CHECK(copy.negative == -3 && copy.positive == 5 && !record_destroyed(101));
+  }
+  CHECK(record_destroyed(101) == 1);
+  {
+    id observed = record_object(102);
+    struct NestedSeparatedRecord original = {42, {
+      {-3, record_value(103), 5, Ok(id, id __weak, record_object(104))},
+      {-6, None(id), 7, Err(id, id __weak, observed)},
+    }};
+    struct NestedSeparatedRecord copy = original;
+    original.records[0].object = None(id);
+    original.records[0].result = Err(id, id __weak, (id)0);
+    observed = (id)0;
+    CHECK(record_destroyed(102) == 1 && result_arm(copy.records[1].result) == 0);
+    CHECK(copy.marker == 42 && copy.records[0].negative == -3 && copy.records[0].positive == 5);
+    CHECK(copy.records[1].negative == -6 && copy.records[1].positive == 7);
+    CHECK(hasValue(copy.records[0].object) && !hasValue(copy.records[1].object));
+    CHECK(result_arm(copy.records[0].result) == 1);
+    CHECK(!record_destroyed(103) && !record_destroyed(104));
+    copy = original;
+    CHECK(!hasValue(copy.records[0].object) && result_arm(copy.records[0].result) == 0);
+    CHECK(record_destroyed(103) == 1 && record_destroyed(104) == 1);
+  }
+  CHECK(record_destroyed(102) == 1 && record_destroyed(103) == 1 && record_destroyed(104) == 1);
+  return 0;
+}
+
+#pragma pack(push, 1)
+struct PackedStrongArray { char marker; RecordStrong values[2]; };
+#pragma pack(pop)
+struct PackedStrongField {
+  char marker;
+  struct OrdinaryBitFieldRecord member __attribute__((packed));
+};
+
+static int packed_record_storage(void) {
+  {
+    struct PackedStrongArray source = {42, {record_value(105), None(id)}};
+    struct PackedStrongArray copy;
+    copy = source;
+    source.values[0] = None(id);
+    CHECK(copy.marker == 42 && hasValue(copy.values[0]) && !hasValue(copy.values[1]));
+    CHECK(!record_destroyed(105));
+  }
+  CHECK(record_destroyed(105) == 1);
+  {
+    struct OrdinaryBitFieldRecord source = {-3, record_value(106), 7};
+    struct PackedStrongField packed = {42, {-1, None(id), 1}};
+    packed.member = source;
+    source.object = None(id);
+    struct OrdinaryBitFieldRecord readback = packed.member;
+    packed.member = source;
+    CHECK(packed.marker == 42 && !hasValue(packed.member.object));
+    CHECK(readback.negative == -3 && readback.positive == 7);
+    CHECK(hasValue(readback.object) && !record_destroyed(106));
+  }
+  CHECK(record_destroyed(106) == 1);
+  return 0;
+}
+#endif
 static RecordStrong fail_native(void) { @throw record_object(16); }
 static int failures(void) {
   @autoreleasepool {
@@ -271,6 +366,9 @@ int main(void) {
   CHECK(ordinary()==0);CHECK(failures()==0);CHECK(calls()==0);CHECK(typed_exits()==0);CHECK(hybrid()==0);CHECK(native_return_failures()==0);
 #ifdef __cplusplus
   CHECK(cpp()==0);
+#else
+  CHECK(separated_bit_fields() == 0);
+  CHECK(packed_record_storage() == 0);
 #endif
   return 0;
 }
