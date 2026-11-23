@@ -11,14 +11,27 @@ on:
         description: Include phased collection, text, and allocator observations
         type: boolean
         default: false
+  pull_request:
+    types: [labeled]
 permissions:
   contents: read
 concurrency:
-  group: preview-calibration-${{ inputs.linux_host }}-${{ github.ref }}
+  group: preview-calibration-${{ github.event_name == 'pull_request' && 'both-hosts' || inputs.linux_host }}-${{ github.ref }}
   cancel-in-progress: false
 jobs:
   calibration:
-    runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && github.event.label.name == 'calibrate preview')
+    name: Calibrate ${{ matrix.linux_host }}
+    strategy:
+      fail-fast: false
+      matrix:
+        linux_host: >-
+          ${{ fromJSON(github.event_name == 'pull_request'
+          && '["linux-x86_64","linux-aarch64"]'
+          || format('["{0}"]', inputs.linux_host)) }}
+    runs-on: ${{ matrix.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container: debian:13
     timeout-minutes: 35
     steps:
@@ -31,7 +44,7 @@ jobs:
           persist-credentials: false
       - name: Install exact published preview
         env:
-          EXPECTED_HOST: ${{ inputs.linux_host }}
+          EXPECTED_HOST: ${{ matrix.linux_host }}
         run: |
           mkdir -p out/calibration
           python3 -B scripts/objc3c_toolchain/linux_host.py --expect-host "$EXPECTED_HOST" --field host
@@ -42,7 +55,7 @@ jobs:
         id: measure
         shell: bash
         env:
-          COLLECTION_SCALING: ${{ inputs.collection_scaling }}
+          COLLECTION_SCALING: ${{ github.event_name == 'pull_request' || inputs.collection_scaling }}
         run: |
           sdk="$RUNNER_TEMP/objc3-calibration/sdk/current"
           extra=()
@@ -61,7 +74,7 @@ jobs:
         if: always() && steps.measure.outcome != 'skipped'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: preview-calibration-${{ inputs.linux_host }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: preview-calibration-${{ matrix.linux_host }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             out/calibration/install.json
             out/calibration/**/qualification.json

@@ -164,11 +164,13 @@ The [Calibrate Linux preview workloads](../../.github/workflows/linux-preview-ca
 workflow installs the published SDK on a native x86-64 or AArch64 runner,
 takes two complete observations on the same host, and retains the raw and pooled
 receipts. Select the `collection_scaling` dispatch input to include the
-collection and text phases in both observations. Each deliberate delay is
-measured alongside a same-input control, in alternating order. The delay is ten
+collection and text phases in both observations. On a pull request, apply
+the `calibrate preview` label to run the full calibration, including collection
+and text phases, on both architectures. Each deliberate delay is measured
+alongside a same-input control, in alternating order. The delay is ten
 milliseconds per workload round. Ordinary samples retain separate timing and
-memory observations. Calibration remains advisory until a performance budget is
-reviewed.
+memory observations. Calibration remains advisory until a performance budget
+is reviewed.
 
 For collection-enabled artifacts, keep each observation's raw `.log` files
 beside its `qualification.json` when pooling across runs. Calibration verifies
