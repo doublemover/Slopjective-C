@@ -5,6 +5,17 @@ The current compiler, runtime, packaging and release qualification target
 Linux x86-64 and AArch64. The runtime profile verifier rejects `macos-arm64`
 until an owned Objective-C 3 runtime and native qualification exist.
 
+## Hosted bootstrap evidence
+
+The [Darwin arm64 bootstrap probe](../../.github/workflows/darwin-bootstrap.yml)
+runs on relevant pull request changes and supports manual dispatch. It selects
+the standard `macos-15` Apple Silicon runner, Xcode 16.4 build `16F6`, macOS SDK
+15.5, and native CPython 3.15.0. The job verifies the LLVM archive checksum and
+calls the same probe used for a local replay. The `darwin-arm64-bootstrap-*`
+artifact retains the host, download, and probe diagnostics on failure and the
+receipt and fixture artifacts on success. The result records C toolchain
+prerequisites with `support_truth: false`.
+
 ## Native bootstrap probe
 
 Run this prerequisite check on an Apple Silicon Mac with macOS 15 or later,
@@ -15,16 +26,16 @@ directory, Apple Clang, Apple linker and tools, SDK version, filesystem case
 sensitivity, and the exact LLVM and Clang identities. The initial deployment
 target for the C probe is macOS 15.0.
 
-Use the upstream
-[`LLVM-23.1.5-macOS-ARM64.tar.xz`](https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.5/LLVM-23.1.5-macOS-ARM64.tar.xz)
+Use `zstd` and the upstream
+[`LLVM-23.1.5-macOS-ARM64.tar.zst`](https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.5/LLVM-23.1.5-macOS-ARM64.tar.zst)
 bootstrap archive. Check the archive's SHA-256 before extracting it.
 
 ```sh
 printf '%s  %s\n' \
-  aba592b4a15e8f90c634c5367b51ec8418b8bcd2829865db331a17dc9418dcff \
-  LLVM-23.1.5-macOS-ARM64.tar.xz | shasum -a 256 -c
+  503de30ef90311e0b143623801b19af2250adac6d69faed65ad0051170202e3b \
+  LLVM-23.1.5-macOS-ARM64.tar.zst | shasum -a 256 -c
 mkdir llvm-darwin-bootstrap
-tar -xf LLVM-23.1.5-macOS-ARM64.tar.xz -C llvm-darwin-bootstrap --strip-components=1
+zstd --long=30 -dc LLVM-23.1.5-macOS-ARM64.tar.zst | tar -xf - -C llvm-darwin-bootstrap --strip-components=1
 python3 -B -m scripts.objc3c_toolchain.darwin_bootstrap \
   --llvm-root "$PWD/llvm-darwin-bootstrap" --output-dir "$PWD/darwin-bootstrap-result"
 ```
@@ -44,15 +55,19 @@ capability and has `support_truth: false`.
   access to the pinned LLVM source and bootstrap dependencies, and permission to
   run and retain a full native qualification. The hosted route needs repository
   Actions workflow dispatch and artifact upload access. Local qualification
-  needs no repository administration permission. The first hosted probe can use
-  Xcode 16.4 and macOS SDK 15.5 on the
+  needs no repository administration permission. The bootstrap runner starts
+  with Xcode 16.4 and macOS SDK 15.5 on the
   [Apple Silicon macOS 15 runner image](https://github.com/actions/runner-images/blob/main/images/macos/macos-15-arm64-Readme.md).
 - A single owned Objective-C 3 runtime ABI on Mach-O. The current GNUstep 2.2
   runtime and ARC, exceptions, async and carrier paths have Linux-specific
-  gates. GNUstep module registration on Linux uses ELF section boundary
-  symbols. The Darwin port needs Mach-O sections and matching runtime
-  registration. Qualify these paths with native workloads and inspect the
-  linked dependency closure for accidental Apple ObjC2 use.
+  gates. The preview driver rejects GNUstep 2.2 for Mach-O. Its GNUstep module
+  registration emits ELF section boundaries, COMDAT groups and an ELF
+  constructor section. A first runtime slice needs Mach-O section names,
+  linker-delimited registration tables and one registration call per loaded
+  image, including metadata linked through static archives. Qualify these paths
+  with native workloads and inspect the linked dependency closure for accidental
+  Apple ObjC2 use. [Driver guard](https://github.com/llvm/llvm-project/blob/392dfff97d29b59d77e5cac6d4b6ef2585fe7117/clang/lib/Driver/ToolChains/Clang.cpp#L8628)
+  · [Registration lowering](https://github.com/llvm/llvm-project/blob/392dfff97d29b59d77e5cac6d4b6ef2585fe7117/clang/lib/CodeGen/CGObjCGNU.cpp#L1518)
 - A native patched Clang and runtime build plan, a Mach-O distribution layout
   and debug inspection, and an install/update/rollback/uninstall path with
   versioned receipts. Run the public compiler and package commands from clean
