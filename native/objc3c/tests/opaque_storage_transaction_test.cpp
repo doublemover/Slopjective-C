@@ -39,9 +39,13 @@ int main() {
     assert(registry.LiveCount() == 0 && registry.TokenCount() == 0);
     assert(destroyed == before + 1);
     auto *first = registry.Store(std::make_unique<Value>(), 1);
+    assert(first && registry.LiveCount() == 1 && registry.TokenCount() == 1);
+    assert(registry.Release(first, 1));
+    assert(registry.LiveCount() == 0 && registry.TokenCount() == 1);
+    assert(registry.Inspect(first, 1) == Storage::Status::StaleHandle);
     auto *second = registry.Store(std::make_unique<Value>(), 1);
-    assert(first && second && first != second && registry.TokenCount() == 2);
-    assert(registry.Release(first, 1) && registry.Release(second, 1));
+    assert(second && first != second && registry.LiveCount() == 1 && registry.TokenCount() == 2);
+    assert(registry.Release(second, 1));
     assert(registry.LiveCount() == 0 && registry.TokenCount() == 2);
     assert(registry.Inspect(first, 1) == Storage::Status::StaleHandle);
     assert(!registry.Store(std::make_unique<Value>(), 1));

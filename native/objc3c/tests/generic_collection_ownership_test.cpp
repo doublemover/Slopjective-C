@@ -330,6 +330,26 @@ void ZeroSizedAndBounds() {
   assert(objc3_generic_array_create(&invalid, nullptr, 1, &array) == OBJC3_GENERIC_COLLECTION_INVALID_ARGUMENT && !array);
   invalid = value_ops; invalid.payload_size = std::numeric_limits<std::uint64_t>::max();
   assert(objc3_generic_array_create(&invalid, nullptr, 2, &array) != ok && !array);
+  ledger.Reset();
+  ledger.FailAt(Callback::Hash, 0);
+  const std::array<Payload, 2> inputs{};
+  auto bad_map = Map();
+  auto bad_set = Set();
+  for (const auto overflow : {std::uint64_t{1} << 63, std::numeric_limits<std::uint64_t>::max()}) {
+    bad_map.value_ops.payload_size = overflow;
+    bad_set.key_ops.payload_size = overflow;
+    assert(objc3_generic_map_create(&bad_map, inputs.data(), inputs.data(), 2, &map) ==
+           OBJC3_GENERIC_COLLECTION_INVALID_ARGUMENT && !map);
+    assert(objc3_generic_set_create(&bad_set, inputs.data(), 2, &set) ==
+           OBJC3_GENERIC_COLLECTION_INVALID_ARGUMENT && !set);
+  }
+  bad_map = Map(); bad_map.value_ops.payload_alignment = 3;
+  bad_set = Set(); bad_set.key_ops.payload_alignment = 3;
+  assert(objc3_generic_map_create(&bad_map, inputs.data(), inputs.data(), 1, &map) ==
+         OBJC3_GENERIC_COLLECTION_INVALID_ARGUMENT && !map);
+  assert(objc3_generic_set_create(&bad_set, inputs.data(), 1, &set) ==
+         OBJC3_GENERIC_COLLECTION_INVALID_ARGUMENT && !set);
+  assert(!ledger.hashes && !ledger.equals && !ledger.copies);
   ledger.Balanced();
 }
 
@@ -366,31 +386,48 @@ void AllocationSweeps() {
     }
     assert(completed && failures > 0);
   }
-  for (unsigned operation = 0; operation != 3; ++operation) {
+}
+
+void ArrayMutationSweeps() {
+  auto ops = Ops();
+  for (const bool fail_allocation : {false, true}) for (unsigned operation = 0; operation != 3; ++operation) {
     bool completed = false; unsigned failures = 0;
     for (unsigned position = 0; position != 64 && !completed; ++position) {
       ledger.Reset();
       std::array<Payload, 33> initial{};
+      for (std::size_t index = 0; index < initial.size(); ++index) initial[index].value = index;
       objc3_generic_array_t array = nullptr;
       assert(objc3_generic_array_create(&ops, initial.data(), initial.size(), &array) == ok);
       objc3_generic_iterator_t iterator = nullptr;
       assert(objc3_generic_array_iterator(array, &iterator) == ok);
       const auto published = ledger.Live(); Payload replacement{99};
-      ledger.allocation_failure_position = position;
+      if (fail_allocation) ledger.allocation_failure_position = position;
+      else ledger.FailAt(Callback::Copy, position);
       const auto status = operation == 0 ? objc3_generic_array_set(array, 0, &replacement)
           : operation == 1 ? objc3_generic_array_append(array, &replacement)
                            : objc3_generic_array_remove(array, 31);
       ledger.allocation_failure_position = -1;
+      ledger.FailAt(Callback::None, -1);
       if (status == ok) completed = true;
       else {
         ++failures;
-        assert(status == OBJC3_GENERIC_COLLECTION_OUT_OF_MEMORY);
-        assert(ledger.Live() == published && "allocation rollback changed published ownership");
+        assert(status == (fail_allocation ? OBJC3_GENERIC_COLLECTION_OUT_OF_MEMORY
+                                         : OBJC3_GENERIC_COLLECTION_INVALID_ARGUMENT));
+        assert(ledger.Live() == published && "failed mutation changed published ownership");
       }
       Payload output{}; int has = 0;
       const auto read = objc3_generic_iterator_next(iterator, &has, &output);
       if (completed) assert(read == OBJC3_GENERIC_COLLECTION_MUTATED_DURING_ITERATION && !has && !output.instance);
-      else { assert(read == ok && has && output.value == 0); Destroy(&output); }
+      else {
+        assert(read == ok && has && output.value == initial.front().value);
+        Destroy(&output);
+        for (std::size_t index = 1; index < initial.size(); ++index) {
+          assert(objc3_generic_iterator_next(iterator, &has, &output) == ok && has);
+          assert(output.value == initial[index].value);
+          Destroy(&output);
+        }
+        assert(objc3_generic_iterator_next(iterator, &has, &output) == ok && !has);
+      }
       assert(objc3_generic_iterator_release(iterator) == ok);
       assert(objc3_generic_array_release(array) == ok); ledger.Balanced(); CheckSources(initial);
     }
@@ -601,6 +638,7 @@ int main() {
   AssociativeReplacementRollback();
   ZeroSizedAndBounds();
   AllocationSweeps();
+  ArrayMutationSweeps();
   ArrayScaling();
   ReaderRetirement();
   ArrayReentry();

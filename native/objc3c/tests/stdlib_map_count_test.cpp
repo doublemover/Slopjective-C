@@ -198,12 +198,18 @@ static void ordered_index_oracle() {
   std::map<int32_t, int32_t> expected;
   std::vector<int32_t> order;
   uint32_t random = 0x4f424a33;
-  for (unsigned step = 0; step != 12000; ++step) {
+  constexpr auto low = std::numeric_limits<int32_t>::min();
+  constexpr auto high = std::numeric_limits<int32_t>::max();
+  constexpr std::array prefix_keys{low, -1, 0, 1, high, 0, low, high, 0};
+  for (unsigned step = 0; step != 2400; ++step) {
     random ^= random << 13; random ^= random >> 17; random ^= random << 5;
-    const auto key = step % 97 == 0 ? std::numeric_limits<int32_t>::min() :
-        step % 89 == 0 ? std::numeric_limits<int32_t>::max() : static_cast<int32_t>(random % 257) - 128;
+    // The prefix erases the middle, first and last slots, then reinserts the
+    // middle key. The generated suffix exercises growing and changing orders.
+    const auto key = step < prefix_keys.size() ? prefix_keys[step] :
+        step % 97 == 0 ? low : step % 89 == 0 ? high : static_cast<int32_t>(random % 257) - 128;
+    const auto operation = step < 5 || step == 8 ? 0U : step < 8 ? 2U : random & 3U;
     const auto value = static_cast<int32_t>(random & 0xffff);
-    if ((random & 3) < 2) {
+    if (operation < 2) {
       const bool inserted = !expected.count(key);
       if (inserted) order.push_back(key);
       expected[key] = value;
@@ -213,25 +219,24 @@ static void ordered_index_oracle() {
       check(count == expected.size());
       check(objc3_runtime_stdlib_set_i32_v2_insert(set, key, &set_inserted) == 0);
       check(set_inserted == inserted);
-    } else if ((random & 3) == 2) {
+    } else if (operation == 2) {
       const bool erased = expected.erase(key);
       if (erased) std::erase(order, key);
       int removed = -1;
       check(objc3_runtime_stdlib_map_i32_i32_v2_remove(map, key, &removed) == 0 && removed == erased);
       check(objc3_runtime_stdlib_set_i32_v2_remove(set, key, &removed) == 0 && removed == erased);
-    } else {
-      int found = -1;
-      int32_t observed = -1;
-      const auto item = expected.find(key);
-      check(objc3_runtime_stdlib_map_i32_i32_v2_get(map, key, &found, &observed) == 0);
-      check(found == (item != expected.end()));
-      check(observed == (item == expected.end() ? 0 : item->second));
-      check(objc3_runtime_stdlib_set_i32_v2_contains(set, key, &found) == 0 && found == (item != expected.end()));
     }
+    int found = -1;
+    int32_t observed = -1;
+    const auto item = expected.find(key);
+    const bool present = item != expected.end();
+    check(objc3_runtime_stdlib_map_i32_i32_v2_get(map, key, &found, &observed) == 0);
+    check(found == present && observed == (present ? item->second : 0));
+    check(objc3_runtime_stdlib_map_i32_i32_v2_contains(map, key, &found) == 0 && found == present);
+    check(objc3_runtime_stdlib_set_i32_v2_contains(set, key, &found) == 0 && found == present);
     uint64_t count = 0;
     check(objc3_runtime_stdlib_map_i32_i32_v2_count(map, &count) == 0 && count == expected.size());
     check(objc3_runtime_stdlib_set_i32_v2_count(set, &count) == 0 && count == expected.size());
-    if (step % 67 != 0) continue;
     objc3_iterator_i32_v2_t map_it = nullptr, set_it = nullptr;
     check(objc3_runtime_stdlib_map_i32_i32_v2_iterator(map, &map_it) == 0);
     check(objc3_runtime_stdlib_set_i32_v2_iterator(set, &set_it) == 0);
