@@ -454,6 +454,68 @@ def install(archive: Path, expected_sha256: str, prefix: Path, *, commands=None)
             'archive_sha256': expected_sha256, 'seal_sha256': product['seal_sha256'], 'prefix': str(prefix), 'host': host}
 
 
+def _qualify_installer_controls(archive, expected_sha256, output, manifest, host, commands):
+    def different(signature):
+        return ('1' if signature.startswith('0') else '0') + signature[1:]
+
+    def snapshot(prefix):
+        if not prefix.exists() and not prefix.is_symlink():
+            return None
+        seal = prefix / MANIFEST
+        return _digest({'inventory': inventory(prefix), 'manifest': _file_hash(seal) if seal.is_file() else None})
+
+    observations = {}
+    with tempfile.TemporaryDirectory(prefix='.installer-controls-', dir=output) as work:
+        work = Path(work)
+
+        def reject(name, media, checksum, prefix, diagnostic):
+            before = snapshot(prefix)
+            try:
+                install(media, checksum, prefix, commands=commands)
+            except ValueError as error:
+                if str(error) != diagnostic:
+                    raise ValueError(f'Darwin installer control {name} failed unexpectedly: {error}') from error
+            else:
+                raise ValueError(f'Darwin installer accepted negative control {name}')
+            after = snapshot(prefix)
+            if before != after or list(work.glob('.objc3-darwin-*')):
+                raise ValueError(f'Darwin installer control {name} changed the destination or left staging files')
+            observations[name] = {'status': 'REJECTED', 'diagnostic': diagnostic,
+                                  'requested_archive_sha256': checksum,
+                                  'prefix_before_sha256': before, 'prefix_after_sha256': after}
+
+        reject('archive-digest', archive, different(expected_sha256), work / 'Wrong digest',
+               'Darwin package archive SHA-256 does not match the receipt')
+        incomplete = work / 'Incomplete prefix'
+        incomplete.mkdir()
+        reject('incomplete-prefix', archive, expected_sha256, incomplete, 'install requires a fresh prefix')
+        damaged = work / 'Damaged prefix'
+        (damaged / 'bin').mkdir(parents=True)
+        (damaged / 'bin/clang').write_bytes(b'damaged installed compiler\n')
+        (damaged / MANIFEST).write_text(json.dumps(manifest) + '\n')
+        reject('damaged-prefix', archive, expected_sha256, damaged, 'install requires a fresh prefix')
+
+        actual = host['tools']['ld']['sha256']
+        requested = different(actual)
+        foreign = dict(manifest)
+        foreign.pop('seal_sha256')
+        requirements = foreign['host_requirements']
+        foreign['host_requirements'] = {**requirements, 'tools': {**requirements['tools'], 'ld': requested}}
+        seal = _digest(foreign)
+        fixture = work / 'Mismatched Apple linker manifest'
+        fixture.mkdir()
+        (fixture / MANIFEST).write_text(json.dumps({**foreign, 'seal_sha256': seal}) + '\n')
+        media = work / 'wrong-host.tar.gz'
+        # The installer admits the sealed host identity before extracting the payload.
+        _write_archive(fixture, media)
+        reject('apple-linker-identity', media, _file_hash(media), work / 'Wrong linker',
+               'this package does not match the admitted experimental Darwin host and ABI')
+        observations['apple-linker-identity'].update(tool='ld', observed_tool_sha256=actual,
+            required_tool_sha256=requested, manifest_seal_sha256=seal)
+    return {'schema': 'objc3c.experimental-darwin-sdk-installer-controls.v1',
+            'archive_sha256': expected_sha256, 'observations': observations}
+
+
 def qualify(archive: Path, expected_sha256: str, output: Path) -> dict:
     require_apple_silicon()
     output = output.resolve()
@@ -518,6 +580,8 @@ def qualify(archive: Path, expected_sha256: str, output: Path) -> dict:
         if native(project / 'static') != WITNESS or native(project / 'dynamic', project / 'liblate.dylib') != WITNESS:
             raise ValueError('cold relocated compiler/runtime witness failed')
         verify_sdk(prefix, installed['seal_sha256'])
+        report['installer_controls'] = _qualify_installer_controls(archive, expected_sha256, output,
+                                                                  manifest, host, commands)
         report.update(status='PASS', artifacts=reports)
     except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
         report['error'] = str(error)

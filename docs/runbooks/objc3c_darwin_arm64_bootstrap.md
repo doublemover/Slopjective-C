@@ -70,7 +70,7 @@ CMake and Ninja on `PATH` and run the explicit experimental qualification.
 
 ```sh
 python3 -B -m scripts.objc3c_toolchain.darwin_registration \
-  --profile macos-arm64-registration-experimental --fetch \
+  --profile macos-arm64-registration-experimental --fetch --package-sdk \
   --bootstrap-report "$PWD/darwin-bootstrap-result/report.json" \
   --output-dir "$PWD/darwin-registration-result"
 ```
@@ -140,6 +140,36 @@ The compiler used upstream LLVM's bundled libc++ headers, which requested
 `std::__1::__hash_memory` from the selected Xcode SDK libc++. The repaired
 preflight checks the matching Xcode headers and SDK runtime before configuration.
 [Failed hosted attempt](https://github.com/doublemover/Slopjective-C/actions/runs/45289344512/job/138093814031)
+
+### Install and replay the experimental SDK
+
+Use native arm64 Python on macOS 15 or later with Xcode 16.4 build `16F6`
+and the macOS 15.5 SDK. Keep the package archive and its producer receipt
+together. The archive carries the patched compiler, runtime and resource
+files. Installation verifies the active Apple tool digests from the seal.
+
+```sh
+package_dir="$PWD/darwin-registration-result/sdk/package"
+archive="$package_dir/objc3-darwin-sdk.tar.gz"
+checksum=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["archive_sha256"])' \
+  "$package_dir/package.json")
+python3 -B -m scripts.objc3c_toolchain.darwin_sdk install \
+  --archive "$archive" --archive-sha256 "$checksum" \
+  --prefix "$PWD/Installed experimental SDK"
+python3 -B -m scripts.objc3c_toolchain.darwin_sdk qualify \
+  --archive "$archive" --archive-sha256 "$checksum" \
+  --output-dir "$PWD/Experimental SDK replay"
+```
+
+Choose a fresh prefix under a writable parent for each installation. Use a
+new prefix for each newer experimental archive. The installer preserves an
+existing path even if its SDK files are incomplete or damaged. Qualification
+installs into a separate relocated directory, recompiles the packaged
+consumers, checks their Mach-O load paths and DWARF, and runs the linked
+executables. Its receipt records rejection of a wrong archive digest and a
+different required Apple linker digest, and compares the destination hashes
+before and after attempts to reuse incomplete and damaged prefixes. Package
+and qualification receipts carry `support_truth: false`.
 
 ### Instance lifetime and the next ABI boundary
 

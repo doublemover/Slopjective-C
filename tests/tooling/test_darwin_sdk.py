@@ -2,7 +2,10 @@
 import io
 import json
 from pathlib import Path
+import platform
 import struct
+import subprocess
+import sys
 import tarfile
 
 import pytest
@@ -115,6 +118,51 @@ def test_failed_install_owns_no_visible_prefix(tmp_path, structural_host, fault,
         sdk.install(archive, expected, prefix)
     assert not prefix.exists()
     assert not list(tmp_path.glob('.objc3-darwin-*'))
+
+
+def test_relocated_qualification_retains_real_archive_and_destination_controls(tmp_path, structural_host):
+    staged = tmp_path / 'stage'
+    manifest = staged_product(staged, structural_host)
+    archive = tmp_path / 'sdk.tar.gz'
+    sdk._write_archive(staged, archive)
+    checksum = _file_hash(archive)
+    active = tmp_path / 'Existing qualified prefix'
+    sdk.install(archive, checksum, active)
+
+    result = sdk._qualify_installer_controls(archive, checksum, tmp_path, manifest, structural_host, [])
+    assert result['schema'] == 'objc3c.experimental-darwin-sdk-installer-controls.v1'
+    assert result['archive_sha256'] == _file_hash(archive) == checksum
+    rows = result['observations']
+    assert set(rows) == {'archive-digest', 'incomplete-prefix', 'damaged-prefix', 'apple-linker-identity'}
+    for name, row in rows.items():
+        assert row['status'] == 'REJECTED'
+        assert row['prefix_before_sha256'] == row['prefix_after_sha256']
+        if name.endswith('-prefix'):
+            assert row['prefix_before_sha256'] is not None
+            assert row['diagnostic'] == 'install requires a fresh prefix'
+            assert row['requested_archive_sha256'] == checksum
+        else:
+            assert row['prefix_before_sha256'] is None
+            assert row['requested_archive_sha256'] != checksum
+    linker = rows['apple-linker-identity']
+    assert linker['tool'] == 'ld'
+    assert linker['observed_tool_sha256'] == structural_host['tools']['ld']['sha256']
+    assert linker['required_tool_sha256'] != linker['observed_tool_sha256']
+    assert rows['damaged-prefix']['prefix_before_sha256'] != rows['incomplete-prefix']['prefix_before_sha256']
+    assert (active / 'bin/clang').read_bytes() == macho(2)
+    assert not list(tmp_path.glob('.installer-controls-*'))
+
+
+def test_install_command_rejects_the_actual_non_apple_silicon_host(tmp_path):
+    if platform.system() == 'Darwin' and platform.machine() == 'arm64':
+        pytest.skip('requires a non-Apple-Silicon host for this command-level rejection')
+    prefix = tmp_path / 'Never activated'
+    result = subprocess.run([sys.executable, '-B', '-m', 'scripts.objc3c_toolchain.darwin_sdk',
+        'install', '--archive', str(tmp_path / 'unavailable.tar.gz'), '--archive-sha256', 'a' * 64,
+        '--prefix', str(prefix)], cwd=sdk.ROOT, capture_output=True, text=True, check=False)
+    assert result.returncode == 2
+    assert 'requires an Apple Silicon Mac running native arm64 Python' in result.stderr
+    assert not result.stdout and not prefix.exists()
 
 
 def payload_archive(destination, manifest, *members):
