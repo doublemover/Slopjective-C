@@ -5,12 +5,12 @@ import argparse
 import json
 import os
 from pathlib import Path
-import re
 import subprocess
 import tempfile
 
 from scripts.objc3c_toolchain.install_sdk import install
 from scripts.objc3c_toolchain.linux_host import native_linux_host
+from scripts.objc3c_toolchain.release_install import published_archive
 from .evidence import digest
 
 DOWNLOADS = 'https://github.com/doublemover/Slopjective-C/releases/download'
@@ -19,11 +19,8 @@ DOWNLOADS = 'https://github.com/doublemover/Slopjective-C/releases/download'
 def install_preview(manifest: Path, directory: Path, *, witness_log: Path | None = None) -> dict:
     index = json.loads(manifest.read_bytes())
     tag, host = index['tag'], native_linux_host()
-    record = index['archives'][host]
-    name = f'objc3-sdk-{tag}-{host}.tar.zst'
-    if (not re.fullmatch(r'v[0-9]+\.[0-9]+\.[0-9]+(?:-[a-z0-9.-]+)?', tag) or
-            record['file'] != name or not re.fullmatch(r'[a-f0-9]{64}', record['sha256'])):
-        raise ValueError('invalid published preview archive coordinates')
+    record = published_archive(index, host)
+    name = record['file']
     directory.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='preview-download-', dir=directory) as scratch:
         archive = Path(scratch) / name

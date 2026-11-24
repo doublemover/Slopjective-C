@@ -8,13 +8,84 @@ from pathlib import Path
 
 import pytest
 
-from scripts.objc3c_toolchain import stage_linux_release as owner
+from scripts.objc3c_toolchain import preview_support, stage_linux_release as owner
 
 
 ROOT = Path(__file__).resolve().parents[2]
 REPO = 'doublemover/Slopjective-C'
 REVISION = 'a' * 40
 RUNS = {'linux-x86_64': 123, 'linux-aarch64': 456}
+
+
+@pytest.mark.parametrize('defect', [None, 'target', 'host', 'revision', 'attempt', 'seal', 'duplicate', 'llvm'])
+def test_preview_matrix_projects_only_exact_native_clean_install_receipts(defect):
+    release = json.loads((ROOT / preview_support.MANIFEST).read_bytes())
+    archive = release['archives']['linux-aarch64']
+    first = archive['clean_installs'][0]
+    if defect == 'target':
+        archive['target'] = 'arm64-apple-macos15.0'
+    elif defect == 'host':
+        first['host'] = 'linux-x86_64'
+    elif defect == 'revision':
+        first['revision'] = REVISION
+    elif defect == 'attempt':
+        first['attempt'] += 1
+    elif defect == 'seal':
+        first['seal_sha256'] = '0' * 64
+    elif defect == 'duplicate':
+        archive['clean_installs'][1] = first
+    elif defect == 'llvm':
+        archive['upstream_commit'] = REVISION
+    if defect:
+        with pytest.raises(ValueError, match='archive coordinates|receipt differs|run or distribution|LLVM base version'):
+            preview_support.render(release)
+    else:
+        assert preview_support.render(release) == (ROOT / preview_support.TABLE).read_text()
+
+
+@pytest.mark.parametrize('changed', [False, True])
+def test_draft_rehearsal_uses_the_archive_digest_in_the_native_manifest(tmp_path, monkeypatch, changed):
+    host = owner.release_install.host_identity()['host']
+    release = json.loads((ROOT / preview_support.MANIFEST).read_bytes())
+    archive = release['archives'][host]
+    original = b'qualified archive'
+    selected = b'substitute bytes!' if changed else original
+    assert len(selected) == len(original)
+    archive['bytes'] = len(original)
+    archive['sha256'] = hashlib.sha256(original).hexdigest()
+    for row in archive['clean_installs']:
+        row['archive_sha256'] = archive['sha256']
+    (tmp_path / 'linux-release.json').write_text(json.dumps(release))
+    (tmp_path / archive['file']).write_bytes(selected)
+    # The checksum index can agree with a substituted asset. Rehearsal must
+    # still use the immutable digest admitted by the qualification receipts.
+    (tmp_path / 'SHA256SUMS').write_text(f'{hashlib.sha256(selected).hexdigest()}  {archive["file"]}\n')
+    receipts = {item['image']: item['image_id'] for item in archive['clean_installs']}
+    resolved, commands = [], []
+
+    def image(reference):
+        resolved.append(reference)
+        return reference, receipts[reference]
+
+    monkeypatch.setattr(owner.release_install, '_container', image)
+    monkeypatch.setattr(owner.release_install.subprocess, 'run', lambda command, *, check: commands.append(command))
+    if changed:
+        with pytest.raises(ValueError, match='SHA-256 differs from the published manifest'):
+            owner.release_install.rehearse(tmp_path, host)
+        assert not resolved and not commands
+    else:
+        owner.release_install.rehearse(tmp_path, host)
+        assert resolved == list(receipts)
+        assert len(commands) == len(receipts)
+        for command in commands:
+            assert command[-2:] == [archive['file'], archive['sha256']]
+
+
+def test_draft_rehearsal_rejects_a_non_native_host_before_reading_release(tmp_path):
+    native = owner.release_install.host_identity()['host']
+    other, = set(owner.HOSTS) - {native}
+    with pytest.raises(ValueError, match='differs from the native host'):
+        owner.release_install.rehearse(tmp_path, other)
 
 
 @pytest.mark.parametrize('fault', [None, 'missing', 'failed', 'duplicate', 'image', 'archive', 'transcript'])

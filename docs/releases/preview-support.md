@@ -7,10 +7,10 @@
 The preview was built from [`8fe5c2fd`](https://github.com/doublemover/Slopjective-C/commit/8fe5c2fd89008d1c090a9355c11bdda01ceb9309). The table uses the installed distribution receipts in the [published manifest](preview-manifest.json).
 
 <!-- prettier-ignore -->
-| Architecture | Clean install distributions | Extension ABI | glibc minimum | libstdc++ minimum |
-| --- | --- | --- | --- | --- |
-| x86-64 | Debian 13, Ubuntu 26.04 | 24 | 2.41 | GLIBCXX_3.4.33 |
-| AArch64 | Debian 13, Ubuntu 26.04 | 24 | 2.41 | GLIBCXX_3.4.33 |
+| Architecture | Clean install distributions | LLVM base | Extension ABI | glibc minimum | libstdc++ minimum |
+| --- | --- | --- | --- | --- | --- |
+| x86-64 | Debian 13, Ubuntu 26.04 | 23.1.5 | 24 | 2.41 | GLIBCXX_3.4.33 |
+| AArch64 | Debian 13, Ubuntu 26.04 | 23.1.5 | 24 | 2.41 | GLIBCXX_3.4.33 |
 
 The preview carries no conformance profile claims.
 See the [feature catalog for v0.1.0-preview.1](https://github.com/doublemover/Slopjective-C/blob/v0.1.0-preview.1/schemas/objc3-language-capabilities.json) for qualified features and compiler modes.

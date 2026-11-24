@@ -83,18 +83,8 @@ def clean_installs(root: Path, *, host: str, revision: str, run: int, attempt: i
     for distribution in release_install.DISTRIBUTIONS:
         path = root / distribution.replace(':', '-') / 'result.json'
         row = json.loads(path.read_bytes())
-        expected = {'schema': release_install.SCHEMA, 'status': 'PASS', 'host': host,
-                    'revision': revision, 'run': run, 'attempt': attempt, 'distribution': distribution,
-                    'archive_sha256': archive['sha256'], 'seal_sha256': archive['seal_sha256'],
-                    'source_build_id': archive['source_build_id']}
-        scopes = row.get('scopes')
-        if (any(row.get(key) != value for key, value in expected.items()) or
-                not release_install.IMAGE.fullmatch(row.get('image', '')) or
-                not release_install.IMAGE_ID.fullmatch(row.get('image_id', '')) or
-                not isinstance(scopes, dict) or set(scopes) != set(release_install.SCOPES) or
-                not all(isinstance(value, str) and re.fullmatch('[a-f0-9]{64}', value)
-                        for value in scopes.values())):
-            raise ValueError(f'{host} {distribution} installation receipt differs from the qualified archive')
+        release_install.validate_clean_install(row, host=host, distribution=distribution, revision=revision,
+                                               run=run, attempt=attempt, archive=archive)
         records.append(row)
     return records
 
@@ -272,7 +262,7 @@ def stage(checkout: Path, *, repo: str, revision: str, tag: str,
         raise ValueError('native archives use different compiler source stacks')
 
     output.parent.mkdir(parents=True, exist_ok=True)
-    report = {'schema': 'objc3c.linux-release.v1', 'tag': tag, 'revision': revision,
+    report = {'schema': release_install.RELEASE_SCHEMA, 'tag': tag, 'revision': revision,
         'channel': 'preview', 'profiles_claimed': [], 'archives': {}}
     with tempfile.TemporaryDirectory(prefix='.release-', dir=output.parent) as directory:
         bundle = Path(directory) / 'bundle'

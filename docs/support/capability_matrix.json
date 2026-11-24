@@ -6554,7 +6554,7 @@
       "id": "platform.linux-x64.unsupported",
       "title": "Linux x64 platform support",
       "state": "rejected",
-      "summary": "Linux x64 support remains fail-closed under issue #8228: source-owned platform, host-promotion, package, and installed-root execution rows record the Linux host/toolchain/package promotion blockers, and both the canonical hosted-evidence workflow plus the conformance-minima dispatch gateway are generated-only, non-promoting evidence paths until build, package, install, installed-root execution, and native execution evidence is reviewed into checked source truth.",
+      "summary": "The tiered runnable workflow Linux x64 row remains fail-closed under issue #8228. The public Linux SDK preview has native x86-64 and AArch64 archives with exact build, package, clean-install, and execution evidence in the release manifest. Promotion of the tiered workflow row requires reviewed source truth through the host-promotion contract.",
       "owner_modules": [
         "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
         "tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json",
@@ -6641,7 +6641,7 @@
       "id": "platform.darwin-arm64.unsupported",
       "title": "macOS arm64 platform support",
       "state": "rejected",
-      "summary": "macOS arm64 support remains fail-closed under issue #8229: source-owned platform, host-promotion, package, and installed-root execution rows record the Apple-toolchain, Mach-O/load-path, package-install, and installed-root blockers, and both the canonical hosted-evidence workflow plus the conformance-minima dispatch gateway are generated-only, non-promoting evidence paths until build, package, install, installed-root execution, and native execution evidence is reviewed into checked source truth.",
+      "summary": "Production macOS arm64 support remains fail-closed under issue #8229. The native Apple Silicon bootstrap and the opt-in Mach-O registration SDK record review evidence with support_truth false. Production promotion requires reviewed build, package, install, installed-root execution, Mach-O/load-path, and native execution evidence for the intended shipping profile.",
       "owner_modules": [
         "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
         "tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json",
@@ -6797,7 +6797,7 @@
       "id": "platform.expansion.umbrella-readiness",
       "title": "Platform expansion umbrella readiness",
       "state": "internal",
-      "summary": "#8206 is an internal source-owned fail-closed readiness boundary over #8228 Linux x64, #8229 macOS arm64, #8230 ASan, #8231 UBSan, and #8232 native object emission. It keeps only Windows x64 projected as supported, keeps Linux and macOS rejected through the host-promotion and installed-root execution evidence contracts, and treats hosted Linux/macOS evidence plus conformance-minima as non-promoting review inputs until checked source truth is promoted. ASan/UBSan package, install, and execution support is evidence-bound for windows-x64 through the source-owned sanitizer runtime promotion gate; generated-only sanitizer reports and unsupported hosts remain non-promoting. Task-hygiene hosted gates stay skip-only when llc object emission is unavailable, and conformance-minima stays fail-closed when required native object emission is missing. Missing-llc, mixed-root, mismatched-version, unsupported-version, and unresolved-version native object emission remain fail-closed with no clang substitute success path.",
+      "summary": "#8206 tracks production platform expansion across #8228 Linux x64, #8229 macOS arm64, #8230 ASan, #8231 UBSan, and #8232 native object emission. Windows x64 remains Tier 1 on the tiered runnable workflow. The public Linux preview is qualified on x86-64 and AArch64 through its release manifest. Apple Silicon bootstrap and experimental SDK receipts are review inputs for macOS arm64. The sanitizer package rows remain evidence-bound for Windows x64 through their runtime promotion gate. Required native object emission uses coherent llc tools. Missing llc, unsupported or unresolved versions, mismatched tool versions, mixed tool roots, and failed target object output fail closed.",
       "owner_modules": [
         "tests/tooling/fixtures/platform_support/source_truth_matrix.json",
         "schemas/objc3c-platform-support-source-truth-v1.schema.json",

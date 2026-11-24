@@ -346,7 +346,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - Current state: `internal`
 - Target state: `implemented`
 - Readiness state: `blocked`
-- Intended public meaning: Objective-C 3.0 platform expansion can become a public platform-support claim only when Linux x64, macOS arm64, and native object emission all have replayable support evidence rather than fail-closed contracts. The current #8206 truth boundary is source-owned and fail-closed: Windows x64 is the only supported projection, Linux/macOS stay rejected, hosted evidence is review-only, and ASan/UBSan package variants are evidence-bound for Windows x64 only through the checked sanitizer runtime promotion gate.
+- Intended public meaning: The #8206 production umbrella tracks the tiered runnable workflow and native object emission contracts. Windows x64 retains Tier 1. The published Linux SDK has exact native x86-64 and AArch64 preview evidence. The Apple Silicon bootstrap and experimental Mach-O SDK route produce review evidence for a limited profile. Production macOS arm64 remains unsupported. ASan and UBSan package variants are evidence-bound for Windows x64 through the checked sanitizer runtime promotion gate.
 
 ### Forbidden Overclaims
 
@@ -359,9 +359,9 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 ### Prerequisite Rows
 
-- `platform.windows-x64.tier1` must be `implemented`: Windows x64 is the only currently supported platform row and must remain evidence-backed.
-- `platform.linux-x64.unsupported` must be `rejected`: Linux x64 remains fail-closed until build, package, install, installed-root execution, and native execution evidence exists, and the host-promotion contract refuses generated-only hosted evidence as support truth.
-- `platform.darwin-arm64.unsupported` must be `rejected`: macOS arm64 remains fail-closed until build, package, install, installed-root execution, Mach-O/load-path, and native execution evidence exists, and the host-promotion contract refuses generated-only hosted evidence as support truth.
+- `platform.windows-x64.tier1` must be `implemented`: Windows x64 is the supported Tier 1 row in the tiered runnable workflow and remains evidence-backed.
+- `platform.linux-x64.unsupported` must be `rejected`: The tiered runnable workflow Linux x64 row remains fail-closed pending its own source promotion. The public Linux preview independently records native x86-64 and AArch64 build, package, install, installed-root execution, and native execution evidence.
+- `platform.darwin-arm64.unsupported` must be `rejected`: Production macOS arm64 remains fail-closed pending reviewed build, package, install, installed-root execution, Mach-O/load-path, and native execution evidence for the shipping profile. Experimental receipts keep support_truth false.
 - `toolchain.llvm.current-probed-executable` must be `internal`: LLVM and native object emission remain current-probe/internal evidence, not broad LLVM compatibility.
 - `toolchain.sanitizer.address` must be `reserved`: The public capability row remains reserved and claimless, while platform source truth marks ASan package, install, and execution support evidence-bound for Windows x64 through the checked runtime-promotion gate; generated reports remain non-promoting inputs and unsupported hosts remain fail-closed.
 - `toolchain.sanitizer.undefined` must be `reserved`: The public capability row remains reserved and claimless, while platform source truth marks UBSan package, install, trap/recover metadata, expected detection, and execution support evidence-bound for Windows x64 through the checked runtime-promotion gate; generated reports remain non-promoting inputs and unsupported hosts remain fail-closed.
@@ -421,7 +421,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 #### Negative Fixtures
 
-- `satisfied` Linux x64 remains an unsupported fail-closed row with no support claim. (capability_id: `platform.linux-x64.unsupported`)
+- `satisfied` The tiered runnable workflow Linux x64 row fails closed. The published preview install scope is recorded in the Linux release manifest. (capability_id: `platform.linux-x64.unsupported`)
 - `satisfied` macOS arm64 remains an unsupported fail-closed row with no support claim. (capability_id: `platform.darwin-arm64.unsupported`)
 - `satisfied` ASan and UBSan are Windows x64 evidence-bound package variants, with generated-only reports and unsupported hosts still rejected before support promotion. (path: `tests/tooling/fixtures/platform_support/source_truth_matrix.json`)
 - `satisfied` Missing llc, missing llc --filetype=obj, failed target object emission, mixed LLVM roots, mismatched LLVM tool versions, unsupported LLVM versions, or unresolved required tool versions remain fail-closed and cannot publish object, package, execution, parity, or platform success. (path: `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`)
@@ -444,10 +444,11 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 #### Docs
 
-- `satisfied` Capability matrix keeps #8206 internal, Linux/macOS rejected, sanitizer variants Windows x64 evidence-bound, and Windows x64 as the only supported host row. (path: `docs/support/capability_matrix.json`)
+- `satisfied` The capability matrix keeps #8206 internal, distinguishes published Linux preview delivery and experimental Apple Silicon work from tiered workflow support, and records the scope of Windows x64 sanitizer evidence. (path: `docs/support/capability_matrix.json`)
 - `satisfied` Evidence rows point to checked source, schemas, diagnostics, and runbooks rather than temp/generated evidence. (path: `docs/support/evidence_map.json`)
 - `satisfied` Hard-cutover truth states the #8206 platform umbrella boundary without broad support claims. (path: `docs/support/hard_cutover_capability_truth.md`)
-- `satisfied` Platform hardening runbook states the llc/no-clang-fallback policy, Linux/macOS fail-closed boundaries, and sanitizer generated-only rejection boundary. (path: `docs/runbooks/objc3c_platform_hardening.md`)
+- `satisfied` The platform hardening runbook states the llc requirement, tiered workflow support boundaries, Linux preview and macOS experimental scopes, and sanitizer evidence admission policy. (path: `docs/runbooks/objc3c_platform_hardening.md`)
+- `satisfied` The release status links exact native Linux preview receipts and the optional Apple Silicon package route. (path: `docs/releases/status.md`)
 - `satisfied` Packaging-channel runbook documents ASan/UBSan package selectors, staging, runtime-library manifests, package-channel actions, and promotion-gate boundaries. (path: `docs/runbooks/objc3c_packaging_channels.md`)
 
 ### Generated Output Boundary
@@ -464,18 +465,15 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 ### Promotion Blockers
 
-- `linux-x64-native-evidence`: Linux x64 remains unsupported.
-  - Linux x64 build evidence through the public workflow path.
-  - Linux x64 package, install, and installed-root execution evidence.
-  - Linux x64 native execution evidence with runtime library availability.
-- `darwin-arm64-native-evidence`: macOS arm64 remains unsupported.
-  - macOS arm64 package, install, and installed-root execution evidence.
-  - Mach-O and load-path evidence.
-  - macOS arm64 native execution evidence.
+- `linux-x64-native-evidence`: The Linux x64 row in the tiered runnable workflow requires its own promotion.
+  - Bind Linux x64 build, package, install, and installed-root native execution to reviewed source evidence for the tiered workflow row.
+- `darwin-arm64-native-evidence`: Production macOS arm64 remains unsupported.
+  - Qualify a production macOS arm64 package, install, and installed-root execution.
+  - Review Mach-O, load-path, and native execution evidence for that shipping profile.
 - `platform-expansion-prerequisites`: The #8206 umbrella cannot be a public implemented platform claim while any child platform remains fail-closed or internal.
   - Promote Linux x64 and macOS arm64 only from checked source rows and public replay evidence.
   - Keep coherent llc object emission as a fail-closed no-clang-substitute guardrail inside platform promotion.
-  - Keep Windows x64 as the only supported projection until every promoted child row has matching source and evidence-map truth.
+  - Keep the tiered workflow projection linked to checked source and evidence-map rows for every promoted host.
 
 ### Final Promotion Criteria
 

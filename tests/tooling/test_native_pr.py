@@ -340,18 +340,23 @@ def test_focused_frontend_receipt_cannot_satisfy_full_suite_or_different_selecti
             suite_results(tmp_path, 'frontend', frontend_names=selection)
 
 
-@pytest.mark.parametrize('defect', [None, 'path', 'length', 'seal', 'source'])
+@pytest.mark.parametrize('defect', [None, 'path', 'length', 'seal', 'source', 'target', 'channel'])
 def test_download_pins_release_archive_and_cleans_temporary_bytes(tmp_path, monkeypatch, defect):
     host, tag = preview_download.native_linux_host(), 'v0.1.0-preview.1'
     name = f'objc3-sdk-{tag}-{host}.tar.zst'
     archive = {'file': name, 'sha256': 'a'*64, 'bytes': 15,
+               'target': {'linux-x86_64': 'x86_64', 'linux-aarch64': 'aarch64'}[host] + '-unknown-linux-gnu',
                'seal_sha256': 'b'*64, 'source_build_id': 'pinned-source'}
     if defect == 'path':
         archive['file'] = '../' + name
     if defect == 'length':
         archive['bytes'] += 1
+    if defect == 'target':
+        archive['target'] = 'arm64-apple-macos15.0'
     manifest = tmp_path / 'manifest.json'
-    manifest.write_text(json.dumps({'tag': tag, 'archives': {host: archive}}))
+    manifest.write_text(json.dumps({'tag': tag, 'schema': 'objc3c.linux-release.v1',
+        'channel': 'experimental' if defect == 'channel' else 'preview', 'revision': 'a' * 40,
+        'archives': {host: archive}}))
     destination = tmp_path / 'install'
 
     def download(command, *, check):
@@ -369,7 +374,7 @@ def test_download_pins_release_archive_and_cleans_temporary_bytes(tmp_path, monk
     monkeypatch.setattr(preview_download.subprocess, 'run', download)
     monkeypatch.setattr(preview_download, 'install', install)
     if defect:
-        with pytest.raises(ValueError, match='archive coordinates|archive length|differs from the release'):
+        with pytest.raises(ValueError, match='preview manifest|archive coordinates|archive length|differs from the release'):
             preview_download.install_preview(manifest, destination)
     else:
         assert preview_download.install_preview(manifest, destination)['seal_sha256'] == archive['seal_sha256']

@@ -11,6 +11,8 @@ import subprocess
 import sys
 import time
 
+from .linux_host import HOSTS, host_identity
+
 
 DISTRIBUTIONS = ('debian:13', 'ubuntu:26.04')
 SCOPES = ('smoke', 'package-build', 'package-surface', 'package-modules',
@@ -19,6 +21,51 @@ SCHEMA = 'objc3c.linux-archive-install.v1'
 SCOPE_SCHEMA = 'objc3c.linux-archive-install-scope.v1'
 IMAGE = re.compile(r'[^\s@]+@sha256:[a-f0-9]{64}')
 IMAGE_ID = re.compile(r'sha256:[a-f0-9]{64}')
+RELEASE_SCHEMA = 'objc3c.linux-release.v1'
+SHA256 = re.compile(r'[a-f0-9]{64}')
+
+
+def validate_clean_install(row: dict, *, host: str, distribution: str, revision: str,
+                           run: int, attempt: int, archive: dict) -> None:
+    expected = {'schema': SCHEMA, 'status': 'PASS', 'host': host, 'revision': revision,
+                'run': run, 'attempt': attempt, 'distribution': distribution,
+                'archive_sha256': archive['sha256'], 'seal_sha256': archive['seal_sha256'],
+                'source_build_id': archive['source_build_id']}
+    scopes = row.get('scopes')
+    if (any(row.get(key) != value for key, value in expected.items()) or
+            not IMAGE.fullmatch(row.get('image', '')) or not IMAGE_ID.fullmatch(row.get('image_id', '')) or
+            not isinstance(scopes, dict) or set(scopes) != set(SCOPES) or
+            not all(isinstance(value, str) and SHA256.fullmatch(value) for value in scopes.values())):
+        raise ValueError(f'{host} {distribution} installation receipt differs from the qualified archive')
+
+
+def published_archive(manifest: dict, host: str) -> dict:
+    tag = manifest.get('tag', '')
+    if (manifest.get('schema') != RELEASE_SCHEMA or manifest.get('channel') != 'preview' or
+            not re.fullmatch(r'v[0-9]+\.[0-9]+\.[0-9]+(?:-[a-z0-9.-]+)?', tag) or
+            not re.fullmatch(r'[a-f0-9]{40}', manifest.get('revision', '')) or host not in HOSTS):
+        raise ValueError('invalid published Linux preview manifest or host')
+    archive = manifest.get('archives', {}).get(host, {})
+    if (archive.get('file') != f'objc3-sdk-{tag}-{host}.tar.zst' or archive.get('target') != HOSTS[host][1] or
+            type(archive.get('bytes')) is not int or archive['bytes'] <= 0 or not archive.get('source_build_id') or
+            not all(SHA256.fullmatch(archive.get(key, '')) for key in ('sha256', 'seal_sha256'))):
+        raise ValueError(f'invalid published preview archive coordinates for {host}')
+    return archive
+
+
+def published_installs(manifest: dict, host: str, archive: dict) -> list[dict]:
+    run, attempt = archive.get('qualification_run'), archive.get('qualification_attempt')
+    rows = archive.get('clean_installs', [])
+    if (type(run) is not int or run <= 0 or type(attempt) is not int or attempt <= 0 or
+            not isinstance(rows, list) or len(rows) != len(DISTRIBUTIONS) or
+            any(not isinstance(row, dict) for row in rows) or
+            {row.get('distribution') for row in rows} != set(DISTRIBUTIONS)):
+        raise ValueError(f'{host} published preview omitted a clean-install run or distribution')
+    by_distribution = {row['distribution']: row for row in rows}
+    for distribution, row in by_distribution.items():
+        validate_clean_install(row, host=host, distribution=distribution, revision=manifest['revision'],
+                               run=run, attempt=attempt, archive=archive)
+    return [by_distribution[distribution] for distribution in DISTRIBUTIONS]
 
 
 def _container(reference: str) -> tuple[str, str]:
@@ -110,9 +157,17 @@ def aggregate(directory: Path, output: Path, distribution: str, *, host: str) ->
 
 
 def rehearse(bundle: Path, host: str) -> None:
+    host_identity(host, require_native=True)
     manifest = json.loads((bundle / 'linux-release.json').read_bytes())
-    record = manifest['archives'][host]
-    for test in record['clean_installs']:
+    record = published_archive(manifest, host)
+    tests = published_installs(manifest, host, record)
+    archive = bundle / record['file']
+    if archive.is_symlink() or archive.stat().st_size != record['bytes']:
+        raise ValueError('draft rehearsal archive length differs from the published bytes')
+    with archive.open('rb') as stream:
+        if hashlib.file_digest(stream, 'sha256').hexdigest() != record['sha256']:
+            raise ValueError('draft rehearsal archive SHA-256 differs from the published manifest')
+    for test in tests:
         image, image_id = _container(test['image'])
         if image != test['image'] or image_id != test['image_id']:
             raise ValueError('draft rehearsal image differs from clean-install qualification')
@@ -121,14 +176,13 @@ def rehearse(bundle: Path, host: str) -> None:
                         '--workdir', '/release', image, 'sh', '-eu', '-c', '''
 sha256sum --check --ignore-missing SHA256SUMS
 archive=$1
-checksum=$(awk -v archive="$archive" '$2 == archive { print $1 }' SHA256SUMS)
-sh install-linux.sh --provision --archive "$archive" --sha256 "$checksum" --root /opt/objc3c
+sh install-linux.sh --provision --archive "$archive" --sha256 "$2" --root /opt/objc3c
 . /opt/objc3c/activate.sh
 objc3c --version
 objc3c "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/main.objc3" -O2 -o /tmp/application
 /tmp/application
 sh "$OBJC3C_SDK_ROOT/share/objc3c/examples/log-summary/verify.sh"
-''', 'sh', record['file']], check=True)
+''', 'sh', record['file'], record['sha256']], check=True)
 
 
 def main() -> None:
