@@ -4,9 +4,6 @@ inputs:
   manifest:
     description: Reviewed Linux preview manifest to admit
     required: true
-  save:
-    description: Save verified downloads after a successful job
-    default: "false"
 outputs:
   directory:
     description: Directory used by preview_download to verify and cache the archive
@@ -14,6 +11,12 @@ outputs:
   archive:
     description: Exact compressed archive path in the cache directory
     value: ${{ steps.coordinates.outputs.archive }}
+  key:
+    description: Exact cache key derived from the host and admitted archive digest
+    value: ${{ steps.coordinates.outputs.key }}
+  cache-hit:
+    description: Whether the exact cache entry was restored
+    value: ${{ steps.restore.outputs.cache-hit }}
 runs:
   using: composite
   steps:
@@ -38,12 +41,7 @@ runs:
             print('directory=' + str(directory), file=output)
             print('archive=' + str(directory / (checksum + '.tar.zst')), file=output)
         PY
-    - if: inputs.save == 'true' && github.event_name == 'workflow_dispatch'
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-      with:
-        path: ${{ steps.coordinates.outputs.archive }}
-        key: ${{ steps.coordinates.outputs.key }}
-    - if: inputs.save != 'true' || github.event_name != 'workflow_dispatch'
+    - id: restore
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ steps.coordinates.outputs.archive }}

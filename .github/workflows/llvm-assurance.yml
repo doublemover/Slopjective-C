@@ -169,7 +169,6 @@ jobs:
         id: preview-cache
         with:
           manifest: docs/releases/preview-manifest.json
-          save: "true"
       - name: Install the exact preview and verify its compiler output
         shell: bash
         env:
@@ -184,6 +183,12 @@ jobs:
           seal=$(python3 -c 'import json; print(json.load(open("out/installed-ir/install.json"))["seal_sha256"])')
           python3 -B -m scripts.objc3c_toolchain.llvm_installed_ir \
             --sdk "$RUNNER_TEMP/objc3-ir/sdk/current" --seal-sha256 "$seal" --output out/installed-ir/verification
+      - name: Save the admitted preview archive on manual runs
+        if: github.event_name == 'workflow_dispatch' && steps.preview-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.preview-cache.outputs.archive }}
+          key: ${{ steps.preview-cache.outputs.key }}
       - name: Retain optimizer, machine, DWARF and native execution evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

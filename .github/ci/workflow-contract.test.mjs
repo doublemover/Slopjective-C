@@ -12,6 +12,7 @@ import {
   validateNativeRelease,
   validateOptionalLLVM,
   validatePreviewArchiveCache,
+  validatePreviewArchiveWriter,
   validateQuickChecks,
   validateWorkflowContracts,
 } from "./workflow-contract.mjs";
@@ -51,6 +52,10 @@ const release = await readFile(
 );
 const llvmOptional = await readFile(
   new URL("../workflows/llvm-assurance.yml", import.meta.url),
+  "utf8",
+);
+const previewCalibration = await readFile(
+  new URL("../workflows/linux-preview-calibration.yml", import.meta.url),
   "utf8",
 );
 const toolingQuick = await readFile(
@@ -105,7 +110,7 @@ test("native PR gate verifies the exact merge and retains failure evidence", () 
       workflow.jobs["native-pr-execution"].steps.at(-1).with.name = "latest";
     },
     (workflow) => {
-      workflow.jobs["native-pr-execution"].steps.find((step) => step.id === "preview-cache").with.save = "true";
+      workflow.jobs["native-pr-execution"].steps.push({ uses: "actions/cache/save@" + "a".repeat(40) });
     },
     (workflow) => {
       workflow.jobs["native-pr-execution"].steps.find((step) => step.id === "preview-manifest").run =
@@ -126,13 +131,25 @@ test("published SDK cache binds the archive digest and limits cache writes to ma
   validatePreviewArchiveCache(previewArchiveCache);
   for (const edit of [
     ([coordinates]) => { coordinates.run = "echo key=linux-preview >> $GITHUB_OUTPUT"; },
-    ([, save]) => { save.if = "inputs.save == 'true'"; },
-    ([, , restore]) => { restore.with["restore-keys"] = "objc3-linux-preview"; },
-    ([, , restore]) => { restore.uses = "actions/cache/restore@main"; },
+    ([, restore]) => { restore.with["restore-keys"] = "objc3-linux-preview"; },
+    ([, restore]) => { restore.uses = "actions/cache/restore@main"; },
   ]) {
     const action = yaml.load(previewArchiveCache);
     edit(action.runs.steps);
     assert.throws(() => validatePreviewArchiveCache(yaml.dump(action)), /Preview cache must restore exact/);
+  }
+  for (const [text, job] of [[llvmOptional, "installed-preview"], [previewCalibration, "calibration"]]) {
+    validatePreviewArchiveWriter(text, job);
+    for (const edit of [
+      (steps, writer) => { writer.if = "always()"; },
+      (steps, writer) => { writer.with.path = "out/"; },
+      (steps, writer) => { steps.unshift(...steps.splice(steps.indexOf(writer), 1)); },
+    ]) {
+      const workflow = yaml.load(text);
+      const steps = workflow.jobs[job].steps;
+      edit(steps, steps.find((step) => step.uses?.startsWith("actions/cache/save@")));
+      assert.throws(() => validatePreviewArchiveWriter(yaml.dump(workflow), job), /Preview cache must save admitted/);
+    }
   }
 });
 test("workflow changes run the pinned actionlint and ShellCheck integration", () => {

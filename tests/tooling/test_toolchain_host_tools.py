@@ -33,6 +33,10 @@ def test_checked_references_agree(repo: Path) -> None:
     assert versions.check_host_tools(repo)["status"] == "PASS"
 
 
+def test_all_checkout_workflows_and_composites_use_locked_tool_versions() -> None:
+    assert versions.check_host_tools(ROOT)["status"] == "PASS"
+
+
 @pytest.mark.parametrize("filename,old,new", [
     (".node-version", "26.13.0", "24.19.0"),
     (".python-version", "3.15.0", "3.13.3"),

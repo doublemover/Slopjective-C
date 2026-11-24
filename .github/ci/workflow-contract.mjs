@@ -99,28 +99,37 @@ export function validateDependencyActions(actions) {
 export function validatePreviewArchiveCache(text) {
   const action = yaml.load(text);
   const steps = action.runs?.steps ?? [];
-  const [coordinates, save, restore] = steps;
-  const cacheInputs = {
-    path: "${{ steps.coordinates.outputs.archive }}",
-    key: "${{ steps.coordinates.outputs.key }}",
-  };
+  const [coordinates, restore] = steps;
   if (
-    action.runs?.using !== "composite" || steps.length !== 3 ||
-    action.inputs?.save?.default !== "false" ||
+    action.runs?.using !== "composite" || steps.length !== 2 ||
     steps.some((step) => step["continue-on-error"]) ||
     coordinates.id !== "coordinates" ||
     !coordinates.run?.includes("published_archive(manifest, host)['sha256']") ||
     !coordinates.run.includes("checksum + '.tar.zst'") ||
-    !/^actions\/cache@[0-9a-f]{40}$/.test(save.uses) ||
     !/^actions\/cache\/restore@[0-9a-f]{40}$/.test(restore.uses) ||
-    save.if !== "inputs.save == 'true' && github.event_name == 'workflow_dispatch'" ||
-    restore.if !== "inputs.save != 'true' || github.event_name != 'workflow_dispatch'" ||
-    [save, restore].some((step) =>
-      Object.entries(cacheInputs).some(([key, value]) => step.with?.[key] !== value) ||
-      step.with?.["restore-keys"],
-    )
+    restore.id !== "restore" || restore.if || restore.with?.["restore-keys"] ||
+    restore.with?.path !== "${{ steps.coordinates.outputs.archive }}" ||
+    restore.with?.key !== "${{ steps.coordinates.outputs.key }}" ||
+    action.outputs?.key?.value !== restore.with.key ||
+    action.outputs?.archive?.value !== restore.with.path ||
+    action.outputs?.["cache-hit"]?.value !== "${{ steps.restore.outputs.cache-hit }}"
   )
-    throw new Error("Preview cache must restore exact pinned archives and save only on explicit dispatch");
+    throw new Error("Preview cache must restore exact pinned archives");
+}
+
+export function validatePreviewArchiveWriter(text, job) {
+  const steps = yaml.load(text).jobs?.[job]?.steps ?? [];
+  const restore = steps.findIndex((step) => step.id === "preview-cache" && step.uses === previewArchiveCache);
+  const install = steps.findIndex((step) => step.run?.includes('--archive-cache "$PREVIEW_CACHE"'));
+  const save = steps.findIndex((step) => step.uses?.startsWith("actions/cache/save@"));
+  const writer = steps[save];
+  if (!(0 <= restore && restore < install && install < save) ||
+      !/^actions\/cache\/save@[0-9a-f]{40}$/.test(writer.uses) ||
+      writer.if !== "github.event_name == 'workflow_dispatch' && steps.preview-cache.outputs.cache-hit != 'true'" ||
+      writer.with?.path !== "${{ steps.preview-cache.outputs.archive }}" ||
+      writer.with?.key !== "${{ steps.preview-cache.outputs.key }}") {
+    throw new Error("Preview cache must save admitted archives only on explicit dispatch");
+  }
 }
 
 export function validateNativePR(text) {
@@ -155,7 +164,7 @@ export function validateNativePR(text) {
     checkout.with["fetch-depth"] !== 0 ||
     !steps.some((step) => step.uses === "./.github/actions/linux-host-tools") ||
     !previewManifest?.run?.includes('git show "$PR_BASE:docs/releases/preview-manifest.json"') ||
-    previewCache?.with?.save ||
+    steps.some((step) => step.uses?.startsWith("actions/cache/save@")) ||
     previewCache?.with?.manifest !== "${{ steps.preview-manifest.outputs.path }}" ||
     previewCache?.if !== "steps.preview-manifest.outputs.path != ''" ||
     previewInstall?.if !== previewCache?.if ||
@@ -1022,6 +1031,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   );
   validateDependencyRouting(allWorkflows);
   validateNativePR(allWorkflows["native-pr.yml"]);
+  validatePreviewArchiveWriter(allWorkflows["linux-preview-calibration.yml"], "calibration");
+  validatePreviewArchiveWriter(allWorkflows["llvm-assurance.yml"], "installed-preview");
   validateNativeRelease(
     allWorkflows["native-assurance.yml"],
     allWorkflows["platform-host-evidence.yml"],

@@ -46,7 +46,6 @@ jobs:
         id: preview-cache
         with:
           manifest: docs/releases/preview-manifest.json
-          save: "true"
       - name: Install exact published preview
         env:
           EXPECTED_HOST: ${{ matrix.linux_host }}
@@ -77,6 +76,12 @@ jobs:
             --receipt out/calibration/observation-1/qualification.json --label "${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-1" \
             --receipt out/calibration/observation-2/qualification.json --label "${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-2" \
             --output out/calibration/pooled
+      - name: Save the admitted preview archive on manual runs
+        if: github.event_name == 'workflow_dispatch' && steps.preview-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.preview-cache.outputs.archive }}
+          key: ${{ steps.preview-cache.outputs.key }}
       - name: Preserve observations and measured costs
         if: always() && steps.measure.outcome != 'skipped'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
