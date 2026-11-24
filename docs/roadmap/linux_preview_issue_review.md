@@ -99,10 +99,10 @@ existing cadence. The default branch has yet to run the revised dispatcher.
 
 The optional source-feedback run qualified its covered Clang on 268 owned
 sources, then exhausted the paired experiment's first strategy budget. Its
-full profile merge and export took 109 and 179 seconds. The revised three-round
-comparison has equal, bounded wall and CPU budgets on both strategies, with
-separate per-command limits. Each case pools its own binary profiles before
-indexing. A native LLVM 23.1.5 replay reduced three raw profiles to one and
+full profile merge and export took 109 and 179 seconds. The revised comparison
+runs six trials per strategy and reports actual wall and CPU time. It uses the
+hosted job's limit. Each case pools its own binary profiles before indexing.
+A native LLVM 23.1.5 replay reduced three raw profiles to one and
 preserved the exact entry points, branch counts, and regions. The new
 release-sized comparison awaits hosted verification.
 [Retained source-feedback timings](https://github.com/doublemover/Slopjective-C/actions/runs/45289388519)

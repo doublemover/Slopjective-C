@@ -70,7 +70,7 @@ def classify(stage: str, code: int, text: str, *, timed_out=False) -> str:
     return 'infrastructure'
 
 
-def command(argv, *, cwd: Path, environment: dict, log: Path, timeout: float) -> dict:
+def command(argv, *, cwd: Path, environment: dict, log: Path, timeout: float | None) -> dict:
     """Kill the entire process group on timeout; retain diagnostics for all exits."""
     started = time.monotonic()
     args = list(map(str, argv))

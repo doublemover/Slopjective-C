@@ -445,7 +445,7 @@ def qualify(repo: Path, output: Path, *, jobs=2, baseline: Path | None = None) -
     env['PATH'] = str(stage / 'bin') + os.pathsep + env.get('PATH', '')
     env['LLVM_PROFILE_FILE'] = os.devnull
     env['PYTHONDONTWRITEBYTECODE'] = '1'
-    def run(name, argv, *, profile=True, timeout=900, stdout=None):
+    def run(name, argv, *, profile=True, stdout=None):
         if any(row['name'] == name for row in report['commands']):
             raise ValueError('duplicate compiler coverage command')
         directory = profile_root / name
@@ -456,8 +456,7 @@ def qualify(repo: Path, output: Path, *, jobs=2, baseline: Path | None = None) -
         started_command = time.monotonic()
         with log.open('w') as stream, stderr_log.open('w') as errors:
             result = subprocess.run(list(map(str, argv)), cwd=repo, env=case_env,
-                stdout=stream, stderr=errors if stdout else subprocess.STDOUT,
-                timeout=timeout)
+                stdout=stream, stderr=errors if stdout else subprocess.STDOUT)
         row = {'name': name, 'argv': list(map(str, argv)), 'exit_code': result.returncode,
                'seconds': round(time.monotonic()-started_command, 6), 'log': str(log), 'sha256': digest(log),
                'stderr': str(stderr_log), 'stderr_sha256': digest(stderr_log)}
@@ -509,7 +508,7 @@ def qualify(repo: Path, output: Path, *, jobs=2, baseline: Path | None = None) -
         discovery = run('objc3-lit-discovery', [lit_tool, '--show-tests', lit_source], profile=False,
                         stdout=output / 'lit-discovery.log')
         lit_log = run('objc3-lit', [lit_tool, '-sv', '--show-unsupported', '-j', str(min(jobs, 4)),
-            '--output', lit_json, lit_source], timeout=1800)
+            '--output', lit_json, lit_source])
         outcomes = lit_inventory(discovery.read_text(), json.loads(lit_json.read_text()))
         report['suites'].append({'name': 'ObjC3-lit', 'status': 'PASS', 'outcomes': outcomes,
                                  'discovery_sha256': digest(discovery), 'log_sha256': digest(lit_log),
@@ -549,7 +548,7 @@ def qualify(repo: Path, output: Path, *, jobs=2, baseline: Path | None = None) -
         run('export', [tools['llvm-cov'], 'export', export_binaries[0],
             *('--object='+str(binary) for binary in export_binaries[1:]),
             *EXPORT_FLAGS, '--instr-profile='+str(merged), '--compilation-dir='+str(build),
-            *(source / name for name in eligible)], profile=False, timeout=1800, stdout=export)
+            *(source / name for name in eligible)], profile=False, stdout=export)
         if (output / 'logs/export.stderr.log').read_text().strip():
             raise ValueError('compiler source coverage export emitted mismatch diagnostics')
         report['source_coverage'] = read_export(export, source=source, eligible=eligible, changed=changed)

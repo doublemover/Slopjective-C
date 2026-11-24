@@ -67,7 +67,7 @@ def shrink(program, predicate, expected_class: str):
 
 class Campaign:
     def __init__(self, repo: Path, output: Path, facade: Path | None, services: Path, runtime: Path,
-                 *, compiler_profile='compiler-asan-ubsan'):
+                 *, compiler_profile='compiler-asan-ubsan', command_timeout: float | None = 180):
         self.repo, self.output = repo, output
         if compiler_profile == 'compiler-source-coverage' and facade is None:
             from .compiler_source_coverage import selected_tools
@@ -84,7 +84,7 @@ class Campaign:
             'build_config_digest': self.foundation['build_config_digest'],
             'permitted_environment': environment,
             'bounds': {'operations': 64, 'logical_allocations': 32, 'seeds': 8,
-                       'process_timeout_seconds': 180,
+                       'process_timeout_seconds': command_timeout,
                        'shared_executor_limits': self.foundation['host_environment']['resource_limits']},
             'profile': {'host': native_linux_host(), 'language': 'objective-c++', 'standards': ['c++20', 'c++23'],
                         'ownership': 'arc', 'target': native_target()},
@@ -96,7 +96,7 @@ class Campaign:
                 'Exact logical survival/weak-zeroing/last destruction, not raw retain/release or copy counts.',
                 'C++ scope and partial-construction cleanup order is explicitly sequenced.',
                 'No move-from observations, signed overflow, unspecified effect order or floating-point equivalences.']}
-        self.executor = Execution(output, environment, self.report, timeout=180)
+        self.executor = Execution(output, environment, self.report, timeout=command_timeout)
         self.run = self.executor.run
         self.flags = ['--no-default-config', '--target='+native_target(), '-x', 'objective-c++',
             '-fobjc-version=3', '-fobjc-runtime=gnustep-2.2', '-fobjc-arc', '-fobjc-arc-exceptions',

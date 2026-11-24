@@ -10,7 +10,7 @@ from scripts.objc3c_toolchain.frontend_tests import qualify
 
 
 def mock_ctest(monkeypatch, rows):
-    def run(argv, *, stdout, stderr, timeout):
+    def run(argv, *, stdout, stderr):
         selected = re.compile(argv[-1]) if '-R' in argv else None
         tests = [row for row in rows() if selected is None or selected.fullmatch(row['name'])]
         stdout.write(json.dumps({'tests': tests}).encode())
@@ -174,20 +174,16 @@ def test_rebound_ctest_command_is_rejected_before_execution(tmp_path, monkeypatc
     assert Path(rows[0]['executable']).is_file()
 
 
-@pytest.mark.parametrize('fault', ('exit', 'timeout', 'oversize', 'malformed', 'duplicate'))
+@pytest.mark.parametrize('fault', ('exit', 'oversize', 'malformed', 'duplicate'))
 def test_post_link_discovery_keeps_the_owned_binary_and_failed_command_evidence(tmp_path, monkeypatch, fault):
     build, rows = fixture(tmp_path, monkeypatch)
     from scripts.objc3c_toolchain import ctest_discovery
     ctest = subprocess.run
 
-    def discover(argv, *, stdout, stderr, timeout):
+    def discover(argv, *, stdout, stderr):
         if '-R' not in argv:
-            return ctest(argv, stdout=stdout, stderr=stderr, timeout=timeout)
-        assert timeout == ctest_discovery.DISCOVERY_TIMEOUT
+            return ctest(argv, stdout=stdout, stderr=stderr)
         stderr.write(b'CTest owner discovery control\n')
-        if fault == 'timeout':
-            stdout.write(b'partial metadata')
-            raise subprocess.TimeoutExpired(argv, timeout)
         if fault == 'duplicate':
             stdout.write(b'{"tests":[{"name":"objc3_first"},{"name":"objc3_first"}]}')
         elif fault == 'oversize':
@@ -213,7 +209,7 @@ def test_post_link_discovery_keeps_the_owned_binary_and_failed_command_evidence(
     assert failed['phase'] == 'ownership' and failed['target'] == rows[0]['target']
     assert failed['stderr'] == 'CTest owner discovery control\n'
     assert 0 < len(failed['stdout']) <= ctest_discovery.MAX_TRANSCRIPT_BYTES
-    assert failed['exit_code'] == {'exit': 7, 'timeout': None}.get(fault, 0)
+    assert failed['exit_code'] == (7 if fault == 'exit' else 0)
 
 
 def configure_real_project(tmp_path, *, unregistered=False):

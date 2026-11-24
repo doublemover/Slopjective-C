@@ -139,22 +139,23 @@ def test_existing_coverage_product_requires_exact_source_object_and_binary_ident
             feedback.admit_coverage_qualification(changed, owner, revision)
 
 
-def test_every_strategy_command_obeys_one_shared_cpu_and_wall_deadline(monkeypatch):
-    clock = {'wall': 10, 'cpu': 20}
-    monkeypatch.setattr(feedback.time, 'monotonic', lambda: clock['wall'])
-    monkeypatch.setattr(feedback, 'cpu_seconds', lambda: clock['cpu'])
-    calls = []
-    campaign = SimpleNamespace(run=lambda *args, **kwargs: calls.append(kwargs['timeout']),
-                               executor=SimpleNamespace(timeout=180))
-    window = feedback.Window(campaign, 30)
-    window.run('first', [])
-    clock['cpu'] += 27
-    window.run('second', [], timeout=20)
-    assert calls == [30, 3]
-    clock['wall'] += 31
-    with pytest.raises(ValueError, match='budget'):
-        window.run('third', [])
-    assert calls == [30, 3]
+def test_measure_uses_no_internal_deadline(tmp_path, monkeypatch):
+    runtime = tmp_path / 'runtime.so'
+    runtime.touch()
+    qualification = tmp_path / 'coverage.json'
+    qualification.write_text('{}')
+    monkeypatch.setattr(feedback.subprocess, 'check_output', lambda *args, **kwargs: 'a'*40)
+
+    def campaign(*args, **kwargs):
+        assert kwargs == {'compiler_profile': feedback.PROFILE, 'command_timeout': None}
+        raise ValueError('intentional setup failure')
+
+    monkeypatch.setattr(feedback, 'Campaign', campaign)
+    output = tmp_path / 'out/feedback'
+    with pytest.raises(ValueError, match='intentional setup failure'):
+        feedback.measure(tmp_path, output, runtime=runtime, services=runtime,
+                         coverage_qualification=qualification)
+    assert json.loads((output / 'qualification.json').read_bytes())['status'] == 'FAIL'
 
 
 def test_pair_union_requires_every_seed_and_both_strategies_once():
@@ -181,7 +182,7 @@ def test_foreign_profile_identity_fails_before_merge_and_is_reclaimed(tmp_path):
     assert not directory.exists()
 
 
-def test_case_profiles_use_one_owned_pool_and_keep_explicit_tool_deadlines(tmp_path, monkeypatch):
+def test_case_profiles_use_one_owned_pool_without_a_tool_deadline(tmp_path, monkeypatch):
     owner = feedback.Feedback.__new__(feedback.Feedback)
     owner.root = owner.source = owner.build = tmp_path
     owner.owner, owner.owner_id, owner.mapping = tmp_path / 'libclang-cpp.so', 'a'*40, None
@@ -213,9 +214,7 @@ def test_case_profiles_use_one_owned_pool_and_keep_explicit_tool_deadlines(tmp_p
     points, receipt = owner.collect('case', directory)
     assert points == {('clang/lib/Sema/ObjC3.cpp', 2, 1)}
     assert receipt['profile_pattern'] == pattern and receipt['raw_profiles']['count'] == 1
-    assert calls == {'case-merge': feedback.PROFILE_MERGE_TIMEOUT, 'case-profile-ids': None,
-                     'case-export': feedback.PROFILE_EXPORT_TIMEOUT}
-    assert feedback.DEFAULT_ROUNDS * feedback.SECONDS_PER_ROUND > feedback.PROFILE_EXPORT_TIMEOUT
+    assert calls == {'case-merge': None, 'case-profile-ids': None, 'case-export': None}
     assert not directory.exists()
 
 

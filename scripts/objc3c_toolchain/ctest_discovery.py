@@ -9,7 +9,6 @@ import tempfile
 import time
 
 
-DISCOVERY_TIMEOUT = 30
 MAX_TRANSCRIPT_BYTES = 1024 * 1024
 
 
@@ -17,12 +16,12 @@ def discover(build: Path, receipt: dict, *, selected: tuple[str, ...] | None = N
     argv = ['ctest', '--test-dir', str(build), '--show-only=json-v1']
     if selected is not None:
         argv += ['-R', '^(' + '|'.join(map(re.escape, selected)) + ')$']
-    receipt.update(argv=argv, status='FAIL', exit_code=None, timeout_seconds=DISCOVERY_TIMEOUT)
+    receipt.update(argv=argv, status='FAIL', exit_code=None)
     started = time.monotonic()
     try:
         with tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr:
             try:
-                result = subprocess.run(argv, stdout=stdout, stderr=stderr, timeout=DISCOVERY_TIMEOUT)
+                result = subprocess.run(argv, stdout=stdout, stderr=stderr)
                 receipt['exit_code'] = result.returncode
             finally:
                 stdout.seek(0)
@@ -41,9 +40,6 @@ def discover(build: Path, receipt: dict, *, selected: tuple[str, ...] | None = N
             raise ValueError('CTest discovery is empty or has duplicate names')
         if selected is not None and set(names) != set(selected):
             raise ValueError('CTest discovery differs from the exact selected names')
-    except subprocess.TimeoutExpired as error:
-        receipt['error'] = 'CTest discovery timed out'
-        raise ValueError(receipt['error']) from error
     except (OSError, KeyError, TypeError, ValueError) as error:
         receipt['error'] = str(error)
         raise ValueError(f'CTest discovery failed: {error}') from error

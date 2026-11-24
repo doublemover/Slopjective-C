@@ -35,12 +35,7 @@ STRATEGIES = ('uniform', 'source-feedback')
 GENERATOR_VERSION = 'source-feedback.v1'
 MAX_POINTS = 500_000
 MAX_ROUNDS = 16
-DEFAULT_ROUNDS = 3
-# The x86-64 release-sized graph measured 109 s to merge and 179 s to export.
-# Give each stage room for host variance while keeping both strategies bounded.
-PROFILE_MERGE_TIMEOUT = 240
-PROFILE_EXPORT_TIMEOUT = 420
-SECONDS_PER_ROUND = 700
+DEFAULT_ROUNDS = 6
 PROFILE_PATTERN = '%b-%m.profraw'
 
 
@@ -218,14 +213,13 @@ class Feedback:
                     selected.append(path)
             require_binary_ids(observed, required={self.owner_id}, allowed=set(self.identities.values()), kind='source-feedback raw profiles')
             merged = directory / 'compiler.profdata'
-            self.campaign.run(name+'-merge', [self.campaign.tools['llvm-profdata'], 'merge', '--sparse', *selected, '-o', merged],
-                              timeout=PROFILE_MERGE_TIMEOUT)
+            self.campaign.run(name+'-merge', [self.campaign.tools['llvm-profdata'], 'merge', '--sparse', *selected, '-o', merged])
             observed = binary_ids(self.campaign.run(name+'-profile-ids',
                 [self.campaign.tools['llvm-profdata'], 'show', '--binary-ids', merged]))
             require_binary_ids(observed, required={self.owner_id}, allowed={self.owner_id}, kind='source-feedback indexed profile')
             text = self.campaign.run(name+'-export', [self.campaign.tools['llvm-cov'], 'export', self.owner,
                 *EXPORT_FLAGS, '--instr-profile='+str(merged), '--compilation-dir='+str(self.build),
-                *(self.source / entry for entry in self.eligible)], timeout=PROFILE_EXPORT_TIMEOUT)
+                *(self.source / entry for entry in self.eligible)])
             mapped, covered = source_points(text, self.source, self.eligible)
             if self.mapping is None:
                 self.mapping = tuple(sorted(mapped))
@@ -249,28 +243,6 @@ class Feedback:
             shutil.rmtree(directory)
 
 
-class Window:
-    def __init__(self, campaign, seconds):
-        self.campaign, self.seconds = campaign, seconds
-        self.started, self.cpu = time.monotonic(), cpu_seconds()
-        self.original = campaign.run
-
-    def remaining(self):
-        remaining = min(self.seconds-(time.monotonic()-self.started), self.seconds-(cpu_seconds()-self.cpu))
-        if remaining <= 0:
-            raise ValueError('source-feedback strategy exhausted its fixed wall/CPU budget')
-        return remaining
-
-    def run(self, name, argv, **kwargs):
-        kwargs['timeout'] = min(kwargs.get('timeout') or self.campaign.executor.timeout, self.remaining())
-        return self.original(name, argv, **kwargs)
-
-    def metrics(self):
-        self.remaining()
-        return {'wall_budget_seconds': self.seconds, 'cpu_budget_seconds': self.seconds,
-                'wall_seconds': time.monotonic()-self.started, 'cpu_seconds': cpu_seconds()-self.cpu}
-
-
 def paired_summary(rows: list[dict], seeds) -> dict:
     indexed_rows = {(row['seed'], row['strategy']): row for row in rows}
     if (len(rows) != 2*len(seeds) or len(indexed_rows) != len(rows) or
@@ -291,18 +263,14 @@ def paired_summary(rows: list[dict], seeds) -> dict:
 
 
 def measure(repo: Path, output: Path, baseline: Path | None = None, *, services: Path, runtime: Path,
-            coverage_qualification: Path | None = None, seeds=(7, 19, 41), rounds=DEFAULT_ROUNDS, budget=None):
+            coverage_qualification: Path | None = None, seeds=(7, 19, 41), rounds=DEFAULT_ROUNDS):
     repo, output = repo.resolve(strict=True), output.resolve()
     services, runtime = services.resolve(strict=True), runtime.resolve(strict=True)
-    if type(rounds) is not int or not 3 <= rounds <= MAX_ROUNDS:
-        raise ValueError('source-feedback comparison requires 3..16 rounds')
-    if budget is None:
-        budget = rounds * SECONDS_PER_ROUND
     if (output.exists() or not output.is_relative_to(repo / 'out') or
-            type(budget) is not int or not 30 <= budget <= rounds * SECONDS_PER_ROUND or
+            type(rounds) is not int or not 3 <= rounds <= MAX_ROUNDS or
             not 3 <= len(seeds) <= 8 or len(set(seeds)) != len(seeds) or
             any(type(seed) is not int or not 0 <= seed < 2**32 for seed in seeds)):
-        raise ValueError('source-feedback comparison requires fresh owned output, 3..8 seeds and bounded rounds/time')
+        raise ValueError('source-feedback comparison requires fresh owned output, 3..8 seeds and 3..16 rounds')
     if baseline is None and coverage_qualification is None:
         raise ValueError('source feedback requires an independent-oracle baseline or exact coverage qualification')
     receipts = {}
@@ -323,21 +291,18 @@ def measure(repo: Path, output: Path, baseline: Path | None = None, *, services:
     report = {'schema': 'objc3c.semantic-source-feedback.v1', 'status': 'RUNNING',
               'subject': 'non-promoting-paired-source-feedback-measurement'}
     try:
-        campaign = Campaign(repo, output, None, services, runtime, compiler_profile=PROFILE)
+        campaign = Campaign(repo, output, None, services, runtime, compiler_profile=PROFILE, command_timeout=None)
         if normal is not None and campaign.foundation['source_tree'] != normal['source_tree']:
             raise ValueError('paired source-feedback profiles refer to different compiler sources')
         report = campaign.report
         report.update(schema='objc3c.semantic-source-feedback.v1', generator_version=GENERATOR_VERSION,
             subject='non-promoting-paired-source-feedback-measurement', seeds=list(seeds), rounds=rounds,
-            case_limits={'profile_merge_timeout_seconds': PROFILE_MERGE_TIMEOUT,
-                         'profile_export_timeout_seconds': PROFILE_EXPORT_TIMEOUT,
-                         'wall_and_cpu_budget_seconds_per_strategy': budget},
             revision=revision, measurements=[],
             baseline={'kind': 'paired-uniform-source-oracle' if normal is None else 'independent-semantic-qualification'},
             qualification_receipts={name: {'path': str(path), 'sha256': sha256}
                                     for name, (path, _, sha256) in receipts.items()},
             adaptive_generation_enabled=False,
-            comparison_limits='Bounded paired development sample with counterbalanced order; default generation is unchanged. No promotion from this sample alone.')
+            comparison_limits='Fixed program count per strategy with counterbalanced order. Wall and CPU time are measured. Default generation is unchanged.')
         for name in ('semantic_source_feedback.py', 'compiler_source_coverage.py', 'semantic_generation.py'):
             path = Path(__file__).with_name(name);campaign.inputs[str(path)] = digest(path)
         campaign.inputs.update({str(path): sha256 for path, _, sha256 in receipts.values()})
@@ -357,7 +322,7 @@ def measure(repo: Path, output: Path, baseline: Path | None = None, *, services:
             campaign.case('warmup-'+str(seed), generate(seed))
             for strategy in STRATEGIES if ordinal % 2 == 0 else tuple(reversed(STRATEGIES)):
                 generator, witnesses, union, trajectory = Generator(seed), [], set(), []
-                window = Window(campaign, budget);campaign.run = window.run
+                wall_started, cpu_started = time.monotonic(), cpu_seconds()
                 try:
                     for turn in range(rounds):
                         witness = generator.propose() if strategy == 'source-feedback' else generate((seed+turn*0x9e3779b9) % 2**32)
@@ -371,16 +336,15 @@ def measure(repo: Path, output: Path, baseline: Path | None = None, *, services:
                                 raise ValueError('source-feedback generator and measured coverage disagree')
                         trajectory.append({'name': name, 'program_sha256': identity([asdict(op) for op in witness]),
                             'new_points': gain, 'union_points': len(union), **receipt})
-                        window.remaining();campaign.executor.save()
-                    metrics = window.metrics()
+                        campaign.executor.save()
                 finally:
-                    campaign.run = window.original
                     campaign.executor.environment['LLVM_PROFILE_FILE'] = os.devnull
+                wall, cpu = time.monotonic()-wall_started, cpu_seconds()-cpu_started
                 report['measurements'].append({'seed': seed, 'strategy': strategy, 'execution_order': len(report['measurements']),
                     'programs': len(witnesses), 'operations_per_program': 24, 'covered_points': len(union),
-                    'eligible_programs_per_second': len(witnesses)/metrics['wall_seconds'],
+                    'eligible_programs_per_second': len(witnesses)/wall,
                     'semantic_coverage': coverage(witnesses), 'trajectory': trajectory,
-                    'reproducing_mismatch_classes': [], **metrics})
+                    'reproducing_mismatch_classes': [], 'wall_seconds': wall, 'cpu_seconds': cpu})
                 campaign.executor.save()
         if any(digest(Path(path)) != value for path, value in campaign.inputs.items()):
             raise ValueError('source-feedback compiler/model/runtime inputs changed during measurement')
@@ -413,7 +377,6 @@ def main():
     parser.add_argument('--coverage-qualification', type=Path, help='current qualified source-coverage receipt')
     parser.add_argument('--seeds', type=int, nargs='+', default=[7, 19, 41])
     parser.add_argument('--rounds', type=int, default=DEFAULT_ROUNDS)
-    parser.add_argument('--budget', type=int, help='wall and CPU seconds per strategy; defaults to 700 per round')
     report = measure(**vars(parser.parse_args()))
     print(json.dumps({'status': report['status'], 'paired_samples': len(report['measurements'])//2,
                       'adaptive_generation_enabled': report['adaptive_generation_enabled']}))
