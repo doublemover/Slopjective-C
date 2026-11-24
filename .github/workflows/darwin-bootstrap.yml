@@ -83,7 +83,13 @@ jobs:
         with:
           python-version: "3.15.0"
           architecture: arm64
-      - name: Download and verify the pinned LLVM bootstrap
+      - name: Restore the pinned Apple Silicon LLVM archive
+        id: llvm-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/${{ env.LLVM_ARCHIVE }}
+          key: darwin-arm64-llvm-archive-${{ env.LLVM_ARCHIVE_SHA256 }}
+      - name: Verify and unpack the pinned LLVM bootstrap
         shell: bash
         run: |
           evidence="$RUNNER_TEMP/darwin-bootstrap-evidence"
@@ -92,17 +98,29 @@ jobs:
           url="https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.5/$LLVM_ARCHIVE"
           {
             printf 'archive=%s\nsha256=%s\n' "$url" "$LLVM_ARCHIVE_SHA256"
-            curl --fail --location --silent --show-error --retry 3 --retry-max-time 300 \
-              --connect-timeout 20 --max-time 300 --output "$archive" "$url"
+            if [[ -f "$archive" ]]; then
+              echo 'source=cache'
+            else
+              echo 'source=download'
+              curl --fail --location --silent --show-error --retry 3 --retry-max-time 300 \
+                --connect-timeout 20 --max-time 300 --output "$archive" "$url"
+            fi
             printf '%s  %s\n' "$LLVM_ARCHIVE_SHA256" "$archive" | shasum -a 256 -c
             mkdir "$toolchain"
             # The official archive's Zstandard frame uses a 1 GiB window.
             zstd --long=30 -dc "$archive" | tar -xf - -C "$toolchain" --strip-components=1
           } 2>&1 | tee "$evidence/bootstrap.log"
+      - name: Save the verified Apple Silicon LLVM archive
+        if: github.event_name == 'workflow_dispatch' && steps.llvm-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/${{ env.LLVM_ARCHIVE }}
+          key: darwin-arm64-llvm-archive-${{ env.LLVM_ARCHIVE_SHA256 }}
       - name: Run the native bootstrap probe
         shell: bash
         run: |
           evidence="$RUNNER_TEMP/darwin-bootstrap-evidence"
+          unlink "$RUNNER_TEMP/$LLVM_ARCHIVE"
           python -B -m scripts.objc3c_toolchain.darwin_bootstrap \
             --llvm-root "$RUNNER_TEMP/darwin-llvm" \
             --output-dir "$evidence/result" 2>&1 | tee "$evidence/probe.log"
