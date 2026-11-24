@@ -1,0 +1,18 @@
+#if !defined(__OBJC3__) || !__has_extension(blocks)
+#error Objective-C 3 and Blocks must be enabled
+#endif
+#if __has_feature(objc_arc) == defined(EXPECT_MRC)
+#error unexpected Objective-C ownership mode
+#endif
+
+int c_value(void);
+int cxx_value(void);
+
+int main(void) {
+  int total;
+  {
+    defer { ++total; }
+    total = c_value() + cxx_value();
+  }
+  return total != 42;
+}

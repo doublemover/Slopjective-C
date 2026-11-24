@@ -64,6 +64,15 @@ def qualify_installed(repo: Path, prefix: Path, output: Path) -> dict:
         run('driver-language-explicit-objc-version', [compiler, '-xc', '-fobjc-version=3',
             '-fsyntax-only', language_source],
             diagnostic="invalid argument '-fobjc-version=3' not allowed with 'C'")
+        mixed_sources = ['driver-mixed-main.objc3', 'driver-mixed-c.c', 'driver-mixed-cxx.cpp']
+        for mode, options in (
+            ('arc', []),
+            ('mrc', ['-fno-objc-arc', '-fblocks', '-DEXPECT_MRC', '-DEXPECT_C_BLOCKS']),
+        ):
+            application = client / ('driver-mixed-' + mode)
+            run('driver-mixed-compile-' + mode, [compiler, '-Werror', *options,
+                *mixed_sources, '-o', application])
+            run('driver-mixed-run-' + mode, [application])
         for standard in ('c++20', 'c++23'):
             pch = client / ('driver-' + standard + '.pch')
             consumer = client / ('pch-consumer-' + standard + '.o')
