@@ -589,7 +589,7 @@ def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = 
 
     def run(name, command, *, expected=0, detector_source=None):
         log = output / (name+'.log')
-        action = sample(command, cwd=repo, environment=environment, log=log, timeout=900)
+        action = sample(command, cwd=repo, environment=environment, log=log, timeout=None)
         code = action['exit_code']
         action.update(name=name, seconds=round(action['wall_seconds'], 6))
         report['commands'].append(action)

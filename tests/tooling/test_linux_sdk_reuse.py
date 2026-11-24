@@ -198,6 +198,9 @@ def test_packaging_input_edit_prevents_installation(tmp_path, monkeypatch):
     monkeypatch.setattr(linux_sdk, 'adopt_candidate_foundation', lambda *a, **kw: {'duplicate_stage_reclaimed': False})
 
     def execute(command, **kwargs):
+        assert kwargs.get('timeout') is None
+        if command[0] == 'ctest':
+            assert '--timeout' not in command
         if 'scripts.objc3c_toolchain_runtime.build_linux' in command:
             result = {'stage': str(sdk), 'build_key': 'runtime', 'robin_map_source': str(sdk)}
             destination = Path(command[command.index('--report-file') + 1])

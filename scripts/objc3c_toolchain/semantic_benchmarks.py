@@ -129,7 +129,11 @@ def runtime_result(text, scale):
 
 
 def sample(argv, *, cwd, environment, log, timeout=120):
-    """Per-command wait4 rusage; never reuse a global descendant RSS maximum."""
+    """Per-command wait4 rusage, with an optional explicit benchmark budget.
+
+    Qualification/build callers pass None to leave wall time to their runner.
+    Never reuse a global descendant RSS maximum.
+    """
     started, timed_out = time.monotonic(), False
     with log.open('w') as stream:
         with subprocess.Popen(list(map(str, argv)), cwd=cwd, env=environment,
@@ -141,7 +145,7 @@ def sample(argv, *, cwd, environment, log, timeout=120):
                     if child:
                         process.returncode = os.waitstatus_to_exitcode(status)
                         break
-                    if time.monotonic()-started >= timeout:
+                    if timeout is not None and time.monotonic()-started >= timeout:
                         timed_out = True
                         _kill_session(process.pid)
                         _, status, usage = os.wait4(process.pid, 0)

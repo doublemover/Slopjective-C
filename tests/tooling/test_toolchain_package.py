@@ -204,3 +204,32 @@ def test_release_gate_rejects_successful_process_with_invalid_receipt(tmp_path, 
         f'(output / "qualification.json").write_text({json.dumps(evidence)!r})\n')
     with pytest.raises(ValueError, match='receipt is incomplete'):
         _qualify_call_suite(sdk, tmp_path / 'evidence', 'sealed', 'probe', {'executions': 1, 'admissions': 1})
+
+
+def test_complete_installed_sidecar_uses_runner_limits_and_checks_its_receipt(tmp_path, monkeypatch):
+    import subprocess
+    from scripts.objc3c_toolchain.package import _qualify_call_suite
+
+    sdk = tmp_path / 'sdk'
+    examples = sdk / 'share/objc3c/examples/native'
+    examples.mkdir(parents=True)
+    evidence = {'status': 'PASS', 'sdk_seal': 'sealed', 'executions': [{}],
+                'commands': [{'exit_code': 0, 'expected_exit_code': 0}]}
+    (examples / 'qualify-probe.py').write_text(
+        'import pathlib,sys\n'
+        'print("suite completed", flush=True)\n'
+        'output = pathlib.Path(sys.argv[sys.argv.index("--output-dir") + 1])\n'
+        f'(output / "qualification.json").write_text({json.dumps(evidence)!r})\n')
+    execute = subprocess.run
+    calls = []
+
+    def run(command, **kwargs):
+        assert kwargs.get('timeout') is None
+        calls.append(command)
+        return execute(command, **kwargs)
+
+    monkeypatch.setattr(subprocess, 'run', run)
+    output = tmp_path / 'evidence'
+    assert _qualify_call_suite(sdk, output, 'sealed', 'probe', {'executions': 1}) == evidence
+    assert len(calls) == 1
+    assert (output / 'execution.log').read_text() == 'suite completed\n'

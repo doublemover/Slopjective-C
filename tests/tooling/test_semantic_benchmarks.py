@@ -245,6 +245,36 @@ def test_timeout_is_retained_as_failure_with_no_successful_timing_claim(tmp_path
     assert row['timed_out'] and row['exit_code'] < 0
 
 
+def test_measurement_without_budget_waits_for_completion_and_retains_rusage(tmp_path, monkeypatch):
+    from itertools import count
+    from scripts.objc3c_toolchain import semantic_benchmarks as owner
+
+    ticks = count()
+    wait4 = owner.os.wait4
+    polls = []
+
+    def first_poll_pending(pid, options):
+        polls.append(pid)
+        return (0, 0, None) if len(polls) == 1 else wait4(pid, options)
+
+    def forbidden_kill(pid):
+        pytest.fail('unbudgeted qualification was terminated by the measurement helper')
+
+    # Simulate a build exceeding both the old 120s sample and 900s wrapper caps,
+    # while waiting for and collecting an actual child process normally.
+    monkeypatch.setattr(owner.time, 'monotonic', lambda: next(ticks) * 10000.0)
+    monkeypatch.setattr(owner.os, 'wait4', first_poll_pending)
+    monkeypatch.setattr(owner, '_kill_session', forbidden_kill)
+    log = tmp_path / 'runner-owned.log'
+    row = sample([sys.executable, '-c', 'print("completed")'], cwd=tmp_path,
+                 environment=dict(os.environ), log=log, timeout=None)
+    assert len(polls) >= 2
+    assert row['exit_code'] == 0 and not row['timed_out']
+    assert row['wall_seconds'] >= 10000 and row['cpu_seconds'] > 0
+    assert row['peak_process_rss_kib'] > 0 and log.read_text() == 'completed\n'
+    assert row['log_sha256'] == hashlib.sha256(log.read_bytes()).hexdigest()
+
+
 def test_interrupted_measurement_reaps_its_detached_process(tmp_path, monkeypatch):
     from scripts.objc3c_toolchain import semantic_benchmarks as owner
     children = []

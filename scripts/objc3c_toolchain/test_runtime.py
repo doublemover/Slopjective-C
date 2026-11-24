@@ -22,7 +22,7 @@ def prepare(repo: Path, bootstrap: Path, output: Path, *, fetch: bool, jobs: int
     log = output / 'build.log'
     with log.open('w') as stream:
         result = subprocess.run(command, cwd=repo, env=environment,
-            stdout=stream, stderr=subprocess.STDOUT, timeout=900)
+            stdout=stream, stderr=subprocess.STDOUT)
     if result.returncode or not receipt.is_file():
         raise ValueError('pinned frontend test runtime build failed; see ' + str(log))
     record = json.loads(receipt.read_text())

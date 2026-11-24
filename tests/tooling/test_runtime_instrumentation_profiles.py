@@ -88,6 +88,7 @@ def test_dependency_symbol_probe_uses_owned_environment(tmp_path, monkeypatch):
     calls = []
     def probe(argv, **kwargs):
         calls.append(argv)
+        assert kwargs.get('timeout') is None
         assert kwargs['env'] == environment and 'LD_PRELOAD' not in kwargs['env']
         assert 'detect_leaks=1' in kwargs['env']['ASAN_OPTIONS']
         return ' U __asan_init\n U __ubsan_handle_type_mismatch_v1\n'
@@ -119,6 +120,7 @@ def test_runtime_sources_are_prepared_before_the_scrubbed_build(tmp_path, monkey
 
     def build(argv, **kwargs):
         assert acquired == [tmp_path] and '--fetch' not in argv
+        assert kwargs.get('timeout') is None
         assert 'HTTPS_PROXY' not in kwargs['env'] and 'halt_on_error=1' in kwargs['env']['ASAN_OPTIONS']
         argv[-1].write_text(json.dumps({'stage': str(library.parent.parent)}))
         return subprocess.CompletedProcess(argv, 0)

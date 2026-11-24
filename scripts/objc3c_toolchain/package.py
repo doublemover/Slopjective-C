@@ -206,7 +206,7 @@ def _qualify_call_suite(prefix: Path, output: Path, seal: str, suite: str, count
         result = subprocess.run([os.sys.executable, '-B',
             str(prefix / 'share/objc3c/examples/native' / ('qualify-' + suite + '.py')),
             '--sdk-root', str(prefix), '--output-dir', str(output)],
-            stdout=log, stderr=subprocess.STDOUT, timeout=1200)
+            stdout=log, stderr=subprocess.STDOUT)
     if result.returncode:
         raise ValueError(f'{suite} failed; see {output / "execution.log"}')
     evidence = json.loads((output / 'qualification.json').read_text())
@@ -376,7 +376,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     with log_summary.open('wb') as log:
         subprocess.run(['env', '-u', 'LD_LIBRARY_PATH', f'PATH={prefix / "bin"}{os.pathsep}{os.environ["PATH"]}',
                         'sh', prefix / 'share/objc3c/examples/log-summary/verify.sh'],
-                       stdout=log, stderr=subprocess.STDOUT, timeout=180, check=True)
+                       stdout=log, stderr=subprocess.STDOUT, check=True)
     from functools import partial
     from .host import resource_limits
     from .qualify_source_modules import qualify
