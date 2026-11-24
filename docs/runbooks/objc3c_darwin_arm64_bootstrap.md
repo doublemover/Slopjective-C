@@ -61,7 +61,8 @@ patch on top of the locked LLVM source. It emits one Mach-O initializer per
 translation unit that defines a class. The initializer hands that unit's
 class table to the owned runtime. Class sends use the metaclass method table,
 and instance sends use the class method table through the live object's ISA.
-Both lookups match the selector and exact no-argument `int` encoding. The compiler
+Both lookups match the selector and exact signature for an `int` result with
+zero or one signed `int` argument. The compiler
 driver reserves `-fobjc-runtime=gnustep-2.99` for Objective-C 3 on macOS arm64
 and rejects Apple runtime linking for this profile.
 
@@ -93,7 +94,14 @@ class and instance selectors, the most-derived override, and explicit
 Its relocated dynamic link puts the strong base reference in a separate
 dylib. The controls check a missing runtime at link and load, the prior
 GNUstep driver guard, a subclass with an added ivar, a root bit-field, a
-parameterized method, Apple runtime linking, and a wrong architecture.
+`double` method argument, Apple runtime linking, and a wrong architecture.
+
+The int-argument fixture uses separate parent and child dylibs. Class and
+instance overrides pass a signed argument through `super`. The consumer
+checks that a nil send evaluates its argument once and returns zero. Static,
+relocated dynamic, and ARC consumer routes qualify the typed runtime lookups.
+The O0/O2 IR checks bind those lookup results to indirect calls with an `i32`
+argument. Runtime controls reject calls that request the wrong selector encoding.
 
 The `fixed-root-int-v1` fixture has one naturally aligned plain `int` in a
 root class. Its child lives in a separate dylib and inherits the same field.
@@ -129,8 +137,8 @@ An x86-64 replay built the modified driver and CodeGen translation units with
 the preview toolchain. They emitted arm64 Mach-O provider and plugin objects
 with startup initializers and owned runtime symbols. DWARF verified. The
 class method lowers its deferred result to `42`, and the same-named instance
-method returns `17`. The compiler diagnosed subclass ivars, root bit-fields, and
-parameterized methods. The allocation and lookup controls passed the separate
+method returns `17`. The compiler diagnosed unsupported layouts and method
+signatures. The allocation and lookup controls passed the separate
 native Linux C runtime replay with ASan and UBSan.
 The inheritance replay also emitted Mach-O startup records and the owned
 `super` lookup symbol, verified both objects' DWARF, and linked the child dylib
@@ -221,7 +229,7 @@ finalization, and exception-aware cleanup across images and threads.
   gates. The released driver rejects GNUstep 2.2 for Mach-O. Its GNUstep
   registration emits ELF section boundaries, COMDAT groups and an ELF
   constructor section. The separate experimental compiler handles root
-  classes, subclasses, and instances with ordinary no-argument `int` methods,
+  classes, subclasses, and instances with ordinary `int` methods taking zero or one `int` argument,
   including a fixed-root scalar layout. General instance storage, properties,
   protocols, categories, broader ARC, exceptions and cross-image runtime
   lifecycle still need a design and native workloads. Inspect the linked

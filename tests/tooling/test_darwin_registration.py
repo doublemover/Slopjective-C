@@ -158,20 +158,29 @@ static int child_answer(const void *receiver, const struct selector_record *sele
   return receiver && selector ? 19 : -1;
 }
 
+static int int_argument(const void *receiver, const struct selector_record *selector, int input) {
+  return receiver && selector ? input + 17 : -1;
+}
+
 static const struct selector_record selector = {"answer", "i16@0:8"};
 static const struct selector_record same_signature = {"answer", "i16@0:8"};
-static const struct selector_record wrong_signature = {"answer", "i20@0:8i16"};
+static const struct selector_record typed = {"argument:", "i20@0:8i16"};
+static const struct selector_record wrong_type = {"answer", "i20@0:8i16"};
+static const struct selector_record wrong_signature = {"answer:", "i24@0:8d16"};
 static const struct method_list class_methods = {
-  NULL, 1, sizeof(struct method_record), {{class_answer, &selector, "i16@0:8"}}
+  NULL, 1, sizeof(struct method_record), {{(method_address)class_answer, &selector, "i16@0:8"}}
 };
 static const struct method_list instance_methods = {
-  NULL, 1, sizeof(struct method_record), {{instance_answer, &selector, "i16@0:8"}}
+  NULL, 2, sizeof(struct method_record), {
+    {(method_address)instance_answer, &selector, "i16@0:8"},
+    {(method_address)int_argument, &typed, "i20@0:8i16"},
+  }
 };
 static const struct method_list child_methods = {
-  NULL, 1, sizeof(struct method_record), {{child_answer, &selector, "i16@0:8"}}
+  NULL, 1, sizeof(struct method_record), {{(method_address)child_answer, &selector, "i16@0:8"}}
 };
 static const struct method_list wrong_methods = {
-  NULL, 1, sizeof(struct method_record), {{instance_answer, &wrong_signature, "i20@0:8i16"}}
+  NULL, 1, sizeof(struct method_record), {{(method_address)instance_answer, &wrong_signature, "i24@0:8d16"}}
 };
 static const struct class_record meta = {.flags = 1, .methods = &class_methods};
 static const struct class_record root = {.isa = &meta, .name = "Root", .methods = &instance_methods};
@@ -245,7 +254,11 @@ int main(int argc, char **argv) {
   if (!first || !second || first == second || *first != &root || *second != &root)
     return 4;
   if (strcmp(control, "wrong-selector-type") == 0)
-    objc3_darwin_lookup_v1(second, &wrong_signature);
+    objc3_darwin_lookup_v1(second, &typed);
+  if (strcmp(control, "wrong-int-selector-type") == 0)
+    objc3_darwin_lookup_int_arg_v1(second, &selector);
+  if (strcmp(control, "wrong-signature-at-same-name") == 0)
+    objc3_darwin_lookup_int_arg_v1(second, &wrong_type);
   if (objc3_darwin_lookup_v1(first, &same_signature)(first, &same_signature) != 17)
     return 5;
   objc3_darwin_deallocate_v1(first);
@@ -267,9 +280,15 @@ int main(int argc, char **argv) {
     const struct super_record wrong = {derived, &meta};
     objc3_darwin_lookup_super_v1(&wrong, &selector);
   }
+  if (strcmp(control, "wrong-int-super-selector-type") == 0)
+    objc3_darwin_lookup_super_int_arg_v1(&instance_super, &selector);
   if (objc3_darwin_lookup_super_v1(&instance_super, &selector)(derived, &selector) != 17 ||
       objc3_darwin_lookup_super_v1(&class_super, &selector)(&child, &selector) != 42)
     return 10;
+  if (objc3_darwin_lookup_int_arg_v1(derived, &typed)(derived, &typed, -12) != 5 ||
+      objc3_darwin_lookup_super_int_arg_v1(&instance_super, &typed)(derived, &typed, -12) != 5 ||
+      objc3_darwin_lookup_int_arg_v1(NULL, &typed)(NULL, &typed, -12) != 0)
+    return 13;
   objc3_darwin_deallocate_v1(derived);
   if (!objc3_darwin_check_arc_threads(&root) || instances)
     return 11;
@@ -290,8 +309,11 @@ int main(int argc, char **argv) {
         ('fixed-offset', 'invalid fixed root ivar layout'),
         ('fixed-stride', 'invalid fixed root class layout'),
         ('fixed-extent', 'invalid fixed root class layout'),
-        ('wrong-method-table', 'invalid no-argument int method'),
-        ('wrong-selector-type', 'method selector is missing'),
+        ('wrong-method-table', 'invalid Darwin int method encoding'),
+        ('wrong-selector-type', 'selector encoding does not match the Darwin lookup ABI'),
+        ('wrong-int-selector-type', 'selector encoding does not match the Darwin lookup ABI'),
+        ('wrong-int-super-selector-type', 'selector encoding does not match the Darwin lookup ABI'),
+        ('wrong-signature-at-same-name', 'method selector is missing'),
         ('missing-superclass', 'class has an unregistered superclass'),
         ('cyclic-superclass', 'class hierarchy has a cycle'),
         ('wrong-super-start', 'super dispatch start is not an ancestor of the receiver'),

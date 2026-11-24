@@ -32,10 +32,14 @@ struct selector_record {
   const char *type;
 };
 
+/* Metadata stores an IMP's address. Each lookup restores the exact
+ * function type after checking the selector's encoding for that entry point. */
+typedef void (*method_address)(void);
 typedef int (*method_implementation)(const void *, const struct selector_record *);
+typedef int (*int_arg_implementation)(const void *, const struct selector_record *, int);
 
 struct method_record {
-  method_implementation implementation;
+  method_address implementation;
   const struct selector_record *selector;
   const char *extended_type;
 };
@@ -121,6 +125,9 @@ static const struct class_record *find_class(const char *name) {
   return NULL;
 }
 
+static const char int_method_encoding[] = "i16@0:8";
+static const char int_arg_method_encoding[] = "i20@0:8i16";
+
 static void check_method_list(const struct method_list *list) {
   if (!list)
     return;
@@ -129,8 +136,10 @@ static void check_method_list(const struct method_list *list) {
   for (int i = 0; i < list->count; ++i) {
     const struct method_record *method = &list->methods[i];
     if (!method->implementation || !method->selector || !method->selector->name ||
-        !method->selector->type || strcmp(method->selector->type, "i16@0:8") != 0)
-      registration_error("invalid no-argument int method");
+        !method->selector->type ||
+        (strcmp(method->selector->type, int_method_encoding) != 0 &&
+         strcmp(method->selector->type, int_arg_method_encoding) != 0))
+      registration_error("invalid Darwin int method encoding");
   }
 }
 
@@ -457,12 +466,22 @@ static int nil_method(const void *receiver, const struct selector_record *sel) {
   return 0;
 }
 
-static method_implementation lookup(const void *receiver, const struct selector_record *selector,
-                                    const struct super_record *super) {
+static int nil_int_arg_method(const void *receiver, const struct selector_record *sel,
+                              int argument) {
+  (void)receiver;
+  (void)sel;
+  (void)argument;
+  return 0;
+}
+
+static method_address lookup(const void *receiver, const struct selector_record *selector,
+                             const struct super_record *super, const char *encoding) {
   if (!receiver)
-    return nil_method;
+    return NULL;
   if (!selector || !selector->name || !selector->type)
     registration_error("invalid selector");
+  if (strcmp(selector->type, encoding) != 0)
+    registration_error("selector encoding does not match the Darwin lookup ABI");
 
   pthread_mutex_lock(&registry_lock);
   const struct class_record *dispatch_class;
@@ -492,7 +511,7 @@ static method_implementation lookup(const void *receiver, const struct selector_
       const struct method_record *method = &list->methods[i];
       if (strcmp(method->selector->name, selector->name) == 0 &&
           strcmp(method->selector->type, selector->type) == 0) {
-        method_implementation implementation = method->implementation;
+        method_address implementation = method->implementation;
         pthread_mutex_unlock(&registry_lock);
         return implementation;
       }
@@ -503,12 +522,28 @@ static method_implementation lookup(const void *receiver, const struct selector_
 
 method_implementation objc3_darwin_lookup_v1(const void *receiver,
                                              const struct selector_record *selector) {
-  return lookup(receiver, selector, NULL);
+  method_address imp = lookup(receiver, selector, NULL, int_method_encoding);
+  return imp ? (method_implementation)imp : nil_method;
 }
 
 method_implementation objc3_darwin_lookup_super_v1(const struct super_record *super,
                                                    const struct selector_record *selector) {
   if (!super)
     registration_error("super dispatch record is missing");
-  return lookup(super->receiver, selector, super);
+  method_address imp = lookup(super->receiver, selector, super, int_method_encoding);
+  return imp ? (method_implementation)imp : nil_method;
+}
+
+int_arg_implementation objc3_darwin_lookup_int_arg_v1(
+    const void *receiver, const struct selector_record *selector) {
+  method_address imp = lookup(receiver, selector, NULL, int_arg_method_encoding);
+  return imp ? (int_arg_implementation)imp : nil_int_arg_method;
+}
+
+int_arg_implementation objc3_darwin_lookup_super_int_arg_v1(
+    const struct super_record *super, const struct selector_record *selector) {
+  if (!super)
+    registration_error("super dispatch record is missing");
+  method_address imp = lookup(super->receiver, selector, super, int_arg_method_encoding);
+  return imp ? (int_arg_implementation)imp : nil_int_arg_method;
 }
