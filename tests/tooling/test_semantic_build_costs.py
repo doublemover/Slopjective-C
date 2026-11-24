@@ -34,6 +34,7 @@ def native_build_reports(tmp_path_factory):
             'identity': phase+'-'+identity+('-staged' if prefix.exists() else '-unstaged'),
             'sdk_consumers': {'installed': {'present': prefix.exists()}},
             'source_build_id': identity, 'source_tree': identity, 'build_config_digest': 'control-config',
+            'upstream_commit': 'native-control', 'patch_digest': identity,
             'effective_configuration': {'LLVM_ENABLE_ASSERTIONS': 'ON'},
             'host_environment': {'compiler': compiler, 'ninja_path': shutil.which('ninja')},
             'command': list(map(str, argv))}
