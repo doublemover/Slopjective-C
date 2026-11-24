@@ -195,5 +195,6 @@ jobs:
             out/installed-ir/**/*.ll
             out/installed-ir/**/*.mm
             out/installed-ir/**/*.h
+            out/installed-ir/**/*.objc3i
           if-no-files-found: error
           retention-days: 7

@@ -30,6 +30,7 @@ def module(*, optnone=False):
 
 
 def test_installed_ir_reuses_the_exact_sdk_and_checks_both_executable_routes(tmp_path):
+    from scripts.objc3c_toolchain.binary_packages import digest
     from scripts.objc3c_toolchain.llvm_installed_ir import qualify
 
     selected = os.environ.get('OBJC3_TEST_NATIVE_REUSE_SDK')
@@ -40,13 +41,33 @@ def test_installed_ir_reuses_the_exact_sdk_and_checks_both_executable_routes(tmp
     with pytest.raises(ValueError, match='identity mismatch'):
         qualify(sdk, tmp_path / 'wrong-seal', seal_sha256='0'*64)
     assert not (tmp_path / 'wrong-seal').exists()
-    report = qualify(sdk, tmp_path / 'evidence', seal_sha256=seal)
+    evidence = tmp_path / 'retained IR evidence with spaces'
+    report = qualify(sdk, evidence, seal_sha256=seal)
     assert report['status'] == 'PASS' and report['sdk']['seal_sha256'] == seal
-    assert len(report['cases']) == 6
+    assert len(report['cases']) == 7
     for row in report['cases']:
         assert row['routes']['driver']['observation'] == row['routes']['backend']['observation']
     commands = [row for row in report['commands'] if '-verify-machineinstrs' in row['argv']]
-    assert len(commands) == 12 and {row['argv'][0] for row in commands} == {str(sdk.resolve() / 'bin/llc')}
+    assert len(commands) == 14 and {row['argv'][0] for row in commands} == {str(sdk.resolve() / 'bin/llc')}
+    assert report['tools']['objc3c'] == {'path': str(sdk.resolve() / 'bin/objc3c'),
+                                       'sha256': digest(sdk / 'bin/objc3c')}
+    imported, = (row for row in report['cases'] if row['transport'] == 'interface')
+    assert imported['modules']['consumer']['instruction_bodies_changed']
+    case_name = imported['name']
+    work = evidence / case_name
+    assert not (work / 'provider.mm').exists() and not (work / 'oracle.h').exists()
+    native = imported['interface']
+    assert set(native['artifacts']) == {f'{case_name}/{name}' for name in
+                                        ('oracle.Provider.objc3i', 'oracle.Provider.objc3i.json')}
+    assert set(native['retained_provider']) == {f'retained-provider/{case_name}/{name}' for name in
+                                                ('provider.mm', 'oracle.h')}
+    for relative, signature in {**native['artifacts'], **native['retained_provider'], **native['records']}.items():
+        assert digest(evidence / relative) == signature
+    assert set(native['records']) == {f'{case_name}/{phase}.dependencies.json' for phase in
+                                      ('frontend', 'optimized', 'driver')}
+    for filename in native['records']:
+        selected, = json.loads((evidence / filename).read_text())['modules']
+        assert {key: selected[key] for key in native['lock']} == native['lock']
 
 
 def test_corpus_keeps_authored_oracles_and_lowering_transports():

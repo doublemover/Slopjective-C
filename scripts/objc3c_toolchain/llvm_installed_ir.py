@@ -12,11 +12,13 @@ from .linux_host import native_loader, native_target
 from .llvm_ir import instruction_body, module_facts
 from .llvm_ir_execution import Execution
 from .package import verify_sdk
-from .sdk_example import environment, runtime_link_flags
+from .sdk_example import environment, native_module_compile_flags, runtime_link_flags
 from .semantic_model import generate, interpret, mismatch
-from .semantic_oracles import source_bundle
+from .semantic_oracles import EXPORTS, source_bundle
 
 SEEDS = (7, 19, 41)
+INTERFACE_MODULE = 'oracle.Provider'
+INTERFACE_PACKAGE = 'semantic-oracle-v1'
 
 
 def qualify(sdk: Path, output: Path, *, seal_sha256: str) -> dict:
@@ -28,7 +30,7 @@ def qualify(sdk: Path, output: Path, *, seal_sha256: str) -> dict:
     target = native_target()
     if admitted.get('target') != target:
         raise ValueError('installed IR assurance requires the native Linux SDK target')
-    tools = {name: sdk / 'bin' / name for name in ('clang++', 'ld.lld', 'llc', 'llvm-dwarfdump')}
+    tools = {name: sdk / 'bin' / name for name in ('clang++', 'objc3c', 'ld.lld', 'llc', 'llvm-dwarfdump')}
     output.mkdir(parents=True)
     report = {'schema': 'objc3c.installed-llvm-ir.v1', 'status': 'RUNNING', 'target': target,
               'sdk': {key: admitted[key] for key in ('seal_sha256', 'source_build_id',
@@ -42,6 +44,7 @@ def qualify(sdk: Path, output: Path, *, seal_sha256: str) -> dict:
             program = generate(seed)
             for optimization in ('O0', 'O2'):
                 verify_case(executor, sdk, tools, target, seed, program, optimization)
+        verify_case(executor, sdk, tools, target, SEEDS[0], generate(SEEDS[0]), 'O2', transport='interface')
         verify_sdk(sdk, seal_sha256)
         report['status'] = 'PASS'
     except BaseException as error:
@@ -52,30 +55,74 @@ def qualify(sdk: Path, output: Path, *, seal_sha256: str) -> dict:
     return report
 
 
-def verify_case(executor, sdk, tools, target, seed, program, optimization):
+def verify_case(executor, sdk, tools, target, seed, program, optimization, *, transport='source'):
     name = f'seed-{seed}-{optimization}'
+    source_free = transport == 'interface'
+    if source_free:
+        name += '-interface'
     output = executor.output / name
-    source_bundle(program, output, optimization=optimization)
+    source_bundle(program, output, transport=transport, optimization=optimization, origin={'seed': seed})
     clang = tools['clang++']
     compile_flags = [f'--target={target}', '-x', 'objective-c++', '-std=c++20',
                      '-fobjc-version=3', '-fobjc-runtime=gnustep-2.2', '-fobjc-arc',
                      '-fobjc-arc-exceptions', '-fexceptions', '-fobjc-exceptions', '-fblocks',
                      '-isystem', sdk / 'include', '-g', '-'+optimization, '-UNDEBUG']
+    interface_evidence = {}
+    if source_free:
+        interface = output / (INTERFACE_MODULE+'.objc3i')
+        sidecar = interface.with_suffix('.objc3i.json')
+        executor.run(name+'-publish', [tools['objc3c'], output / 'provider.mm', '--objc3', '--objcxx', '--arc',
+            '--emit-interface', interface, '--module', INTERFACE_MODULE, '--package', INTERFACE_PACKAGE,
+            '--module-source-root', output, *(part for export in EXPORTS for part in ('--export-declaration', export)),
+            '--', *compile_flags], outputs=[interface, sidecar], stage='frontend-interface')
+        module = json.loads(sidecar.read_text())['module']
+        lock = {'name': module['canonical_name'], 'fingerprint': module['semantic_fingerprint'],
+                'package': module['package_identity']}
+        interface_evidence = {'lock': lock,
+                              'artifacts': {str(path.relative_to(executor.output)): digest(path)
+                                            for path in (interface, sidecar)},
+                              'records': {}, 'retained_provider': {}}
     modules, driver_objects, backend_objects = {}, [], []
     for unit in ('provider', 'consumer'):
         source = output / (unit+'.mm')
         frontend, optimized, driver, backend = (output / (unit+suffix) for suffix in
                                                 ('.frontend.ll', '.optimized.ll', '.driver.o', '.backend.o'))
         stage = name+'-'+unit
-        executor.run(stage+'-frontend', [clang, *compile_flags, '-Xclang', '-disable-llvm-passes',
-            '-S', '-emit-llvm', source, '-o', frontend], outputs=[frontend])
-        executor.run(stage+'-optimized', [clang, *compile_flags, '-S', '-emit-llvm', source, '-o', optimized],
-                     outputs=[optimized])
+        imported = source_free and unit == 'consumer'
+        if imported:
+            # Keep replay inputs outside the consumer's source and module search directory.
+            retained = executor.output / 'retained-provider' / name
+            retained.mkdir(parents=True)
+            for filename in ('provider.mm', 'oracle.h'):
+                saved = (output / filename).rename(retained / filename)
+                interface_evidence['retained_provider'][str(saved.relative_to(executor.output))] = digest(saved)
+
+        def emit(phase, destination, *, extra=()):
+            object_output = phase == 'driver'
+            if imported:
+                record = output / (phase+'.dependencies.json')
+                executor.run(stage+'-'+phase, [tools['objc3c'], source, '--objc3', '--objcxx', '--arc',
+                    '--source-imports', '--module-search-path', output, '--import-module',
+                    lock['name'], lock['fingerprint'], lock['package'], '--emit-dependency-record', record,
+                    '--emit-object' if object_output else '--emit-llvm', destination, '--', *compile_flags,
+                    *native_module_compile_flags('objective-c++', output / phase), *extra],
+                    outputs=[destination, record], stage='frontend-interface')
+                selected = json.loads(record.read_text())['modules']
+                if len(selected) != 1 or any(selected[0][key] != value for key, value in lock.items()):
+                    raise ValueError('installed IR consumer did not resolve the exact source-free dependency lock')
+                interface_evidence['records'][str(record.relative_to(executor.output))] = digest(record)
+            else:
+                action = ['-c'] if object_output else ['-S', '-emit-llvm']
+                executor.run(stage+'-'+phase, [clang, *compile_flags, *extra, *action, source, '-o', destination],
+                             outputs=[destination], stage='frontend-lowering')
+
+        emit('frontend', frontend, extra=('-Xclang', '-disable-llvm-passes'))
+        emit('optimized', optimized)
         before, after = frontend.read_text(), optimized.read_text()
         facts = module_facts(before, target, require_optimizable=optimization == 'O2')
         module_facts(after, target)
         modules[unit] = {'frontend': facts, 'instruction_bodies_changed': instruction_body(before) != instruction_body(after)}
-        executor.run(stage+'-driver', [clang, *compile_flags, '-c', source, '-o', driver], outputs=[driver])
+        emit('driver', driver)
         executor.run(stage+'-backend', [tools['llc'], '-verify-machineinstrs', '-relocation-model=pic',
             '-filetype=obj', optimized, '-o', backend], outputs=[backend])
         for route, obj in (('driver', driver), ('backend', backend)):
@@ -83,7 +130,8 @@ def verify_case(executor, sdk, tools, target, seed, program, optimization):
                          stage='debug', contains=('No errors.',))
         driver_objects.append(driver)
         backend_objects.append(backend)
-    if optimization == 'O2' and not any(row['instruction_bodies_changed'] for row in modules.values()):
+    optimization_witnesses = [modules['consumer']] if source_free else modules.values()
+    if optimization == 'O2' and not any(row['instruction_bodies_changed'] for row in optimization_witnesses):
         raise ValueError('installed optimizer did not transform a generated IR case')
     expected = interpret(program)
     routes = {}
@@ -100,8 +148,11 @@ def verify_case(executor, sdk, tools, target, seed, program, optimization):
         if disagreement:
             raise ValueError(f'{name} {route} disagreed with the independent oracle: {disagreement}')
         routes[route] = {'sha256': digest(binary), 'loaded_graph': graph, 'observation': observed, 'status': 'PASS'}
-    executor.report['cases'].append({'name': name, 'source_sha256': digest(output / 'program.json'),
-                                     'modules': modules, 'routes': routes, 'status': 'PASS'})
+    row = {'name': name, 'transport': transport, 'source_sha256': digest(output / 'program.json'),
+           'modules': modules, 'routes': routes, 'status': 'PASS'}
+    if source_free:
+        row['interface'] = interface_evidence
+    executor.report['cases'].append(row)
     executor.save()
 
 
