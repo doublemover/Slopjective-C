@@ -3,6 +3,7 @@ import hashlib
 import io
 import json
 from compression import zstd
+import subprocess
 import tarfile
 from pathlib import Path
 
@@ -180,7 +181,7 @@ def test_captures_passed_qualification_jobs(tmp_path, monkeypatch, fault):
 def fixture_archive(directory, host, *, changed_installer=False, extension_abi=24):
     directory.mkdir(parents=True)
     manifest = {'schema': owner.SCHEMA, 'target': owner.HOSTS[host], 'source_build_id': host,
-                'upstream_commit': 'b' * 40, 'patch_digest': 'c' * 64, 'linux_abi': {}}
+                'upstream_commit': 'b' * 40, 'patch_digest': 'c' * 64, 'build_config_digest': 'd' * 64, 'linux_abi': {}}
     manifest['seal_sha256'] = owner._digest(manifest)
     payloads = {owner.MANIFEST: json.dumps(manifest).encode()}
     payloads[owner.FOUNDATION] = (
@@ -225,18 +226,44 @@ def test_rejects_wrong_installer_and_archive_bytes(tmp_path):
         owner.admit_archive(archive.parent, host=host, checkout=ROOT)
 
 
+def test_checkout_compares_the_full_configuration_identity(tmp_path, monkeypatch):
+    host = 'linux-x86_64'
+    archive = fixture_archive(tmp_path / 'fixture', host)
+    license_file = tmp_path / 'LICENSE'
+    license_file.write_text('fixture license')
+    monkeypatch.setattr(owner, 'distribution_license', lambda _: license_file)
+    _, record = owner.admit_archive(archive.parent, host=host, checkout=ROOT)
+    identity = {'upstream_commit': record['upstream_commit'], 'patch_digest': record['patch_digest'],
+                'build_id': record['source_build_id'], 'build_config_digest': record['build_config_digest']}
+    monkeypatch.setattr(owner, 'planned_development_identity', lambda _: identity)
+    monkeypatch.setattr(owner.subprocess, 'check_output', lambda *args, **kwargs: REVISION)
+    monkeypatch.setattr(owner.subprocess, 'run', lambda *args, **kwargs: subprocess.CompletedProcess([], 0))
+    owner.admit_checkout(ROOT, revision=REVISION, archives={host: record})
+    record['build_config_digest'] = record['build_config_digest'][:8] + 'a'*56
+    with pytest.raises(ValueError, match='differs? from the pinned compiler source stack'):
+        owner.admit_checkout(ROOT, revision=REVISION, archives={host: record})
+
+
 @pytest.mark.parametrize('arm_abi,transport', [(24, 'same'), (24, 'cross-device'), (24, 'retry'), (21, 'same')])
 def test_stages_two_native_archives_with_installer_and_checksums(tmp_path, monkeypatch, arm_abi, transport):
     downloads, output = tmp_path / 'downloads', tmp_path / 'draft'
     license_file = tmp_path / 'LICENSE'
     license_file.write_text('fixture license')
     monkeypatch.setattr(owner, 'distribution_license', lambda _: license_file)
+    monkeypatch.setattr(owner, 'admit_checkout', lambda *args, **kwargs: None)
+
+    def source_inventory(checkout, *, revision, tag, archives):
+        assert checkout == ROOT and revision == REVISION and archives.keys() == RUNS.keys()
+        return [{'component': 'Slopjective-C', 'revision': revision, 'file': f'slopjective-c-{tag}-source.tar.gz'}]
+
+    monkeypatch.setattr(owner, 'source_inventory', source_inventory)
 
     def stage_sources(checkout, bundle, *, revision, tag, archives):
         assert checkout == ROOT and revision == REVISION and archives.keys() == RUNS.keys()
-        file = bundle / f'slopjective-c-{tag}-source.tar.gz'
+        source, = source_inventory(checkout, revision=revision, tag=tag, archives=archives)
+        file = bundle / source['file']
         file.write_bytes(b'fixture source archive')
-        return [{'file': file.name, 'sha256': owner._file_hash(file)}]
+        return [{**source, 'sha256': owner._file_hash(file), 'bytes': file.stat().st_size}]
 
     monkeypatch.setattr(owner, 'stage_sources', stage_sources)
     hosts = {str(run): host for host, run in RUNS.items()}
@@ -306,6 +333,14 @@ def test_stages_two_native_archives_with_installer_and_checksums(tmp_path, monke
     assert checksums[result['sources'][0]['file']] == result['sources'][0]['sha256']
     for name, digest in checksums.items():
         assert hashlib.sha256((output / name).read_bytes()).hexdigest() == digest
+    monkeypatch.setattr(owner, 'stage_sources', lambda *args, **kwargs: pytest.fail('valid staged sources were recreated'))
+    monkeypatch.setattr(owner.subprocess, 'run', lambda *args, **kwargs: pytest.fail('valid staged SDK was downloaded again'))
+    assert owner.stage(ROOT, repo=REPO, revision=REVISION, tag='v0.1.0-preview.1',
+                       runs=RUNS, downloads=downloads, output=output) == result
+    (output / 'LICENSE').write_bytes(b'changed license')
+    with pytest.raises(ValueError, match='differs from its checksum'):
+        owner.stage(ROOT, repo=REPO, revision=REVISION, tag='v0.1.0-preview.1',
+                    runs=RUNS, downloads=downloads, output=output)
 
 
 @pytest.mark.parametrize('fault', [None, 'missing-license', 'foreign-root', 'truncated'])
@@ -329,76 +364,163 @@ def test_pinned_dependency_source_archive_requires_root_and_license(tmp_path, mo
         assert target.read_bytes() == data
 
 
-@pytest.mark.parametrize('changed', [False, True])
-def test_resumes_only_matching_remote_assets(tmp_path, monkeypatch, changed):
+@pytest.fixture
+def draft_fixture(tmp_path, monkeypatch):
     bundle = tmp_path / 'bundle'
     bundle.mkdir()
-    manifest, installer = bundle / 'linux-release.json', bundle / 'install-linux.sh'
-    manifest.write_text('{}\n')
-    installer.write_text('fixture installer')
+    (bundle / 'linux-release.json').write_text('{}\n')
+    (bundle / 'install-linux.sh').write_text('fixture installer')
+    (bundle / 'SHA256SUMS').write_text(''.join(
+        f'{owner._file_hash(path)}  {path.name}\n' for path in sorted(bundle.iterdir())))
+    notes = tmp_path / 'notes.md'
+    notes.write_text('Fixture draft notes\n')
     tag = 'v0.1.0-preview.1'
     draft = {'id': 4, 'tag_name': tag, 'draft': True, 'prerelease': True, 'target_commitish': REVISION,
-             'body': f'<!-- objc3c-release-manifest-sha256: {owner._file_hash(manifest)} -->'}
-    assets = [{'name': manifest.name, 'size': manifest.stat().st_size,
-               'digest': f'sha256:{owner._file_hash(manifest)}' if not changed else 'sha256:old'}]
+             'body': f'<!-- objc3c-release-manifest-sha256: {owner._file_hash(bundle / "linux-release.json")} -->'}
+    assets = {}
+    mutations = []
+    slept = []
+    state = {'exists': True, 'hidden': 0, 'asset_lag': 0, 'finish_starter': False,
+             'failed_asset': None, 'release_edited': False}
 
-    def api(command):
-        route = command[2].split(REPO + '/', 1)[1]
-        return json.dumps({'git/matching-refs/tags/' + tag: [],
-                           'releases?per_page=100': draft, 'releases/4/assets': assets}[route])
-
-    def upload(command, *, check):
-        assert check and command == ['gh', 'release', 'upload', tag, '--repo', REPO, str(installer)]
-        assets.append({'name': installer.name, 'size': installer.stat().st_size,
-                       'digest': f'sha256:{owner._file_hash(installer)}'})
-
-    monkeypatch.setattr(owner.subprocess, 'check_output', api)
-    monkeypatch.setattr(owner.subprocess, 'run', upload)
-    if changed:
-        with pytest.raises(ValueError, match='mismatched asset'):
-            owner.publish_draft(bundle, repo=REPO, tag=tag, revision=REVISION, notes=tmp_path / 'notes')
-        assert len(assets) == 1
-    else:
-        owner.publish_draft(bundle, repo=REPO, tag=tag, revision=REVISION, notes=tmp_path / 'notes')
-        assert len(assets) == 2
-
-
-def test_waits_for_draft_and_asset_visibility(tmp_path, monkeypatch):
-    bundle = tmp_path / 'bundle'
-    bundle.mkdir()
-    manifest = bundle / 'linux-release.json'
-    manifest.write_text('{}\n')
-    notes = tmp_path / 'notes.md'
-    notes.write_text('Draft notes\n')
-    tag = 'v0.1.0-preview.1'
-    draft = {'id': 4, 'tag_name': tag, 'draft': True, 'prerelease': True,
-             'target_commitish': REVISION}
-    asset = {'name': manifest.name, 'size': manifest.stat().st_size,
-             'digest': f'sha256:{owner._file_hash(manifest)}'}
-    pending_lists = iter([[], [], [], [draft]])
-    pending_assets = iter([[], [], [asset]])
-    calls, slept = [], []
+    def asset(name, *, state='uploaded'):
+        path = bundle / name
+        return {'id': len(assets)+20, 'name': name, 'size': path.stat().st_size if state == 'uploaded' else 0,
+                'digest': f'sha256:{owner._file_hash(path)}' if state == 'uploaded' else None, 'state': state}
 
     def api(command):
         route = command[2].split(REPO + '/', 1)[1]
         if route == 'releases?per_page=100':
-            return '\n'.join(map(json.dumps, next(pending_lists)))
-        if route == 'releases/4/assets':
-            return json.dumps(next(pending_assets))
+            assert command[-3:] == ['--paginate', '--jq', '.[]']
+            if state['hidden']:
+                state['hidden'] -= 1
+                return ''
+            return json.dumps(draft) if state['exists'] else ''
+        if route == 'releases/4/assets?per_page=100':
+            assert command[-3:] == ['--paginate', '--jq', '.[]']
+            if state['asset_lag'] and any(kind == 'upload' for kind, _ in mutations):
+                state['asset_lag'] -= 1
+                return ''
+            return '\n'.join(map(json.dumps, assets.values()))
+        if route == 'releases/4':
+            return json.dumps(draft)
+        if route.startswith('releases/assets/'):
+            row = next(row for row in assets.values() if row['id'] == int(route.split('/')[-1]))
+            if state['finish_starter']:
+                row.update({**asset(row['name']), 'id': row['id']})
+            return json.dumps(row)
         assert route == 'git/matching-refs/tags/' + tag
         return '[]'
 
-    def gh(command, *, check):
-        assert check and command[:2] == ['gh', 'release']
-        calls.append(command[2])
-        if command[2] == 'create':
+    def mutate(command, *, check):
+        assert check
+        if command[:3] == ['gh', 'release', 'create']:
+            assert not state['exists']
+            mutations.append(('create', tag))
+            state.update(exists=True, hidden=2)
             draft['body'] = Path(command[-1]).read_text()
+        elif command[:3] == ['gh', 'release', 'upload']:
+            name = Path(command[-1]).name
+            assert command == ['gh', 'release', 'upload', tag, '--repo', REPO, str(bundle / name)]
+            assert name not in assets
+            mutations.append(('upload', name))
+            if state['failed_asset'] == name:
+                assets[name] = asset(name, state='starter')
+                raise subprocess.CalledProcessError(1, command)
+            assets[name] = asset(name)
+            if state['release_edited']:
+                draft['draft'] = False
         else:
-            assert command == ['gh', 'release', 'upload', tag, '--repo', REPO, str(manifest)]
+            assert command[:4] == ['gh', 'api', '--method', 'DELETE'] and command[-1] == '--silent'
+            asset_id = int(command[-2].split('/')[-1])
+            name, = [key for key, row in assets.items() if row['id'] == asset_id and row['state'] == 'starter']
+            mutations.append(('delete-starter', name))
+            del assets[name]
+
+    def publish():
+        owner.publish_draft(bundle, repo=REPO, tag=tag, revision=REVISION, notes=notes)
 
     monkeypatch.setattr(owner.subprocess, 'check_output', api)
-    monkeypatch.setattr(owner.subprocess, 'run', gh)
+    monkeypatch.setattr(owner.subprocess, 'run', mutate)
     monkeypatch.setattr(owner.time, 'sleep', slept.append)
-    owner.publish_draft(bundle, repo=REPO, tag=tag, revision=REVISION, notes=notes)
-    assert calls == ['create', 'upload']
-    assert slept == [0, 1, 2, 0, 1]
+    return bundle, draft, assets, asset, state, mutations, slept, publish
+
+
+def test_resumes_only_matching_remote_assets(draft_fixture):
+    _, _, assets, asset, _, actions, _, publish = draft_fixture
+    manifest = 'linux-release.json'
+    assets[manifest] = asset(manifest)
+    publish()
+    assert actions == [('upload', 'SHA256SUMS'), ('upload', 'install-linux.sh')]
+    publish()
+    assert actions == [('upload', 'SHA256SUMS'), ('upload', 'install-linux.sh')]
+
+
+@pytest.mark.parametrize('fault', ['changed', 'unknown', 'duplicate', 'starter-bytes', 'bundle-marker'])
+def test_rejects_unowned_remote_assets_before_any_mutation(draft_fixture, fault):
+    _, draft, assets, asset, _, actions, _, publish = draft_fixture
+    manifest = 'linux-release.json'
+    assets[manifest] = asset(manifest)
+    if fault == 'changed':
+        assets[manifest]['digest'] = 'sha256:changed'
+    elif fault == 'unknown':
+        assets['another'] = {**assets[manifest], 'name': 'unexpected.zip'}
+    elif fault == 'duplicate':
+        assets['another'] = {**assets[manifest], 'id': 999}
+    elif fault == 'starter-bytes':
+        assets[manifest].update(state='starter', digest=None)
+    else:
+        draft['body'] += '\n<!-- objc3c-release-bundle-sha256: changed -->'
+    with pytest.raises(ValueError, match='asset|exact resumable preview draft'):
+        publish()
+    assert actions == []
+
+
+def test_interrupted_upload_repairs_only_its_empty_placeholder(draft_fixture):
+    _, _, assets, _, state, actions, _, publish = draft_fixture
+    state['failed_asset'] = 'install-linux.sh'
+    with pytest.raises(subprocess.CalledProcessError):
+        publish()
+    assert actions == [('upload', 'SHA256SUMS'), ('upload', 'install-linux.sh')]
+    assert assets['install-linux.sh']['state'] == 'starter'
+    state['failed_asset'] = None
+    publish()
+    assert actions[2:] == [('delete-starter', 'install-linux.sh'), ('upload', 'install-linux.sh'),
+                          ('upload', 'linux-release.json')]
+    assert all(asset['state'] == 'uploaded' for asset in assets.values())
+
+
+def test_waits_for_the_new_draft_and_records_the_whole_bundle_identity(draft_fixture):
+    bundle, draft, _, _, state, actions, slept, publish = draft_fixture
+    state.update(exists=False, asset_lag=2)
+    publish()
+    assert actions[0][0] == 'create'
+    assert slept == [0, 1, 2, 0, 1, 2]
+    assert f'<!-- objc3c-release-bundle-sha256: {owner._file_hash(bundle / "SHA256SUMS")} -->' in draft['body']
+
+
+def test_final_verification_rejects_remote_draft_edited_during_upload(draft_fixture):
+    _, _, assets, asset, state, actions, _, publish = draft_fixture
+    for name in ('linux-release.json', 'SHA256SUMS'):
+        assets[name] = asset(name)
+    state['release_edited'] = True
+    with pytest.raises(ValueError, match='exact resumable preview draft'):
+        publish()
+    assert actions == [('upload', 'install-linux.sh')]
+
+
+def test_interrupted_marker_which_finished_is_preserved(draft_fixture):
+    _, _, assets, asset, state, actions, _, publish = draft_fixture
+    assets['install-linux.sh'] = asset('install-linux.sh', state='starter')
+    state['finish_starter'] = True
+    publish()
+    assert assets['install-linux.sh']['state'] == 'uploaded'
+    assert actions == [('upload', 'SHA256SUMS'), ('upload', 'linux-release.json')]
+
+
+def test_expected_bundle_rejects_changed_installer_before_remote_operations(draft_fixture):
+    bundle, _, _, _, _, actions, _, publish = draft_fixture
+    (bundle / 'install-linux.sh').write_text('changed installer')
+    with pytest.raises(ValueError, match='staged asset differs from its checksum'):
+        publish()
+    assert actions == []

@@ -32,6 +32,7 @@ QUALIFICATION = '.github/workflows/platform-host-evidence.yml'
 TERMINAL_GATE = 'Require complete native SDK release evidence'
 LLVM_MANIFEST = 'toolchains/llvm/manifest.json'
 RELEASE_VISIBILITY_DELAYS = (0, 1, 2, 4, 8, 15)
+ASSET_NAME = re.compile(r'[A-Za-z0-9][A-Za-z0-9._-]*')
 
 
 def validate_run(run: dict, *, repo: str, revision: str, run_id: int) -> None:
@@ -82,6 +83,9 @@ def clean_installs(root: Path, *, host: str, revision: str, run: int, attempt: i
     records = []
     for distribution in release_install.DISTRIBUTIONS:
         path = root / distribution.replace(':', '-') / 'result.json'
+        if (path.is_symlink() or path.parent.is_symlink() or not path.is_file() or
+                not path.resolve(strict=True).is_relative_to(root.resolve(strict=True))):
+            raise ValueError(f'{host} clean-install receipt is missing or outside its owned directory')
         row = json.loads(path.read_bytes())
         release_install.validate_clean_install(row, host=host, distribution=distribution, revision=revision,
                                                run=run, attempt=attempt, archive=archive)
@@ -116,6 +120,10 @@ def admit_archive(download: Path, *, host: str, checkout: Path) -> tuple[Path, d
     if len(archives) != 1 or receipts != [archives[0].with_suffix('.json')]:
         raise ValueError(f'{host} must provide one matched release archive and receipt')
     archive = archives[0]
+    if (download.is_symlink() or archive.is_symlink() or receipts[0].is_symlink() or
+            not archive.resolve(strict=True).is_relative_to(download.resolve(strict=True)) or
+            not receipts[0].resolve(strict=True).is_relative_to(download.resolve(strict=True))):
+        raise ValueError(f'{host} downloaded archive or receipt is outside its owned directory')
     receipt = json.loads(receipts[0].read_bytes())
     archive_sha256 = _file_hash(archive)
     if (receipt.get('host') != host or receipt.get('target') != HOSTS[host] or
@@ -127,9 +135,11 @@ def admit_archive(download: Path, *, host: str, checkout: Path) -> tuple[Path, d
     manifest, members = read_release_archive(archive, check_license=license_file is not None)
     seal = manifest.pop('seal_sha256', None)
     build_id = manifest.get('source_build_id')
+    configuration = manifest.get('build_config_digest')
     if (manifest.get('schema') != SCHEMA or manifest.get('target') != HOSTS[host] or
             seal != receipt.get('seal_sha256') or seal != _digest(manifest) or
-            not build_id or build_id != receipt.get('source_build_id')):
+            not build_id or build_id != receipt.get('source_build_id') or
+            not isinstance(configuration, str) or not re.fullmatch(r'[a-f0-9]{64}', configuration)):
         raise ValueError(f'{host} SDK seal or source build differs from the release receipt')
     for name, path in INSTALLERS.items():
         if members[f'objc3-sdk/share/objc3c/{name}'] != (checkout / path).read_bytes():
@@ -146,6 +156,7 @@ def admit_archive(download: Path, *, host: str, checkout: Path) -> tuple[Path, d
         'seal_sha256': seal, 'source_build_id': build_id, 'linux_abi': manifest['linux_abi'],
         'extension_abi': int(abi[1]),
         'upstream_commit': manifest['upstream_commit'], 'patch_digest': manifest['patch_digest'],
+        'build_config_digest': configuration,
     }
 
 
@@ -168,8 +179,7 @@ def download_source(url: str, output: Path, *, root: str, license_path: str) -> 
             pass
 
 
-def stage_sources(checkout: Path, bundle: Path, *, revision: str, tag: str,
-                  archives: dict[str, dict]) -> list[dict]:
+def admit_checkout(checkout: Path, *, revision: str, archives: dict) -> None:
     head = subprocess.check_output(['git', '-C', str(checkout), 'rev-parse', 'HEAD'], text=True).strip()
     if head != revision:
         raise ValueError('source checkout differs from the release revision')
@@ -177,16 +187,15 @@ def stage_sources(checkout: Path, bundle: Path, *, revision: str, tag: str,
         raise ValueError('source checkout has tracked changes')
     identity = planned_development_identity(checkout)
     archive_keys = {'upstream_commit': 'upstream_commit', 'patch_digest': 'patch_digest',
-                    'source_build_id': 'build_id'}
+                    'source_build_id': 'build_id', 'build_config_digest': 'build_config_digest'}
     if any(row[archive_key] != identity[source_key] for row in archives.values()
            for archive_key, source_key in archive_keys.items()):
         raise ValueError('native archives differ from the pinned compiler source stack')
 
-    project = bundle / f'slopjective-c-{tag}-source.tar.gz'
-    with project.open('xb') as stream:
-        subprocess.run(['git', '-C', str(checkout), 'archive', '--format=tar.gz',
-                        f'--prefix=Slopjective-C-{revision}/', revision], stdout=stream, check=True)
-    sources = [{'component': 'Slopjective-C', 'revision': revision, 'file': project.name}]
+
+def source_inventory(checkout: Path, *, revision: str, tag: str, archives: dict) -> list[dict]:
+    project = f'slopjective-c-{tag}-source.tar.gz'
+    sources = [{'component': 'Slopjective-C', 'revision': revision, 'file': project}]
     llvm = json.loads((checkout / LLVM_MANIFEST).read_bytes())['upstream']
     dependencies = {('llvm-project', llvm['url'], llvm['commit'], 'llvm/LICENSE.TXT')}
     for host in archives:
@@ -202,13 +211,74 @@ def stage_sources(checkout: Path, bundle: Path, *, revision: str, tag: str,
             raise ValueError(f'{component} has an invalid source pin')
         url = f'https://codeload.github.com/{repository[1]}/tar.gz/{commit}'
         root = f'{component}-{commit}'
-        destination = bundle / f'{root}-source.tar.gz'
-        download_source(url, destination, root=root, license_path=license_path)
-        sources.append({'component': component, 'revision': commit, 'file': destination.name, 'url': url})
+        sources.append({'component': component, 'revision': commit, 'file': f'{root}-source.tar.gz',
+                        'url': url, 'root': root, 'license_path': license_path})
+    return sources
+
+
+def stage_sources(checkout: Path, bundle: Path, *, revision: str, tag: str,
+                  archives: dict[str, dict]) -> list[dict]:
+    sources = source_inventory(checkout, revision=revision, tag=tag, archives=archives)
+    project = bundle / sources[0]['file']
+    with project.open('xb') as stream:
+        subprocess.run(['git', '-C', str(checkout), 'archive', '--format=tar.gz',
+                        f'--prefix=Slopjective-C-{revision}/', revision], stdout=stream, check=True)
+    for source in sources[1:]:
+        download_source(source['url'], bundle / source['file'], root=source.pop('root'),
+                        license_path=source.pop('license_path'))
     for source in sources:
         file = bundle / source['file']
         source.update(sha256=_file_hash(file), bytes=file.stat().st_size)
     return sources
+
+
+def bundle_assets(output: Path) -> dict[str, tuple[str, int]]:
+    if output.is_symlink() or not output.is_dir():
+        raise ValueError('release needs an owned staged bundle')
+    files = {path.name: path for path in output.iterdir()}
+    if any(not ASSET_NAME.fullmatch(name) or path.is_symlink() or not path.is_file()
+           for name, path in files.items()):
+        raise ValueError('release bundle contains an invalid asset path')
+    sums = files.get('SHA256SUMS')
+    if sums is None or not 0 < sums.stat().st_size <= 64 * 1024:
+        raise ValueError('release bundle needs its complete bounded checksum index')
+    records = {}
+    for line in sums.read_text().splitlines():
+        pair = re.fullmatch(r'([a-f0-9]{64})  ([A-Za-z0-9][A-Za-z0-9._-]*)', line)
+        if not pair or pair[2] in records:
+            raise ValueError('release bundle has an invalid or duplicate checksum entry')
+        records[pair[2]] = pair[1]
+    if set(records) != set(files) - {'SHA256SUMS'} or 'linux-release.json' not in records:
+        raise ValueError('release checksum index differs from the staged asset inventory')
+    for name, signature in records.items():
+        if _file_hash(files[name]) != signature:
+            raise ValueError(f'release staged asset differs from its checksum: {name}')
+    return {name: ('sha256:' + (records[name] if name in records else _file_hash(path)), path.stat().st_size)
+            for name, path in files.items()}
+
+
+def resume_staged(output: Path, checkout: Path, license_file: Path, report: dict) -> dict:
+    assets = bundle_assets(output)
+    existing = json.loads((output / 'linux-release.json').read_bytes())
+    sources = source_inventory(checkout, revision=report['revision'], tag=report['tag'], archives=report['archives'])
+    expected_names = {'linux-release.json', 'SHA256SUMS', 'LICENSE', *INSTALLERS,
+                      *(row['file'] for row in report['archives'].values()), *(row['file'] for row in sources)}
+    if set(assets) != expected_names:
+        raise ValueError('staged release differs from the exact expected asset inventory')
+    for source in sources:
+        source.pop('root', None)
+        source.pop('license_path', None)
+        signature, size = assets[source['file']]
+        source.update(sha256=signature.removeprefix('sha256:'), bytes=size)
+    if existing != {**report, 'sources': sources}:
+        raise ValueError('staged release differs from the exact qualified producers or source pins')
+    for archive in report['archives'].values():
+        if assets[archive['file']] != ('sha256:' + archive['sha256'], archive['bytes']):
+            raise ValueError('staged SDK archive differs from the qualified producer')
+    for name, source in {'LICENSE': license_file, **{label: checkout / filename for label, filename in INSTALLERS.items()}}.items():
+        if (output / name).read_bytes() != source.read_bytes():
+            raise ValueError(f'staged release file differs from the qualified revision: {name}')
+    return existing
 
 
 def stage(checkout: Path, *, repo: str, revision: str, tag: str,
@@ -219,8 +289,6 @@ def stage(checkout: Path, *, repo: str, revision: str, tag: str,
         raise ValueError('release requires a version tag such as v0.1.0-preview.1')
     if runs.keys() != HOSTS.keys() or len(set(runs.values())) != len(HOSTS):
         raise ValueError('release requires distinct x86-64 and AArch64 qualification runs')
-    if output.exists():
-        raise ValueError('release staging requires a fresh output directory')
     license_file = distribution_license(checkout)
     if license_file is None:
         raise ValueError('release requires an approved project distribution license')
@@ -264,12 +332,19 @@ def stage(checkout: Path, *, repo: str, revision: str, tag: str,
     output.parent.mkdir(parents=True, exist_ok=True)
     report = {'schema': release_install.RELEASE_SCHEMA, 'tag': tag, 'revision': revision,
         'channel': 'preview', 'profiles_claimed': [], 'archives': {}}
+    admit_checkout(checkout, revision=revision, archives={host: record for host, (_, record) in admitted.items()})
+    for host, (_, record) in admitted.items():
+        public = {key: value for key, value in record.items() if key != 'build_config_digest'}
+        report['archives'][host] = {**public, 'file': f'objc3-sdk-{tag}-{host}.tar.zst',
+            'qualification_run': runs[host], 'qualification_url': f'https://github.com/{repo}/actions/runs/{runs[host]}'}
+    if output.exists() or output.is_symlink():
+        return resume_staged(output, checkout, license_file, report)
     with tempfile.TemporaryDirectory(prefix='.release-', dir=output.parent) as directory:
         bundle = Path(directory) / 'bundle'
         bundle.mkdir()
         digests = {}
         for host, (archive, record) in admitted.items():
-            name = f'objc3-sdk-{tag}-{host}.tar.zst'
+            name = report['archives'][host]['file']
             asset = bundle / name
             try:
                 asset.hardlink_to(archive)
@@ -280,8 +355,6 @@ def stage(checkout: Path, *, repo: str, revision: str, tag: str,
             digests[name] = _file_hash(asset)
             if digests[name] != record['sha256']:
                 raise ValueError(f'{host} archive changed while staging')
-            report['archives'][host] = {**record, 'file': name, 'qualification_run': runs[host],
-                                        'qualification_url': f'https://github.com/{repo}/actions/runs/{runs[host]}'}
         for name, path in INSTALLERS.items():
             shutil.copyfile(checkout / path, bundle / name)
         shutil.copyfile(license_file, bundle / 'LICENSE')
@@ -297,45 +370,81 @@ def stage(checkout: Path, *, repo: str, revision: str, tag: str,
 
 
 def publish_draft(output: Path, *, repo: str, tag: str, revision: str, notes: Path) -> None:
-    def api(route: str, *options: str):
-        return json.loads(subprocess.check_output(['gh', 'api', f'repos/{repo}/{route}', *options]))
+    if not re.fullmatch(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+', repo):
+        raise ValueError('draft publication needs the exact owner/repository')
+
+    def api(route: str):
+        return json.loads(subprocess.check_output(['gh', 'api', f'repos/{repo}/{route}']))
+
+    def paged(route: str):
+        rows = subprocess.check_output(['gh', 'api', f'repos/{repo}/{route}?per_page=100',
+                                        '--paginate', '--jq', '.[]'])
+        return map(json.loads, rows.splitlines())
 
     def find_release():
-        rows = subprocess.check_output(['gh', 'api', f'repos/{repo}/releases?per_page=100',
-                                        '--paginate', '--jq', '.[]'])
-        return next((row for row in map(json.loads, rows.splitlines()) if row['tag_name'] == tag), None)
+        matches = [row for row in paged('releases') if row['tag_name'] == tag]
+        if len(matches) > 1:
+            raise ValueError(f'{tag} identifies multiple releases')
+        return matches[0] if matches else None
 
-    manifest = output / 'linux-release.json'
-    marker = f'<!-- objc3c-release-manifest-sha256: {_file_hash(manifest)} -->'
-    expected = {path.name: ('sha256:' + _file_hash(path), path.stat().st_size)
-                for path in output.iterdir()}
+    expected = bundle_assets(output)
+    manifest_prefix = '<!-- objc3c-release-manifest-sha256: '
+    manifest_marker = f'{manifest_prefix}{expected["linux-release.json"][0][7:]} -->'
+    bundle_prefix = '<!-- objc3c-release-bundle-sha256: '
+    bundle_marker = f'{bundle_prefix}{expected["SHA256SUMS"][0][7:]} -->'
 
-    def missing_assets(release):
-        if (release is None or not release.get('draft') or not release.get('prerelease') or
-                release.get('target_commitish') != revision or marker not in release['body'].splitlines()):
+    def require_draft(release, release_id):
+        lines = (release.get('body') or '').splitlines()
+        manifest_markers = [line for line in lines if line.startswith(manifest_prefix)]
+        bundle_markers = [line for line in lines if line.startswith(bundle_prefix)]
+        if (type(release_id) is not int or release_id <= 0 or release.get('id') != release_id or
+                release.get('tag_name') != tag or release.get('draft') is not True or
+                release.get('prerelease') is not True or release.get('target_commitish') != revision or
+                manifest_markers != [manifest_marker] or bundle_markers not in ([], [bundle_marker])):
             raise ValueError(f'{tag} does not identify the exact resumable preview draft')
-        missing = set(expected)
-        for asset in api(f'releases/{release["id"]}/assets'):
-            name = asset['name']
-            if name not in missing or (asset.get('digest'), asset['size']) != expected[name]:
-                raise ValueError(f'{tag} already has an unexpected or mismatched asset: {name}')
-            missing.remove(name)
-        return sorted(missing)
 
-    refs = api(f'git/matching-refs/tags/{tag}')
-    if any(ref['ref'] == f'refs/tags/{tag}' for ref in refs):
-        if api(f'commits/{tag}')['sha'] != revision:
+    def verify_release(release_id):
+        release = api(f'releases/{release_id}')
+        require_draft(release, release_id)
+
+    def uploaded(asset):
+        return (asset.get('state') == 'uploaded' and
+                (asset.get('digest'), asset['size']) == expected[asset['name']])
+
+    def missing_assets(release_id):
+        verify_release(release_id)
+        missing = set(expected)
+        seen = set()
+        starters = []
+        for asset in paged(f'releases/{release_id}/assets'):
+            name = asset['name']
+            if name not in expected or name in seen:
+                raise ValueError(f'{tag} already has an unexpected or duplicate asset: {name}')
+            seen.add(name)
+            if uploaded(asset):
+                missing.remove(name)
+            elif (asset.get('state') == 'starter' and asset.get('size') == 0 and
+                  asset.get('digest') in ('', None) and type(asset.get('id')) is int and asset['id'] > 0):
+                starters.append(asset)
+            else:
+                raise ValueError(f'{tag} already has a mismatched asset: {name}')
+        return sorted(missing), starters
+
+    def verify_tag():
+        refs = api(f'git/matching-refs/tags/{tag}')
+        if (any(ref['ref'] == f'refs/tags/{tag}' for ref in refs) and
+                api(f'commits/{tag}')['sha'] != revision):
             raise ValueError(f'{tag} already points to a different Git revision')
 
+    verify_tag()
     release = find_release()
     if release is None:
         with tempfile.TemporaryDirectory(prefix='objc3-release-notes-') as directory:
             draft_notes = Path(directory) / 'notes.md'
-            draft_notes.write_text(notes.read_text().rstrip() + f'\n\n{marker}\n')
+            draft_notes.write_text(notes.read_text().rstrip() + f'\n\n{manifest_marker}\n{bundle_marker}\n')
             subprocess.run(['gh', 'release', 'create', tag, '--repo', repo, '--target', revision,
                             '--draft', '--prerelease', '--title', f'Objective-C 3.0 Linux SDK {tag}',
                             '--notes-file', str(draft_notes)], check=True)
-        # GitHub acknowledges draft creation before the release list can read it.
         for delay in RELEASE_VISIBILITY_DELAYS:
             time.sleep(delay)
             release = find_release()
@@ -343,16 +452,40 @@ def publish_draft(output: Path, *, repo: str, tag: str, revision: str, notes: Pa
                 break
         else:
             raise ValueError(f'{tag} was created but did not become visible in the release list')
-    missing = missing_assets(release)
-    if missing:
-        subprocess.run(['gh', 'release', 'upload', tag, '--repo', repo,
-                        *(str(output / name) for name in missing)], check=True)
+    release_id = release.get('id')
+    require_draft(release, release_id)
+    missing, starters = missing_assets(release_id)
+    if starters:
+        for asset in starters:
+            verify_release(release_id)
+            route = f'releases/assets/{asset["id"]}'
+            current = api(route)
+            if current.get('id') == asset['id'] and current.get('name') == asset['name'] and uploaded(current):
+                continue
+            if current != asset:
+                raise ValueError(f'{tag} interrupted asset changed before cleanup: {asset["name"]}')
+            # GitHub may leave a zero-byte starter when upload fails. Only a
+            # still-empty marker identified in this exact draft can be removed.
+            subprocess.run(['gh', 'api', '--method', 'DELETE', f'repos/{repo}/{route}', '--silent'], check=True)
         for delay in RELEASE_VISIBILITY_DELAYS:
             time.sleep(delay)
-            if not missing_assets(release):
+            missing, starters = missing_assets(release_id)
+            if not starters:
+                break
+        else:
+            raise ValueError(f'{tag} interrupted assets are still visible')
+    for name in missing:
+        verify_release(release_id)
+        require_draft(find_release() or {}, release_id)
+        subprocess.run(['gh', 'release', 'upload', tag, '--repo', repo, str(output / name)], check=True)
+    if missing:
+        for delay in RELEASE_VISIBILITY_DELAYS:
+            time.sleep(delay)
+            if not missing_assets(release_id)[0]:
                 break
         else:
             raise ValueError(f'{tag} draft is missing expected assets after upload')
+    verify_tag()
 
 
 def main() -> None:

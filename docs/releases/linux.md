@@ -92,8 +92,10 @@ preparation commands use Git metadata to verify the pinned dependencies.
    published reporting route. Confirm the terms for distributing the combined
    SDK and provide the corresponding source required by the GPL for any
    GPL-covered binaries. Require passing draft-download rehearsals on both
-   architectures and a passing source downloads check. A partial upload can
-   resume with the same version, revision, and qualification runs.
+   architectures and a passing source downloads check. Resume a partial upload
+   with the same version, revision, and qualification runs. The staging owner
+   verifies the existing bundle and draft asset hashes, preserves completed
+   assets, and retries only missing assets and confirmed empty upload placeholders.
 4. Reconcile the release receipts with the [tracked Linux acceptance work](../roadmap/linux_acceptance_followups.md).
    Review workload observations under [#8291](https://github.com/doublemover/Slopjective-C/issues/8291).
    Publish after the owner has reviewed the release. Open the public release
