@@ -118,10 +118,13 @@ Mach-O bytes, and source hashes. Its ZIP SHA-256 is
 [Native registrar receipt](https://github.com/doublemover/Slopjective-C/actions/runs/45292115173/artifacts/14876712288)
 
 The expanded candidate adds stateless inheritance, fixed root storage,
-one signed integer argument, and an owned ARC lifetime runtime. The SDK
-qualifier compiles and executes from a fresh relocated install and can check
-an optional package with ASan and UBSan consumer variants. Hosted package
-and expanded runtime evidence are pending.
+one signed integer argument, and an owned ARC lifetime runtime. The native
+Apple Silicon run qualified all of them and replayed collection, text, ARC,
+ASan, and UBSan consumers from the relocated experimental SDK. The
+independent terminal passed at `4a7e25d76` and recorded SDK seal
+`ecd5e4f0b8396dd23373f37f0012f5d70a86facb2c38a993d9af8b1e32bd3e88`.
+The later managed upgrade and uninstall path requires a separate native
+replay. [Expanded native SDK qualification](https://github.com/doublemover/Slopjective-C/actions/runs/45299864475)
 
 ## Release CI cost
 
