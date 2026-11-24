@@ -11,7 +11,8 @@ directory. The [SDK setup guide](../../docs/tutorials/getting_started.md) sets
 `OBJC3C_SDK_ROOT`.
 
 ```sh
-sh showcase/parcel-quotes/run.sh "$OBJC3C_SDK_ROOT" ./parcel-quote-output
+mkdir -p out
+sh showcase/parcel-quotes/run.sh "$OBJC3C_SDK_ROOT" ./out/parcel-quote-output
 ```
 
 ```text
@@ -33,6 +34,8 @@ The runner removes its staged producer sources and build outputs before
 the compiler and linker commands, and `provider_compilations: 0`.
 
 Run the application again with
-`./parcel-quote-output/consumer-build/application.bin`. To quote a different
+`./out/parcel-quote-output/consumer-build/application.bin`. To quote a different
 batch, edit `consumer/main.mm` and run the example with a new output directory.
+Use `sh showcase/parcel-quotes/verify.sh` with the SDK active to check the
+formatted output and zero provider compilations from a fresh directory.
 [Immutable package commands](../../docs/roadmap/linux_immutable_packages.md)

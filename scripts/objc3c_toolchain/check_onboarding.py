@@ -67,6 +67,8 @@ def check(repo: Path) -> dict:
         'native-application': ('tests/clang_foundation/installed_sdk/main.objc3', 'installed_qualification'),
         'managed-modules': ('tests/clang_foundation/native_package', 'installed_source_modules'),
         'package-graph': ('tests/clang_foundation/source_graph/workspace.json', 'installed_source_graph'),
+        'collections-text': ('showcase/collections-text/collections-text.objc3', 'published_preview_examples'),
+        'parcel-quotes': ('showcase/parcel-quotes', 'published_preview_examples'),
     }
     actual = {}
     for example in portfolio.get('examples', []):
