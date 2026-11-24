@@ -375,6 +375,24 @@ def compiler_raw_profiles(root: Path) -> list[Path]:
     return paths
 
 
+def lit_inventory(discovery: str, results: dict) -> dict:
+    """Reconcile all discovered Objective-C 3 cases with recorded outcomes."""
+    header, separator, listing = discovery.partition('-- Available Tests --\n')
+    if header.strip() or not separator:
+        raise ValueError('compiler coverage could not read the lit discovery inventory')
+    lines = listing.splitlines()
+    names = {line.removeprefix('  ') for line in lines if line.startswith('  ') and ' :: ' in line}
+    tests = results.get('tests', [])
+    if (not names or len(lines) != len(names) or len(tests) != len(names) or
+            {row.get('name') for row in tests} != names):
+        raise ValueError('compiler coverage lit execution differs from the full discovered inventory')
+    outcomes = Counter(row.get('code') for row in tests)
+    if (not outcomes['PASS'] or not outcomes.keys() <= {'PASS', 'XFAIL', 'UNSUPPORTED'} or
+            any(row['code'] == 'UNSUPPORTED' and not row.get('output', '').strip() for row in tests)):
+        raise ValueError('compiler coverage lit suite failed or omitted an unsupported-case reason')
+    return {key: outcomes[key] for key in ('PASS', 'XFAIL', 'UNSUPPORTED')}
+
+
 def qualify(repo: Path, output: Path, *, jobs=2, baseline: Path | None = None) -> dict:
     repo, output = repo.resolve(strict=True), output.resolve()
     if output.exists() or not output.is_relative_to(repo / 'out') or jobs not in (1, 2, 3, 4):
@@ -421,7 +439,8 @@ def qualify(repo: Path, output: Path, *, jobs=2, baseline: Path | None = None) -
         report['seconds'] = round(time.monotonic() - started, 6)
         write_json(output / 'qualification.json', report)
     env = {key: value for key, value in os.environ.items() if key not in
-           ('ASAN_OPTIONS', 'LSAN_OPTIONS', 'UBSAN_OPTIONS', 'TSAN_OPTIONS', 'LLVM_PROFILE_FILE')}
+           ('ASAN_OPTIONS', 'LSAN_OPTIONS', 'UBSAN_OPTIONS', 'TSAN_OPTIONS', 'LLVM_PROFILE_FILE') and
+           not key.startswith(('LIT_', 'GTEST_'))}
     env['LD_LIBRARY_PATH'] = str(stage / 'lib')
     env['PATH'] = str(stage / 'bin') + os.pathsep + env.get('PATH', '')
     env['LLVM_PROFILE_FILE'] = os.devnull
@@ -486,15 +505,15 @@ def qualify(repo: Path, output: Path, *, jobs=2, baseline: Path | None = None) -
         before.update({str(source / name): value for name, value in eligible.items()})
         before.update({str(path): digest(path) for path in [*binaries, *tools.values()]})
         lit_json = output / 'lit-results.json'
-        lit_log = run('objc3-lit', [build / 'bin/llvm-lit', '-sv', '--show-unsupported', '-j', str(min(jobs, 4)),
-            '--output', lit_json, source / 'clang/test/ObjC3'], timeout=1800)
-        lit = json.loads(lit_json.read_text())
-        outcomes = {key: len([row for row in lit.get('tests', []) if row.get('code') == key])
-                    for key in ('PASS', 'XFAIL', 'UNSUPPORTED')}
-        if not lit.get('tests') or any(row.get('code') not in outcomes for row in lit['tests']) or not outcomes['PASS']:
-            raise ValueError('covered ObjC3 lit suite is empty or failed')
+        lit_tool, lit_source = build / 'bin/llvm-lit', source / 'clang/test/ObjC3'
+        discovery = run('objc3-lit-discovery', [lit_tool, '--show-tests', lit_source], profile=False,
+                        stdout=output / 'lit-discovery.log')
+        lit_log = run('objc3-lit', [lit_tool, '-sv', '--show-unsupported', '-j', str(min(jobs, 4)),
+            '--output', lit_json, lit_source], timeout=1800)
+        outcomes = lit_inventory(discovery.read_text(), json.loads(lit_json.read_text()))
         report['suites'].append({'name': 'ObjC3-lit', 'status': 'PASS', 'outcomes': outcomes,
-                                 'log_sha256': digest(lit_log), 'result_sha256': digest(lit_json)})
+                                 'discovery_sha256': digest(discovery), 'log_sha256': digest(lit_log),
+                                 'result_sha256': digest(lit_json)})
         for binary in test_binaries:
             result = output / (binary.name+'.xml')
             run('unit-'+binary.name, [binary, '--gtest_output=xml:'+str(result)])

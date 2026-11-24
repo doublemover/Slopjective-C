@@ -9,7 +9,7 @@ import pytest
 
 from scripts.objc3c_toolchain.compiler_source_coverage import (
     EXPORT_FLAGS, FLAGS, PROFILE, SCHEMA, changed_branches, compare_coverage, compile_inventory, coverage_baseline,
-    inspect_objects, merged_ranges, patched_inventory, read_export,
+    inspect_objects, lit_inventory, merged_ranges, patched_inventory, read_export,
     require_binary_ids, select_coverage_profiles, unique_binary_paths,
 )
 from scripts.objc3c_toolchain.source_coverage import COVERAGE_SECTIONS, coverage_section_command
@@ -130,6 +130,26 @@ def test_baseline_reports_a_lost_branch_arm_with_the_same_aggregate():
     point = {'start': [2, 1], 'end': [2, 4], 'occurrences': 1}
     assert result['lost_branch_arms'] == {name: [{**point, 'arm': 'true'}]}
     assert result['gained_branch_arms'] == {name: [{**point, 'arm': 'false'}]}
+
+
+@pytest.mark.parametrize('defect', [None, 'missing', 'duplicate', 'missing-reason', 'unexpected-result'])
+def test_coverage_lit_requires_every_discovered_case_and_actual_outcomes(defect):
+    source = '-- Available Tests --\n  Clang :: ObjC3/a.m\n  Clang :: ObjC3/b.m\n'
+    rows = [{'name': 'Clang :: ObjC3/a.m', 'code': 'PASS'},
+            {'name': 'Clang :: ObjC3/b.m', 'code': 'UNSUPPORTED', 'output': 'Needs an unavailable target'}]
+    if defect == 'missing':
+        rows.pop()
+    elif defect == 'duplicate':
+        rows[1] = rows[0]
+    elif defect == 'missing-reason':
+        del rows[1]['output']
+    elif defect == 'unexpected-result':
+        rows[1]['code'] = 'UNRESOLVED'
+    if defect is None:
+        assert lit_inventory(source, {'tests': rows}) == {'PASS': 1, 'XFAIL': 0, 'UNSUPPORTED': 1}
+    else:
+        with pytest.raises(ValueError, match='lit execution|lit suite'):
+            lit_inventory(source, {'tests': rows})
 
 
 def test_reviewed_baseline_binds_archive_receipt_and_architecture(tmp_path):

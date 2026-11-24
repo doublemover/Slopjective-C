@@ -74,8 +74,11 @@ The integrated compiler owner now uses the isolated `compiler-source-coverage`
 foundation. It derives whole-file and changed-hunk denominators directly from
 the admitted patches, verifies every eligible implementation object's flags,
 hashes and nonempty ELF coverage sections, and executes the ObjC3 lit suite plus
-the selected native unit binaries. Actual ELF identities bind each profile to the executed
-main and allowed loaded modules; unrelated support-tool profiles remain separate.
+the selected native unit binaries. A separate lit discovery report names every
+test. The coverage owner reconciles those names with the execution results and
+requires an explanation for each unsupported case. ELF identities tie each
+profile to the executed main and allowed loaded modules. Unrelated support-tool
+profiles remain separate.
 Exports retain zero-hit and missing-mapping files rather than silently reducing
 the denominator. The changed-hunk view records region entries and both arm counts
 for every branch decision intersecting a maintained hunk. Source, object, DSO
