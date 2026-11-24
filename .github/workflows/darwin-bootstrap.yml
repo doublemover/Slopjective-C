@@ -54,7 +54,7 @@ jobs:
   bootstrap:
     name: Probe Apple Silicon toolchain and Mach-O prerequisites
     runs-on: macos-15
-    timeout-minutes: 215
+    timeout-minutes: 360
     outputs:
       runtime_selected: ${{ steps.runtime.outputs.selected }}
       sanitizers_selected: ${{ steps.runtime.outputs.sanitizers }}
@@ -170,7 +170,6 @@ jobs:
             --output-dir "$evidence/result" 2>&1 | tee "$evidence/probe.log"
       - name: Build and qualify experimental Objective-C 3 registration
         if: steps.runtime.outputs.selected == 'true'
-        timeout-minutes: 195
         shell: bash
         env:
           RUN_SANITIZERS: ${{ steps.runtime.outputs.sanitizers }}

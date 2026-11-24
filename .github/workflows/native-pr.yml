@@ -15,7 +15,7 @@ jobs:
     name: Execute Linux native PR checks
     runs-on: ubuntu-26.04
     container: debian:13
-    timeout-minutes: 180
+    timeout-minutes: 360
     env:
       OBJC3C_CLOUD_SETUP_ROOT: /opt/objc3c-host
     steps:

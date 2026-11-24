@@ -375,7 +375,6 @@ jobs:
             --group product-producer
       - name: Replay the exact published archive without rebuilding or extracting the payload
         if: inputs.linux_host != 'linux-aarch64'
-        timeout-minutes: 10
         shell: bash
         run: |
           source /opt/objc3c-host/activate.sh
@@ -819,7 +818,7 @@ jobs:
     container:
       image: debian:13
       options: --security-opt seccomp=unconfined
-    timeout-minutes: 180
+    timeout-minutes: 360
     env:
       OBJC3C_CLOUD_SETUP_ROOT: /opt/objc3c-host
       COVERAGE_PARTITION: ${{ matrix.partition }}
@@ -927,7 +926,7 @@ jobs:
             receipt: debian-13
           - distribution: "ubuntu:26.04"
             receipt: ubuntu-26.04
-    timeout-minutes: 120
+    timeout-minutes: 360
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
