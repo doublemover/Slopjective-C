@@ -487,7 +487,10 @@ def borrowed_base_pch_matrix(compiler: Path, source: Path, output: Path, *, run)
             pch.unlink()
 
 
-def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = None) -> dict:
+def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = None,
+            measure_costs=False) -> dict:
+    from .semantic_benchmarks import sample
+
     if jobs < 1:
         raise ValueError('compiler qualification requires positive build parallelism')
     repo = repo.resolve(strict=True)
@@ -533,6 +536,8 @@ def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = 
     libraries = [installed_shared_library(stage / 'lib', name)
                  for name in ('libclang-cpp.so', 'libLLVM.so')]
     output.mkdir(parents=True)
+    started = time.monotonic()
+    initial_free = shutil.disk_usage(output).free
     receipt = output / 'qualification.json'
     report = {'schema': 'objc3c.compiler-implementation-instrumentation.v1', 'status': 'running',
               'subject': 'compiler-implementation', 'profile': PROFILE,
@@ -560,20 +565,13 @@ def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = 
 
     def run(name, command, *, expected=0, detector_source=None):
         log = output / (name+'.log')
-        started = time.monotonic()
-        argv = list(map(str, command))
-        try:
-            with log.open('w') as stream:
-                result = subprocess.run(argv, cwd=repo, env=environment,
-                    stdout=stream, stderr=subprocess.STDOUT, timeout=900)
-            code = result.returncode
-        except subprocess.TimeoutExpired:
-            code = 124
-        report['commands'].append({'name': name, 'argv': argv, 'exit_code': code,
-            'seconds': round(time.monotonic()-started, 6), 'log': str(log), 'log_sha256': digest(log)})
+        action = sample(command, cwd=repo, environment=environment, log=log, timeout=900)
+        code = action['exit_code']
+        action.update(name=name, seconds=round(action['wall_seconds'], 6))
+        report['commands'].append(action)
         write_json(receipt, report)
         diagnostic = log.read_text(errors='replace')
-        if code != expected:
+        if action['timed_out'] or code != expected:
             raise ValueError('compiler instrumentation command failed: '+name)
         if detector_source is None:
             require_clean_diagnostic(diagnostic)
@@ -582,6 +580,18 @@ def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = 
         return diagnostic
 
     try:
+        if measure_costs:
+            from .semantic_build_costs import foundation_record
+
+            report['foundation_cost'] = foundation_record(foundation_report)
+            phases = output / 'foundation'
+            phases.mkdir()
+            shutil.copyfile(foundation_report, phases / 'foundation.json')
+            for index, phase in enumerate(completed['phases']):
+                log = Path(phase['log']).resolve(strict=True)
+                shutil.copyfile(log, phases / f'phase-{index}.log')
+            if foundation_record(phases / 'foundation.json') != report['foundation_cost']:
+                raise ValueError('retained compiler cost evidence differs from the actual build')
         from .test_runtime import prepare as prepare_runtime
         dependency = prepare_runtime(repo, bootstrap, output / 'objc-runtime', fetch=True, jobs=jobs)
         report['test_objc_runtime'] = dependency
@@ -607,6 +617,16 @@ def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = 
         borrowed_base_pch_matrix(stage / 'bin/clang', source, output, run=run)
         ninja = Path(plan['host_environment']['ninja_path'])
         targets = [target for group in plan['instrumentation']['build_target_groups'] for target in group['targets']] + ['install-distribution']
+        if measure_costs:
+            build_targets = list(dict.fromkeys(target for target in targets if target != 'install-distribution'))
+            command = [ninja, '-C', build, *build_targets]
+            forecast = run('foundation-warm-forecast', [*command[:3], '-n', *command[3:]])
+            report['foundation_warm_targets'] = {'forecast_log_sha256': report['commands'][-1]['log_sha256'],
+                                                 'state': 'rebuild-needed'}
+            if 'ninja: no work to do.' in forecast:
+                if 'ninja: no work to do.' not in run('foundation-warm-target-reuse', command):
+                    raise ValueError('instrumented foundation changed during warm measurement')
+                report['foundation_warm_targets'].update(state='no-op', measurement=report['commands'][-1])
         report['foundation_objects'] = graph_records(build, source, targets, ninja, environment,
             foundation=True, run=lambda name, cmd: run('foundation-'+name, cmd))
         verify_symbols(report['foundation_objects'], bootstrap / 'bin/llvm-nm',
@@ -695,6 +715,13 @@ def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = 
         report.update(status='FAIL', error=str(error))
         raise
     finally:
+        report['cost'] = {'qualification_seconds': round(time.monotonic()-started, 6),
+                          'peak_sampled_process_rss_kib': max(
+                              (row['peak_process_rss_kib'] for row in report['commands']), default=None),
+                          'disk_free_begin_bytes': initial_free, 'disk_free_end_bytes': shutil.disk_usage(output).free,
+                          'qualification_output_bytes': sum(path.stat().st_size for path in output.rglob('*')
+                                                            if path != receipt and path.is_file()),
+                          'filesystem_scope': 'Free space snapshots while qualifying can include other activity.'}
         write_json(receipt, report)
     return report
 
@@ -721,10 +748,13 @@ def main(argv=None):
     parser.add_argument('--jobs', type=int, default=2)
     parser.add_argument('--embedding-build', type=Path,
                         help='incrementally rebuild a matching isolated compiler-profile embedding tree')
+    parser.add_argument('--measure-costs', action='store_true',
+                        help='retain foundation phase logs and sample the admitted unchanged Ninja targets')
     args = parser.parse_args(argv)
     if args.jobs < 1:
         parser.error('--jobs must be positive')
-    qualify(args.repo, args.output, jobs=args.jobs, embedding_build=args.embedding_build)
+    qualify(args.repo, args.output, jobs=args.jobs, embedding_build=args.embedding_build,
+            measure_costs=args.measure_costs)
     return 0
 
 

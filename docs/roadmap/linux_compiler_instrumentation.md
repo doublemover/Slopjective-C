@@ -45,6 +45,14 @@ foundation phases and the exact staged Clang and LLVM shared-library ELF build
 IDs. The full object-and-link qualification requires execution of the optional
 mode at the chosen source revision. [x86-64 producer](https://github.com/doublemover/Slopjective-C/actions/runs/44865570421/artifacts/14693129425) · [AArch64 producer](https://github.com/doublemover/Slopjective-C/actions/runs/44865570382/artifacts/14693123879)
 
+The preview's cold foundation builds took 3,355.65 seconds on x86-64 and
+3,099.86 seconds on AArch64. Their staged compiler transports were 873,603,469
+and 860,950,487 bytes. The optional compiler graph job preserves its actual
+foundation phase logs, measures per-command elapsed time and largest process
+RSS, and records filesystem free space and qualification output bytes. It measures an
+unchanged Ninja invocation when its dry run confirms that every selected
+target is current. The warm measurement is pending on a run with this option.
+
 The runner reconciles transitive Ninja compilation commands against compilation
 ownership, then checks object bytes and actual instrumentation symbols. Staged LLVM/Clang
 and embedding archive members must match the exact ordered Ninja target objects
