@@ -400,39 +400,52 @@ def verify_owned_shared_libraries(build: Path, libraries: list[Path], records: l
 
 def elf_gnu_build_id(path: Path, *, allow_missing: bool = False) -> str | None:
     """Read one canonical SHA-1 NT_GNU_BUILD_ID without executing the ELF."""
-    data = path.read_bytes()
-    if data[:6] != b'\x7fELF\x02\x01' or len(data) < 64:
-        raise ValueError('loaded dependency is not a little-endian ELF64 image: '+str(path))
-    program_offset = struct.unpack_from('<Q', data, 32)[0]
-    program_size, program_count = struct.unpack_from('<HH', data, 54)
-    if (program_size != 56 or not program_count or
-            program_offset+program_size*program_count > len(data)):
-        raise ValueError('loaded dependency has an invalid ELF program inventory: '+str(path))
     identities = []
-    for index in range(program_count):
-        header = struct.unpack_from('<IIQQQQQQ', data, program_offset+program_size*index)
-        if header[0] != 4:  # PT_NOTE
-            continue
-        offset, size = header[2], header[5]
-        if offset+size > len(data):
-            raise ValueError('loaded dependency has a truncated ELF note: '+str(path))
-        cursor, end = offset, offset+size
-        while cursor < end:
-            if cursor+12 > end:
-                raise ValueError('loaded dependency has a malformed ELF note: '+str(path))
-            name_size, value_size, note_type = struct.unpack_from('<III', data, cursor)
-            cursor += 12
-            name_end = cursor+name_size
-            value_start = (name_end+3) & ~3
-            value_end = value_start+value_size
-            next_note = (value_end+3) & ~3
-            if name_end > end or value_end > end or next_note > end:
-                raise ValueError('loaded dependency has a malformed ELF note: '+str(path))
-            if note_type == 3 and data[cursor:name_end] == b'GNU\0':
+    with path.open('rb') as stream:
+        file_size = os.fstat(stream.fileno()).st_size
+        header = stream.read(64)
+        if header[:6] != b'\x7fELF\x02\x01' or len(header) != 64:
+            raise ValueError('loaded dependency is not a little-endian ELF64 image: '+str(path))
+        program_offset = struct.unpack_from('<Q', header, 32)[0]
+        program_size, program_count = struct.unpack_from('<HH', header, 54)
+        inventory_bytes = program_size * program_count
+        if program_size != 56 or not program_count or program_offset + inventory_bytes > file_size:
+            raise ValueError('loaded dependency has an invalid ELF program inventory: '+str(path))
+        stream.seek(program_offset)
+        inventory = stream.read(inventory_bytes)
+        if len(inventory) != inventory_bytes:
+            raise ValueError('loaded dependency has a truncated ELF program inventory: '+str(path))
+        malformed = 'loaded dependency has a malformed ELF note: '+str(path)
+        for kind, _, offset, _, _, size, _, _ in struct.iter_unpack('<IIQQQQQQ', inventory):
+            if kind != 4:  # PT_NOTE
+                continue
+            cursor, end = offset, offset + size
+            if end > file_size:
+                raise ValueError('loaded dependency has a truncated ELF note: '+str(path))
+            while cursor < end:
+                stream.seek(cursor)
+                note_header = stream.read(min(12, end-cursor))
+                if len(note_header) != 12:
+                    raise ValueError(malformed)
+                name_size, value_size, note_type = struct.unpack('<III', note_header)
+                value_start = (cursor + 12 + name_size + 3) & ~3
+                cursor = (value_start + value_size + 3) & ~3
+                if cursor > end:
+                    raise ValueError(malformed)
+                if note_type != 3 or name_size != 4:
+                    continue
+                name = stream.read(4)
+                if len(name) != 4:
+                    raise ValueError(malformed)
+                if name != b'GNU\0':
+                    continue
                 if value_size != 20:
                     raise ValueError('loaded dependency lacks a canonical SHA-1 build identity: '+str(path))
-                identities.append(data[value_start:value_end].hex())
-            cursor = next_note
+                stream.seek(value_start)
+                identity = stream.read(value_size)
+                if len(identity) != value_size:
+                    raise ValueError(malformed)
+                identities.append(identity.hex())
     if not identities and allow_missing:
         return None
     if len(identities) != 1:
