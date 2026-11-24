@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 
 const DAY = 86_400_000;
+const HISTORY_DAYS = 370;
 
 export function validateConfig(config) {
   if (config.version !== 1 || !Array.isArray(config.suites) || config.suites.length === 0) {
@@ -149,12 +150,15 @@ async function listBounded(call, params, key, maximumPages = 5) {
 
 export async function collectSnapshot({ github, context, suite, now, defaultBranch, timezone = 'America/Detroit' }) {
   const common = { owner: context.repo.owner, repo: context.repo.repo };
+  const cutoff = timestamp(now) - HISTORY_DAYS * DAY;
   const runs = await listBounded(github.rest.actions.listWorkflowRuns, {
     ...common, workflow_id: 'adaptive-maintenance.yml',
+    branch: defaultBranch, created: `${new Date(cutoff).toISOString()}..${new Date(now).toISOString()}`,
   }, 'workflow_runs');
   const relevantRuns = runs.filter((run) => run.id !== context.runId &&
+    run.head_branch === defaultBranch &&
     run.display_title === `Adaptive maintenance / ${suite.id}` &&
-    timestamp(run.created_at) >= timestamp(now) - 370 * DAY);
+    timestamp(run.created_at) >= cutoff);
   const history = [];
   for (const run of relevantRuns) {
     const jobs = await listBounded(github.rest.actions.listJobsForWorkflowRun, {

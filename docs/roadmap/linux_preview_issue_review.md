@@ -83,6 +83,20 @@ and source identity in the retained proof. The native execution took 133.84
 seconds with a fresh consumer build. The tested fixture commit was
 `05c97fcbf7a765b9842760d9fd94c3196b9f9809`.
 
+The hosted cold PR passed at merge commit
+`422e9d875786d9556ecea2fe14f4fe3e6bd35344`. Native execution took 94 minutes,
+including 56.2 minutes of foundation work. The terminal verified 1,168
+foundation results, 105 frontend CTests, and 10 runtime CTests. An independent
+replay checked the archived receipts against the exact merge commit. The
+reported ZIP SHA-256 is
+`52d5303175f331aaa9761279071965d7f433485656105128e661f11ac6c67c7e`.
+[Cold PR run and retained evidence](https://github.com/doublemover/Slopjective-C/actions/runs/45289344500)
+
+The adaptive dispatcher scopes its history to recent runs on the default
+branch and delegates to the canonical native qualification. A read-only check
+against the live GitHub history found the next run was still subject to the
+existing cadence. The default branch has yet to run the revised dispatcher.
+
 The repaired Apple Silicon registrar passed at
 `ebb30539dd68d63f18e1a0f41e9f724d674028ea`. The native report records
 39 bootstrap commands and 60 registration commands. The preflight linked
@@ -114,4 +128,8 @@ updated [native workflow](../../.github/workflows/native-assurance.yml) merges
 the original owner artifacts in the terminal job and publishes its result and
 operational cost receipts. It still executes the disjoint-union and exact
 archive checks on the underlying bytes. The next release will measure the
-transfer savings and give a baseline for instrumented consumer scheduling.
+transfer savings. The revised instrumented schedule distributes source and
+PCH invocations across the ten jobs while covering all 480 maintained feature
+cases. It seeds 17 profile builds across those jobs, down from 22. The
+[runtime matrix](linux_sanitizer_product_matrix.md) records the archived
+measurements and the per-job estimates.

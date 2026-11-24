@@ -116,9 +116,19 @@ test('queued caller counts as inflight even before reusable jobs appear', () => 
   assert.equal(summarizeAttempt({ ...run, status: 'queued' }, [], suite).inProgress, true);
 });
 test('collector avoids all activity API work when a monthly pass is already due', async () => {
-  const github = { rest: { actions: { listWorkflowRuns: async () => ({ data: { workflow_runs: [] } }) } } };
-  const result = await collectSnapshot({ github, context: { repo: { owner: 'owner', repo: 'repo' }, runId: 1 }, suite, now: '2026-11-03T12:00:00Z', defaultBranch: 'trunk' });
+  const now = '2026-11-03T12:00:00Z';
+  const github = { rest: { actions: { listWorkflowRuns: async (request) => {
+    assert.equal(request.branch, 'trunk');
+    assert.equal(request.created, '2025-10-29T12:00:00.000Z..2026-11-03T12:00:00.000Z');
+    const queued = { id: 2, display_title: 'Adaptive maintenance / full', head_branch: 'other',
+      created_at: now, status: 'queued' };
+    return { data: { workflow_runs: [queued, { ...queued, id: 1, head_branch: 'trunk' },
+      { ...queued, id: 3, head_branch: 'trunk', created_at: '2025-10-28T12:00:00Z' }] } };
+  } } } };
+  const result = await collectSnapshot({ github, context: { repo: { owner: 'owner', repo: 'repo' }, runId: 1 }, suite, now, defaultBranch: 'trunk' });
   assert.equal(result.changes.length, 0);
+  assert.equal(result.history.length, 0);
+  assert.equal(decide(result).due, true);
 });
 test('collector failure is surfaced, not changed into a successful skip', async () => {
   const github = { rest: { actions: { listWorkflowRuns: async () => { throw new Error('denied'); } } } };
@@ -154,7 +164,7 @@ test('the configured Saturday dispatcher keeps the exact unchanged source idle a
   const core = { setOutput: (key, value) => outputs.set(key, value), info: (line) => info.push(line), summary };
   const github = { rest: { repos: { get: async () => ({ data: { default_branch: 'main' } }) }, actions: {
     listWorkflowRuns: async () => ({ data: { workflow_runs: [{ id: 1, display_title: 'Adaptive maintenance / closeout',
-      created_at: '2026-11-21T15:37:57Z', head_sha: exact, status: 'completed', conclusion: 'success' }] } }),
+      created_at: '2026-11-21T15:37:57Z', head_branch: 'main', head_sha: exact, status: 'completed', conclusion: 'success' }] } }),
     listJobsForWorkflowRun: async () => ({ data: { jobs: closeout.expectedJobs.map(({ name, requiredSteps }) =>
       job({ name: `run-closeout / ${name}`, steps: requiredSteps.map((pattern) =>
         ({ name: pattern.slice(1, -1), conclusion: 'success' })) })) } }),
