@@ -50,6 +50,7 @@ def load_profile() -> tuple[dict, Path]:
             profile.get('target') != 'arm64-apple-macos' + DEPLOYMENT_TARGET or
             profile.get('compiler_runtime_flag') != '-fobjc-runtime=gnustep-2.99' or
             profile.get('runtime_abi') != 'objc3-darwin-registration-v1' or
+            profile.get('inheritance') != 'stateless-super-v1' or
             file_digest(patch) != profile.get('patch_sha256')):
         raise ValueError('experimental Darwin registration profile or patch differs from its pin')
     return profile, patch
@@ -271,7 +272,8 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
     runtime_object = stages / 'runtime.o'
     runtime_archive = layout / 'lib/libobjc3darwin.a'
     runtime_dylib = layout / 'lib/libobjc3darwin.dylib'
-    fixture_objects = {name: stages / (name + '.o') for name in ('provider', 'main', 'late')}
+    names = ('provider', 'main', 'late', 'inheritance_base', 'inheritance_child', 'inheritance_main')
+    fixture_objects = {name: stages / (name + '.o') for name in names}
     fixture_archive = layout / 'lib/libprovider.a'
     late_dylib = layout / 'lib/liblate.dylib'
     static = layout / 'bin/static'
@@ -286,13 +288,24 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
         '-Wl,-install_name,@rpath/liblate.dylib', '-Wl,-rpath,@loader_path', '-o', late_dylib)
     run(*link, fixture_objects['main'], fixture_archive, runtime_archive, '-o', static)
     run(*link, fixture_objects['main'], fixture_archive, runtime_dylib, '-Wl,-rpath,@loader_path/../lib', '-o', dynamic)
+    base = layout / 'lib/libinheritance-base.dylib'
+    child = layout / 'lib/libinheritance-child.dylib'
+    run(*link, '-dynamiclib', fixture_objects['inheritance_base'], runtime_dylib,
+        '-Wl,-install_name,@rpath/libinheritance-base.dylib', '-Wl,-rpath,@loader_path', '-o', base)
+    run(*link, '-dynamiclib', fixture_objects['inheritance_child'], base, runtime_dylib,
+        '-Wl,-install_name,@rpath/libinheritance-child.dylib', '-Wl,-rpath,@loader_path', '-o', child)
+    # The static path links the child's constructor before the base's.
+    run(*link, fixture_objects['inheritance_main'], fixture_objects['inheritance_child'],
+        fixture_objects['inheritance_base'], runtime_archive, '-o', layout / 'bin/inheritance-static')
+    run(*link, fixture_objects['inheritance_main'], child, runtime_dylib,
+        '-Wl,-rpath,@loader_path/../lib', '-o', layout / 'bin/inheritance-dynamic')
     run(*link, fixture_objects['main'], fixture_archive, '-o', stages / 'no-runtime',
         rejects=('objc3_darwin_lookup_v1', 'objc3_darwin_register_v1',
                  'objc3_darwin_allocate_v1', 'objc3_darwin_deallocate_v1'), label='missing-runtime-at-link')
     unsupported = FIXTURES / 'unsupported.m'
     run(*objective_c, '-c', unsupported, '-o', stages / 'unsupported.o',
-        rejects=('experimental Darwin registration requires a stateless root class',), label='unsupported-subclass')
-    for name, diagnostic in (('layout', 'a stateless root class'), ('signature', 'ordinary no-argument int methods')):
+        rejects=('experimental Darwin registration requires a stateless class',), label='unsupported-subclass-layout')
+    for name, diagnostic in (('layout', 'a stateless class'), ('signature', 'ordinary no-argument int methods')):
         fixture = FIXTURES / f'unsupported_instance_{name}.m'
         run(*objective_c, '-c', fixture, '-o', stages / f'unsupported-instance-{name}.o',
             rejects=(f'experimental Darwin registration requires {diagnostic}',), label=f'unsupported-instance-{name}')
@@ -305,6 +318,7 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
     run(*objective_c, '-fobjc-runtime=gnustep-2.2', '-c', FIXTURES / 'provider.m', '-o', stages / 'legacy.o',
         rejects=('GNUstep Objective-C runtime version 2 incompatible with target binary format',), label='legacy-runtime')
     run(dwarf, '--verify', fixture_objects['provider'])
+    run(dwarf, '--verify', fixture_objects['inheritance_child'])
     ir = stages / 'provider.ll'
     run(*objective_c, '-O0', '-S', '-emit-llvm', FIXTURES / 'provider.m', '-o', ir)
     metadata = ir.read_text()
@@ -319,9 +333,15 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
         if run(ar, 't', archive).splitlines() != members:
             raise ValueError(f'unexpected members in Darwin archive {archive}')
         artifacts[name] = {'path': str(archive), 'format': 'Darwin ar', 'members': members, 'sha256': file_digest(archive)}
-    required_libraries = {'bin/static': [], 'bin/dynamic': ['@rpath/libobjc3darwin.dylib'],
-                          'lib/libobjc3darwin.dylib': ['@rpath/libobjc3darwin.dylib'],
-                          'lib/liblate.dylib': ['@rpath/liblate.dylib', '@rpath/libobjc3darwin.dylib']}
+    runtime_id = '@rpath/libobjc3darwin.dylib'
+    base_id = '@rpath/libinheritance-base.dylib'
+    child_id = '@rpath/libinheritance-child.dylib'
+    required_libraries = {'bin/static': [], 'bin/dynamic': [runtime_id],
+                          'lib/libobjc3darwin.dylib': [runtime_id],
+                          'lib/liblate.dylib': ['@rpath/liblate.dylib', runtime_id],
+                          'lib/libinheritance-base.dylib': [base_id, runtime_id],
+                          'lib/libinheritance-child.dylib': [child_id, base_id, runtime_id],
+                          'bin/inheritance-static': [], 'bin/inheritance-dynamic': [child_id, runtime_id]}
     for relative, library_paths in required_libraries.items():
         path = layout / relative
         kind = 'executable' if relative.startswith('bin/') else 'dynamic_library'
@@ -333,14 +353,22 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
     expected = 'owned Objective-C 3 Darwin registration: PASS\nowned Objective-C 3 Darwin instances: PASS'
     if run(layout / 'bin/static') != expected or run(layout / 'bin/dynamic', layout / 'lib/liblate.dylib') != expected:
         raise ValueError('the registered native consumers did not return the runtime success witness')
-    library = layout / 'lib/libobjc3darwin.dylib'
-    hidden = library.with_suffix('.absent')
-    library.rename(hidden)
-    try:
-        run(layout / 'bin/dynamic', rejects=('Library not loaded', 'libobjc3darwin.dylib'),
-            rejection_status=(1, -signal.SIGABRT), label='missing-runtime-at-load')
-    finally:
-        hidden.rename(library)
+    inheritance_output = 'owned Objective-C 3 Darwin inheritance: PASS'
+    for route in ('static', 'dynamic'):
+        if run(layout / f'bin/inheritance-{route}', label=f'inheritance-{route}-native') != inheritance_output:
+            raise ValueError(f'the native {route} inheritance consumer failed')
+    for binary, filename, label in (
+        ('dynamic', 'libobjc3darwin.dylib', 'missing-runtime-at-load'),
+        ('inheritance-dynamic', 'libinheritance-base.dylib', 'missing-superclass-at-load'),
+    ):
+        library = layout / 'lib' / filename
+        hidden = library.with_suffix('.absent')
+        library.rename(hidden)
+        try:
+            run(layout / 'bin' / binary, rejects=('Library not loaded', filename),
+                rejection_status=(1, -signal.SIGABRT), label=label)
+        finally:
+            hidden.rename(library)
     report.update(artifacts=artifacts, installation_root=str(layout))
     report['portable_services'] = _exercise_portable_services(
         run, defaults, linker, stages, layout, cxx_flags=report['cxx_toolchain']['flags'])

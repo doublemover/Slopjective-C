@@ -87,9 +87,13 @@ live instances, same-named class and instance methods, a nil send and nested
 `self` dispatch. The provider's sibling class registers from the same archive
 member. A late-loaded dylib adds a class to the same runtime, and the consumer
 checks both class and instance sends through it. Both executables run after
-moving the install tree. The controls check a missing runtime at link and
-load, the prior GNUstep driver guard, a subclass, an instance ivar, a
-parameterized method, ARC, Apple runtime linking, and a wrong architecture.
+moving the install tree. The `stateless-super-v1` fixture covers inherited
+class and instance selectors, the most-derived override, and explicit
+`super` sends. Its static link places child metadata before base metadata.
+Its relocated dynamic link puts the strong base reference in a separate
+dylib. The controls check a missing runtime at link and load, the prior
+GNUstep driver guard, a subclass with an ivar, a stateful root, a parameterized
+method, ARC, Apple runtime linking, and a wrong architecture.
 
 The qualifier also compiles the current concrete collection and text service
 sources with the patched compiler and libc++. The existing map-count and text
@@ -107,9 +111,14 @@ An x86-64 replay built the modified driver and CodeGen translation units with
 the preview toolchain. They emitted arm64 Mach-O provider and plugin objects
 with startup initializers and owned runtime symbols. DWARF verified. The
 class method lowers its deferred result to `42`, and the same-named instance
-method returns `17`. The compiler diagnosed subclasses, instance ivars, and
+method returns `17`. The compiler diagnosed subclass ivars, root ivars, and
 parameterized methods. The allocation and lookup controls passed the separate
 native Linux C runtime replay with ASan and UBSan.
+The inheritance replay also emitted Mach-O startup records and the owned
+`super` lookup symbol, verified both objects' DWARF, and linked the child dylib
+with a strong dependency on the base dylib. The C runtime test exercised
+child-first registration, missing and cyclic ancestors, and an invalid super
+start under ASan and UBSan.
 
 Native execution evidence for this step is pending. The receipt has
 `support_truth: false`, and the release profile still requires SDK packaging,
@@ -127,17 +136,19 @@ preflight checks the matching Xcode headers and SDK runtime before configuration
 The experimental MRC entry points `objc3_darwin_allocate_v1` and
 `objc3_darwin_deallocate_v1` allocate and reclaim one ISA header with private
 registry bookkeeping. Allocation admits the exact registered class pointer
-and its stateless, zero-size compiler metadata. Dispatch recognizes only
-registered class objects and live instances. The owner keeps an instance live
+and its stateless, zero-size compiler metadata through the registered parent
+chain. Constructors may register child and parent metadata in either order.
+Name lookup, allocation, and dispatch require a complete acyclic chain.
+`objc3_darwin_lookup_super_v1` starts at the compiler-selected ancestor and
+keeps the original receiver. The owner keeps an instance live
 for the entire send, including nested sends and calls from other threads.
 Deallocation removes the live registry entry and releases the allocation.
 
-Superclass support needs dependency-ordered registration across images,
-inherited lookup, and explicit super dispatch. A stateful ABI must resolve
-the compiler's relative instance-size and ivar-offset records, validate
-alignment and overflow, and initialize the resulting storage before it becomes
-visible to a sender. Native controls need separately linked subclasses,
-cross-image parent registration, and invalid or stale layout records.
+A stateful ABI must resolve the compiler's relative instance-size and
+ivar-offset records, validate alignment and overflow, and initialize the
+resulting storage before it becomes visible to a sender. Native controls need
+invalid or stale layout records, inherited offsets, and field inspection in
+debug information.
 
 ARC requires retain and release operations with a defined finalization path,
 weak-slot synchronization, autorelease pools, and exception-aware cleanup.
@@ -159,8 +170,8 @@ that cross image and thread boundaries.
   gates. The released driver rejects GNUstep 2.2 for Mach-O. Its GNUstep
   registration emits ELF section boundaries, COMDAT groups and an ELF
   constructor section. The separate experimental compiler handles stateless root
-  classes and instances with ordinary no-argument `int` methods. Inheritance,
-  instance storage, properties, protocols, categories, ARC, exceptions and
+  classes, subclasses, and instances with ordinary no-argument `int` methods.
+  Instance storage, properties, protocols, categories, ARC, exceptions and
   cross-image runtime lifecycle still need a design and native workloads. Inspect the linked
   dependency closure for accidental Apple ObjC2 use. [Driver guard](https://github.com/llvm/llvm-project/blob/392dfff97d29b59d77e5cac6d4b6ef2585fe7117/clang/lib/Driver/ToolChains/Clang.cpp#L8628)
   · [Registration lowering](https://github.com/llvm/llvm-project/blob/392dfff97d29b59d77e5cac6d4b6ef2585fe7117/clang/lib/CodeGen/CGObjCGNU.cpp#L1518)

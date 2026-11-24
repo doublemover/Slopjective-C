@@ -1,5 +1,5 @@
 diff --git a/clang/lib/CodeGen/CGObjCGNU.cpp b/clang/lib/CodeGen/CGObjCGNU.cpp
-index dc61dffce..9c9ad5ef5 100644
+index dc61dffce..dae44c071 100644
 --- a/clang/lib/CodeGen/CGObjCGNU.cpp
 +++ b/clang/lib/CodeGen/CGObjCGNU.cpp
 @@ -48,6 +48,29 @@ using namespace CodeGen;
@@ -50,7 +50,19 @@ index dc61dffce..9c9ad5ef5 100644
  
      auto Str = SL->getString();
      CharUnits Align = CGM.getPointerAlign();
-@@ -1483,6 +1510,8 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -1247,6 +1274,11 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+         CGObjCGNU::EnforceType(Builder, ObjCSuper.emitRawPointer(CGF),
+                                PtrToObjCSuperTy),
+         cmd};
++    if (isObjC3DarwinRegistration(CGM)) {
++      auto *Type = llvm::FunctionType::get(IMPTy, {PtrToObjCSuperTy, SelectorTy}, false);
++      auto Lookup = CGM.CreateRuntimeFunction(Type, "objc3_darwin_lookup_super_v1");
++      return CGF.EmitNounwindRuntimeCall(Lookup, lookupArgs);
++    }
+     return CGF.EmitNounwindRuntimeCall(MsgLookupSuperFn, lookupArgs);
+   }
+ 
+@@ -1483,6 +1515,8 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
      return MangledTypes;
    }
    llvm::Constant  *GetTypeString(llvm::StringRef TypeEncoding) {
@@ -59,7 +71,7 @@ index dc61dffce..9c9ad5ef5 100644
      if (TypeEncoding.empty())
        return NULLPtr;
      std::string MangledTypes =
-@@ -1509,14 +1538,18 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -1509,14 +1543,18 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
        return GV;
      ConstantInitBuilder builder(CGM);
      auto SelBuilder = builder.beginStruct();
@@ -82,7 +94,7 @@ index dc61dffce..9c9ad5ef5 100644
      return GV;
    }
    llvm::StructType *emptyStruct = nullptr;
-@@ -1565,7 +1598,53 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -1565,7 +1603,53 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
    CatchTypeInfo getCatchAllTypeInfo() override {
      return CGM.getCXXABI().getCatchAllTypeInfo();
    }
@@ -136,19 +148,19 @@ index dc61dffce..9c9ad5ef5 100644
      // A COFF translation unit with no Objective-C metadata needs no runtime
      // registration. Emitting only zero-sized section sentinels creates an
      // entirely empty .objcrt section, which COFF linkers may discard even
-@@ -1773,6 +1852,25 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -1773,6 +1857,25 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
      // Get the class name
      ObjCInterfaceDecl *classDecl =
          const_cast<ObjCInterfaceDecl *>(OID->getClassInterface());
 +    bool DarwinRegistration = isObjC3DarwinRegistration(CGM);
 +    if (DarwinRegistration) {
-+      if (!classDecl->hasAttr<ObjCRootClassAttr>() || classDecl->getSuperClass() ||
++      if ((!classDecl->hasAttr<ObjCRootClassAttr>() && !classDecl->getSuperClass()) ||
 +          classDecl->all_declared_ivar_begin() ||
 +          classDecl->all_referenced_protocol_begin() !=
 +              classDecl->all_referenced_protocol_end() ||
 +          !classDecl->properties().empty() || !OID->property_impls().empty()) {
 +        CGM.Error(OID->getLocation(),
-+                  "experimental Darwin registration requires a stateless root class");
++                  "experimental Darwin registration requires a stateless class");
 +        return;
 +      }
 +      for (const auto *Method : OID->methods()) {
@@ -162,7 +174,7 @@ index dc61dffce..9c9ad5ef5 100644
      std::string className = classDecl->getObjCRuntimeNameAsString().str();
      auto *classNameConstant = MakeConstantString(className);
  
-@@ -2023,7 +2121,8 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -2023,7 +2126,8 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
          CGM.getPointerAlign(), false, llvm::GlobalValue::ExternalLinkage);
  
      auto *classRefSymbol = GetClassVar(className);
@@ -172,7 +184,7 @@ index dc61dffce..9c9ad5ef5 100644
      classRefSymbol->setInitializer(classStruct);
  
      if (IsCOFF) {
-@@ -2063,6 +2162,11 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -2063,6 +2167,11 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
      }
      assert(classStruct->getName() == SymbolForClass(className));
  
@@ -184,7 +196,27 @@ index dc61dffce..9c9ad5ef5 100644
      auto classInitRef = new llvm::GlobalVariable(TheModule,
          classStruct->getType(), false, llvm::GlobalValue::ExternalLinkage,
          classStruct, ManglePublicSymbol("OBJC_INIT_CLASS_") + className);
-@@ -2947,6 +3051,10 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
+@@ -2829,6 +2938,10 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
+                                     const CallArgList &CallArgs,
+                                     const ObjCMethodDecl *Method) {
+   CGBuilderTy &Builder = CGF.Builder;
++  bool DarwinRegistration = isObjC3DarwinRegistration(CGM);
++  if (DarwinRegistration && !isDarwinRegistrationMethod(Method))
++    CGM.Error(Method ? Method->getLocation() : SourceLocation(),
++              "experimental Darwin registration requires an ordinary no-argument int super message");
+   if (CGM.getLangOpts().getGC() == LangOptions::GCOnly) {
+     if (Sel == RetainSel || Sel == AutoreleaseSel) {
+       return RValue::get(EnforceType(Builder, Receiver,
+@@ -2839,7 +2952,7 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
+     }
+   }
+ 
+-  llvm::Value *cmd = GetSelector(CGF, Sel);
++  llvm::Value *cmd = DarwinRegistration && Method ? GetSelector(CGF, Method) : GetSelector(CGF, Sel);
+   CallArgList ActualArgs;
+ 
+   ActualArgs.add(RValue::get(EnforceType(Builder, Receiver, IdTy)), ASTIdTy);
+@@ -2947,6 +3060,10 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
                                 const ObjCInterfaceDecl *Class,
                                 const ObjCMethodDecl *Method) {
    CGBuilderTy &Builder = CGF.Builder;
@@ -195,7 +227,7 @@ index dc61dffce..9c9ad5ef5 100644
  
    // Strip out message sends to retain / release in GC mode
    if (CGM.getLangOpts().getGC() == LangOptions::GCOnly) {
-@@ -3097,6 +3205,8 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
+@@ -3097,6 +3214,8 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
    // If this is a direct method, just emit it here.
    if (isDirect)
      imp = GenerateMethod(Method, Method->getClassInterface());

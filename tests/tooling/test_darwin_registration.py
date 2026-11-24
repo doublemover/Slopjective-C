@@ -12,6 +12,7 @@ from scripts.objc3c_toolchain import darwin_registration
 def test_experimental_profile_binds_separate_patch_and_native_job_budget():
     profile, patch = darwin_registration.load_profile()
     assert profile['profile'] == 'macos-arm64-registration-experimental'
+    assert profile['inheritance'] == 'stateless-super-v1'
     assert patch.parent.name == 'experimental'
     assert patch.name not in (darwin_registration.ROOT / 'toolchains/llvm/patches/series').read_text()
     assert darwin_registration.compile_jobs(3, 7 * 1024 ** 3) == 2
@@ -136,6 +137,10 @@ static int instance_answer(const void *receiver, const struct selector_record *s
   return receiver && selector ? 17 : -1;
 }
 
+static int child_answer(const void *receiver, const struct selector_record *selector) {
+  return receiver && selector ? 19 : -1;
+}
+
 static const struct selector_record selector = {"answer", "i16@0:8"};
 static const struct selector_record same_signature = {"answer", "i16@0:8"};
 static const struct selector_record wrong_signature = {"answer", "i20@0:8i16"};
@@ -145,11 +150,19 @@ static const struct method_list class_methods = {
 static const struct method_list instance_methods = {
   NULL, 1, sizeof(struct method_record), {{instance_answer, &selector, "i16@0:8"}}
 };
+static const struct method_list child_methods = {
+  NULL, 1, sizeof(struct method_record), {{child_answer, &selector, "i16@0:8"}}
+};
 static const struct method_list wrong_methods = {
   NULL, 1, sizeof(struct method_record), {{instance_answer, &wrong_signature, "i20@0:8i16"}}
 };
 static const struct class_record meta = {.flags = 1, .methods = &class_methods};
 static const struct class_record root = {.isa = &meta, .name = "Root", .methods = &instance_methods};
+static const struct class_record child_meta = {.flags = 1};
+static const struct class_record child = {
+  .isa = &child_meta, .superclass = &root, .name = "Child", .methods = &child_methods
+};
+static const struct class_record cyclic = {.isa = &meta, .superclass = &cyclic, .name = "Cyclic"};
 static const struct class_record stateful = {.isa = &meta, .name = "Stateful", .instance_size = 8};
 static const struct class_record wrong_methods_class = {.isa = &meta, .name = "Wrong", .methods = &wrong_methods};
 
@@ -161,6 +174,15 @@ int main(int argc, char **argv) {
     objc3_darwin_lookup_v1(&root, &selector);
   if (strcmp(control, "allocate-unregistered") == 0)
     objc3_darwin_allocate_v1(&root);
+  const struct class_record *child_batch[] = {&child};
+  objc3_darwin_register_v1(child_batch, 1);
+  if (strcmp(control, "missing-superclass") == 0)
+    objc3_darwin_class_v1("Child");
+  if (strcmp(control, "cyclic-superclass") == 0) {
+    const struct class_record *bad[] = {&cyclic};
+    objc3_darwin_register_v1(bad, 1);
+    objc3_darwin_allocate_v1(&cyclic);
+  }
   const struct class_record *batch[] = {&root};
   objc3_darwin_register_v1(batch, 1);
   if (strcmp(control, "duplicate") == 0)
@@ -196,6 +218,22 @@ int main(int argc, char **argv) {
   objc3_darwin_deallocate_v1(NULL);
   if (instances || objc3_darwin_allocate_v1(NULL))
     return 7;
+  if (objc3_darwin_class_v1("Child") != &child ||
+      objc3_darwin_lookup_v1(&child, &selector)(&child, &selector) != 42)
+    return 8;
+  struct instance_record *derived = objc3_darwin_allocate_v1(&child);
+  if (!derived || objc3_darwin_lookup_v1(derived, &selector)(derived, &selector) != 19)
+    return 9;
+  const struct super_record instance_super = {derived, &root};
+  const struct super_record class_super = {&child, &meta};
+  if (strcmp(control, "wrong-super-start") == 0) {
+    const struct super_record wrong = {derived, &meta};
+    objc3_darwin_lookup_super_v1(&wrong, &selector);
+  }
+  if (objc3_darwin_lookup_super_v1(&instance_super, &selector)(derived, &selector) != 17 ||
+      objc3_darwin_lookup_super_v1(&class_super, &selector)(&child, &selector) != 42)
+    return 10;
+  objc3_darwin_deallocate_v1(derived);
   return 0;
 }
 ''')
@@ -206,11 +244,14 @@ int main(int argc, char **argv) {
     for name, diagnostic in (
         ('duplicate', 'duplicate class name'),
         ('unregistered', 'receiver has no registered class or live instance'),
-        ('allocate-unregistered', 'allocation requires a registered root class'),
+        ('allocate-unregistered', 'allocation requires a registered class'),
         ('deallocate-class', 'deallocation requires a live instance'),
-        ('stateful', 'invalid stateless root class metadata'),
+        ('stateful', 'invalid stateless class metadata'),
         ('wrong-method-table', 'invalid no-argument int method'),
         ('wrong-selector-type', 'method selector is missing'),
+        ('missing-superclass', 'class has an unregistered superclass'),
+        ('cyclic-superclass', 'class hierarchy has a cycle'),
+        ('wrong-super-start', 'super dispatch start is not an ancestor of the receiver'),
     ):
         result = subprocess.run([binary, name], capture_output=True, text=True)
         assert result.returncode == -signal.SIGABRT

@@ -4,5 +4,6 @@
   "target": "arm64-apple-macos15.0",
   "compiler_runtime_flag": "-fobjc-runtime=gnustep-2.99",
   "runtime_abi": "objc3-darwin-registration-v1",
-  "patch_sha256": "7b36f104aff478f817f2de7f57b2fa6b6c5679982e0eb1c8227424f8a65f1721"
+  "inheritance": "stateless-super-v1",
+  "patch_sha256": "ec93173c0ba0725a1a91a3481a54715534759127db3f179c252a16156ff49f3e"
 }
