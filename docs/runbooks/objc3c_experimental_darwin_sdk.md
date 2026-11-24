@@ -1,9 +1,12 @@
 # Experimental Objective-C 3 SDK on Apple Silicon
 
 The experimental SDK packages the patched Apple Silicon Clang driver and the
-private Objective-C 3 registration runtime. The profile covers stateless
-Objective-C root classes and no-argument `int` methods under manual reference
-counting. The package receipt carries `support_truth: false`. [Registration
+private Objective-C 3 registration runtime. The profile covers class, instance,
+and `super` dispatch for `int` methods with zero or one signed `int` argument.
+A root class can declare one fixed `int` field. The lifetime checks exercise
+manual allocation and deallocation as well as ARC strong references, zeroing
+weak references, and thread-local autorelease pools. The package receipt carries
+`support_truth: false`. [Registration
 profile](../../toolchains/llvm/experimental/darwin-registration.json)
 
 Run the producer on native Apple Silicon with macOS 15.0 or later, Xcode 16.4
@@ -33,7 +36,10 @@ inventory with file permissions and SHA-256 digests, compiler source and
 configuration identity, bootstrap identity, and the private runtime ABI. Its
 contents are the native Clang driver, `llvm-ar`, `llvm-dwarfdump`, Clang resource
 headers and arm64 builtins, both private runtime libraries, the registration
-example, and licenses. The selected Xcode and its SDK remain host prerequisites.
+and ARC examples, and licenses. The portable collections and text static
+library ships with three public headers under `include/objc3c/runtime` and a C++ example
+under `share/objc3c/examples/collections-text`. The selected Xcode and its SDK
+remain host prerequisites.
 
 ## Install and replay
 
@@ -60,10 +66,12 @@ python3 -B -m scripts.objc3c_toolchain.darwin_sdk qualify \
 uses the installed Clang driver and resource directory to compile the packaged
 source example. It checks Mach-O arm64 objects, the Darwin archive, DWARF, private
 runtime install names and relative load paths. It links and executes static and
-shared-runtime consumers, including a late-loaded fixture. It also checks that
-ARC with Objective-C exceptions, x86-64 compilation, and missing-runtime
-linking produce the expected diagnostics. Successful evidence lives in `qualification.json`, together with
-exact commands and native exit statuses.
+shared-runtime consumers, including a late-loaded fixture. An optimized ARC
+consumer confirms that dyld loads the owned runtime from the installed SDK.
+The installed C++ example exercises map replacement and Unicode scalar slice
+boundaries. ARC with Objective-C exceptions, x86-64 compilation, and
+missing-runtime linking produce the expected diagnostics. Successful evidence
+lives in `qualification.json`, with exact commands and native exit statuses.
 
 Local tests cover the archive format, relocation structure, manifest and content
 hashes, path admission, wrong-architecture files, and host prerequisites. The

@@ -17,16 +17,31 @@ on:
       - "scripts/objc3c_toolchain/darwin_evidence.py"
       - "scripts/objc3c_toolchain/darwin_registration.py"
       - "scripts/objc3c_toolchain/darwin_sdk.py"
+      - "scripts/objc3c_toolchain/darwin_sdk_arc.py"
+      - "scripts/objc3c_toolchain/darwin_sdk_portable_services.py"
       - "scripts/objc3c_toolchain/darwin_sdk_sanitizers.py"
       - "scripts/objc3c_toolchain_runtime/runtime-profile.json"
       - "scripts/objc3c_toolchain_runtime/verify_runtime_profile.py"
       - "native/objc3c/src/runtime/platform/darwin_registration.c"
+      - "native/objc3c/src/runtime/public/objc3_collections.h"
+      - "native/objc3c/src/runtime/public/objc3_stdlib_status.h"
+      - "native/objc3c/src/runtime/public/objc3_text.h"
+      - "native/objc3c/src/runtime/stdlib/collections_service.cpp"
+      - "native/objc3c/src/runtime/stdlib/opaque_service_storage.h"
+      - "native/objc3c/src/runtime/stdlib/stdlib_service_contract.h"
+      - "native/objc3c/src/runtime/stdlib/text_service.cpp"
+      - "native/objc3c/src/runtime/stdlib/text_utf8_decode.h"
+      - "native/objc3c/tests/stdlib_map_count_test.cpp"
+      - "native/objc3c/tests/text_scalar_boundary_test.cpp"
+      - "native/objc3c/tests/test_assertion_policy.h"
+      - "tests/clang_foundation/darwin_portable_services/**"
       - "tests/clang_foundation/darwin_registration/**"
       - "tests/clang_foundation/darwin_sanitizers/**"
       - "tests/tooling/test_darwin_bootstrap.py"
       - "tests/tooling/test_darwin_evidence.py"
       - "tests/tooling/test_darwin_registration.py"
       - "tests/tooling/test_darwin_sdk.py"
+      - "tests/tooling/test_darwin_sdk_portable_services.py"
       - "tests/tooling/test_darwin_sdk_sanitizers.py"
       - "toolchains/llvm/manifest.json"
       - "toolchains/llvm/experimental/**"
@@ -85,8 +100,22 @@ jobs:
           if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
             changes=$(git diff --name-only HEAD^1 HEAD -- toolchains/llvm/experimental \
               scripts/objc3c_toolchain/darwin_registration.py \
-              scripts/objc3c_toolchain/darwin_sdk.py tests/tooling/test_darwin_sdk.py \
+              scripts/objc3c_toolchain/darwin_sdk.py scripts/objc3c_toolchain/darwin_sdk_arc.py \
+              scripts/objc3c_toolchain/darwin_sdk_portable_services.py \
+              tests/tooling/test_darwin_sdk.py tests/tooling/test_darwin_sdk_portable_services.py \
+              tests/clang_foundation/darwin_portable_services \
               native/objc3c/src/runtime/platform/darwin_registration.c \
+              native/objc3c/src/runtime/public/objc3_collections.h \
+              native/objc3c/src/runtime/public/objc3_stdlib_status.h \
+              native/objc3c/src/runtime/public/objc3_text.h \
+              native/objc3c/src/runtime/stdlib/collections_service.cpp \
+              native/objc3c/src/runtime/stdlib/opaque_service_storage.h \
+              native/objc3c/src/runtime/stdlib/stdlib_service_contract.h \
+              native/objc3c/src/runtime/stdlib/text_service.cpp \
+              native/objc3c/src/runtime/stdlib/text_utf8_decode.h \
+              native/objc3c/tests/stdlib_map_count_test.cpp \
+              native/objc3c/tests/text_scalar_boundary_test.cpp \
+              native/objc3c/tests/test_assertion_policy.h \
               tests/clang_foundation/darwin_registration tests/tooling/test_darwin_registration.py)
             if [[ -n "$changes" ]]; then
               RUN_RUNTIME=true

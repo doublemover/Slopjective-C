@@ -9,11 +9,16 @@ import signal
 import tarfile
 
 from . import darwin_sdk_sanitizers as sanitizers
+from . import darwin_sdk_arc as sdk_arc
+from . import darwin_sdk_portable_services as services
 from .darwin_bootstrap import DEPLOYMENT_TARGET, ROOT, verify_macho
 from .darwin_registration import (
     NATIVE, PORTABLE_HEADERS, PORTABLE_SERVICES, RUNTIME, file_digest, load_profile, verify_fixed_layout_dwarf,
 )
-from .darwin_sdk import ARCHIVE_NAME, ARCHIVE_ROOT, PAYLOAD_SCHEMA, PROFILE, RECEIPT_SCHEMA, SDK_VERSION, WITNESS, XCODE
+from .darwin_sdk import (
+    ARCHIVE_NAME, ARCHIVE_ROOT, DEMO, LIBRARY, PAYLOAD_SCHEMA, PROFILE, RECEIPT_SCHEMA, SDK_VERSION,
+    SYSTEM, WITNESS, XCODE,
+)
 from .package import MANIFEST, _digest
 
 RECEIPT_BYTES = 16 * 1024**2
@@ -169,7 +174,12 @@ def registration(root: Path, first: dict, revision: str, *, require_arc: bool) -
             for linkage in ('static', 'dynamic'):
                 binary = name + '-' + linkage
                 executable_witness(path, 'Relocated install/bin/' + binary, route[linkage],
-                                   labels.get(binary + '-native', []), 'owned Objective-C 3 Darwin ARC: PASS')
+                                   labels.get(binary + '-native', []), sdk_arc.WITNESS)
+    if require_arc:
+        for route in ('static', 'dynamic', 'arc'):
+            binary = 'int-method-' + route
+            executable_witness(path, 'Relocated install/bin/' + binary, report['artifacts']['bin/' + binary],
+                               labels.get(binary + '-native', []), 'owned Objective-C 3 Darwin int-argument methods: PASS')
     portable = report['portable_services']
     inputs = {NATIVE / name for name in PORTABLE_HEADERS}
     for service, fixture in PORTABLE_SERVICES.values():
@@ -251,6 +261,63 @@ def sanitizer_consumers(path: Path, manifest: dict, packed: dict, qualified: dic
             raise ValueError(f'Darwin SDK {mode} did not execute with its exact admitted runtime')
 
 
+def installed_arc(path: Path, manifest: dict, qualified: dict) -> None:
+    arc = qualified['arc']
+    installed = qualified['installation']
+    prefix, resource = Path(installed['prefix']), manifest['resource_dir']
+    runtime = f'lib/{LIBRARY}.dylib'
+    inputs = [*(f'{DEMO}/{name}' for name in sdk_arc.SOURCES), 'bin/clang', 'bin/llvm-dwarfdump',
+              f'{resource}/include/stddef.h', f'{resource}/lib/darwin/libclang_rt.osx.a', runtime]
+    loaded = {'path': str(prefix / runtime), 'sha256': manifest['files'][runtime]['sha256']}
+    if (arc['schema'] != sdk_arc.SCHEMA or arc['status'] != 'PASS' or arc['support_truth'] is not False or
+            arc['optimization'] != 'O2' or arc['seal_sha256'] != installed['seal_sha256'] or
+            arc['inputs'] != {name: manifest['files'][name]['sha256'] for name in inputs} or
+            arc['loaded_runtime'] != loaded):
+        raise ValueError('Darwin archived ARC consumer differs from the installed SDK inputs')
+    directory = 'qualification/' + sdk_arc.DIRECTORY + '/'
+    for name, kind in (('arc.o', 'object'), ('arc-threads.o', 'object'), ('arc', 'executable')):
+        require_macho(path, directory + name, arc['artifacts'][name], kind)
+    executable = arc['artifacts']['arc']
+    loaded_paths = [SYSTEM, '@rpath/' + LIBRARY + '.dylib']
+    reported_paths = [loaded['path']]
+    if loaded['path'].startswith(('/private/var/', '/private/tmp/')):
+        reported_paths.append(loaded['path'].removeprefix('/private'))
+    if (sorted(executable['load_paths']) != sorted(loaded_paths) or
+            not sdk_arc.REQUIRED_IMPORTS <= set(executable['imports']) or
+            file_digest(retained(path, directory + 'arc-threads.d')) != arc['thread_dependencies']['sha256'] or
+            not any(row['argv'] == [executable['path']] and row['exit_status'] == 0 and
+                    row.get('dyld_print_libraries') is True and row['stdout'].strip() == sdk_arc.WITNESS and
+                    any(line.endswith(' ' + candidate) for line in row['stderr'].splitlines()
+                        for candidate in reported_paths)
+                    for row in qualified['commands'])):
+        raise ValueError('Darwin archived ARC consumer did not execute with the installed runtime')
+
+
+def installed_services(path: Path, manifest: dict, runtime: dict, packed: dict, qualified: dict) -> None:
+    payload, report = manifest[services.KEY], qualified[services.KEY]
+    baseline = runtime['portable_services']
+    build_inputs = {**baseline['inputs'], services.EXAMPLE_SOURCE: file_digest(ROOT / services.EXAMPLE_SOURCE)}
+    if (report['schema'] != services.SCHEMA or report['status'] != 'PASS' or
+            report['support_truth'] is not False or report['abi'] != services.ABI or
+            packed[services.KEY] != payload or qualified['installation'][services.KEY] != payload or
+            payload['build_inputs'] != build_inputs or
+            services.manifest_files(manifest) != report['inputs'].keys() or report['inputs'] != payload['files']):
+        raise ValueError('Darwin installed collections and text evidence differs from the sealed payload')
+    originals = baseline['suites']
+    for name, label in services.MEMBERS.items():
+        require_macho(path.parent, 'build/' + name, originals[label]['objects'][name], 'object')
+        if payload['objects'][name] != originals[label]['objects'][name]['sha256']:
+            raise ValueError('Darwin portable archive differs from the native service build')
+    directory = 'qualification/' + services.DIRECTORY + '/'
+    require_macho(path, directory + 'example.o', report['object'], 'object')
+    require_macho(path, directory + 'example', report['executable'], 'executable')
+    if (file_digest(retained(path, directory + 'example.cpp')) != report['inputs'][services.EXAMPLE] or
+            not any(row['argv'] == [report['executable']['path']] and row['exit_status'] == 0 and
+                    not row['stderr'] and row['stdout'].strip() == services.WITNESS
+                    for row in qualified['commands'])):
+        raise ValueError('Darwin installed collections and text example did not execute')
+
+
 def package(root: Path, runtime: dict, revision: str, *, require_sanitizers: bool) -> dict:
     path = root / 'runtime/sdk'
     packed = info(path, 'package/package.json')
@@ -287,6 +354,8 @@ def package(root: Path, runtime: dict, revision: str, *, require_sanitizers: boo
                 for name, key in (('libobjc3darwin.a', 'libobjc3darwin.a'),
                                   ('libobjc3darwin.dylib', 'lib/libobjc3darwin.dylib')))):
         raise ValueError('Darwin SDK seal does not represent the executed compiler and runtime')
+    installed_arc(path, manifest, qualified)
+    installed_services(path, manifest, runtime, packed, qualified)
     sanitizer_consumers(path, manifest, packed, qualified, selected=require_sanitizers)
     consumer = 'qualification/Fresh native consumer/'
     for name, relative, kind in (

@@ -96,6 +96,7 @@ jobs:
           tests/tooling/test_darwin_evidence.py
           tests/tooling/test_darwin_registration.py
           tests/tooling/test_darwin_sdk.py
+          tests/tooling/test_darwin_sdk_portable_services.py
           tests/tooling/test_darwin_sdk_sanitizers.py
           tests/tooling/test_linux_archive_debugger_gate.py
           tests/tooling/test_stage_linux_release.py
