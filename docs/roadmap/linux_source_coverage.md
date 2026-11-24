@@ -136,6 +136,16 @@ matching LLVM profiles. Its receipt SHA-256 is
 `59c57390d98934f3ca4b1e796c7127aca266d9f86c41e5778a029d6c4bdfbd3f`.
 [Published runtime checks](https://github.com/doublemover/Slopjective-C/blob/8fe5c2fd89008d1c090a9355c11bdda01ceb9309/native/objc3c/src/runtime/stdlib/generic_associative_service.cpp#L558)
 
+The eight runtime suites on each published host report the text service as
+`mapped-but-not-linked`. A local x86-64 run used the same instrumented text
+service object with the original and updated scalar boundary fixture. The
+byte-search past-end decision at `text_service.cpp:314:13–314:44` gained
+true/false hits from `[0, 0]` to `[1, 2]`. The added case checks an empty
+search at the exact byte end, output clearing on a past-end request, and a
+successful retry on the same text. The updated fixture also passed against
+the published x86-64 header and archive at `-O0` and `-O2`. Local receipt
+SHA-256 `851740285f2ff80e73fa3810cc90bc531def3ff65265530931e195bafe5e0b32`.
+
 Each published host retained one cold instrumented foundation build and eight
 first-party partitions. Component command totals add work across partitions.
 The partition wall time is the longest observation. Archive bytes include

@@ -325,6 +325,20 @@ int main() {
              text, face, sizeof(face) - 1, 0, &found, &scalar_index) ==
          OBJC3_STDLIB_V2_INVALID_UTF8);
 
+  std::uint64_t byte_index = 0;
+  assert(objc3_runtime_stdlib_text_v2_find_bytes(
+             text, nullptr, 0, sizeof(sample), &found, &byte_index) ==
+         OBJC3_STDLIB_V2_OK);
+  assert(found == 1 && byte_index == sizeof(sample));
+  assert(objc3_runtime_stdlib_text_v2_find_bytes(
+             text, nullptr, 0, sizeof(sample) + 1, &found, &byte_index) ==
+         OBJC3_STDLIB_V2_OUT_OF_BOUNDS);
+  assert(found == 0 && byte_index == 0);
+  assert(objc3_runtime_stdlib_text_v2_find_bytes(
+             text, "B", 1, sizeof(sample) - 1, &found, &byte_index) ==
+         OBJC3_STDLIB_V2_OK);
+  assert(found == 1 && byte_index == sizeof(sample) - 1);
+
   objc3_text_v2_t slice = nullptr;
   assert(objc3_runtime_stdlib_text_v2_slice_scalars(text, 1, 1, &slice) ==
          OBJC3_STDLIB_V2_OK);
