@@ -1,11 +1,22 @@
 import json
 from pathlib import Path
+import re
 import subprocess
 import sys
 
 import pytest
 
 from scripts.objc3c_toolchain.frontend_tests import qualify
+
+
+def mock_ctest(monkeypatch, rows):
+    def run(argv, *, stdout, stderr, timeout):
+        selected = re.compile(argv[-1]) if '-R' in argv else None
+        tests = [row for row in rows() if selected is None or selected.fullmatch(row['name'])]
+        stdout.write(json.dumps({'tests': tests}).encode())
+        return subprocess.CompletedProcess(argv, 0)
+
+    monkeypatch.setattr('scripts.objc3c_toolchain.ctest_discovery.subprocess.run', run)
 
 
 def fixture(tmp_path, monkeypatch):
@@ -16,10 +27,8 @@ def fixture(tmp_path, monkeypatch):
             {'name': 'objc3_second', 'target': 'objc3_second_test',
              'executable': str(build / 'objc3_second_test'), 'command_index': 0}]
     (build / 'frontend-test-targets.json').write_text(json.dumps({'tests': rows}))
-    monkeypatch.setattr('scripts.objc3c_toolchain.frontend_tests.subprocess.check_output',
-                        lambda *a, **kw: json.dumps({'tests': [
-                            {'name': r['name'], **({'command': [r['executable']]}
-                             if Path(r['executable']).exists() else {})} for r in rows]}))
+    mock_ctest(monkeypatch, lambda: [{'name': r['name'], **({'command': [r['executable']]}
+        if Path(r['executable']).exists() else {})} for r in rows])
     return build, rows
 
 
@@ -52,6 +61,9 @@ def test_focused_selection_keeps_full_inventory_and_runs_only_the_requested_vari
     result = qualify(build, tmp_path / 'proof', run, jobs=2, required_names=frozenset({'objc3_second'}))
     assert result['ctest_test_names'] == ['objc3_first', 'objc3_second']
     assert result['selected_ctest_names'] == ['objc3_second']
+    initial, owner = result['discovery']
+    assert initial['names'] == result['ctest_test_names'] and '-R' not in initial['argv']
+    assert owner['names'] == result['selected_ctest_names'] and owner['argv'][-2:] == ['-R', '^(objc3_second)$']
     assert calls == ['frontend-objc3_second-build', 'frontend-objc3_second-ctest']
 
 
@@ -153,15 +165,55 @@ def test_rebound_ctest_command_is_rejected_before_execution(tmp_path, monkeypatc
     build, rows = fixture(tmp_path, monkeypatch)
     rows[0]['command_index'] = position
     (build / 'frontend-test-targets.json').write_text(json.dumps({'tests': rows}))
-    monkeypatch.setattr('scripts.objc3c_toolchain.frontend_tests.subprocess.check_output',
-        lambda *a, **kw: json.dumps({'tests': [
-            {'name': row['name'], 'command': ['/foreign/program']} for row in rows]}))
+    mock_ctest(monkeypatch, lambda: [{'name': row['name'], 'command': ['/foreign/program']} for row in rows])
     def run(label, args):
         assert args[0] == 'cmake'
         Path(rows[0]['executable']).write_bytes(b'owned program')
     with pytest.raises(ValueError, match='command differs'):
         qualify(build, tmp_path / 'proof', run, jobs=2)
     assert Path(rows[0]['executable']).is_file()
+
+
+@pytest.mark.parametrize('fault', ('exit', 'timeout', 'oversize', 'malformed', 'duplicate'))
+def test_post_link_discovery_keeps_the_owned_binary_and_failed_command_evidence(tmp_path, monkeypatch, fault):
+    build, rows = fixture(tmp_path, monkeypatch)
+    from scripts.objc3c_toolchain import ctest_discovery
+    ctest = subprocess.run
+
+    def discover(argv, *, stdout, stderr, timeout):
+        if '-R' not in argv:
+            return ctest(argv, stdout=stdout, stderr=stderr, timeout=timeout)
+        assert timeout == ctest_discovery.DISCOVERY_TIMEOUT
+        stderr.write(b'CTest owner discovery control\n')
+        if fault == 'timeout':
+            stdout.write(b'partial metadata')
+            raise subprocess.TimeoutExpired(argv, timeout)
+        if fault == 'duplicate':
+            stdout.write(b'{"tests":[{"name":"objc3_first"},{"name":"objc3_first"}]}')
+        elif fault == 'oversize':
+            stdout.write(b'x' * (ctest_discovery.MAX_TRANSCRIPT_BYTES + 1))
+        else:
+            stdout.write(b'not CTest JSON')
+        return subprocess.CompletedProcess(argv, 7 if fault == 'exit' else 0)
+
+    monkeypatch.setattr(ctest_discovery.subprocess, 'run', discover)
+
+    def run(label, args):
+        assert args[0] == 'cmake'
+        Path(rows[0]['executable']).write_bytes(b'keep owned binary')
+
+    output = tmp_path / 'proof'
+    with pytest.raises(ValueError, match='CTest discovery'):
+        qualify(build, output, run, jobs=2)
+    report = json.loads((output / 'qualification.json').read_bytes())
+    assert report['status'] == 'FAIL' and not report['tests'] and not report['reclaimed']
+    assert Path(rows[0]['executable']).read_bytes() == b'keep owned binary'
+    initial, failed = report['discovery']
+    assert initial['status'] == 'PASS' and failed['status'] == 'FAIL'
+    assert failed['phase'] == 'ownership' and failed['target'] == rows[0]['target']
+    assert failed['stderr'] == 'CTest owner discovery control\n'
+    assert 0 < len(failed['stdout']) <= ctest_discovery.MAX_TRANSCRIPT_BYTES
+    assert failed['exit_code'] == {'exit': 7, 'timeout': None}.get(fault, 0)
 
 
 def configure_real_project(tmp_path, *, unregistered=False):

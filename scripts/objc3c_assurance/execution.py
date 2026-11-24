@@ -1,31 +1,25 @@
 """Checked native commands and discovered CTest execution records."""
 from __future__ import annotations
 
-import json
 import math
 from pathlib import Path
-import subprocess
 import sys
 import time
 
 from scripts.objc3c_toolchain.binary_packages import write_json
+from scripts.objc3c_toolchain.ctest_discovery import discover
 from scripts.objc3c_toolchain.llvm_ir_execution import command as bounded_command
 from .evidence import junit
 
 
-def ctest_inventory(build: Path) -> set[str]:
-    tests = json.loads(subprocess.check_output(
-        ['ctest', '--test-dir', str(build), '--show-only=json-v1'], text=True))['tests']
-    names = [test['name'] for test in tests]
-    if not names or len(names) != len(set(names)):
-        raise ValueError('CTest discovery is empty or has duplicate names')
-    return set(names)
+def require_label(label: str) -> None:
+    if not label or '/' in label or '\\' in label or label in ('.', '..'):
+        raise ValueError('command log must belong to its active native suite')
 
 
 def checked_command(label, argv, *, repo: Path, environment: dict, directory: Path, records: list,
                     timeout: float = 1800):
-    if not label or '/' in label or '\\' in label or label in ('.', '..'):
-        raise ValueError('command log must belong to its active native suite')
+    require_label(label)
     argv = list(map(str, argv))
     if (not argv or type(timeout) not in (int, float) or not math.isfinite(timeout) or timeout <= 0):
         raise ValueError('native command requires an executable and a finite positive timeout')
@@ -56,11 +50,21 @@ def checked_command(label, argv, *, repo: Path, environment: dict, directory: Pa
 
 
 def execute_ctest(build: Path, label: str, directory: Path, command) -> list[dict]:
-    names = ctest_inventory(build)
-    write_json(directory / (label + '-inventory.json'), sorted(names))
+    require_label(label)
+    discovery = directory / (label + '-discovery.json')
+    inventory = directory / (label + '-inventory.json')
+    result = directory / (label + '.xml')
+    if any(path.exists() or path.is_symlink() for path in (discovery, inventory, result, directory / (label + '.log'))):
+        raise ValueError('native CTest requires fresh discovery and execution evidence: ' + label)
+    receipt = {}
+    try:
+        names = set(discover(build, receipt))
+    finally:
+        write_json(discovery, receipt)
+    write_json(inventory, sorted(names))
     command(label, ['ctest', '--test-dir', build, '--no-tests=error',
                     '--output-on-failure', '--timeout', '120'])
-    return junit(directory / (label + '.xml'), expected=names)
+    return junit(result, expected=names)
 
 
 def execute_suites(suites: list[dict], *, output: Path, report: dict, execute, save,

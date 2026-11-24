@@ -5,8 +5,8 @@ import hashlib
 import json
 from pathlib import Path
 import re
-import subprocess
 
+from .ctest_discovery import discover
 from .sdk_example import write_json
 
 
@@ -15,18 +15,17 @@ def qualify(build: Path, output: Path, run, *, jobs: int,
     """Build, execute and reclaim each owned test; retain failed outputs."""
     build = build.resolve(strict=True)
     report = {'status': 'running', 'schema': 'objc3c.frontend-serial-ctest.v2',
-              'tests': [], 'reclaimed': [], 'ctest_test_names': [], 'failures': []}
+              'tests': [], 'reclaimed': [], 'ctest_test_names': [], 'failures': [], 'discovery': []}
     output.mkdir(parents=True, exist_ok=True)
     receipt = output / 'qualification.json'
     write_json(receipt, report)
     try:
         plan = json.loads((build / 'frontend-test-targets.json').read_text())
-        metadata = json.loads(subprocess.check_output(
-            ['ctest', '--test-dir', str(build), '--show-only=json-v1'], text=True))
-        names = [test['name'] for test in metadata['tests']]
+        initial = {'phase': 'inventory'}
+        report['discovery'].append(initial)
+        names = list(discover(build, initial))
         rows = plan.get('tests', [])
-        if (not names or len(names) != len(set(names)) or
-                len(rows) != len(names) or {row['name'] for row in rows} != set(names)):
+        if len(rows) != len(names) or {row['name'] for row in rows} != set(names):
             raise ValueError('frontend target manifest does not match the CTest inventory')
         if required_names is not None and (not required_names or not required_names <= set(names)):
             raise ValueError('frontend selection is empty or outside the configured CTest inventory')
@@ -68,9 +67,9 @@ def qualify(build: Path, output: Path, run, *, jobs: int,
             # CTest exposes the actual command once the executable exists.
             # Check aliases against that command instead of guessing a target
             # from each test's profile-specific name.
-            commands = {test['name']: test.get('command', []) for test in json.loads(
-                subprocess.check_output(['ctest', '--test-dir', str(build),
-                                         '--show-only=json-v1'], text=True))['tests']}
+            owner_discovery = {'phase': 'ownership', 'target': target}
+            report['discovery'].append(owner_discovery)
+            commands = discover(build, owner_discovery, selected=tuple(row['name'] for row in variants))
             for row in variants:
                 command = commands.get(row['name'], [])
                 position = row['command_index']

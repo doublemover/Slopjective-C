@@ -72,9 +72,15 @@ The stable source surface uses existing owners:
   Test XML from those same commands.
 - Native runtime CMake tests compile emitted Objective-C/Objective-C++ and execute
   against the pinned runtime. CTest discovery must match JUnit execution exactly.
-- The frontend owner reconciles its generated manifest with CTest, builds and
-  executes each registration serially, hashes the binary, and reclaims successful
-  test executables. Every selected registration also needs passing JUnit evidence.
+  The runner checks that the inventory, log, and JUnit paths are fresh before
+  writing discovery evidence.
+- The frontend owner reconciles its generated manifest with the full CTest
+  inventory. After linking each owned binary, it rediscovers the exact selected
+  registrations for that binary and checks their commands before execution.
+  Discovery records its command, bounded output, elapsed time, and outcome.
+  The owner hashes the binary, reclaims successful test executables, and keeps
+  the executable and diagnostics on discovery or test failure. Each selected
+  registration needs passing JUnit evidence.
 - Installed source witnesses build and run O0/O2 applications, PCH consumers,
   embedding and debugger examples outside the checkout. This is an installed
   development stage, not a newly qualified release archive.

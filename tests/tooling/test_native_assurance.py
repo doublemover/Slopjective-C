@@ -1033,6 +1033,24 @@ def test_real_native_commands_and_ctest_fail_closed(tmp_path, fault):
     else:
         with pytest.raises(ValueError):
             execute_ctest(build, 'actual', output, command)
+    discovery = json.loads((output / 'actual-discovery.json').read_bytes())
+    assert discovery['status'] == ('FAIL' if fault == 'empty' else 'PASS')
+    assert discovery['argv'] == ['ctest', '--test-dir', str(build), '--show-only=json-v1']
+    assert discovery['stdout']
+
+
+def test_runtime_ctest_refuses_to_mix_a_new_inventory_with_old_junit(tmp_path):
+    output = tmp_path / 'evidence'
+    output.mkdir()
+    inventory = output / 'runtime-ctest-inventory.json'
+    result = output / 'runtime-ctest.xml'
+    inventory.write_text('["stale-witness"]\n')
+    result.write_bytes(b'<testsuite><testcase name="stale-witness"/></testsuite>')
+    prior = {path.name: path.read_bytes() for path in output.iterdir()}
+    with pytest.raises(ValueError, match='fresh discovery and execution evidence'):
+        execute_ctest(tmp_path / 'unavailable-build', 'runtime-ctest', output,
+                      lambda *_: pytest.fail('stale evidence must be rejected before execution'))
+    assert {path.name: path.read_bytes() for path in output.iterdir()} == prior
 
 
 @pytest.mark.parametrize('fault', ['missing-cost', 'changed-cost', 'false-decision', 'false-timing'])
