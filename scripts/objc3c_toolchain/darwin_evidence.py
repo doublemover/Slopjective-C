@@ -79,7 +79,7 @@ def bootstrap(root: Path, revision: str) -> dict:
     return report
 
 
-def registration(root: Path, first: dict, revision: str) -> dict:
+def registration(root: Path, first: dict, revision: str, *, require_arc: bool) -> dict:
     path = root / 'runtime'
     report = info(path, 'report.json')
     profile, _ = load_profile()
@@ -133,7 +133,7 @@ def registration(root: Path, first: dict, revision: str) -> dict:
         if not {'@rpath/libinheritance-base.dylib', '@rpath/libobjc3darwin.dylib'} <= set(
                 report['artifacts']['lib/libinheritance-child.dylib']['load_paths']):
             raise ValueError('Darwin inheritance omitted the strong parent and owned runtime dependencies')
-    if profile.get('arc') == 'stateless-owned-reference-v1':
+    if require_arc or profile.get('arc') == 'stateless-owned-reference-v1':
         arc = report['arc']
         if arc['status'] != 'PASS' or set(arc['routes']) != {'O0', 'O2'}:
             raise ValueError('Darwin ARC omitted a required optimization route')
@@ -219,7 +219,7 @@ def verify(root: Path, revision: str, *, outcome: str, mode: str) -> dict:
         raise ValueError('Darwin producer did not complete successfully for an exact source revision')
     root = root.resolve(strict=True)
     first = bootstrap(root, revision)
-    runtime = registration(root, first, revision) if mode != 'bootstrap' else None
+    runtime = registration(root, first, revision, require_arc=mode == 'package') if mode != 'bootstrap' else None
     packed = package(root, runtime, revision) if mode == 'package' else None
     result = {'status': 'PASS', 'revision': revision, 'mode': mode, 'platform': first['platform_identity'],
               'support_truth': False, 'bootstrap_sha256': file_digest(root / 'result/report.json')}
