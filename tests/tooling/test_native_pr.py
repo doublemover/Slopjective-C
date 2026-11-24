@@ -171,6 +171,9 @@ def test_pr_foundation_requires_exact_sealed_arch_and_configuration(tmp_path, mo
     (['toolchains/llvm/cmake/ObjC3LLVMCache.cmake'], False),
     (['toolchains/llvm/cmake/ObjC3LLVMCache.cmake', 'scripts/objc3c_toolchain/install_sdk.py'], True),
     (['tests/clang_foundation/installed_sdk/carrier-record-main.m'], True),
+    (['scripts/objc3c_assurance/preview_download.py'], True),
+    (['scripts/objc3c_toolchain/release_install.py'], True),
+    (['.github/actions/linux-preview-archive-cache/action.yml'], True),
 ])
 def test_install_witness_remains_selected_when_llvm_rebuilds(paths, expected):
     assert pr_native.needs_install_witness({'changed_paths': paths}) is expected
@@ -190,7 +193,9 @@ def test_frontend_probes_require_a_known_tooling_only_delta(paths, focused):
 
 
 @pytest.mark.parametrize('defect', [None, 'skipped', 'cancelled', 'lost-artifact', 'wrong-sha',
-                                   'wrong-partition', 'unexpected-skip', 'changed-install-log'])
+                                   'wrong-partition', 'unexpected-skip', 'changed-install-log',
+                                   'wrong-install-output', 'missing-acquisition', 'wrong-cache-digest',
+                                   'wrong-initial-identity', 'reused-initial-install', 'no-relocated-reuse'])
 def test_terminal_gate_reconciles_independent_execution_evidence(checkout, monkeypatch, defect):
     repo, commit = checkout
     revision = commit('scripts/objc3c_toolchain/install_sdk.py')
@@ -210,12 +215,20 @@ def test_terminal_gate_reconciles_independent_execution_evidence(checkout, monke
     monkeypatch.setattr(pr_native, 'planned_development_identity', lambda repo: {
         key: foundation[name] for name, key in pr_native.FOUNDATION_FIELDS.items()})
     log = evidence / 'install-witness.log'
-    log.write_text('native program executed\n')
-    write(evidence / 'preview-install.json', {'status': 'PASS', 'activated': True,
-        'seal_sha256': RELEASE['seal_sha256'], 'cost': {'prefix_reused': True,
+    log.write_bytes(b'unrelated output\n' if defect == 'wrong-install-output' else preview_download.WITNESS_OUTPUT)
+    cost = {'schema': 'objc3c.sdk-install-cost.v1', 'seal_sha256': RELEASE['seal_sha256'],
             'source_build_id': RELEASE['source_build_id'], 'archive_bytes': RELEASE['bytes'],
-            'archive_sha256': RELEASE['sha256']}, 'witness': {'source': 'native/main.objc3',
-            'status': 'PASS', 'log_sha256': artifact(evidence, log)['sha256']}})
+            'archive_sha256': RELEASE['sha256']}
+    initial = {**cost, 'prefix_reused': defect == 'reused-initial-install'}
+    if defect == 'wrong-initial-identity':
+        initial['source_build_id'] = 'different-build'
+    acquisition = {'source': 'cache', 'bytes': RELEASE['bytes'], 'elapsed_seconds': 0.05,
+                   'sha256': '9'*64 if defect == 'wrong-cache-digest' else RELEASE['sha256']}
+    write(evidence / 'preview-install.json', {'status': 'PASS', 'activated': True,
+        'seal_sha256': RELEASE['seal_sha256'], 'cost': {**cost, 'prefix_reused': defect != 'no-relocated-reuse'},
+        'archive_acquisition': {} if defect == 'missing-acquisition' else acquisition,
+        'witness': {'source': 'native/main.objc3', 'status': 'PASS',
+                    'log_sha256': artifact(evidence, log)['sha256'], 'initial_install_cost': initial}})
     write(evidence / 'checked/result.json', {'schema': pr_native.SCHEMA, 'status': 'PASS',
         'classification': 'native', 'revision': revision, 'plan_sha256': plan['sha256'],
         'foundation': 'verified-release', 'foundation_sdk': foundation, 'suites': ['runtime', 'frontend'],

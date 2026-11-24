@@ -16,6 +16,7 @@ from scripts.objc3c_toolchain.release_install import published_archive
 from .evidence import digest
 
 DOWNLOADS = 'https://github.com/doublemover/Slopjective-C/releases/download'
+WITNESS_OUTPUT = b'native Linux application\n'
 
 
 def download_archive(path: Path, tag: str, record: dict) -> None:
@@ -58,13 +59,15 @@ def install_preview(manifest: Path, directory: Path, *, witness_log: Path | None
     identity = {'expected_seal_sha256': record['seal_sha256'],
                 'expected_source_build_id': record['source_build_id']}
     directory.mkdir(parents=True, exist_ok=True)
+    destination = directory / 'sdk'
+    initial = directory / 'initial SDK' if witness_log else destination
+    if witness_log and any(path.exists() or path.is_symlink() for path in (initial, destination)):
+        raise ValueError('preview relocation witness requires a fresh installation directory')
     with tempfile.TemporaryDirectory(prefix='preview-download-', dir=directory) as scratch:
         started = time.monotonic()
         archive, acquisition = acquire_archive(Path(scratch), tag, record, archive_cache)
         archive_acquisition = {'source': acquisition, 'sha256': record['sha256'],
                                'bytes': record['bytes'], 'elapsed_seconds': time.monotonic() - started}
-        destination = directory / 'sdk'
-        initial = directory / 'initial SDK' if witness_log else destination
         result = install(archive, record['sha256'], initial, **identity)
         if (result['seal_sha256'] != record['seal_sha256'] or
                 result['cost']['source_build_id'] != record['source_build_id']):
@@ -82,9 +85,11 @@ def install_preview(manifest: Path, directory: Path, *, witness_log: Path | None
             environment = {key: value for key, value in os.environ.items() if key not in (
                 'LD_LIBRARY_PATH', 'LD_PRELOAD', 'OBJC3C_SDK_ROOT', 'OBJC3C_CLANG_FOUNDATION_ROOT')}
             with witness_log.open('w') as log:
-                for command in ([root / 'bin/objc3c', source, '-O2', '-g', '-o', application], [application]):
+                for command in ([root / 'bin/objc3c', source, '-O2', '-g', '-Werror', '-o', application], [application]):
                     subprocess.run(command, check=True, env=environment, stdout=log,
                                    stderr=subprocess.STDOUT, timeout=120)
+            if witness_log.read_bytes() != WITNESS_OUTPUT:
+                raise ValueError('relocated preview application produced unexpected output')
             result = {**relocated, 'witness': {'status': 'PASS', 'source': 'native/main.objc3',
                       'log_sha256': digest(witness_log), 'initial_install_cost': result['cost']}}
     return {**result, 'archive_acquisition': archive_acquisition}

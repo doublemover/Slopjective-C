@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 import re
 
@@ -13,6 +14,7 @@ from scripts.objc3c_toolchain.linux_host import native_linux_host, native_target
 from scripts.objc3c_toolchain.package import verify_sdk
 from .evidence import aggregate, artifact
 from .plan import PACKAGE, from_checkout, git, prose
+from .preview_download import WITNESS_OUTPUT
 from .runner import run
 
 FOUNDATION_FIELDS = {
@@ -24,6 +26,9 @@ FOUNDATION_FIELDS = {
 SOURCE_SUITES = ('runtime', 'frontend')
 SCHEMA = 'objc3c.native-pr.v1'
 TOOLING_PATHS = ('.github/', 'scripts/objc3c_assurance/')
+PREVIEW_INSTALL_PATHS = ('scripts/objc3c_assurance/preview_download.py',
+                         'scripts/objc3c_toolchain/release_install.py',
+                         '.github/actions/linux-preview-archive-cache/')
 FRONTEND_WITNESSES = frozenset((
     'objc3_borrowed_pointers', 'objc3_c_inline_provider', 'objc3_carrier_service',
     'objc3_compile_session', 'objc3_diagnostic_cli', 'objc3_interface_codec',
@@ -32,7 +37,7 @@ FRONTEND_WITNESSES = frozenset((
 
 def needs_install_witness(plan: dict) -> bool:
     paths = plan['changed_paths']
-    return not paths or any(path.startswith(PACKAGE) for path in paths)
+    return not paths or any(path.startswith(PACKAGE + PREVIEW_INSTALL_PATHS) for path in paths)
 
 
 def frontend_selection(plan: dict) -> frozenset[str] | None:
@@ -55,6 +60,13 @@ def matching_foundation(repo: Path, plan: dict, sdk: Path | None) -> dict | None
         return None
     return {**{field: installed[field] for field in FOUNDATION_FIELDS},
             'seal_sha256': installed['seal_sha256'], 'target': installed['target']}
+
+
+def matching_install_cost(cost: dict, release: dict) -> bool:
+    return (cost.get('schema') == 'objc3c.sdk-install-cost.v1' and
+            cost.get('seal_sha256') == release['seal_sha256'] and
+            cost.get('source_build_id') == release['source_build_id'] and
+            cost.get('archive_sha256') == release['sha256'] and cost.get('archive_bytes') == release['bytes'])
 
 
 def execute(repo: Path, output: Path, *, head: str, base: str, tested: str,
@@ -135,17 +147,24 @@ def verify(repo: Path, evidence: Path, *, head: str, base: str, tested: str, exe
         manifest = json.loads(git(repo, 'show', f'{base}:docs/releases/preview-manifest.json'))
         released = manifest['archives'][native_linux_host()]
         installation = read('preview-install.json')
-        cost = installation['cost']
+        cost = installation.get('cost', {})
+        acquisition = installation.get('archive_acquisition', {})
+        elapsed = acquisition.get('elapsed_seconds')
         if (installation.get('status') != 'PASS' or installation.get('activated') is not True or
                 installation.get('seal_sha256') != released['seal_sha256'] or
-                cost.get('source_build_id') != released['source_build_id'] or
-                cost.get('archive_sha256') != released['sha256'] or cost.get('archive_bytes') != released['bytes']):
+                not matching_install_cost(cost, released) or acquisition.get('sha256') != released['sha256'] or
+                acquisition.get('bytes') != released['bytes'] or acquisition.get('source') not in ('cache', 'download') or
+                type(elapsed) is not float or not math.isfinite(elapsed) or elapsed < 0):
             raise ValueError('native PR installation does not match the base release archive')
         if install_required:
-            witness = installation['witness']
-            log = artifact(evidence, evidence / 'install-witness.log')
+            witness = installation.get('witness', {})
+            initial = witness.get('initial_install_cost', {})
+            log_path = evidence / 'install-witness.log'
+            log = artifact(evidence, log_path)
             if (cost.get('prefix_reused') is not True or witness.get('status') != 'PASS' or
-                    witness.get('source') != 'native/main.objc3' or witness.get('log_sha256') != log['sha256']):
+                    not matching_install_cost(initial, released) or initial.get('prefix_reused') is not False or
+                    witness.get('source') != 'native/main.objc3' or witness.get('log_sha256') != log['sha256'] or
+                    log_path.read_bytes() != WITNESS_OUTPUT):
                 raise ValueError('native PR is missing its matching installed relocation witness')
 
     planned = planned_development_identity(repo)
