@@ -56,9 +56,9 @@ policy. Shards retain the complete catalogue and the exact disjoint assigned
 executions. Shards from the same partition share a test binary hash. Both
 producer and terminal verifier recompute this proof
 from JUnit. Passed output is bounded at 16 MiB so CTest’s default 1-KiB
-truncation cannot erase the execution inventory. Instrumented emitter shards
-each have a reviewed 900-second deadline; other selected tests retain 120
-seconds. Raw profiles remain bounded at 256 MiB per first-party suite.
+truncation cannot erase the execution inventory. Instrumented CTests use the
+hosted job deadline and respect explicit fixture timeout properties. Raw
+profiles remain bounded at 256 MiB per first-party suite.
 
 Five independent controls prove concurrent process profile isolation, an eligible zero-hit function and
 both ordinary/recovery decision arms, wrong-binary rejection, missing-profile

@@ -84,6 +84,26 @@ def test_native_command_can_run_under_the_job_deadline(tmp_path, monkeypatch):
     assert Path(records[0]['log']).read_text() == 'complete\n'
 
 
+@pytest.mark.skipif(shutil.which('ctest') is None, reason='requires native CTest')
+def test_native_ctest_preserves_only_registered_test_deadlines(tmp_path):
+    build, output = tmp_path / 'build', tmp_path / 'evidence'
+    build.mkdir()
+    output.mkdir()
+    (build / 'CTestTestfile.cmake').write_text(
+        'add_test(ordinary echo ordinary)\n'
+        'add_test(explicit echo explicit)\n'
+        'set_tests_properties(explicit PROPERTIES TIMEOUT 17)\n')
+
+    def command(label, argv):
+        checked_command(label, [*argv, '-V'], repo=tmp_path, environment=dict(os.environ),
+                        directory=output, records=[])
+
+    execute_ctest(build, 'registered', output, command)
+    log = (output / 'registered.log').read_text()
+    waits = [int(line.rsplit(' ', 1)[-1]) for line in log.splitlines() if 'Test timeout computed to be:' in line]
+    assert len(waits) == 2 and waits[0] > 360 * 60 and waits[1] == 17
+
+
 def test_native_package_uses_the_sdk_pipeline_install_without_requalifying_the_archive():
     result = {'status': 'PASS', 'archive_sha256': 'a' * 64,
               'installed': {'prefix': '/content-addressed/sdk'},

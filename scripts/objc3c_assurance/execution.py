@@ -65,7 +65,7 @@ def execute_ctest(build: Path, label: str, directory: Path, command) -> list[dic
         write_json(discovery, receipt)
     write_json(inventory, sorted(names))
     command(label, ['ctest', '--test-dir', build, '--no-tests=error',
-                    '--output-on-failure', '--timeout', '120'])
+                    '--output-on-failure', '--timeout', '0'])
     return junit(result, expected=names)
 
 

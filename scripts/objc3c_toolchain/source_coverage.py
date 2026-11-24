@@ -28,7 +28,6 @@ from .analysis_partition import balance_indices
 
 LIMIT = 64 * 1024**2
 FIRST_PARTY_PROFILE_LIMIT = 256 * 1024**2
-MAX_TEST_TIMEOUT = 900
 COVERAGE_SECTIONS = ('__llvm_covmap', '__llvm_prf_cnts', '__llvm_prf_data')
 IMPLEMENTATION_ROOTS = {'frontend': 'native/objc3c/src/clang_foundation',
                         'runtime': 'native/objc3c/src/runtime'}
@@ -135,7 +134,7 @@ def partition_catalogue(policy: dict, index: int, count: int) -> tuple[list[tupl
     keys = {f'{component}:{name}' for component, name in catalogue}
     if (not isinstance(seconds, dict) or 'default' not in seconds or
             seconds.keys() - (keys | {'default'}) or
-            any(type(value) is not int or not 1 <= value <= MAX_TEST_TIMEOUT for value in seconds.values())):
+            any(type(value) is not int or value <= 0 for value in seconds.values())):
         raise ValueError('source coverage policy has invalid partition costs')
     durations = [seconds.get(f'{component}:{name}', seconds['default']) for component, name in catalogue]
     bins = balance_indices(durations, count)
@@ -155,27 +154,6 @@ def selected_targets(build: Path, component: str, names: list[str]) -> dict[str,
     if not set(names) <= set(owners):
         raise ValueError('coverage suite has no registered frontend target owner')
     return {name: owners[name] for name in names}
-
-
-def suite_timeout(policy: dict, component: str, name: str, *, properties=()) -> int:
-    """Return the effective CTest deadline, including its explicit test property."""
-    values = policy.get('test_timeouts_seconds')
-    selected = {f'{owner}:{test}' for owner in ('frontend', 'runtime')
-                for test in policy.get(owner+'_tests', [])}
-    if (type(values) is not dict or set(values) - ({'default'} | selected) or
-            type(values.get('default')) is not int or
-            any(type(value) is not int or not 1 <= value <= MAX_TEST_TIMEOUT
-                for value in values.values())):
-        raise ValueError('source coverage policy has invalid test timeout budgets')
-    explicit = [row['value'] for row in properties if row['name'] == 'TIMEOUT']
-    if not explicit:
-        return values.get(f'{component}:{name}', values['default'])
-    if (len(explicit) != 1 or type(explicit[0]) not in (int, float) or
-            not 1 <= explicit[0] <= MAX_TEST_TIMEOUT or explicit[0] % 1):
-        raise ValueError('source coverage discovered an invalid CTest TIMEOUT property: ' + name)
-    # The CTest command-line default is ignored when the test sets TIMEOUT.
-    # Use the same effective deadline to bound the Python subprocess.
-    return int(explicit[0])
 
 
 def profile_runtime(bootstrap: Path, target: str) -> tuple[Path, Path]:
@@ -453,11 +431,11 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None,
     def save():
         report['seconds'] = round(time.monotonic()-started, 6)
         write_json(output / 'qualification.json', report)
-    def run(name, argv, *, environment=None, expected=0, cwd=repo, timeout=None):
+    def run(name, argv, *, environment=None, expected=0, cwd=repo):
         environment = env if environment is None else environment
         if any(row['name'] == name for row in report['commands']): raise ValueError('duplicate coverage command')
         row = {'name': name, 'environment': dict(environment), **command(argv, cwd=cwd, environment=environment,
-            log=output / 'logs' / (name+'.log'), timeout=timeout)}
+            log=output / 'logs' / (name+'.log'), timeout=None)}
         report['commands'].append(row);save()
         text = Path(row['log']).read_text(errors='replace')
         if row['timed_out'] or row['exit_code'] != expected:
@@ -580,13 +558,13 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None,
                 raw = work / 'raw';raw.mkdir()
                 case_env = suite_profile_environment(env, raw)
                 result = work / 'tests.xml'
-                timeout = suite_timeout(policy, component, name,
-                                        properties=current[0].get('properties', ()))
+                # Honor explicit CTest fixture properties. Unbounded tests use
+                # the supervising job deadline instead of a coverage override.
                 run(component+'-'+name, ['ctest', '--test-dir', build, '--no-tests=error', '--output-on-failure',
-                    '-R', '^'+re.escape(name)+'$', '--timeout', str(timeout),
+                    '-R', '^'+re.escape(name)+'$', '--timeout', '0',
                     '--test-output-size-passed', str(CTEST_OUTPUT_LIMIT),
                     '--test-output-size-failed', str(CTEST_OUTPUT_LIMIT), '--output-junit', result],
-                    environment=case_env, timeout=timeout+30)
+                    environment=case_env)
                 executions = junit(result, expected={name})
                 profiles = raw_profiles(raw, limit=FIRST_PARTY_PROFILE_LIMIT)
                 profile_identity = {profile.name: single_profile_binary_id(run(

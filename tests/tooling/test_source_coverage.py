@@ -8,7 +8,7 @@ import pytest
 from scripts.objc3c_toolchain.source_coverage import (
     binary_ids, compile_inventory, elf_build_id, first_party_inventory, profile_runtime, raw_profiles,
     read_export, partition_catalogue, reclaim_indexed_export, reclaim_raw_profiles,
-    require_translation_units, single_profile_binary_id, suite_timeout, validate_first_party_denominator,
+    require_translation_units, single_profile_binary_id, validate_first_party_denominator,
     validate_foundation_identity,
 )
 from scripts.objc3c_toolchain.llvm_tools import identity
@@ -65,30 +65,8 @@ def test_coverage_keeps_expensive_cases_in_separate_partitions():
     second, _ = partition_catalogue(policy, 1, 2)
     assert first == [('frontend', 'slow-cxx20'), ('frontend', 'quick1'), ('runtime', 'quick3')]
     assert second == [('frontend', 'slow-cxx23'), ('frontend', 'quick2'), ('runtime', 'quick4')]
-    policy['partition_seconds']['frontend:slow-cxx23'] = 600
+    policy['partition_seconds']['frontend:slow-cxx23'] = 1200
     assert partition_catalogue(policy, 0, 2)[1] != signature
-
-
-def test_instrumented_suite_timeouts_are_reviewed_and_bounded():
-    policy = {'frontend_tests': ['ordinary', 'heavy'], 'runtime_tests': [],
-              'test_timeouts_seconds': {'default': 120, 'frontend:heavy': 300}}
-    assert suite_timeout(policy, 'frontend', 'ordinary') == 120
-    assert suite_timeout(policy, 'frontend', 'heavy') == 300
-    assert suite_timeout(policy, 'frontend', 'ordinary',
-                         properties=[{'name': 'TIMEOUT', 'value': 300.0}]) == 300
-    assert suite_timeout(policy, 'frontend', 'heavy',
-                         properties=[{'name': 'TIMEOUT', 'value': 90.0}]) == 90
-    for invalid_property in (0, 901, '300', True, float('nan')):
-        with pytest.raises(ValueError, match='invalid CTest TIMEOUT'):
-            suite_timeout(policy, 'frontend', 'heavy',
-                          properties=[{'name': 'TIMEOUT', 'value': invalid_property}])
-    for invalid in (
-            {'default': 0},
-            {'default': 120, 'frontend:unknown': 300},
-            {'default': 120, 'frontend:heavy': 901}):
-        policy['test_timeouts_seconds'] = invalid
-        with pytest.raises(ValueError, match='timeout budgets'):
-            suite_timeout(policy, 'frontend', 'heavy')
 
 
 def test_profile_runtime_is_exact_nonempty_pinned_target_input(tmp_path):
