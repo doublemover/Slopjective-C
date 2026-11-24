@@ -15,7 +15,9 @@ python3 -B -m scripts.objc3c_toolchain.coverage_controls \
   --output out/source-coverage-reader-controls
 ```
 
-The source-owned policy selects 66 frontend and eight runtime CTests.
+The source-owned policy selects 66 frontend and nine runtime CTests. The
+standalone `objc3_text_scalar_boundary` case links the production runtime
+archive.
 Thirty-two frontend CTests partition the complete emitter catalogue by ordinal.
 The uninstrumented core runs the full emitter suite as one program. Actual
 Ninja commands, compilation databases and dependency closures establish object
@@ -145,6 +147,11 @@ search at the exact byte end, output clearing on a past-end request, and a
 successful retry on the same text. The updated fixture also passed against
 the published x86-64 header and archive at `-O0` and `-O2`. Local receipt
 SHA-256 `851740285f2ff80e73fa3810cc90bc531def3ff65265530931e195bafe5e0b32`.
+
+The new standalone CTest passed in Release and coverage builds on x86-64.
+Its indexed profile matched the executable's ELF build ID and reproduced
+`[1, 2]` for the past-end decision. Local receipt SHA-256
+`7554369690a16cbcb79a8f0efe8687e5b0797e16df940e30cc2a65601a8fb4e6`.
 
 Each published host retained one cold instrumented foundation build and eight
 first-party partitions. Component command totals add work across partitions.

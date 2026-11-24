@@ -82,7 +82,8 @@
     "objc3_async_handle_join",
     "objc3_generic_collection_service",
     "objc3_generic_associative_service",
-    "objc3_generic_collection_ownership"
+    "objc3_generic_collection_ownership",
+    "objc3_text_scalar_boundary"
   ],
   "test_timeouts_seconds": {
     "default": 120,
