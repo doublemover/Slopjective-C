@@ -187,6 +187,23 @@ def _copied_file(source, destination):
     shutil.copy2(source, destination)
 
 
+def _stage_builtins(source, destination, lipo, commands):
+    arches = _run(lipo, '-archs', source, commands=commands).split()
+    if 'arm64' not in arches:
+        raise ValueError('Darwin compiler builtins lack arm64')
+    with source.open('rb') as archive:
+        header = archive.read(8)
+    if header == b'!<arch>\n':
+        _copied_file(source, destination)
+    elif header[:4] in (b'\xca\xfe\xba\xbe', b'\xca\xfe\xba\xbf'):
+        # The pinned archive is a FAT container even though lipo lists one slice.
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        _run(lipo, source, '-thin', 'arm64', '-output', destination, commands=commands)
+    else:
+        raise ValueError('Darwin compiler builtins have an unsupported archive format')
+    _archive_objects(destination)
+
+
 def _validate_manifest(data, host):
     if (data.get('payload_schema') != PAYLOAD_SCHEMA or data.get('profile') != PROFILE or
             data.get('target') != TARGET or data.get('runtime_abi') != RUNTIME_ABI or
@@ -314,14 +331,7 @@ def package_registration(clang: Path, llvm_source: Path, bootstrap_report: Path,
             if header.is_file():
                 _copied_file(header, prefix / resource_dir / header.relative_to(resource))
         package_builtins = prefix / resource_dir / 'lib/darwin' / builtins.name
-        arches = _run(host['tools']['lipo']['path'], '-archs', builtins, commands=commands).split()
-        if 'arm64' not in arches:
-            raise ValueError('Darwin compiler builtins lack arm64')
-        if arches == ['arm64']:
-            _copied_file(builtins, package_builtins)
-        else:
-            package_builtins.parent.mkdir(parents=True, exist_ok=True)
-            _run(host['tools']['lipo']['path'], builtins, '-thin', 'arm64', '-output', package_builtins, commands=commands)
+        _stage_builtins(builtins, package_builtins, host['tools']['lipo']['path'], commands)
         for name in DEMO_FILES:
             fixture = ROOT / 'tests/clang_foundation/darwin_registration' / name
             _copied_file(_checked_file(fixture, registration['fixtures'][name]), prefix / DEMO / name)

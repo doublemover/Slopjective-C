@@ -211,6 +211,39 @@ def test_archive_admission_checks_every_arm64_object(tmp_path):
         sdk._archive_objects(archive)
 
 
+@pytest.mark.parametrize('wrapped', [False, True])
+def test_builtin_staging_uses_archive_format_even_with_one_arm64_slice(tmp_path, monkeypatch, wrapped):
+    source = tmp_path / 'libclang_rt.osx.a'
+    destination = tmp_path / 'SDK/libclang_rt.osx.a'
+    payload = thin_archive('builtins.o', macho(1))
+    if wrapped:
+        # The official LLVM archive uses one arm64 slice in a FAT container.
+        offset = 4096
+        header = struct.pack('>7I', 0xcafebabe, 1, 0x0100000c, 0, offset, len(payload), 12)
+        source.write_bytes(header.ljust(offset, b'\0') + payload)
+    else:
+        source.write_bytes(payload)
+
+    calls = []
+    def lipo(*args, commands):
+        assert args[0] == '/Xcode/bin/lipo'
+        calls.append(args[1:])
+        if args[1:] == ('-archs', source):
+            return 'arm64'
+        assert args[1:] == (source, '-thin', 'arm64', '-output', destination)
+        assert wrapped
+        magic, count, cpu, _, start, length, _ = struct.unpack('>7I', source.read_bytes()[:28])
+        assert (magic, count, cpu) == (0xcafebabe, 1, 0x0100000c)
+        destination.write_bytes(source.read_bytes()[start:start + length])
+        return ''
+
+    monkeypatch.setattr(sdk, '_run', lipo)
+    sdk._stage_builtins(source, destination, '/Xcode/bin/lipo', [])
+    assert len(calls) == (2 if wrapped else 1)
+    assert destination.read_bytes() == payload
+    assert sdk._archive_objects(destination) == ['builtins.o']
+
+
 def test_host_probe_rejects_wrong_xcode(monkeypatch):
     monkeypatch.setattr(sdk, 'require_apple_silicon', lambda: None)
     expected = {'/usr/bin/sw_vers': '15.5', '/usr/bin/xcodebuild': 'Xcode 16.3', '/usr/bin/xcrun': '15.5'}
