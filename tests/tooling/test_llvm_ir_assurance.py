@@ -175,6 +175,15 @@ def test_timeout_kills_children_that_create_separate_ninja_style_process_groups(
     assert not running
 
 
+def test_job_limited_command_measures_its_own_resources_and_separates_diagnostics(tmp_path):
+    output, errors = tmp_path / 'output.log', tmp_path / 'errors.log'
+    row = command([sys.executable, '-c', 'import sys; print("result"); print("diagnostic", file=sys.stderr)'],
+                  cwd=tmp_path, environment=dict(os.environ), log=output, timeout=None, stderr_log=errors)
+    assert row['exit_code'] == 0 and not row['timed_out']
+    assert row['seconds'] > 0 and row['cpu_seconds'] >= 0 and row['peak_process_rss_kib'] > 0
+    assert output.read_text() == 'result\n' and errors.read_text() == 'diagnostic\n'
+
+
 def test_interruption_kills_and_reaps_the_detached_command_session(tmp_path, monkeypatch):
     class Process:
         pid = 31415

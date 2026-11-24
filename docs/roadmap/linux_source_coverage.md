@@ -59,6 +59,9 @@ from JUnit. Passed output is bounded at 16 MiB so CTest’s default 1-KiB
 truncation cannot erase the execution inventory. Instrumented CTests use the
 hosted job deadline and respect explicit fixture timeout properties. Raw
 profiles remain bounded at 256 MiB per first-party suite.
+Command receipts record wall time, CPU time, and the peak RSS of an individual
+process among the command and its waited descendants. Foundation receipts
+record compilation and staging costs separately from the coverage runs.
 
 Five independent controls prove concurrent process profile isolation, an eligible zero-hit function and
 both ordinary/recovery decision arms, wrong-binary rejection, missing-profile

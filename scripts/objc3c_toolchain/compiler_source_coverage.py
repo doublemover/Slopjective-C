@@ -19,6 +19,7 @@ from zipfile import ZipFile
 
 from .binary_packages import digest, installed_shared_library, write_json
 from .core import build_plans
+from .llvm_ir_execution import command
 from .source_coverage import binary_ids, coverage_object_sections, coverage_section_command, reclaim_indexed_export
 
 PROFILE = 'compiler-source-coverage'
@@ -453,15 +454,13 @@ def qualify(repo: Path, output: Path, *, jobs=2, baseline: Path | None = None) -
         case_env = {**env, **({'LLVM_PROFILE_FILE': str(directory / '%b-%8m.profraw')} if profile else {})}
         log = Path(stdout) if stdout else output / 'logs' / (name+'.log')
         stderr_log = output / 'logs' / (name+'.stderr.log')
-        started_command = time.monotonic()
-        with log.open('w') as stream, stderr_log.open('w') as errors:
-            result = subprocess.run(list(map(str, argv)), cwd=repo, env=case_env,
-                stdout=stream, stderr=errors if stdout else subprocess.STDOUT)
-        row = {'name': name, 'argv': list(map(str, argv)), 'exit_code': result.returncode,
-               'seconds': round(time.monotonic()-started_command, 6), 'log': str(log), 'sha256': digest(log),
-               'stderr': str(stderr_log), 'stderr_sha256': digest(stderr_log)}
+        if not stdout:
+            stderr_log.touch()
+        row = command(argv, cwd=repo, environment=case_env, log=log, timeout=None,
+                      stderr_log=stderr_log if stdout else None)
+        row.update(name=name, sha256=row['log_sha256'], stderr=str(stderr_log), stderr_sha256=digest(stderr_log))
         report['commands'].append(row);save()
-        if result.returncode:
+        if row['exit_code']:
             raise ValueError('compiler source coverage command failed: '+name)
         return log
     try:
