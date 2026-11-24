@@ -15,6 +15,7 @@ from .package import MANIFEST, _digest
 
 RECEIPT_BYTES = 16 * 1024**2
 PRODUCT_BYTES = 1024**3
+LOADER_ABSENCE_CONTROLS = {'missing-runtime-at-load', 'missing-superclass-at-load'}
 
 
 def retained(root: Path, relative: str | Path, *, limit=RECEIPT_BYTES, allow_empty=False) -> Path:
@@ -33,6 +34,13 @@ def require_macho(root: Path, relative: str, record: dict, kind: str) -> None:
 
 def info(root: Path, relative: str) -> dict:
     return json.loads(retained(root, relative).read_bytes())
+
+
+def executable_witness(root: Path, relative: str, record: dict, rows: list[dict], expected: str) -> None:
+    require_macho(root, relative, record, 'executable')
+    if not any(row['argv'][0] == record['path'] and row['exit_status'] == 0 and
+               retained(root, row['log']).read_text().strip() == expected for row in rows):
+        raise ValueError(f'Darwin qualification omitted native execution of {relative}')
 
 
 def bootstrap(root: Path, revision: str) -> dict:
@@ -95,7 +103,7 @@ def registration(root: Path, first: dict, revision: str) -> dict:
             raise ValueError(f'Darwin registration command log changed: {row["log"]}')
         label = match[1]
         rejects = row.get('expected_diagnostic', [])
-        allowed = {1, 2, -signal.SIGABRT} if label == 'missing-runtime-at-load' else {1, 2}
+        allowed = {1, -signal.SIGABRT} if label in LOADER_ABSENCE_CONTROLS else {1, 2}
         status = row['exit_status']
         if (type(status) is not int or (rejects and (
                 status not in allowed or any(marker not in log.read_text(errors='replace') for marker in rejects))) or
@@ -110,25 +118,35 @@ def registration(root: Path, first: dict, revision: str) -> dict:
             [cxx['hash_probe']['path'], 'stable-hash-input', 'stable-hash-input']):
         raise ValueError('Darwin registration omitted the native Xcode libc++ link and execution preflight')
     for name in ('bin/static', 'bin/dynamic'):
-        require_macho(path, 'Relocated install/' + name, report['artifacts'][name], 'executable')
-        executions = [row for row in labels.get(Path(name).name, []) if 'expected_diagnostic' not in row]
-        if not any(row['argv'][0] == report['artifacts'][name]['path'] and
-                   retained(path, row['log']).read_text().strip() == WITNESS for row in executions):
-            raise ValueError(f'Darwin registration omitted native execution: {name}')
+        executable_witness(path, 'Relocated install/' + name, report['artifacts'][name],
+                           labels.get(Path(name).name, []), WITNESS)
     if profile.get('inheritance') == 'stateless-super-v1':
+        if not any(row.get('expected_diagnostic') for row in labels.get('missing-superclass-at-load', [])):
+            raise ValueError('Darwin inheritance omitted the missing strong parent control')
         for name in ('inheritance-static', 'inheritance-dynamic'):
             artifact = report['artifacts']['bin/' + name]
-            require_macho(path, 'Relocated install/bin/' + name, artifact, 'executable')
-            if not any(row['argv'][0] == artifact['path'] and row['exit_status'] == 0 and
-                       retained(path, row['log']).read_text().strip() == 'owned Objective-C 3 Darwin inheritance: PASS'
-                       for row in labels.get(name + '-native', [])):
-                raise ValueError(f'Darwin inheritance omitted native execution: {name}')
+            executable_witness(path, 'Relocated install/bin/' + name, artifact, labels.get(name + '-native', []),
+                               'owned Objective-C 3 Darwin inheritance: PASS')
         for name in ('libinheritance-base.dylib', 'libinheritance-child.dylib'):
             require_macho(path, 'Relocated install/lib/' + name,
                           report['artifacts']['lib/' + name], 'dynamic_library')
         if not {'@rpath/libinheritance-base.dylib', '@rpath/libobjc3darwin.dylib'} <= set(
                 report['artifacts']['lib/libinheritance-child.dylib']['load_paths']):
             raise ValueError('Darwin inheritance omitted the strong parent and owned runtime dependencies')
+    if profile.get('arc') == 'stateless-owned-reference-v1':
+        arc = report['arc']
+        if arc['status'] != 'PASS' or set(arc['routes']) != {'O0', 'O2'}:
+            raise ValueError('Darwin ARC omitted a required optimization route')
+        require_macho(path, 'build/arc-threads.o', arc['threads_object'], 'object')
+        for optimization, route in arc['routes'].items():
+            name = 'arc-' + optimization.lower()
+            require_macho(path, 'build/' + name + '.o', route['object'], 'object')
+            if file_digest(retained(path, 'build/' + name + '.ll')) != route['ir_sha256']:
+                raise ValueError(f'Darwin ARC compiler IR changed: {optimization}')
+            for linkage in ('static', 'dynamic'):
+                binary = name + '-' + linkage
+                executable_witness(path, 'Relocated install/bin/' + binary, route[linkage],
+                                   labels.get(binary + '-native', []), 'owned Objective-C 3 Darwin ARC: PASS')
     portable = report['portable_services']
     inputs = {NATIVE / name for name in PORTABLE_HEADERS}
     for service, fixture in PORTABLE_SERVICES.values():
