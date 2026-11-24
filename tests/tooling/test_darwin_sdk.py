@@ -372,6 +372,30 @@ def test_managed_install_reuses_updates_and_removes_only_the_admitted_sdk(tmp_pa
     assert keep.read_text() == 'preserve user files\n'
 
 
+def test_managed_install_readmits_repacked_archive_once(tmp_path, structural_host, monkeypatch):
+    root = tmp_path / 'Managed Darwin SDK'
+    first, _ = managed_packages(tmp_path, structural_host)
+    activation.install(*first[:2], root)
+    compiler = root / 'current/bin/clang'
+    original_inode = compiler.stat().st_ino
+
+    repacked = tmp_path / 'repacked.tar.gz'
+    archive = bytearray(first[0].read_bytes())
+    struct.pack_into('<I', archive, 4, 1)
+    repacked.write_bytes(archive)
+    checksum = _file_hash(repacked)
+    assert checksum != first[1]
+    receipt = activation.install(repacked, checksum, root)
+    assert receipt['action'] == 'reused' and receipt['archive_sha256'] == checksum
+    assert receipt['seal_sha256'] == first[2] and compiler.stat().st_ino == original_inode
+
+    def reject_extraction(*args):
+        pytest.fail('already admitted repacked archive was extracted again')
+
+    monkeypatch.setattr(sdk, 'install', reject_extraction)
+    assert activation.install(repacked, checksum, root) == receipt
+
+
 def test_managed_install_failure_leaves_previous_activation(tmp_path, structural_host, monkeypatch):
     root = tmp_path / 'Managed Darwin SDK'
     first, second = managed_packages(tmp_path, structural_host)

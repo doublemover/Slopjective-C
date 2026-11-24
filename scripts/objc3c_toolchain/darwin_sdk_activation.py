@@ -127,10 +127,14 @@ def install(archive: Path, expected_sha256: str, root: Path) -> dict:
             candidate.mkdir()
             verified = sdk.install(archive, expected_sha256, candidate / 'sdk')
             seal = verified['seal_sha256']
+            if old and old['seal_sha256'] == seal:
+                admission = {**old, 'archive_sha256': expected_sha256, 'host': verified['host']}
+                receipt = staging / ADMISSION
+                receipt.write_text(json.dumps(admission, indent=2) + '\n')
+                os.replace(receipt, active / ADMISSION)
+                return _result(root, 'reused', admission)
             admission = {'schema': SCHEMA, 'seal_sha256': seal, 'archive_sha256': expected_sha256,
                          'host': verified['host'], 'previous_seal_sha256': old['seal_sha256'] if old else None}
-            if old and old['seal_sha256'] == seal:
-                return _result(root, 'reused', admission)
             destination = root / ('sdk-' + seal)
             (candidate / ADMISSION).write_text(json.dumps(admission, indent=2) + '\n')
             pending = staging / 'current'
