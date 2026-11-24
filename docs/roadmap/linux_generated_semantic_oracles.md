@@ -23,10 +23,11 @@ adaptation and concurrency are outside this model. Existing authored ownership,
 diagnostic, sanitizer and concurrency witnesses retain their separate scope.
 
 The seed bank begins with reviewed transitions and then adds deterministic
-combinations. Coverage records every operation, operation pairs and all four
-active-arm transitions for both scalar carrier kinds. Model changes require
-review of the public contract and curated transitions; expected output must not
-be edited simply to match a compiler result.
+combinations. Two separate reviewed traces cover rare ownership and carrier
+transitions independently of those combinations. Qualification requires all 50
+declared model transitions and all nine ordered ownership-operation pairs.
+Coverage of the other operation pairs is recorded for comparison. Changes to
+expected output require review against the public contract and curated traces.
 
 ## Executable routes and controls
 
@@ -47,10 +48,12 @@ objects. Their oracle mismatch is mandatory; a sanitizer finding cannot satisfy
 that control. A corrected program uses the same sanitizer configuration.
 
 The typed deletion reducer preserves well-formed operations and the same
-mismatch class. Compile/link errors, crashes, timeouts and a different mismatch
-cannot make a candidate interesting. It retains the original, emits the reduced
-program, and compiles/runs a fresh replay. Unexpected semantic failures invoke
-the same reducer with their original transport, standard and optimization.
+mismatch class. A candidate must compile, exit cleanly and reproduce that class.
+The reduced record retains both model traces, the original seed or reviewed
+witness, and the exact native inputs used in the final replay. The Result-arm
+control reduces and replays with ASan/UBSan enabled. Unexpected semantic
+failures use the same reducer with their original transport, standard and
+optimization.
 
 ## Running and replaying
 
@@ -91,12 +94,53 @@ platform expansion retain their own issue owners.
 
 ## Completed native checkpoint
 
-Version 2 passes **33 positive cases and seven controls**, followed by a fresh
-CLI reduction replay. Its reviewed bank covers **38/50 declared model transition
-categories** and **38/196 operation pairs**. These denominators describe the
-small supported model, independently of compiler source coverage. The tooling
-suite has 103 model/eligibility tests, including valid operand endpoints,
-adjacent invalid values, INT_MIN/INT_MAX and incompatible-manifest controls.
+The earlier matched development campaign passed **33 positive cases and seven
+controls**, followed by a fresh CLI reduction replay. It covered **38/50
+declared model transitions** and **38/196 operation pairs**. The expanded
+reviewed bank covers **50/50 declared model transitions**, **9/9 ordered
+ownership-operation pairs** and **58/196 total operation pairs**. Seven native
+programs and four fresh matched builds passed on the published x86-64 SDK,
+including the reviewed ARC witness via source, PCH and an authentic source-free
+interface.
+
+### Sanitizer-clean mutation and fresh reduction replay
+
+The published x86-64 SDK at seal
+`d7de09cc1d27fb7add8c2f4792d34d488384300df8d248318b3539e0cfcf2fd0`
+supplied Clang, its compiler resources, LLD and the installed GNUstep runtime
+and service archive. The admitted LLVM 23.1.5 symbolizer SHA-256 was
+`35bec8ab8108b5396f61d1b3664629699bd9c9f59983179bf3eb32cc8cd5a6d2`.
+The generated provider and consumer both referenced ASan and UBSan symbols.
+Every listed program exited zero and its log contained zero ASan, UBSan or
+LeakSanitizer findings. The independent model check compared the full state
+and cleanup traces.
+
+| Program on seed 7 | Model comparison | First observed difference |
+| --- | --- | --- |
+| Corrected control | Equal | None |
+| Flipped Result arm | `value-or-lifetime` | Expected Ok, observed Err |
+| Omitted defer | `cleanup-order` | Nine expected events, seven observed |
+| Duplicate destructor event | `cleanup-order` | Nine expected events, eleven observed |
+| Changed provider result | `value-or-lifetime` | Expected 6, observed 7 |
+| Changed error propagation | `value-or-lifetime` | Expected 9, observed 10 |
+
+Eight deletion trials reduced the 24-operation Result-arm mismatch to
+`err(slot=1, value=-16)`. The model expected Err(-16), and the executable
+produced Ok(-16). A fresh matched build retained both sanitizer flags and
+reproduced the same trace with SHA-256
+`2e7b9cd73b6364f22b006606dab367c8a77a3539a20ccc3538a80bd80d3988b7`.
+
+| Retained native evidence | SHA-256 |
+| --- | --- |
+| Controls and reduction trials `qualification.json` | `e95c19cfb188837ea3a1f36f075edee9e2265e8a77338ff7cdba0a66bf14607e` |
+| Reduction input `reduction.json` | `8c248c5243ba12ed73a4ca9dca848ed1e5bd52022ae103d9d9b28d6ff35ee70e` |
+| Fresh replay `qualification.json` | `711fe716263e459e7b50811e00aaa51cb0df21b40b9c863ec36e45003e0a10b2` |
+
+This local checkpoint covers the installed x86-64 compiler and instrumented
+generated programs using the shipped runtime. The hosted matched development
+campaign supplies compiler-instrumentation and full matrix evidence.
+
+### Earlier generation experiment
 
 A non-promoting generation experiment compares uniform and pair-balanced tails
 on identical seeds, compiler/runtime inputs, 24-operation lengths and 180-second

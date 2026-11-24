@@ -16,6 +16,7 @@ from .binary_packages import digest, installed_shared_library, write_json
 from .compiler_instrumentation import loaded_graph
 from .llvm_ir_execution import Execution, StageFailure
 from .llvm_tools import identity, selected, verify_receipt
+from .sanitizer_policy import OPTIONS
 from .sdk_example import dependencies
 from .semantic_model import (VERSION, EligibilityFailure, Operation, candidates, coverage,
                             eligibility, generate, interpret, mismatch, transition_witnesses, verify_eligibility)
@@ -161,6 +162,14 @@ class Campaign:
                 'semantic_sources': {name: digest(Path(__file__).with_name(name))
                     for name in ('semantic_oracles.py', 'semantic_model.py', 'semantic_sources.py')},
             }
+            if sanitized:
+                environment = self.executor.environment
+                symbolizer = Path(environment['ASAN_SYMBOLIZER_PATH']).resolve(strict=True)
+                self.inputs[str(symbolizer)] = digest(symbolizer)
+                contexts[sanitized]['sanitizer'] = {
+                    'options': {key: environment[key] for key in OPTIONS},
+                    'symbolizer_sha256': self.inputs[str(symbolizer)],
+                }
         return contexts[sanitized]
 
     def case(self, name, program, *, origin=None, **configuration):
@@ -194,7 +203,7 @@ class Campaign:
         source_bundle(program, work, transport=transport, relation=relation, mutant=mutant, bias=bias,
             optimization=optimization, standard=standard, sanitized=sanitized, expected_mismatch=expected_mismatch,
             origin=origin)
-        bind_native = not mutant and expected_mismatch is None and not probe
+        bind_native = not probe
         generated = {name: digest(work / name) for name in ('oracle.h', 'provider.mm', 'consumer.mm')}
         required = getattr(self, 'expected_provenance', None)
         if required and required['generated_sources'] != generated:
@@ -264,7 +273,7 @@ class Campaign:
         except ValueError as error:
             raise StageFailure(name, 'output-schema', 'generated program did not produce its state/event record') from error
         classification = mismatch(interpret(program, bias=bias), actual)
-        if bind_native and classification is None:
+        if bind_native and classification == expected_mismatch:
             retained_sources = self.output / 'retained-provider' / name if transport == 'interface' else work
             if generated != {'consumer.mm': digest(work / 'consumer.mm'),
                              **{unit: digest(retained_sources / unit) for unit in ('oracle.h', 'provider.mm')}}:
@@ -333,7 +342,7 @@ class Campaign:
             raise ValueError('stale ownership contract produced a consumer object')
         self.report['controls'].append({'name': name, 'status': 'PASS', 'old': old_fingerprint, 'changed': changed})
 
-    def reduce(self, program, *, mutant='', mismatch_class='value-or-lifetime',
+    def reduce(self, program, *, origin=None, mutant='', mismatch_class='value-or-lifetime',
                transport='source', optimization='O2', standard='c++20', relation='', bias=0, sanitized=False):
         attempts = 0
         def interesting(trial):
@@ -354,20 +363,25 @@ class Campaign:
             transport=transport, optimization=optimization, standard=standard, relation=relation, bias=bias, sanitized=sanitized)
         configuration = dict(transport=transport, optimization=optimization, standard=standard,
             relation=relation, bias=bias, mutant=mutant, sanitized=sanitized, expected_mismatch=mismatch_class)
-        write_json(self.output / 'reduction.json', {'status': 'PASS', 'model_version': VERSION,
+        replayed = json.loads((self.output / 'reduction-replay/program.json').read_text())
+        record = {'status': 'PASS', 'model_version': VERSION,
             'original': [asdict(op) for op in program], 'reduced': [asdict(op) for op in reduced],
             'mismatch': mismatch_class, 'attempts': attempts, 'transport': transport,
             'optimization': optimization, 'standard': standard, 'mutant': mutant, 'provider_bias': bias,
-            'sanitized': sanitized, 'transform': relation,
+            'sanitized': sanitized, 'transform': relation, 'expected': replayed['expected'],
+            'original_expected': interpret(program, bias=bias), 'native_provenance': replayed['native_provenance'],
             'eligibility': eligibility(reduced, **configuration),
-            'original_eligibility': eligibility(program, **configuration)})
+            'original_eligibility': eligibility(program, **configuration)}
+        if origin is not None:
+            record['origin'] = origin
+        write_json(self.output / 'reduction.json', record)
 
     def checked_case(self, name, program, *, origin=None, **configuration):
         try:
             return self.case(name, program, origin=origin, **configuration)
         except StageFailure as error:
             if error.classification in ('value-or-lifetime', 'cleanup-order'):
-                self.reduce(program, mismatch_class=error.classification, **configuration)
+                self.reduce(program, origin=origin, mismatch_class=error.classification, **configuration)
             raise
 
 
@@ -404,7 +418,7 @@ def qualify(repo: Path, output: Path, *, facade: Path, services: Path, runtime: 
                 expected.append(name)
                 campaign.checked_case(name, program, origin={'reviewed_witness': witness}, optimization=optimization)
         for mutant in ('tag', 'defer', 'destructor', 'provider', 'error'):
-            campaign.case('control-'+mutant, generate(seeds[0]), mutant=mutant, sanitized=True,
+            campaign.case('control-'+mutant, generated[seeds[0]], origin={'seed': seeds[0]}, mutant=mutant, sanitized=True,
                 expected_mismatch='cleanup-order' if mutant in ('defer', 'destructor') else 'value-or-lifetime')
         expected.append('sanitizer-clean-control')
         campaign.case('sanitizer-clean-control', generated[seeds[0]], origin={'seed': seeds[0]}, sanitized=True)
@@ -416,7 +430,7 @@ def qualify(repo: Path, output: Path, *, facade: Path, services: Path, runtime: 
         if base['module_identity'] != changed['module_identity']:
             raise ValueError('private implementation edit changed public interface identity')
         campaign.stale_effect(generate(seeds[0]), base['module_identity']['semantic_fingerprint'])
-        campaign.reduce(generate(seeds[0]), mutant='tag')
+        campaign.reduce(generated[seeds[0]], origin={'seed': seeds[0]}, mutant='tag', sanitized=True)
         if {row['name'] for row in campaign.report['cases']} != set(expected):
             raise ValueError('generated semantic execution inventory is incomplete')
         if any(digest(Path(path)) != signature for path, signature in campaign.inputs.items()):
@@ -454,6 +468,13 @@ def replay(repo: Path, output: Path, document: Path, *, facade: Path, services: 
     except (KeyError, TypeError) as error:
         raise EligibilityFailure('semantic replay has an incomplete typed witness/configuration') from error
     verify_eligibility(record, program, **configuration)
+    original = program
+    if 'reduced' in record:
+        original = [Operation(**item) for item in record['original']]
+        original_record = {'eligibility': record.get('original_eligibility')}
+        if 'original_expected' in record:
+            original_record['expected'] = record['original_expected']
+        verify_eligibility(original_record, original, **configuration)
     origin = record.get('origin')
     if 'origin' in record:
         regenerated = None
@@ -463,19 +484,15 @@ def replay(repo: Path, output: Path, document: Path, *, facade: Path, services: 
                 regenerated = generate(seed)
             if set(origin) == {'reviewed_witness'} and isinstance(witness, str):
                 regenerated = transition_witnesses().get(witness)
-        if program != regenerated:
+        if original != regenerated:
             raise EligibilityFailure('semantic replay program differs from its retained seed or reviewed witness')
     provenance = record.get('native_provenance')
     provenance_fields = ('execution', 'generated_sources', 'external_headers', 'runtime_libraries')
     if ('native_provenance' in record and
             (not isinstance(provenance, dict) or provenance.get('schema') != 'objc3c.semantic-native-witness.v1' or
              set(provenance) != {'schema', *provenance_fields} or
-             any(not isinstance(provenance[field], dict) for field in provenance_fields) or
-             configuration['mutant'] or configuration['expected_mismatch'] is not None)):
+             any(not isinstance(provenance[field], dict) for field in provenance_fields))):
         raise EligibilityFailure('invalid native semantic replay provenance')
-    if 'reduced' in record:
-        original = [Operation(**item) for item in record['original']]
-        verify_eligibility({'eligibility': record.get('original_eligibility')}, original, **configuration)
     repo, output = repo.resolve(strict=True), output.resolve()
     if output.exists() or not output.is_relative_to(repo / 'out'):
         raise ValueError('semantic replay needs fresh owned evidence')
@@ -491,7 +508,7 @@ def replay(repo: Path, output: Path, document: Path, *, facade: Path, services: 
             if campaign.native_context(configuration['sanitized']) != provenance['execution']:
                 raise EligibilityFailure('compiler or runtime differs from the retained native witness')
             campaign.expected_provenance = provenance
-        campaign.case('replay', program, origin=origin, **configuration)
+        campaign.case('replay', program, origin=origin if 'reduced' not in record else None, **configuration)
         if any(digest(Path(path)) != signature for path, signature in campaign.inputs.items()):
             raise ValueError('semantic replay input changed during execution')
         campaign.report.update(status='PASS', reproduced_mismatch=record.get('mismatch', record.get('expected_mismatch')))
