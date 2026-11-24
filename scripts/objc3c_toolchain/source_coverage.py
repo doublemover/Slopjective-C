@@ -13,6 +13,7 @@ import shlex
 import subprocess
 import tempfile
 import time
+from zipfile import ZipFile
 
 from .binary_packages import digest, installed_shared_library, write_json
 from .compiler_instrumentation import loaded_graph, _without_dependency_flags
@@ -21,7 +22,7 @@ from .core import build_plans
 from .llvm_tools import identity
 from .sanitizer_policy import strict_environment, require_clean_diagnostic
 from .sdk_example import dependencies
-from scripts.objc3c_assurance.evidence import junit
+from scripts.objc3c_assurance.evidence import MAX_BYTES, junit
 from scripts.objc3c_assurance.emitter_shards import CTEST_OUTPUT_LIMIT
 from .analysis_partition import balance_indices
 
@@ -32,6 +33,96 @@ COMMAND_TIMEOUT = 900
 BUILD_TIMEOUT = 3600
 MAX_TEST_TIMEOUT = 900
 COVERAGE_SECTIONS = ('__llvm_covmap', '__llvm_prf_cnts', '__llvm_prf_data')
+IMPLEMENTATION_ROOTS = {'frontend': 'native/objc3c/src/clang_foundation',
+                        'runtime': 'native/objc3c/src/runtime'}
+TRANSLATION_UNIT_SUFFIXES = {'.c', '.cc', '.cpp', '.cxx', '.m', '.mm'}
+HEADER_SUFFIXES = {'.h', '.hh', '.hpp', '.hxx', '.inc'}
+UNMEASURED_TRANSLATION_UNITS = {
+    'native/objc3c/src/clang_foundation/driver_main.cpp': 'CLI entry point outside embedding targets',
+    'native/objc3c/src/clang_foundation/scan_deps_main.cpp': 'scan-deps CLI outside embedding targets',
+    'native/objc3c/src/runtime/platform/objc3_native_object_adapter.mm': 'separate SDK native object adapter target',
+    'native/objc3c/src/runtime/platform/darwin_registration.c': 'experimental Darwin registration target',
+}
+
+
+def first_party_inventory(repo: Path) -> tuple[dict[str, str], dict]:
+    """Keep source ownership independent of which tests happened to build it."""
+    eligible = {}
+    required = {component: [] for component in IMPLEMENTATION_ROOTS}
+    unmeasured = {}
+    templates = {}
+    for component, root in (*IMPLEMENTATION_ROOTS.items(), ('public-headers', 'stdlib/include/objc3')):
+        for path in sorted((repo / root).rglob('*')):
+            if not path.is_file():
+                continue
+            name = path.relative_to(repo).as_posix()
+            if path.name.endswith('.h.in'):
+                templates[name] = digest(path)
+            elif path.suffix in HEADER_SUFFIXES:
+                eligible[name] = digest(path)
+            elif component in required and path.suffix in TRANSLATION_UNIT_SUFFIXES:
+                eligible[name] = digest(path)
+                if name in UNMEASURED_TRANSLATION_UNITS:
+                    unmeasured[name] = UNMEASURED_TRANSLATION_UNITS[name]
+                else:
+                    required[component].append(name)
+    if not all(required.values()) or not any(name.startswith('stdlib/include/objc3/') for name in eligible):
+        raise ValueError('first-party source coverage inventory omitted an owned source root')
+    return eligible, {'required_translation_units': required, 'unmeasured_translation_units': unmeasured,
+                      'configured_header_templates': templates}
+
+
+def require_translation_units(repo: Path, objects: list[dict], required: list[str]):
+    built = {path.relative_to(repo).as_posix() for row in objects
+             if (path := Path(row['source'])).is_relative_to(repo)}
+    missing = sorted(set(required) - built)
+    if missing:
+        raise ValueError('coverage graph omitted owned translation units: ' + ', '.join(missing))
+
+
+def validate_first_party_denominator(report: dict, *, current=None):
+    """Validate exact suite denominators, with an optional current source owner."""
+    eligible, scope = report.get('eligible'), report.get('ownership')
+    if (not isinstance(eligible, dict) or not eligible or report.get('eligible_digest') != identity(eligible) or
+            (current is not None and (eligible, scope) != current)):
+        raise ValueError('first-party coverage denominator differs from its owned inventory')
+    for suite in report['suites']:
+        rows = suite.get('source_coverage', {})
+        if not isinstance(rows, dict) or rows.keys() != eligible.keys():
+            raise ValueError('first-party coverage suite omitted owned source: ' + suite['name'])
+        if scope is not None:
+            for name in scope['required_translation_units'][suite['component']]:
+                mapping = rows[name].get('compiled_mapping_summary') or {}
+                count = mapping.get('regions', {}).get('count')
+                if type(count) is not int or count <= 0:
+                    raise ValueError('first-party coverage has no compiled mapping for ' + name)
+
+
+def compare_published_inventory(repo: Path, archive: Path) -> dict:
+    """Show first-party ownership changes before spending a coverage build."""
+    from .compiler_source_coverage import coverage_baseline
+
+    if archive.suffix != '.zip':
+        raise ValueError('first-party coverage comparison needs a reviewed release ZIP')
+    compiler, release = coverage_baseline(repo, archive)
+    member_name = 'source-coverage/source-coverage/first-party/qualification.json'
+    with ZipFile(archive) as zipped:
+        members = [entry for entry in zipped.infolist() if entry.filename == member_name]
+        if len(members) != 1 or members[0].file_size > MAX_BYTES:
+            raise ValueError('reviewed coverage archive omitted its bounded first-party receipt')
+        prior = json.loads(zipped.read(members[0]))
+    if prior.get('status') != 'PASS' or prior.get('revision') != compiler['revision']:
+        raise ValueError('reviewed first-party coverage receipt differs from its released revision')
+    validate_first_party_denominator(prior)
+    before = prior['eligible']
+    current, scope = first_party_inventory(repo)
+    return {'schema': 'objc3c.first-party-coverage-inventory-comparison.v1',
+            'baseline': {'host': compiler['host'], 'revision': prior['revision'],
+                         'archive_sha256': release['sha256'], 'eligible_digest': prior['eligible_digest']},
+            'current': {'eligible_digest': identity(current), 'ownership': scope},
+            'added': {name: current[name] for name in sorted(current.keys() - before.keys())},
+            'removed': {name: before[name] for name in sorted(before.keys() - current.keys())},
+            'source_changed': sorted(name for name in current.keys() & before.keys() if current[name] != before[name])}
 
 
 def partition_catalogue(policy: dict, index: int, count: int) -> tuple[list[tuple[str, str]], str]:
@@ -413,13 +504,10 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None,
             [tools['llvm-readobj'], '--notes', library])) for index, library in enumerate(libraries)}
         library_ids = set(library_identity.values())
         report['coverage_library_build_ids'] = library_identity
-        # Keep uninstantiated headers and unused compiled files visible; only
-        # LLVM's emitted maps determine executable-region denominators.
-        for path in sorted((repo / 'native/objc3c/src').rglob('*')):
-            if path.suffix in ('.cpp', '.h', '.hpp'):
-                name = path.relative_to(repo).as_posix()
-                report['eligible'][name] = digest(path);frozen[str(path)] = digest(path)
-        report['eligible_digest'] = identity(report['eligible'])
+        eligible, scope = first_party_inventory(repo)
+        report.update(eligible=eligible, eligible_digest=identity(eligible), ownership=scope)
+        frozen.update({str(repo / name): signature
+                       for name, signature in (eligible | scope['configured_header_templates']).items()})
         for component in ('frontend', 'runtime'):
             build = build_root / component
             source = repo / ('native/objc3c' if component == 'frontend' else 'native/objc3c/src/runtime')
@@ -459,6 +547,7 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None,
                 graph = run(component+'-'+name+'-graph', [plan['host_environment']['ninja_path'], '-C', build,
                     '-t', 'commands', target, *common])
                 objects = compile_inventory(build, graph, required_flags=policy['compile_flags'])
+                require_translation_units(repo, objects, scope['required_translation_units'][component])
                 for obj in objects:
                     if obj['object'] in records:
                         if records[obj['object']] != obj: raise ValueError('coverage object changed between test shards')
@@ -547,6 +636,7 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None,
         if (len(report['suites']) != len(selected_catalogue) or
                 [(row['component'], row['name']) for row in report['suites']] != selected_catalogue):
             raise ValueError('source coverage is missing a required suite/shard')
+        validate_first_party_denominator(report, current=first_party_inventory(repo))
         if partition_count == 1:
             from scripts.objc3c_assurance.emitter_shards import emitter_partition
             report['emitter_partition'] = emitter_partition(output, report['suites'])
@@ -576,7 +666,21 @@ def main():
     parser.add_argument('--reuse-build-receipt', type=Path)
     parser.add_argument('--partition-index', type=int, default=0)
     parser.add_argument('--partition-count', type=int, choices=(1, 2, 4, 8), default=1)
-    result = qualify(**vars(parser.parse_args()))
+    parser.add_argument('--compare-published-inventory', type=Path,
+                        help='compare owned sources with a reviewed release ZIP without building')
+    args = parser.parse_args()
+    if args.compare_published_inventory is not None:
+        repo, output = args.repo.resolve(strict=True), args.output.resolve()
+        if output.exists() or not output.is_relative_to(repo / 'out'):
+            raise ValueError('first-party inventory comparison needs a fresh output file under out')
+        result = compare_published_inventory(repo, args.compare_published_inventory)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        write_json(output, result)
+        print(json.dumps({key: len(result[key]) for key in ('added', 'removed', 'source_changed')}))
+        return
+    options = vars(args).copy()
+    del options['compare_published_inventory']
+    result = qualify(**options)
     print(json.dumps({'status': result['status'], 'suites': len(result['suites'])}))
 
 

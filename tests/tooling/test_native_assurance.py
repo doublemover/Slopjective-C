@@ -151,6 +151,8 @@ def test_product_consumers_keep_the_exact_sdk_immutable_and_skip_development_sca
 
 def test_source_coverage_reader_derives_current_compiler_suite_inventory(tmp_path, monkeypatch):
     from scripts.objc3c_assurance import emitter_shards
+    from scripts.objc3c_toolchain.llvm_tools import identity
+    from scripts.objc3c_toolchain.source_coverage import first_party_inventory
     root = tmp_path / 'source-coverage'
     root.mkdir()
     suite = ET.Element('testsuite', tests='4', failures='0')
@@ -160,14 +162,18 @@ def test_source_coverage_reader_derives_current_compiler_suite_inventory(tmp_pat
     (root / 'controls').mkdir();(root / 'first-party').mkdir();(root / 'compiler').mkdir()
     (root / 'controls/qualification.json').write_text(json.dumps({
         'status': 'PASS', 'controls': [{'status': 'PASS'} for _ in range(5)]}))
-    policy = json.loads((Path(__file__).resolve().parents[2] /
-                         'toolchains/llvm/source-coverage.json').read_text())
+    repo = Path(__file__).resolve().parents[2]
+    policy = json.loads((repo / 'toolchains/llvm/source-coverage.json').read_text())
+    eligible, ownership = first_party_inventory(repo)
+    mapped = {name: {'state': 'executed', 'compiled_mapping_summary': {'regions': {'count': 1}}}
+              for name in eligible}
     native_suites = [{'name': name, 'component': component, 'status': 'PASS',
-                      'source_coverage': {'source.cpp': {'state': 'executed'}}}
+                      'source_coverage': mapped}
                      for component in ('frontend', 'runtime') for name in policy[component + '_tests']]
     native_receipt = root / 'first-party/qualification.json'
     native_report = {
         'status': 'PASS', 'emitter_partition': {'proof': 'exact'}, 'suites': native_suites,
+        'eligible': eligible, 'eligible_digest': identity(eligible), 'ownership': ownership,
         'temporary_build_reclaimed': True, 'policy': policy}
     native_receipt.write_text(json.dumps(native_report))
     units = {'/build/bin/unit-'+str(index): 'a'*40 for index in range(5)}
@@ -180,6 +186,17 @@ def test_source_coverage_reader_derives_current_compiler_suite_inventory(tmp_pat
         'binary_ids': ['b'*40]}))
     monkeypatch.setattr(emitter_shards, 'emitter_partition', lambda *_: {'proof': 'exact'})
     assert len(evidence.suite_results(tmp_path, 'source-coverage')) == 2 + len(native_suites) + 6
+    incomplete = dict(mapped)
+    del incomplete['stdlib/include/objc3/collections.h']
+    native_receipt.write_text(json.dumps({**native_report, 'suites': [
+        *native_suites[:-1], {**native_suites[-1], 'source_coverage': incomplete}]}))
+    with pytest.raises(ValueError, match='suite omitted owned source'):
+        evidence.suite_results(tmp_path, 'source-coverage')
+    incomplete = {**mapped, ownership['required_translation_units']['runtime'][0]: {'state': 'no-emitted-mapping'}}
+    native_receipt.write_text(json.dumps({**native_report, 'suites': [
+        *native_suites[:-1], {**native_suites[-1], 'source_coverage': incomplete}]}))
+    with pytest.raises(ValueError, match='has no compiled mapping'):
+        evidence.suite_results(tmp_path, 'source-coverage')
     native_receipt.write_text(json.dumps({**native_report, 'suites': [
         *native_suites[:-1], {**native_suites[-1], 'name': 'substituted-runtime-test'}]}))
     with pytest.raises(ValueError, match='source coverage is incomplete'):

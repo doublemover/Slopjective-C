@@ -18,7 +18,8 @@ from scripts.objc3c_toolchain.core import build_plans, verify_development
 from scripts.objc3c_toolchain.coverage_controls import qualify as coverage_controls
 from scripts.objc3c_toolchain.semantic_build_costs import snapshot
 from scripts.objc3c_toolchain.source_coverage import (
-    partition_catalogue, qualify as first_party_coverage, validate_foundation_identity)
+    first_party_inventory, partition_catalogue, qualify as first_party_coverage,
+    validate_first_party_denominator, validate_foundation_identity)
 from .emitter_shards import emitter_partition
 from .evidence import MAX_BYTES, SCHEMA, aggregate, artifact, junit, native_files, suite_results
 from .plan import from_checkout, selected_suites, validate
@@ -242,6 +243,7 @@ def aggregate_partitions(repo: Path, plan: dict, producer_root: Path,
     reports = []
     suites = {}
     policy = json.loads((repo / 'toolchains/llvm/source-coverage.json').read_text())
+    inventory = first_party_inventory(repo)
     for index in range(PARTITIONS):
         root = _partition_root(partitions_root, index)
         report = json.loads((root / 'qualification.json').read_text())
@@ -258,6 +260,7 @@ def aggregate_partitions(repo: Path, plan: dict, producer_root: Path,
                               'selected': [list(row) for row in expected]} or report.get('policy') != policy or
                 [(row.get('component'), row.get('name')) for row in report.get('suites', [])] != expected):
             raise ValueError('coverage partition is stale, failed or substituted: '+str(index))
+        validate_first_party_denominator(report, current=inventory)
         reports.append(report)
         for row in report.get('suites', []):
             key = (row.get('component'), row.get('name'))

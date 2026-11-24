@@ -6,10 +6,12 @@ import shlex
 import pytest
 
 from scripts.objc3c_toolchain.source_coverage import (
-    binary_ids, compile_inventory, elf_build_id, profile_runtime, raw_profiles, read_export,
-    partition_catalogue, reclaim_indexed_export, reclaim_raw_profiles,
-    single_profile_binary_id, suite_timeout, validate_foundation_identity,
+    binary_ids, compile_inventory, elf_build_id, first_party_inventory, profile_runtime, raw_profiles,
+    read_export, partition_catalogue, reclaim_indexed_export, reclaim_raw_profiles,
+    require_translation_units, single_profile_binary_id, suite_timeout, validate_first_party_denominator,
+    validate_foundation_identity,
 )
+from scripts.objc3c_toolchain.llvm_tools import identity
 
 FLAGS = ['-fprofile-instr-generate', '-fcoverage-mapping', '-fprofile-update=atomic']
 
@@ -137,6 +139,42 @@ def test_real_graph_cannot_lose_coverage_objects_or_instrumentation(tmp_path, mu
     else:
         rows = compile_inventory(tmp_path, graph, required_flags=FLAGS)
         assert len(rows) == 1 and rows[0]['source'] == str(source)
+
+
+def test_first_party_inventory_keeps_public_inlines_and_detects_a_missing_compile_owner(tmp_path):
+    frontend = 'native/objc3c/src/clang_foundation/'
+    runtime = 'native/objc3c/src/runtime/'
+    driver = frontend+'driver_main.cpp'
+    daemon = runtime+'platform/darwin_registration.c'
+    public = 'stdlib/include/objc3/collections.h'
+    template = frontend+'runtime_interface_header.h.in'
+    sources = [frontend+'frontend_api.cpp', runtime+'service.mm']
+    for name in (*sources, driver, daemon, public, template, 'native/objc3c/tests/fixture.cpp'):
+        path = tmp_path / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(name)
+    eligible, scope = first_party_inventory(tmp_path)
+    assert set(eligible) == {*sources, driver, daemon, public}
+    assert scope['required_translation_units'] == {'frontend': sources[:1], 'runtime': sources[1:]}
+    assert set(scope['unmeasured_translation_units']) == {driver, daemon}
+    assert set(scope['configured_header_templates']) == {template}
+    objects = [{'source': str(tmp_path / name)} for name in sources]
+    require_translation_units(tmp_path, objects, sources)
+    with pytest.raises(ValueError, match='coverage graph omitted owned translation units: .*service.mm'):
+        require_translation_units(tmp_path, objects[:1], sources)
+
+
+def test_prior_release_denominator_is_readable_with_its_original_inventory():
+    eligible = {'source.cpp': 'a'*64, 'unused.h': 'b'*64}
+    sources = {name: {'state': 'no-emitted-mapping'} for name in eligible}
+    report = {'eligible': eligible, 'eligible_digest': identity(eligible),
+              'suites': [{'name': 'native', 'component': 'runtime', 'source_coverage': sources}]}
+    validate_first_party_denominator(report)
+    with pytest.raises(ValueError, match='differs from its owned inventory'):
+        validate_first_party_denominator(report, current=(eligible, {}))
+    del sources['unused.h']
+    with pytest.raises(ValueError, match='suite omitted owned source'):
+        validate_first_party_denominator(report)
 
 
 @pytest.mark.parametrize('mutation', ['empty', 'zero-byte', 'symlink', 'unowned'])

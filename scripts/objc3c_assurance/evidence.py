@@ -425,10 +425,12 @@ def suite_results(root: Path, name: str, *, frontend_names: frozenset[str] | Non
         native = read('first-party/qualification.json')
         compiler = read('compiler/qualification.json')
         from .emitter_shards import emitter_partition
+        from scripts.objc3c_toolchain.source_coverage import first_party_inventory, validate_first_party_denominator
+        repo = Path(__file__).resolve().parents[2]
+        validate_first_party_denominator(native, current=first_party_inventory(repo))
         if (native.get('emitter_partition') != emitter_partition(directory / 'first-party', native['suites'])):
             raise ValueError('emitter coverage partition proof changed')
-        policy = json.loads((Path(__file__).resolve().parents[2] /
-                             'toolchains/llvm/source-coverage.json').read_text())
+        policy = json.loads((repo / 'toolchains/llvm/source-coverage.json').read_text())
         catalogue = [(component, test) for component in ('frontend', 'runtime')
                      for test in policy[component + '_tests']]
         compiler_units = compiler.get('executed_unit_binary_ids', {})
