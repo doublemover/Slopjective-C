@@ -165,6 +165,7 @@ static const struct class_record child = {
 static const struct class_record cyclic = {.isa = &meta, .superclass = &cyclic, .name = "Cyclic"};
 static const struct class_record stateful = {.isa = &meta, .name = "Stateful", .instance_size = 8};
 static const struct class_record wrong_methods_class = {.isa = &meta, .name = "Wrong", .methods = &wrong_methods};
+int objc3_darwin_check_arc_threads(const void *cls);
 
 int main(int argc, char **argv) {
   struct rlimit no_core = {0, 0};
@@ -203,9 +204,9 @@ int main(int argc, char **argv) {
     return 2;
   if (objc3_darwin_lookup_v1(NULL, &selector)(NULL, &selector) != 0)
     return 3;
-  struct instance_record *first = objc3_darwin_allocate_v1(&root);
-  struct instance_record *second = objc3_darwin_allocate_v1(&root);
-  if (!first || !second || first == second || first->isa != &root || second->isa != &root)
+  const struct class_record **first = objc3_darwin_allocate_v1(&root);
+  const struct class_record **second = objc3_darwin_allocate_v1(&root);
+  if (!first || !second || first == second || *first != &root || *second != &root)
     return 4;
   if (strcmp(control, "wrong-selector-type") == 0)
     objc3_darwin_lookup_v1(second, &wrong_signature);
@@ -221,7 +222,7 @@ int main(int argc, char **argv) {
   if (objc3_darwin_class_v1("Child") != &child ||
       objc3_darwin_lookup_v1(&child, &selector)(&child, &selector) != 42)
     return 8;
-  struct instance_record *derived = objc3_darwin_allocate_v1(&child);
+  void *derived = objc3_darwin_allocate_v1(&child);
   if (!derived || objc3_darwin_lookup_v1(derived, &selector)(derived, &selector) != 19)
     return 9;
   const struct super_record instance_super = {derived, &root};
@@ -234,12 +235,15 @@ int main(int argc, char **argv) {
       objc3_darwin_lookup_super_v1(&class_super, &selector)(&child, &selector) != 42)
     return 10;
   objc3_darwin_deallocate_v1(derived);
+  if (!objc3_darwin_check_arc_threads(&root) || instances)
+    return 11;
   return 0;
 }
 ''')
     binary = tmp_path / 'registry'
     subprocess.run(['cc', '-O2', '-Wall', '-Wextra', '-Werror', '-pthread', '-I',
-                    darwin_registration.RUNTIME.parent, harness, '-o', binary], check=True)
+                    darwin_registration.RUNTIME.parent, harness,
+                    darwin_registration.FIXTURES / 'arc_threads.c', '-o', binary], check=True)
     subprocess.run([binary], check=True)
     for name, diagnostic in (
         ('duplicate', 'duplicate class name'),

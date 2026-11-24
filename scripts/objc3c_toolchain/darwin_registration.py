@@ -309,8 +309,6 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
         fixture = FIXTURES / f'unsupported_instance_{name}.m'
         run(*objective_c, '-c', fixture, '-o', stages / f'unsupported-instance-{name}.o',
             rejects=(f'experimental Darwin registration requires {diagnostic}',), label=f'unsupported-instance-{name}')
-    run(*objective_c, '-fobjc-arc', '-c', FIXTURES / 'provider.m', '-o', stages / 'arc.o',
-        rejects=(profile['compiler_runtime_flag'], '-fobjc-arc'), label='unsupported-arc')
     run(*objective_c, '-fobjc-link-runtime', '-c', FIXTURES / 'provider.m', '-o', stages / 'apple-runtime.o',
         rejects=(profile['compiler_runtime_flag'], '-fobjc-link-runtime'), label='unsupported-apple-runtime')
     run(*objective_c, '--target=x86_64-apple-macos15.0', '-c', FIXTURES / 'provider.m', '-o', stages / 'x86.o',
@@ -370,8 +368,82 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
         finally:
             hidden.rename(library)
     report.update(artifacts=artifacts, installation_root=str(layout))
+    report['arc'] = _exercise_arc(run, defaults, profile['compiler_runtime_flag'],
+                                  link, stages, layout, dwarf)
     report['portable_services'] = _exercise_portable_services(
         run, defaults, linker, stages, layout, cxx_flags=report['cxx_toolchain']['flags'])
+
+
+def _exercise_arc(run, defaults, runtime_flag: str, link, stages: Path,
+                  layout: Path, dwarf: Path) -> dict:
+    objective_c = [*defaults, '-std=c17', '-fobjc-version=3', runtime_flag, '-fobjc-arc']
+    source = FIXTURES / 'arc.m'
+    threads = stages / 'arc-threads.o'
+    run(*defaults, '-std=c17', '-Wall', '-Wextra', '-Werror', '-O2', '-g',
+        '-c', FIXTURES / 'arc_threads.c', '-o', threads, label='arc-threads-object')
+    for option in ('-fblocks', '-fobjc-exceptions', '-fexceptions', '-fobjc-link-runtime'):
+        diagnostic = runtime_flag if option == '-fobjc-link-runtime' else 'experimental Darwin ARC'
+        run(*objective_c, option, '-c', source, '-o', stages / 'unsupported-arc.o',
+            rejects=(diagnostic, option), label='unsupported-arc' + option)
+    run(*objective_c, '-x', 'objective-c++', '-std=c++20', '-c', source, '-o', stages / 'unsupported-arc.o',
+        rejects=('experimental Darwin ARC', 'Objective-C++ ARC'), label='unsupported-arc-objcxx')
+
+    def imports(path: Path, label: str) -> list[str]:
+        result = run('/usr/bin/nm', '-u', '-j', path, label=label)
+        names = sorted({name.removeprefix('_') for name in result.splitlines()})
+        if any(name.startswith(('objc_', '__objc_', '_Block_', '_NSConcrete')) for name in names):
+            raise ValueError(f'ARC artifact has a foreign Objective-C runtime import: {path}')
+        return names
+
+    owned = {'objc3_darwin_arc_' + operation + '_v1' for operation in (
+        'retain', 'release', 'init_weak', 'store_weak', 'load_weak_retained',
+        'copy_weak', 'destroy_weak', 'pool_push', 'pool_pop', 'autorelease')}
+    routes = {}
+    for optimization in ('O0', 'O2'):
+        label = 'arc-' + optimization.lower()
+        required = owned | ({'objc3_darwin_arc_store_strong_v1'} if optimization == 'O0' else set())
+        obj = stages / (label + '.o')
+        ir = stages / (label + '.ll')
+        run(*objective_c, '-' + optimization, '-Wall', '-Wextra', '-Werror',
+            '-g', '-c', source, '-o', obj, label=label+'-object')
+        run(*objective_c, '-' + optimization, '-S', '-emit-llvm', source,
+            '-o', ir, label=label+'-ir')
+        ir_text = ir.read_text()
+        called = set(re.findall(r'\b(?:call|invoke)\b[^\n]*?@(objc3_darwin_arc_\w+)\(', ir_text))
+        if (not required <= called or
+                re.search(r'@(?:llvm\.objc\.(?!clang\.arc\.)|objc_)|clang\.arc\.attachedcall', ir_text)):
+            raise ValueError(f'{label} did not lower directly to its owned ARC entry points')
+        object_imports = imports(obj, label+'-object-imports')
+        if not required <= set(object_imports):
+            raise ValueError(f'{label} Mach-O object is missing owned ARC imports')
+        run(dwarf, '--verify', obj, label=label+'-dwarf')
+        routes[optimization] = {'object': {**verify_macho(obj, 'object'), 'imports': object_imports},
+                                'ir_sha256': file_digest(ir), 'canonical_calls': sorted(called)}
+        for linkage, library in (('static', 'libobjc3darwin.a'), ('dynamic', 'libobjc3darwin.dylib')):
+            label_route = label + '-' + linkage
+            executable = layout / 'bin' / label_route
+            rpath = ['-Wl,-rpath,@loader_path/../lib'] if linkage == 'dynamic' else []
+            run(*link, obj, threads, layout / 'lib' / library, *rpath,
+                '-o', executable, label=label_route+'-link')
+            dependencies = [line.strip().split(' (', 1)[0] for line in
+                            run('/usr/bin/otool', '-L', executable, label=label_route+'-load-paths')
+                            .splitlines()[1:]]
+            expected = ['/usr/lib/libSystem.B.dylib']
+            if linkage == 'dynamic':
+                expected.append('@rpath/libobjc3darwin.dylib')
+            if sorted(dependencies) != sorted(expected):
+                raise ValueError(f'{label_route} has an unexpected runtime dependency')
+            undefined = imports(executable, label_route+'-executable-imports')
+            owned_imports = {name for name in undefined if name.startswith('objc3_darwin_')}
+            if ((linkage == 'dynamic' and not required <= owned_imports) or
+                    (linkage == 'static' and owned_imports)):
+                raise ValueError(f'{label_route} has inconsistent owned runtime linkage')
+            if run(executable, label=label_route+'-native') != 'owned Objective-C 3 Darwin ARC: PASS':
+                raise ValueError(f'{label_route} failed the ARC lifetime witness')
+            routes[optimization][linkage] = {**verify_macho(executable, 'executable'),
+                                            'load_paths': dependencies, 'imports': undefined}
+    return {'status': 'PASS', 'scope': 'Stateless ARC objects and thread-local autorelease pools.',
+            'threads_object': verify_macho(threads, 'object'), 'routes': routes}
 
 
 def _exercise_portable_services(run, defaults, linker: str, stages: Path, layout: Path, *, cxx_flags: list[str]) -> dict:

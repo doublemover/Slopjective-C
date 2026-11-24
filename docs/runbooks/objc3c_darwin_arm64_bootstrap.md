@@ -63,7 +63,7 @@ class table to the owned runtime. Class sends use the metaclass method table,
 and instance sends use the class method table through the live object's ISA.
 Both lookups match the selector and exact no-argument `int` encoding. The compiler
 driver reserves `-fobjc-runtime=gnustep-2.99` for Objective-C 3 on macOS arm64
-and rejects ARC and Apple runtime linking for this profile.
+and rejects Apple runtime linking for this profile.
 
 From the same checkout and Xcode configuration as the bootstrap probe, put
 CMake and Ninja on `PATH` and run the explicit experimental qualification.
@@ -93,7 +93,17 @@ class and instance selectors, the most-derived override, and explicit
 Its relocated dynamic link puts the strong base reference in a separate
 dylib. The controls check a missing runtime at link and load, the prior
 GNUstep driver guard, a subclass with an ivar, a stateful root, a parameterized
-method, ARC, Apple runtime linking, and a wrong architecture.
+method, Apple runtime linking, and a wrong architecture.
+
+The ARC exercise compiles Objective-C C17 stateless classes with `-fobjc-arc`
+at O0 and O2. It checks owned allocation, strong references, weak zeroing,
+ordinary autoreleased returns, and nested pools. A second thread holds a weak
+load across the original owner's release and drains its own pool while the
+main thread's pool holds a different live object. The static and dynamic routes
+verify the executable's imports and run after relocation. The controls reject
+Blocks, exceptions, Objective-C++ ARC, and Apple runtime linkage. ARC weak
+slots require native pointer alignment. Autoreleasing a live instance requires
+an active pool on the calling thread.
 
 The qualifier also compiles the current concrete collection and text service
 sources with the patched compiler and libc++. The existing map-count and text
@@ -150,11 +160,8 @@ resulting storage before it becomes visible to a sender. Native controls need
 invalid or stale layout records, inherited offsets, and field inspection in
 debug information.
 
-ARC requires retain and release operations with a defined finalization path,
-weak-slot synchronization, autorelease pools, and exception-aware cleanup.
-Those operations need ABI and compiler lowering tests alongside the Mach-O
-loader tests. They also need native lifetime evidence for instances and Blocks
-that cross image and thread boundaries.
+Broader ARC support requires native evidence for stateful instances, Blocks,
+custom finalization, and exception-aware cleanup across images and threads.
 
 ## Evidence required for a port
 
@@ -171,7 +178,7 @@ that cross image and thread boundaries.
   registration emits ELF section boundaries, COMDAT groups and an ELF
   constructor section. The separate experimental compiler handles stateless root
   classes, subclasses, and instances with ordinary no-argument `int` methods.
-  Instance storage, properties, protocols, categories, ARC, exceptions and
+  Instance storage, properties, protocols, categories, broader ARC, exceptions and
   cross-image runtime lifecycle still need a design and native workloads. Inspect the linked
   dependency closure for accidental Apple ObjC2 use. [Driver guard](https://github.com/llvm/llvm-project/blob/392dfff97d29b59d77e5cac6d4b6ef2585fe7117/clang/lib/Driver/ToolChains/Clang.cpp#L8628)
   · [Registration lowering](https://github.com/llvm/llvm-project/blob/392dfff97d29b59d77e5cac6d4b6ef2585fe7117/clang/lib/CodeGen/CGObjCGNU.cpp#L1518)

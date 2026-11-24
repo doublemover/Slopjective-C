@@ -1,25 +1,24 @@
 diff --git a/clang/lib/CodeGen/CGObjCGNU.cpp b/clang/lib/CodeGen/CGObjCGNU.cpp
-index dc61dffce..dae44c071 100644
+index dc61dffce..5abfd5c46 100644
 --- a/clang/lib/CodeGen/CGObjCGNU.cpp
 +++ b/clang/lib/CodeGen/CGObjCGNU.cpp
-@@ -48,6 +48,29 @@ using namespace CodeGen;
+@@ -19,6 +19,7 @@
+ #include "clang/AST/ObjC3Async.h"
+ #include "CGObjC3ArcCarriers.h"
+ #include "CGObjC3ManagedStorage.h"
++#include "CGObjC3Darwin.h"
+ #include "CGObjCRuntime.h"
+ #include "CodeGenFunction.h"
+ #include "CodeGenModule.h"
+@@ -48,6 +49,20 @@ using namespace CodeGen;
  
  namespace {
  
-+static bool isObjC3DarwinRegistration(CodeGenModule &CGM) {
-+  const auto &Runtime = CGM.getLangOpts().ObjCRuntime;
-+  StringRef Arch = CGM.getTriple().getArchName();
-+  return CGM.getLangOpts().ObjC3 && !CGM.getLangOpts().ObjCAutoRefCount &&
-+         CGM.getTriple().isMacOSX() &&
-+         (Arch == "arm64" || Arch == "aarch64") &&
-+         Runtime.getKind() == ObjCRuntime::GNUstep &&
-+         Runtime.getVersion() == VersionTuple(2, 99);
-+}
-+
 +static bool isDarwinRegistrationMethod(const ObjCMethodDecl *Method) {
 +  if (!Method || Method->isDirectMethod() ||
 +      Method->isVariadic() || Method->param_size() ||
 +      Method->getObjC3FunctionEffects().Async ||
++      Method->getObjC3FunctionEffects().Throws != ObjC3ThrowsKind::None ||
 +      !Method->getReturnType()->isSpecificBuiltinType(BuiltinType::Int))
 +    return false;
 +  std::string Selector = Method->getSelector().getAsString();
@@ -32,7 +31,7 @@ index dc61dffce..dae44c071 100644
  /// Class that lazily initialises the runtime function.  Avoids inserting the
  /// types and the function declaration into a module if they're not used, and
  /// avoids constructing the type more than once if it's used more than once.
-@@ -956,6 +979,7 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -956,6 +971,7 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
    };
    static const char *const SectionsBaseNames[8];
    static const char *const PECOFFSectionsBaseNames[8];
@@ -40,7 +39,7 @@ index dc61dffce..dae44c071 100644
    template<SectionKind K>
    std::string sectionName() {
      if (CGM.getTriple().isOSBinFormatCOFF()) {
-@@ -1013,6 +1037,9 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -1013,6 +1029,9 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
    }
  
    ConstantAddress GenerateConstantString(const StringLiteral *SL) override {
@@ -50,7 +49,7 @@ index dc61dffce..dae44c071 100644
  
      auto Str = SL->getString();
      CharUnits Align = CGM.getPointerAlign();
-@@ -1247,6 +1274,11 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -1247,6 +1266,11 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
          CGObjCGNU::EnforceType(Builder, ObjCSuper.emitRawPointer(CGF),
                                 PtrToObjCSuperTy),
          cmd};
@@ -62,7 +61,7 @@ index dc61dffce..dae44c071 100644
      return CGF.EmitNounwindRuntimeCall(MsgLookupSuperFn, lookupArgs);
    }
  
-@@ -1483,6 +1515,8 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -1483,6 +1507,8 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
      return MangledTypes;
    }
    llvm::Constant  *GetTypeString(llvm::StringRef TypeEncoding) {
@@ -71,7 +70,7 @@ index dc61dffce..dae44c071 100644
      if (TypeEncoding.empty())
        return NULLPtr;
      std::string MangledTypes =
-@@ -1509,14 +1543,18 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -1509,14 +1535,18 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
        return GV;
      ConstantInitBuilder builder(CGM);
      auto SelBuilder = builder.beginStruct();
@@ -94,7 +93,7 @@ index dc61dffce..dae44c071 100644
      return GV;
    }
    llvm::StructType *emptyStruct = nullptr;
-@@ -1565,7 +1603,53 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -1565,7 +1595,77 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
    CatchTypeInfo getCatchAllTypeInfo() override {
      return CGM.getCXXABI().getCatchAllTypeInfo();
    }
@@ -140,15 +139,39 @@ index dc61dffce..dae44c071 100644
 +    if (CGM.getLangOpts().ObjCRuntime.getVersion() == VersionTuple(2, 99)) {
 +      if (!isObjC3DarwinRegistration(CGM)) {
 +        CGM.Error(SourceLocation(),
-+                  "experimental Darwin registration requires plain arm64 macOS in Objective-C 3 mode without ARC");
++                  "experimental Darwin registration requires plain arm64 macOS in Objective-C 3 mode");
 +        return nullptr;
++      }
++      if (isObjC3DarwinARC(CGM)) {
++        const auto &Lang = CGM.getLangOpts();
++        if (Lang.CPlusPlus || Lang.Blocks || Lang.ObjCExceptions ||
++            Lang.Exceptions) {
++          CGM.Error(SourceLocation(),
++                    "experimental Darwin ARC requires Objective-C without blocks or exceptions");
++          return nullptr;
++        }
++        // Every lifetime call must already name an owned entry point. LLVM's
++        // ARC passes may lower any surviving ownership intrinsic using the
++        // platform runtime spelling, even when it is unreachable afterward.
++        for (const llvm::Function &F : TheModule) {
++          StringRef Name = F.getName();
++          if (F.use_empty() || Name == "llvm.objc.clang.arc.use" ||
++              Name == "llvm.objc.clang.arc.noop.use")
++            continue;
++          if (Name.starts_with("llvm.objc.") || Name.starts_with("objc_") ||
++              Name.starts_with("_Block_")) {
++            CGM.Error(SourceLocation(),
++                      "experimental Darwin ARC encountered an unowned runtime entry point");
++            return nullptr;
++          }
++        }
 +      }
 +      return EmitDarwinRegistration();
 +    }
      // A COFF translation unit with no Objective-C metadata needs no runtime
      // registration. Emitting only zero-sized section sentinels creates an
      // entirely empty .objcrt section, which COFF linkers may discard even
-@@ -1773,6 +1857,25 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -1773,6 +1873,25 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
      // Get the class name
      ObjCInterfaceDecl *classDecl =
          const_cast<ObjCInterfaceDecl *>(OID->getClassInterface());
@@ -174,7 +197,7 @@ index dc61dffce..dae44c071 100644
      std::string className = classDecl->getObjCRuntimeNameAsString().str();
      auto *classNameConstant = MakeConstantString(className);
  
-@@ -2023,7 +2126,8 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -2023,7 +2142,8 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
          CGM.getPointerAlign(), false, llvm::GlobalValue::ExternalLinkage);
  
      auto *classRefSymbol = GetClassVar(className);
@@ -184,7 +207,7 @@ index dc61dffce..dae44c071 100644
      classRefSymbol->setInitializer(classStruct);
  
      if (IsCOFF) {
-@@ -2063,6 +2167,11 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -2063,6 +2183,11 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
      }
      assert(classStruct->getName() == SymbolForClass(className));
  
@@ -196,7 +219,7 @@ index dc61dffce..dae44c071 100644
      auto classInitRef = new llvm::GlobalVariable(TheModule,
          classStruct->getType(), false, llvm::GlobalValue::ExternalLinkage,
          classStruct, ManglePublicSymbol("OBJC_INIT_CLASS_") + className);
-@@ -2829,6 +2938,10 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
+@@ -2829,6 +2954,10 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
                                      const CallArgList &CallArgs,
                                      const ObjCMethodDecl *Method) {
    CGBuilderTy &Builder = CGF.Builder;
@@ -207,7 +230,7 @@ index dc61dffce..dae44c071 100644
    if (CGM.getLangOpts().getGC() == LangOptions::GCOnly) {
      if (Sel == RetainSel || Sel == AutoreleaseSel) {
        return RValue::get(EnforceType(Builder, Receiver,
-@@ -2839,7 +2952,7 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
+@@ -2839,7 +2968,7 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
      }
    }
  
@@ -216,7 +239,7 @@ index dc61dffce..dae44c071 100644
    CallArgList ActualArgs;
  
    ActualArgs.add(RValue::get(EnforceType(Builder, Receiver, IdTy)), ASTIdTy);
-@@ -2947,6 +3060,10 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
+@@ -2947,6 +3076,10 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
                                 const ObjCInterfaceDecl *Class,
                                 const ObjCMethodDecl *Method) {
    CGBuilderTy &Builder = CGF.Builder;
@@ -227,7 +250,7 @@ index dc61dffce..dae44c071 100644
  
    // Strip out message sends to retain / release in GC mode
    if (CGM.getLangOpts().getGC() == LangOptions::GCOnly) {
-@@ -3097,6 +3214,8 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
+@@ -3097,6 +3230,8 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
    // If this is a direct method, just emit it here.
    if (isDirect)
      imp = GenerateMethod(Method, Method->getClassInterface());
@@ -236,11 +259,175 @@ index dc61dffce..dae44c071 100644
    else
      // If we have non-legacy dispatch specified, we try using the
      // objc_msgSend() functions.  These are not supported on all platforms
+diff --git a/clang/lib/CodeGen/CGObjC.cpp b/clang/lib/CodeGen/CGObjC.cpp
+index d8b879729..e2792da0b 100644
+--- a/clang/lib/CodeGen/CGObjC.cpp
++++ b/clang/lib/CodeGen/CGObjC.cpp
+@@ -11,6 +11,7 @@
+ //===----------------------------------------------------------------------===//
+ 
+ #include "CGDebugInfo.h"
++#include "CGObjC3Darwin.h"
+ #include "CGObjCRuntime.h"
+ #include "CGObjC3ABIBoundaries.h"
+ #include "CGObjC3ArcCarriers.h"
+@@ -2380,6 +2381,39 @@ static void setARCRuntimeFunctionLinkage(CodeGenModule &CGM,
+ 
+ static llvm::Function *getARCIntrinsic(llvm::Intrinsic::ID IntID,
+                                        CodeGenModule &CGM) {
++  if (isObjC3DarwinARC(CGM)) {
++    llvm::StringRef Name;
++    switch (IntID) {
++    case llvm::Intrinsic::objc_retain: Name = "retain"; break;
++    case llvm::Intrinsic::objc_release: Name = "release"; break;
++    case llvm::Intrinsic::objc_storeStrong: Name = "store_strong"; break;
++    case llvm::Intrinsic::objc_autorelease:
++    case llvm::Intrinsic::objc_autoreleaseReturnValue:
++      Name = "autorelease"; break;
++    case llvm::Intrinsic::objc_retainAutorelease:
++    case llvm::Intrinsic::objc_retainAutoreleaseReturnValue:
++      Name = "retain_autorelease"; break;
++    case llvm::Intrinsic::objc_loadWeak: Name = "load_weak"; break;
++    case llvm::Intrinsic::objc_loadWeakRetained: Name = "load_weak_retained"; break;
++    case llvm::Intrinsic::objc_storeWeak: Name = "store_weak"; break;
++    case llvm::Intrinsic::objc_initWeak: Name = "init_weak"; break;
++    case llvm::Intrinsic::objc_destroyWeak: Name = "destroy_weak"; break;
++    case llvm::Intrinsic::objc_copyWeak: Name = "copy_weak"; break;
++    case llvm::Intrinsic::objc_moveWeak: Name = "move_weak"; break;
++    case llvm::Intrinsic::objc_autoreleasePoolPush: Name = "pool_push"; break;
++    case llvm::Intrinsic::objc_autoreleasePoolPop: Name = "pool_pop"; break;
++    default:
++      CGM.Error(SourceLocation(),
++                "ARC operation is unsupported by the experimental Darwin runtime");
++      break;
++    }
++    if (!Name.empty()) {
++      auto *Type = llvm::Intrinsic::getType(CGM.getLLVMContext(), IntID);
++      std::string Symbol = ("objc3_darwin_arc_" + Name + "_v1").str();
++      return cast<llvm::Function>(
++          CGM.CreateRuntimeFunction(Type, Symbol).getCallee());
++    }
++  }
+   llvm::Function *fn = CGM.getIntrinsic(IntID);
+   setARCRuntimeFunctionLinkage(CGM, fn);
+   return fn;
+@@ -2415,9 +2449,11 @@ static llvm::Value *emitARCValueOperation(
+ // its type, including when it reaches this point through an aggregate helper.
+ static bool checkObjC3ARCWeakAlignment(CodeGenFunction &CGF, Address Addr) {
+   const auto &Runtime = CGF.getLangOpts().ObjCRuntime;
+-  if (!CGF.getLangOpts().ObjC3 || !CGF.CGM.getTarget().getTriple().isOSLinux() ||
+-      Runtime.getKind() != ObjCRuntime::GNUstep ||
+-      Runtime.getVersion() != VersionTuple(2, 2) ||
++  bool QualifiedLinux = CGF.getLangOpts().ObjC3 &&
++                        CGF.CGM.getTarget().getTriple().isOSLinux() &&
++                        Runtime.getKind() == ObjCRuntime::GNUstep &&
++                        Runtime.getVersion() == VersionTuple(2, 2);
++  if ((!QualifiedLinux && !isObjC3DarwinARC(CGF.CGM)) ||
+       Addr.getAlignment() >= CGF.getPointerAlign())
+     return true;
+ 
+@@ -2493,6 +2529,11 @@ static llvm::Value *emitObjCValueOperation(CodeGenFunction &CGF,
+                                            llvm::Type *returnType,
+                                            llvm::FunctionCallee &fn,
+                                            StringRef fnName) {
++  if (isObjC3DarwinARC(CGF.CGM) && fnName.starts_with("objc_alloc")) {
++    CGF.CGM.Error(SourceLocation(),
++                  "experimental Darwin ARC requires the owned stateless allocation API");
++    return llvm::Constant::getNullValue(returnType ? returnType : value->getType());
++  }
+   if (isa<llvm::ConstantPointerNull>(value))
+     return value;
+ 
+@@ -2626,6 +2667,10 @@ static void emitAutoreleasedReturnValueMarker(CodeGenFunction &CGF) {
+ static llvm::Value *emitOptimizedARCReturnCall(llvm::Value *value,
+                                                bool IsRetainRV,
+                                                CodeGenFunction &CGF) {
++  // Owned Darwin ARC implements the full +0 result contract in ordinary
++  // calls. It does not use the platform's caller/callee assembly handshake.
++  if (isObjC3DarwinARC(CGF.CGM))
++    return IsRetainRV ? CGF.EmitARCRetainNonBlock(value) : value;
+   emitAutoreleasedReturnValueMarker(CGF);
+ 
+   // Add operand bundle "clang.arc.attachedcall" to the call instead of emitting
+@@ -2963,7 +3008,7 @@ llvm::Value *CodeGenFunction::EmitObjCAutoreleasePoolPush() {
+ void CodeGenFunction::EmitObjCAutoreleasePoolPop(llvm::Value *value) {
+   assert(value->getType() == Int8PtrTy);
+ 
+-  if (getInvokeDest()) {
++  if (getInvokeDest() && !isObjC3DarwinARC(CGM)) {
+     // Call the runtime method not the intrinsic if we are handling exceptions
+     llvm::FunctionCallee &fn =
+         CGM.getObjCEntrypoints().objc_autoreleasePoolPopInvoke;
+@@ -3076,6 +3121,8 @@ void CodeGenFunction::emitARCIntrinsicUse(CodeGenFunction &CGF, Address addr,
+ ///   call i8* \@objc_autorelease(i8* %value)
+ llvm::Value *CodeGenFunction::EmitObjCAutorelease(llvm::Value *value,
+                                                   llvm::Type *returnType) {
++  if (isObjC3DarwinARC(CGM))
++    return EmitARCAutorelease(value);
+   return emitObjCValueOperation(
+       *this, value, returnType,
+       CGM.getObjCEntrypoints().objc_autoreleaseRuntimeFunction,
+@@ -3086,6 +3133,8 @@ llvm::Value *CodeGenFunction::EmitObjCAutorelease(llvm::Value *value,
+ ///   call i8* \@objc_retain(i8* %value)
+ llvm::Value *CodeGenFunction::EmitObjCRetainNonBlock(llvm::Value *value,
+                                                      llvm::Type *returnType) {
++  if (isObjC3DarwinARC(CGM))
++    return EmitARCRetainNonBlock(value);
+   return emitObjCValueOperation(
+       *this, value, returnType,
+       CGM.getObjCEntrypoints().objc_retainRuntimeFunction, "objc_retain");
+@@ -3095,6 +3144,8 @@ llvm::Value *CodeGenFunction::EmitObjCRetainNonBlock(llvm::Value *value,
+ ///   call void \@objc_release(i8* %value)
+ void CodeGenFunction::EmitObjCRelease(llvm::Value *value,
+                                       ARCPreciseLifetime_t precise) {
++  if (isObjC3DarwinARC(CGM))
++    return EmitARCRelease(value, precise);
+   if (isa<llvm::ConstantPointerNull>(value)) return;
+ 
+   llvm::FunctionCallee &fn =
 diff --git a/clang/lib/Driver/ToolChains/Clang.cpp b/clang/lib/Driver/ToolChains/Clang.cpp
-index 230fd92b3..5d4cdb790 100644
+index 230fd92b3..127beb647 100644
 --- a/clang/lib/Driver/ToolChains/Clang.cpp
 +++ b/clang/lib/Driver/ToolChains/Clang.cpp
-@@ -8631,14 +8631,29 @@ ObjCRuntime Clang::AddObjCRuntimeArgs(const ArgList &args,
+@@ -131,6 +131,19 @@ shouldUseExceptionTablesForObjCExceptions(const ObjCRuntime &runtime,
+            Triple.getArch() == llvm::Triple::arm));
+ }
+ 
++static bool usesObjC3DarwinARC(const ArgList &Args) {
++  const Arg *Runtime =
++      Args.getLastArg(options::OPT_fnext_runtime, options::OPT_fgnu_runtime,
++                      options::OPT_fobjc_runtime_EQ);
++  if (!Runtime || !Runtime->getOption().matches(options::OPT_fobjc_runtime_EQ) ||
++      !isObjCAutoRefCount(Args))
++    return false;
++  ObjCRuntime Profile;
++  return !Profile.tryParse(Runtime->getValue()) &&
++         Profile.getKind() == ObjCRuntime::GNUstep &&
++         Profile.getVersion() == VersionTuple(2, 99);
++}
++
+ /// Adds exception related arguments to the driver command arguments. There's a
+ /// main flag, -fexceptions and also language specific flags to enable/disable
+ /// C++ and Objective-C exceptions. This makes it possible to for example
+@@ -174,7 +187,7 @@ static bool addExceptionArgs(const ArgList &Args, types::ID InputType,
+   // is not necessarily sensible, but follows GCC.
+   if (types::isObjC(InputType) &&
+       Args.hasFlag(options::OPT_fobjc_exceptions,
+-                   options::OPT_fno_objc_exceptions, true)) {
++                   options::OPT_fno_objc_exceptions, !usesObjC3DarwinARC(Args))) {
+     CmdArgs.push_back("-fobjc-exceptions");
+ 
+     EH |= shouldUseExceptionTablesForObjCExceptions(objcRuntime, Triple);
+@@ -7473,7 +7486,7 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
+ 
+   // -fblocks=0 is default.
+   if (Args.hasFlag(options::OPT_fblocks, options::OPT_fno_blocks,
+-                   TC.IsBlocksDefault()) ||
++                   TC.IsBlocksDefault() && !usesObjC3DarwinARC(Args)) ||
+       (Args.hasArg(options::OPT_fgnu_runtime) &&
+        Args.hasArg(options::OPT_fobjc_nonfragile_abi) &&
+        !Args.hasArg(options::OPT_fno_blocks))) {
+@@ -8631,14 +8644,44 @@ ObjCRuntime Clang::AddObjCRuntimeArgs(const ArgList &args,
        getToolChain().getDriver().Diag(diag::err_drv_unknown_objc_runtime)
            << value;
      }
@@ -259,9 +446,24 @@ index 230fd92b3..5d4cdb790 100644
 +        if (args.getLastArgValue(options::OPT_fobjc_version_EQ) != "3")
 +          getToolChain().getDriver().Diag(diag::err_drv_argument_not_allowed_with)
 +              << runtimeArg->getAsString(args) << "Objective-C 2 mode; use -fobjc-version=3";
-+        if (isObjCAutoRefCount(args))
-+          getToolChain().getDriver().Diag(diag::err_drv_argument_not_allowed_with)
-+              << runtimeArg->getAsString(args) << "-fobjc-arc";
++        if (isObjCAutoRefCount(args)) {
++          const char *Unsupported = nullptr;
++          if (llvm::any_of(inputs, [](const InputInfo &Input) {
++                return types::isCXX(Input.getType());
++              }))
++            Unsupported = "Objective-C++ ARC";
++          else if (args.hasFlag(options::OPT_fblocks, options::OPT_fno_blocks, false))
++            Unsupported = "-fblocks";
++          else if (args.hasFlag(options::OPT_fobjc_exceptions,
++                                options::OPT_fno_objc_exceptions, false))
++            Unsupported = "-fobjc-exceptions";
++          else if (args.hasFlag(options::OPT_fexceptions,
++                                options::OPT_fno_exceptions, false))
++            Unsupported = "-fexceptions";
++          if (Unsupported)
++            getToolChain().getDriver().Diag(diag::err_drv_argument_not_allowed_with)
++                << "experimental Darwin ARC" << Unsupported;
++        }
 +        if (args.hasArg(options::OPT_fobjc_link_runtime))
 +          getToolChain().getDriver().Diag(diag::err_drv_argument_not_allowed_with)
 +              << runtimeArg->getAsString(args) << "-fobjc-link-runtime";
@@ -274,3 +476,40 @@ index 230fd92b3..5d4cdb790 100644
  
      runtimeArg->render(args, cmdArgs);
      return runtime;
+diff --git a/clang/lib/CodeGen/CGObjC3Darwin.h b/clang/lib/CodeGen/CGObjC3Darwin.h
+new file mode 100644
+index 000000000..d4ae84d29
+--- /dev/null
++++ b/clang/lib/CodeGen/CGObjC3Darwin.h
+@@ -0,0 +1,31 @@
++//===--- CGObjC3Darwin.h - Experimental owned Darwin runtime -----*- C++ -*-===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// See https://llvm.org/LICENSE.txt for license information.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++
++#ifndef LLVM_CLANG_LIB_CODEGEN_CGOBJC3DARWIN_H
++#define LLVM_CLANG_LIB_CODEGEN_CGOBJC3DARWIN_H
++
++#include "CodeGenModule.h"
++
++namespace clang::CodeGen {
++
++inline bool isObjC3DarwinRegistration(const CodeGenModule &CGM) {
++  const auto &Runtime = CGM.getLangOpts().ObjCRuntime;
++  llvm::StringRef Arch = CGM.getTriple().getArchName();
++  return CGM.getLangOpts().ObjC3 && CGM.getTriple().isMacOSX() &&
++         (Arch == "arm64" || Arch == "aarch64") &&
++         Runtime.getKind() == ObjCRuntime::GNUstep &&
++         Runtime.getVersion() == VersionTuple(2, 99);
++}
++
++inline bool isObjC3DarwinARC(const CodeGenModule &CGM) {
++  return CGM.getLangOpts().ObjCAutoRefCount && isObjC3DarwinRegistration(CGM);
++}
++
++} // namespace clang::CodeGen
++
++#endif

@@ -61,8 +61,8 @@ uses the installed Clang driver and resource directory to compile the packaged
 source example. It checks Mach-O arm64 objects, the Darwin archive, DWARF, private
 runtime install names and relative load paths. It links and executes static and
 shared-runtime consumers, including a late-loaded fixture. It also checks that
-ARC and x86-64 compilation and missing-runtime linking produce the expected
-diagnostics. Successful evidence lives in `qualification.json`, together with
+ARC with Objective-C exceptions, x86-64 compilation, and missing-runtime
+linking produce the expected diagnostics. Successful evidence lives in `qualification.json`, together with
 exact commands and native exit statuses.
 
 Local tests cover the archive format, relocation structure, manifest and content

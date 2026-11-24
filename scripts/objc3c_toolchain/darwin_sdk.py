@@ -482,8 +482,8 @@ def qualify(archive: Path, expected_sha256: str, output: Path) -> dict:
         link = [*defaults, '--ld-path=' + host['tools']['ld']['path']]
         for name in ('provider', 'main', 'late'):
             native(*objc, '-c', prefix / DEMO / (name + '.m'), '-o', name + '.o')
-        native(*objc, '-fobjc-arc', '-c', prefix / DEMO / 'provider.m', '-o', 'arc.o',
-               rejects=(RUNTIME_FLAG, '-fobjc-arc'))
+        native(*objc, '-fobjc-arc', '-fobjc-exceptions', '-c', prefix / DEMO / 'provider.m', '-o', 'arc.o',
+               rejects=('experimental Darwin ARC', '-fobjc-exceptions'))
         native(*objc, '--target=x86_64-apple-macos15.0', '-c', prefix / DEMO / 'provider.m', '-o', 'x86.o',
                rejects=(RUNTIME_FLAG, 'x86_64'))
         native(ar, '--format=darwin', 'rcs', 'libprovider.a', 'provider.o')
