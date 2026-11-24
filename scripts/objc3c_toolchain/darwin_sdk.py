@@ -18,6 +18,7 @@ import tempfile
 import unicodedata
 
 from .darwin_bootstrap import DEPLOYMENT_TARGET, ROOT, require_apple_silicon, verify_macho
+from . import darwin_sdk_arc as arc_consumer
 from . import darwin_sdk_sanitizers as sanitizers
 from .package import MANIFEST, SCHEMA, _digest, _file_hash, inventory, normalize_permissions, verify_sdk
 
@@ -34,7 +35,7 @@ SDK_VERSION = '15.5'
 LIBRARY = 'libobjc3darwin'
 SYSTEM = '/usr/lib/libSystem.B.dylib'
 DEMO = 'share/objc3c/examples/registration'
-DEMO_FILES = ('api.h', 'provider.m', 'main.m', 'late.m')
+DEMO_FILES = ('api.h', 'provider.m', 'main.m', 'late.m', *arc_consumer.SOURCES)
 WITNESS = 'owned Objective-C 3 Darwin registration: PASS\nowned Objective-C 3 Darwin instances: PASS'
 MAX_ENTRIES = 10000
 MAX_PAYLOAD_BYTES = 1024 ** 3
@@ -48,13 +49,18 @@ def _environment():
     return env
 
 
-def _run(*args, cwd=None, commands=None, rejects=(), timeout=60):
+def _run(*args, cwd=None, commands=None, rejects=(), timeout=60, trace_libraries=False):
     argv = list(map(str, args))
-    result = subprocess.run(argv, env=_environment(), cwd=cwd, capture_output=True,
+    environment = _environment()
+    if trace_libraries:
+        environment['DYLD_PRINT_LIBRARIES'] = '1'
+    result = subprocess.run(argv, env=environment, cwd=cwd, capture_output=True,
                             text=True, timeout=timeout, errors='replace')
     if commands is not None:
         commands.append({'argv': argv, 'exit_status': result.returncode, 'expected_diagnostics': list(rejects),
                          'stdout': result.stdout, 'stderr': result.stderr})
+        if trace_libraries:
+            commands[-1]['dyld_print_libraries'] = True
     if rejects and (result.returncode not in (1, 2) or any(token not in result.stderr for token in rejects)):
         raise ValueError(f'{argv[0]} did not issue the expected rejection: {result.stderr.strip()}')
     if not rejects and result.returncode:
@@ -601,6 +607,7 @@ def qualify(archive: Path, expected_sha256: str, output: Path) -> dict:
         reports['debug'] = verify_macho(debug_file, 'debug_info')
         if native(project / 'static') != WITNESS or native(project / 'dynamic', project / 'liblate.dylib') != WITNESS:
             raise ValueError('cold relocated compiler/runtime witness failed')
+        report['arc'] = arc_consumer.qualify_consumer(prefix, manifest, host, output / arc_consumer.DIRECTORY, commands)
         if sanitizers.KEY in manifest:
             report[sanitizers.KEY] = sanitizers.qualify_consumers(
                 prefix, manifest, host, output / sanitizers.WITNESS_DIRECTORY, commands)

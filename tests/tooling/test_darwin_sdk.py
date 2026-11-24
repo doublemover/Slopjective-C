@@ -10,7 +10,7 @@ import tarfile
 
 import pytest
 
-from scripts.objc3c_toolchain import darwin_sdk as sdk
+from scripts.objc3c_toolchain import darwin_sdk as sdk, darwin_sdk_arc as arc
 from scripts.objc3c_toolchain.package import MANIFEST, SCHEMA, _digest, _file_hash, inventory, normalize_permissions
 
 
@@ -163,6 +163,109 @@ def test_install_command_rejects_the_actual_non_apple_silicon_host(tmp_path):
     assert result.returncode == 2
     assert 'requires an Apple Silicon Mac running native arm64 Python' in result.stderr
     assert not result.stdout and not prefix.exists()
+
+
+def test_installed_arc_load_trace_resolves_native_root_aliases(tmp_path):
+    private = tmp_path.resolve() / 'private' / 'var'
+    runtime = private / 'Relocated SDK/lib/libobjc3darwin.dylib'
+    put(private, 'Relocated SDK/lib/libobjc3darwin.dylib', b'owned runtime')
+    public = tmp_path / 'var'
+    public.symlink_to(private, target_is_directory=True)
+    trace = f'dyld[123]: <UUID> {public / runtime.relative_to(private)}\n'
+    assert arc.loaded_runtime(trace, runtime) == str(runtime)
+    with pytest.raises(ValueError, match='exact installed'):
+        arc.loaded_runtime('', runtime)
+
+
+@pytest.mark.parametrize('fault', (None, 'stale-source', 'wrong-header', 'foreign-import', 'wrong-runtime'))
+def test_installed_arc_witness_binds_the_archive_compiler_headers_and_loaded_runtime(
+        tmp_path, structural_host, monkeypatch, fault):
+    tmp_path = tmp_path.resolve()
+    prefix = tmp_path / 'Relocated Objective-C 3 SDK'
+    manifest = staged_product(prefix, structural_host)
+    compiler = prefix / 'bin/clang'
+    runtime = prefix / 'lib/libobjc3darwin.dylib'
+    resource = prefix / manifest['resource_dir']
+    stddef = resource / 'include/stddef.h'
+    xcode = tmp_path / 'Apple SDK'
+    pthread = xcode / 'usr/include/pthread.h'
+    put(xcode, 'usr/include/pthread.h', b'Apple pthread header')
+    host = {**structural_host, 'sdk_path': str(xcode)}
+    output = tmp_path / arc.DIRECTORY
+    rpath = '@loader_path/../Relocated Objective-C 3 SDK/lib'
+    commands = []
+
+    def quote(path):
+        return str(path).replace(' ', '\\ ')
+
+    def execute(*args, cwd=None, commands=None, trace_libraries=False):
+        tool, output_bytes = args[0], ''
+        stderr = ''
+        if tool == compiler:
+            assert args[1:7] == ('--no-default-config', '--target=' + sdk.TARGET, '-isysroot', xcode,
+                                 '-resource-dir', resource)
+            if args[-1] == '-print-file-name=libclang_rt.osx.a':
+                output_bytes = str(resource / 'lib/darwin/libclang_rt.osx.a')
+            else:
+                if '-c' in args:
+                    name = args[args.index('-c') + 1]
+                    assert name in (prefix / sdk.DEMO / 'arc.m', prefix / sdk.DEMO / 'arc_threads.c')
+                    assert ('-fobjc-arc' in args) == (name.suffix == '.m')
+                    assert '-O2' in args
+                    if '-MF' in args:
+                        depfile = args[args.index('-MF') + 1]
+                        included = pthread if fault == 'wrong-header' else stddef
+                        depfile.write_text(f'arc-threads.o: {quote(name)} {quote(pthread)} {quote(included)}\n')
+                else:
+                    assert runtime in args and '-Wl,-rpath,' + rpath in args
+                args[-1].write_bytes(macho(1 if '-c' in args else 2))
+        elif tool == '/usr/bin/nm':
+            assert args[1:] == ('-u', '-j', output / 'arc')
+            names = sorted('_' + name for name in arc.REQUIRED_IMPORTS)
+            if fault == 'foreign-import':
+                names.append('_objc_release')
+            output_bytes = '\n'.join(names)
+        elif tool == structural_host['tools']['otool']['path']:
+            if args[1] == '-L':
+                output_bytes = f'{args[2]}:\n\t{sdk.SYSTEM} (version)\n\t@rpath/{runtime.name} (version)'
+            else:
+                output_bytes = (f'Load command 0\ncmd LC_RPATH\ncmdsize 72\npath {rpath} (offset 12)\n'
+                                'Load command 1\ncmd LC_BUILD_VERSION\nplatform MACOS\nminos 15.0\nsdk 15.5')
+        elif tool == output / 'arc':
+            assert trace_libraries and cwd == output
+            loaded = runtime
+            if fault == 'wrong-runtime':
+                loaded = tmp_path / 'Other runtime' / runtime.name
+                put(loaded.parent, runtime.name, runtime.read_bytes())
+            stderr = f'dyld[123]: <UUID> {sdk.SYSTEM}\ndyld[123]: <UUID> {loaded}\n'
+            output_bytes = arc.WITNESS
+        else:
+            assert args == (prefix / 'bin/llvm-dwarfdump', '--verify', output / 'arc.o')
+        if commands is not None:
+            commands.append({'argv': list(map(str, args)), 'exit_status': 0, 'stdout': output_bytes, 'stderr': stderr})
+        return output_bytes
+
+    monkeypatch.setattr(sdk, '_run', execute)
+    if fault == 'stale-source':
+        (prefix / sdk.DEMO / 'arc.m').write_text('unqualified source')
+    if fault:
+        diagnostics = {'stale-source': 'differs from its producer receipt',
+                       'wrong-header': 'pinned Apple SDK headers',
+                       'foreign-import': 'inconsistent owned runtime imports', 'wrong-runtime': 'exact installed'}
+        with pytest.raises(ValueError, match=diagnostics[fault]):
+            arc.qualify_consumer(prefix, manifest, host, output, commands)
+        if fault == 'stale-source':
+            assert not commands
+    else:
+        receipt = arc.qualify_consumer(prefix, manifest, host, output, commands)
+        assert receipt['status'] == 'PASS' and receipt['support_truth'] is False
+        assert receipt['seal_sha256'] == manifest['seal_sha256'] and receipt['optimization'] == 'O2'
+        assert receipt['loaded_runtime'] == {'path': str(runtime), 'sha256': _file_hash(runtime)}
+        assert receipt['inputs'][sdk.DEMO + '/arc.m'] == _file_hash(prefix / sdk.DEMO / 'arc.m')
+        assert receipt['thread_dependencies'] == {'sha256': _file_hash(output / 'arc-threads.d'),
+                                                   'stddef': str(stddef), 'pthread': str(pthread)}
+        assert receipt['artifacts']['arc']['rpaths'] == [rpath]
+        assert commands[-1]['argv'] == [str(output / 'arc')]
 
 
 def payload_archive(destination, manifest, *members):
