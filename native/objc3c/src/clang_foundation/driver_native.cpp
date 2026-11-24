@@ -2,7 +2,9 @@
 #include "clang_foundation/sdk_identity.h"
 #include "clang_foundation/source_identity.h"
 #include "clang/Driver/Driver.h"
+#include "clang/Options/Options.h"
 #include "llvm/ADT/SmallVector.h"
+#include "llvm/Option/ArgList.h"
 #include "llvm/Support/Allocator.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/FileSystem.h"
@@ -61,7 +63,7 @@ int RunNativeDriver(int argc, char **raw_argv) {
   const bool objcxx = std::any_of(argv + 1, argv + argc,
       [](const char *arg) { return std::string_view(arg) == "--objcxx"; });
   std::vector<std::string> forwarded;
-  bool cxx = false, objc = false, source = false, query = false;
+  bool cxx = false, objc = false, source = false;
   bool header = false;
   for (int i = 1; i < argc; ++i) {
     std::string arg(argv[i]);
@@ -101,30 +103,40 @@ int RunNativeDriver(int argc, char **raw_argv) {
     } else if (arg == "--") {
       // Clang's own options remain options after the interface CLI delimiter.
       continue;
-    } else {
-      if (arg == "--help" || arg == "--version" || arg == "-print-resource-dir")
-        query = true;
-      const auto ext = fs::path(arg).extension();
-      if (!arg.starts_with('-') && (ext == ".m" || ext == ".mm" || ext == ".objc3"))
-        objc = true;
-      if (!arg.starts_with('-') && (ext == ".mm" || ext == ".cpp" || ext == ".cc" || ext == ".cxx"))
-        cxx = true;
-      if (!arg.starts_with('-') && (ext == ".c" || ext == ".m" || ext == ".mm" ||
-          ext == ".objc3" || ext == ".cpp" || ext == ".cc" || ext == ".cxx"))
-        source = true;
-      if (ext == ".objc3" && !arg.starts_with('-')) {
-        forwarded.insert(forwarded.end(), {"-x", objcxx ? "objective-c++" : "objective-c", arg});
-        const bool more_inputs = std::any_of(argv + i + 1, argv + argc, [](const char *next) {
-          const std::string_view value(next);
-          const auto suffix = fs::path(next).extension();
-          return !value.starts_with('-') && (value.starts_with('@') || suffix == ".c" ||
-              suffix == ".m" || suffix == ".mm" || suffix == ".cc" || suffix == ".cpp" ||
-              suffix == ".cxx" || suffix == ".o" || suffix == ".a" || suffix == ".so");
-        });
-        if (more_inputs) forwarded.insert(forwarded.end(), {"-x", "none"});
-      } else
-        forwarded.push_back(arg);
-    }
+    } else
+      forwarded.push_back(arg);
+  }
+  using namespace clang::options;
+  llvm::SmallVector<const char *, 32> clang_arguments;
+  for (const auto &arg : forwarded)
+    clang_arguments.push_back(arg.c_str());
+  unsigned missing_index = 0, missing_count = 0;
+  const auto parsed = clang::getDriverOptTable().ParseArgs(
+      clang_arguments, missing_index, missing_count, llvm::opt::Visibility(ClangOption));
+  const bool query = parsed.hasArg(OPT_help, OPT__version, OPT_print_resource_dir);
+  const bool link = !header &&
+      !parsed.hasArg(OPT_c, OPT_S, OPT_E, OPT_fsyntax_only, OPT_M, OPT_MM,
+                     OPT__precompile, OPT_emit_ast, OPT__analyze);
+  llvm::SmallVector<unsigned, 4> objc3_inputs;
+  const auto *last_input = parsed.getLastArg(OPT_INPUT);
+  for (const auto *input : parsed.filtered(OPT_INPUT)) {
+    const auto extension = fs::path(input->getValue()).extension();
+    const bool input_objc = extension == ".m" || extension == ".mm" || extension == ".objc3";
+    const bool input_cxx = extension == ".mm" || extension == ".cpp" || extension == ".cc" ||
+                           extension == ".cxx";
+    objc |= input_objc;
+    cxx |= input_cxx;
+    source |= input_objc || input_cxx || extension == ".c";
+    if (extension == ".objc3")
+      objc3_inputs.push_back(input->getIndex());
+  }
+  // Scope the Objective-C 3 language override to one actual input. Clang's
+  // option table excludes operands such as the output filename and PCH path.
+  const unsigned last_input_index = last_input ? last_input->getIndex() : 0;
+  for (auto input = objc3_inputs.rbegin(); input != objc3_inputs.rend(); ++input) {
+    if (*input < last_input_index)
+      forwarded.insert(forwarded.begin() + *input + 1, {"-x", "none"});
+    forwarded.insert(forwarded.begin() + *input, {"-x", objcxx ? "objective-c++" : "objective-c"});
   }
   std::string clang, resources, error;
   if (!VerifyRelocatedSDK(root.string(), OBJC3C_FOUNDATION_DRIVER_SHA256,
@@ -150,13 +162,9 @@ int RunNativeDriver(int argc, char **raw_argv) {
   // Defaults precede user arguments so explicit ARC/MRC/runtime choices win.
   args.insert(args.end(), forwarded.begin(), forwarded.end());
   if (!query) {
-    args.insert(args.end(), {"-I" + (root / "include").string(),
-        "-L" + (root / "lib").string(), "-fuse-ld=lld"});
-    bool link = !header;
-    for (const auto &arg : forwarded)
-      if (arg == "-c" || arg == "-S" || arg == "-E" || arg == "-fsyntax-only" ||
-          arg == "-M" || arg == "-MM") link = false;
-    if (link) args.insert(args.end(), {"-lobjc", "-Wl,-rpath," + (root / "lib").string(),
+    args.push_back("-I" + (root / "include").string());
+    if (link) args.insert(args.end(), {"-L" + (root / "lib").string(),
+        "-fuse-ld=lld", "-lobjc", "-Wl,-rpath," + (root / "lib").string(),
         // DWARF 5 address pools must distinguish discarded COMDAT helpers
         // from live code at address zero. In particular, separate Block
         // providers commonly emit identical copy/dispose helpers.

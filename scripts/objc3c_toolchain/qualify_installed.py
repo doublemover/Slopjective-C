@@ -32,16 +32,23 @@ def qualify_installed(repo: Path, prefix: Path, output: Path) -> dict:
         run('help', [compiler, '--help'])
         for standard in ('c++20', 'c++23'):
             pch = client / ('driver-' + standard + '.pch')
+            consumer = client / ('pch-consumer-' + standard + '.o')
             application = client / ('pch-application-' + standard)
-            mode = ['-x', 'objective-c++-header'] if standard == 'c++20' else ['-xobjective-c++-header']
+            mode = (['-x', 'objective-c++-header'] if standard == 'c++20'
+                    else ['--precompile', '-xobjective-c++-header'])
             run('pch-generate-' + standard, [compiler, *mode, '-std=' + standard,
-                '-g', 'driver-pch.h', '-o', pch])
+                '-g', '-Werror', 'driver-pch.h', '-o', pch])
             run('pch-consume-' + standard, [compiler, '-std=' + standard,
-                '-g', '-include-pch', pch, 'driver-pch.mm', '-o', application])
+                '-g', '-Werror', '-include-pch', pch, '-c', 'driver-pch.mm', '-o', consumer])
+            run('pch-link-' + standard, [compiler, '-Werror', consumer, '-o', application])
             run('pch-execute-' + standard, [application])
+        run('independent-compile', [compiler, '-Werror', '-std=c17', '-c', 'main.objc3', '-o', 'main.o'])
+        run('independent-link', [compiler, '-Werror', 'main.o', '-o', 'independent'])
+        run('independent-run', [client / 'independent'])
+        run('c-helper-compile', [compiler, '-Werror', '-std=c17', '-c', 'extra.c', '-o', 'extra.o'])
         for optimize in ('O0', 'O2'):
             application = client / ('application-' + optimize)
-            run(f'compile-{optimize}', [compiler, 'main.objc3', f'-{optimize}', '-g',
+            run(f'compile-{optimize}', [compiler, 'main.objc3', 'extra.o', f'-{optimize}', '-g',
                                       '-MMD', '-MF', 'main.d', '-o', application])
             if 'main.objc3' not in (client / 'main.d').read_text():
                 raise ValueError('Clang dependency output omits the source')

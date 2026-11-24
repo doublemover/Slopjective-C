@@ -33,9 +33,11 @@ The compiler accepts normal Clang compilation, linking, diagnostics and
 Makefile dependency options. `.objc3` selects Objective-C 3 with ARC and Blocks.
 Use `-fno-objc-arc` for explicit manual ownership, `.mm` for Objective-C++, and
 `-c`, `-S`, `-E` or `-fsyntax-only` for individual compilation stages.
+Compile any C helpers separately to keep their translation units in C mode.
 
 ```sh
-objc3c main.objc3 helpers.c -O2 -MMD -MF application.d -o application
+objc3c -std=c17 -O2 -c helpers.c -o helpers.o
+objc3c main.objc3 helpers.o -O2 -MMD -MF application.d -o application
 objc3c library.m --objc3 --arc --emit-object library.o \
   --emit-interface Library.objc3i --module Library --package example.library
 ```
