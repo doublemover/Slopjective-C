@@ -84,13 +84,13 @@ seconds with a fresh consumer build. The tested fixture commit was
 `05c97fcbf7a765b9842760d9fd94c3196b9f9809`.
 
 The repaired Apple Silicon registrar passed at
-\`ebb30539dd68d63f18e1a0f41e9f724d674028ea\`. The native report records
+`ebb30539dd68d63f18e1a0f41e9f724d674028ea`. The native report records
 39 bootstrap commands and 60 registration commands. The preflight linked
 and ran with Xcode 16.4 libc++ and SDK 15.5. Static and dynamic registration,
 stateless instances, ordered map operations, and text scalar boundaries
 passed natively. Replaying the retained archive verified the command logs,
 Mach-O bytes, and source hashes. Its ZIP SHA-256 is
-\`7f46ec3d0f861484837947bae70b78611b949de93e3d94aa67a7210b1ca6229f\`.
+`7f46ec3d0f861484837947bae70b78611b949de93e3d94aa67a7210b1ca6229f`.
 [Native registrar receipt](https://github.com/doublemover/Slopjective-C/actions/runs/45292115173/artifacts/14876712288)
 
 The expanded candidate adds stateless inheritance, fixed root storage,

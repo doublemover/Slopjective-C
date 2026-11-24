@@ -441,9 +441,12 @@ def test_native_assurance_workflow_has_exact_periodic_and_dispatch_revision_gate
     assert '--periodic-sha "$GITHUB_SHA"' in workflow
     assert 'objc3c_assurance plan' in workflow and 'objc3c_assurance verify' in workflow
     dependencies = {'gnupg', 'libxml2', 'libcurl4', 'libedit2', 'libsqlite3-0', 'libncurses6'}
-    for path in ('native-assurance.yml', 'adaptive-closeout.yml'):
-        text = (root / '.github/workflows' / path).read_text()
-        assert all(name in text for name in dependencies)
+    assert all(name in workflow for name in dependencies)
+    closeout = (root / '.github/workflows/adaptive-closeout.yml').read_text()
+    assert 'uses: ./.github/workflows/native-assurance.yml' in closeout
+    assert 'needs: [source, native]' in closeout and 'archive_install: false' in closeout
+    assert '"$SOURCE_SHA" != "$GITHUB_SHA"' in closeout
+    assert all(name not in closeout for name in dependencies)
 
 
 def test_frontend_fuzz_evidence_requires_patched_frontend_feedback(tmp_path):
