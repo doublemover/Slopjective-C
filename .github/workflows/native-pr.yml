@@ -85,7 +85,7 @@ jobs:
           python3 -B -m scripts.objc3c_assurance.preview_download \
             --manifest "$RUNNER_TEMP/native-pr-preview/manifest.json" --directory "$RUNNER_TEMP/native-pr-preview" \
             "${witness[@]}" > out/native-pr/preview-install.json
-      - name: Execute the bounded native source suites or record prose classification
+      - name: Execute the native source suites and bounded implementation analysis
         id: run
         shell: bash
         run: |
@@ -130,7 +130,7 @@ jobs:
         with:
           name: native-pr-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: out/native-pr-evidence
-      - name: Verify the exact tested source and retained native evidence
+      - name: Verify the exact tested source and retained native and analysis evidence
         shell: bash
         run: |
           python3 -B -m scripts.objc3c_assurance.pr_native \

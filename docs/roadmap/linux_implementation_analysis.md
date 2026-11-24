@@ -116,16 +116,17 @@ python3 -B -m scripts.objc3c_toolchain.implementation_analysis \
 
 The `Extended Linux implementation analysis` workflow owns the durable gate.
 It runs on manual dispatch, the existing weekly schedule and exact-SHA SDK release
-calls. Routine PR feedback uses the independent quick checks and does not rebuild
-LLVM or run full static analysis. Manual/local dependency selection still scopes
-native edits independently to the frontend and standalone runtime; shared
+calls. The native PR gate runs the [bounded executor analysis](#required-executor-analysis-pilot)
+using its existing compiler and CMake graph. Manual/local dependency selection scopes
+native edits independently to the frontend and standalone runtime. Shared
 fork/tool/checker changes select maintained Clang units as well. Complete extended
 runs use one immutable SHA. Repeated requests for the same source revision queue without canceling active
 work. A repaired release can progress alongside an older revision's analysis once
-its native build has completed. The workflow builds the admitted `compiler-asan-ubsan` foundation,
-separate integrated-frontend and standalone-runtime databases, and the matched
-analysis tool in each bounded six-hour partition job; native qualification has
-its own execution budget. Completed analysis actions also report progress in the
+its native build has completed. The workflow restores the admitted shared
+`compiler-asan-ubsan` foundation and builds separate integrated-frontend and
+standalone-runtime databases and the matched analysis tool in each bounded
+six-hour partition job. Native qualification has its own execution budget.
+Completed analysis actions also report progress in the
 job log. A second job admits only the exact
 revision, canonical plan, complete per-TU inventory, paired detector controls,
 clean diagnostics and content-hashed retained evidence.
@@ -237,7 +238,7 @@ records the exact artifact IDs and SHA-256 digests. [x86-64 gate](https://github
 - Seven checked executor controls and `retainable-family-analyzer.m` passed in
   the published host receipts. The empty suppression policy is code-enforced for
   maintained source additions. Scheduled and release gates cover the full
-  inventory. Required default-PR analyzer execution remains open.
+  inventory.
 
 While a current producer artifact is retained, the existing analysis runner can
 reuse it through `--foundation-bundle` and `--foundation-archive-sha256` from the
@@ -255,3 +256,28 @@ before extracting it and runs the existing terminal aggregator.
 python3 -B -m scripts.objc3c_implementation_assurance.replay \
   --host linux-x86_64 --archive-directory /path/to/retained-artifacts
 ```
+
+## Required executor analysis pilot
+
+The native PR job checks `service_executor.cpp` with the reviewed
+`core.NullDereference` blocker. For native source changes it preprocesses that
+translation unit with its real integrated Ninja compile command. An edit to a
+transitive header selects the unchanged translation unit. Foundation, CMake and
+pilot input changes also select it. The gate reads the admitted base SDK
+manifest and exact driver bytes when the locked fork matches. When the native
+PR already built its current foundation, it checks the same build receipt and
+the driver's install-time RPATH transition. Both routes use the compiler already
+chosen by the native job. The weekly and release clang-tidy scans retain the
+full checker set and translation-unit inventories.
+
+The terminal job checks the selected dependency closure, original compile
+flags, response files, checker inventory, paired source-site controls and SARIF
+results. It requires explicit evidence when the executor is outside the selected
+scope. A blocker or incomplete evidence fails the native PR gate.
+
+Local verification used the published x86-64 SDK and its matching `8fe5c2fd8`
+native source. The actual CMake/Ninja executor action qualified in approximately
+three seconds after SDK admission. A same-length, same-mtime transitive header
+edit in an isolated control selected the unchanged executor and reported the
+expected checker. Restoring the header cleared the finding. A hosted native PR
+replay of this staged gate and additional promoted checker scopes remain open.

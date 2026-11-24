@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import re
 
+from scripts.objc3c_implementation_assurance import pr_pilot
 from scripts.objc3c_toolchain.binary_packages import write_json
 from scripts.objc3c_toolchain.core import planned_development_identity
 from scripts.objc3c_toolchain.linux_host import native_linux_host, native_target
@@ -69,7 +70,9 @@ def execute(repo: Path, output: Path, *, head: str, base: str, tested: str,
                'classification': plan['classification']}
     try:
         if plan['classification'] == 'prose-only':
-            receipt.update(status='PASS', foundation='not-required', suites=[])
+            receipt.update(status='PASS', foundation='not-required', suites=[],
+                           implementation_pilot=pr_pilot.execute(repo, plan, output / 'implementation-pilot',
+                               sdk=None, admitted=None, foundation_report=output / 'execution/foundation/foundation.json'))
             return receipt
         foundation = matching_foundation(repo, plan, sdk)
         suites = SOURCE_SUITES if foundation else ('foundation', *SOURCE_SUITES)
@@ -86,6 +89,9 @@ def execute(repo: Path, output: Path, *, head: str, base: str, tested: str,
             raise ValueError('native PR execution omitted a passing selected suite')
         if foundation and matching_foundation(repo, plan, sdk) != foundation:
             raise ValueError('PR foundation SDK changed during native validation')
+        receipt['implementation_pilot'] = pr_pilot.execute(repo, plan, output / 'implementation-pilot',
+            sdk=sdk if foundation else None, admitted=foundation,
+            foundation_report=output / 'execution/foundation/foundation.json')
         receipt['status'] = 'PASS'
         return receipt
     except BaseException as error:
@@ -115,9 +121,12 @@ def verify(repo: Path, evidence: Path, *, head: str, base: str, tested: str, exe
                 'plan_sha256': plan['sha256'], 'classification': plan['classification']}
     if any(receipt.get(key) != value for key, value in expected.items()):
         raise ValueError('native PR receipt is stale, failed or does not match the tested selection')
+    pilot = receipt.get('implementation_pilot', {})
+    foundation_report = evidence / 'checked/execution/foundation/foundation.json'
     if plan['classification'] == 'prose-only':
         if receipt.get('foundation') != 'not-required' or receipt.get('suites') != []:
             raise ValueError('prose-only PR reported an unexpected native selection')
+        pr_pilot.verify(repo, plan, evidence / 'checked', pilot, admitted=None, foundation_report=foundation_report)
         return {**expected, 'suites': []}
 
     foundation = receipt.get('foundation')
@@ -167,8 +176,11 @@ def verify(repo: Path, evidence: Path, *, head: str, base: str, tested: str, exe
     frontend_names = frontend_selection(plan) if foundation == 'verified-release' else None
     if receipt.get('frontend_ctests') != (sorted(frontend_names) if frontend_names is not None else None):
         raise ValueError('native PR receipt omitted the exact frontend CTest selection')
-    return aggregate(plan, evidence / 'checked/execution', outcomes={'plan': 'success', 'native': execution},
-                     tested=tested, suite_ids=suites, frontend_names=frontend_names)
+    pr_pilot.verify(repo, plan, evidence / 'checked', pilot, admitted=receipt.get('foundation_sdk'),
+                    foundation_report=foundation_report)
+    result = aggregate(plan, evidence / 'checked/execution', outcomes={'plan': 'success', 'native': execution},
+                       tested=tested, suite_ids=suites, frontend_names=frontend_names)
+    return {**result, 'implementation_pilot': pilot}
 
 
 def main() -> None:

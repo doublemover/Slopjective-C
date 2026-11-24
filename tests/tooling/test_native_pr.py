@@ -72,11 +72,25 @@ def test_pr_gate_selects_exact_revision_and_only_admitted_foundation(
                            for name in suite_ids]}
 
     monkeypatch.setattr(pr_native, 'run', execute)
+    pilot_calls = []
+    original_pilot = pr_native.pr_pilot.execute
+
+    def run_pilot(repo, plan, output, **kwargs):
+        if not pr_native.pr_pilot.selected(plan):
+            return original_pilot(repo, plan, output, **kwargs)
+        assert executed == list(expected)
+        assert output.name == 'implementation-pilot'
+        assert kwargs['sdk'] == (sdk if expected == pr_native.SOURCE_SUITES else None)
+        pilot_calls.append(plan['revision'])
+        return {'status': 'PASS', 'dependent': True}
+
+    monkeypatch.setattr(pr_native.pr_pilot, 'execute', run_pilot)
     output = repo / 'out' / 'native-pr'
     report = pr_native.execute(repo, output, **revision, sdk=sdk)
     assert report['suites'] == executed == list(expected)
     assert report['status'] == 'PASS'
     assert report['revision'] == revision
+    assert pilot_calls == ([revision] if changed.startswith(('native/', 'toolchains/', '.github/')) else [])
     assert json.loads((output / 'result.json').read_text()) == report
     with pytest.raises(ValueError, match='fresh owned output'):
         pr_native.execute(repo, output, **revision, sdk=sdk)
@@ -104,6 +118,30 @@ def test_pr_gate_records_failure_for_incomplete_or_drifting_evidence(checkout, m
     monkeypatch.setattr(pr_native, 'run', execute)
     output = repo / 'out' / 'native-pr'
     with pytest.raises(ValueError, match='different tested plan|passing selected suite|SDK changed'):
+        pr_native.execute(repo, output, **revision)
+    assert json.loads((output / 'result.json').read_text())['status'] == 'FAIL'
+
+
+def test_executor_analysis_finding_blocks_an_otherwise_passing_native_pr(checkout, monkeypatch):
+    repo, commit = checkout
+    revision = commit(str(pr_native.pr_pilot.SOURCE))
+    executed = []
+    monkeypatch.setattr(pr_native, 'matching_foundation', lambda *args: {'seal_sha256': 'a' * 64})
+
+    def run(repo, plan, output, *, suite_ids, product_sdk, frontend_names):
+        executed.extend(suite_ids)
+        return {'status': 'PASS', 'revision': plan['revision'], 'plan_sha256': plan['sha256'],
+                'suites': [{'id': name, 'status': 'PASS', 'executions': ['witness']} for name in suite_ids]}
+
+    def analyze(repo, plan, output, **kwargs):
+        assert executed == list(pr_native.SOURCE_SUITES)
+        assert pr_native.pr_pilot.selected(plan)
+        raise ValueError('implementation pilot found core.NullDereference')
+
+    monkeypatch.setattr(pr_native, 'run', run)
+    monkeypatch.setattr(pr_native.pr_pilot, 'execute', analyze)
+    output = repo / 'out/native-pr'
+    with pytest.raises(ValueError, match='pilot found core.NullDereference'):
         pr_native.execute(repo, output, **revision)
     assert json.loads((output / 'result.json').read_text())['status'] == 'FAIL'
 
@@ -177,7 +215,8 @@ def test_terminal_gate_reconciles_independent_execution_evidence(checkout, monke
             'status': 'PASS', 'log_sha256': artifact(evidence, log)['sha256']}})
     write(evidence / 'checked/result.json', {'schema': pr_native.SCHEMA, 'status': 'PASS',
         'classification': 'native', 'revision': revision, 'plan_sha256': plan['sha256'],
-        'foundation': 'verified-release', 'foundation_sdk': foundation, 'suites': ['runtime', 'frontend']})
+        'foundation': 'verified-release', 'foundation_sdk': foundation, 'suites': ['runtime', 'frontend'],
+        'implementation_pilot': {'status': 'NOT-SELECTED', 'reason': 'no inputs in the executor analysis pilot'}})
 
     def junit(path, name, *, skip=False):
         path.write_text(f'<testsuite tests="1"><testcase name="{name}">'
@@ -236,6 +275,13 @@ def test_terminal_gate_checks_full_cold_foundation_identity(checkout, monkeypatc
         key: foundation[name] for name, key in pr_native.FOUNDATION_FIELDS.items()})
     suites = ('foundation', *pr_native.SOURCE_SUITES)
     reached = []
+    pilot_reached = []
+
+    def verify_pilot(repo, plan, output, summary, *, admitted, foundation_report):
+        assert plan['revision'] == revision and not admitted
+        assert summary == {'status': 'PASS', 'dependent': True}
+        assert foundation_report == output / 'execution/foundation/foundation.json'
+        pilot_reached.append(output)
 
     def aggregate(plan, root, *, outcomes, tested, suite_ids, frontend_names):
         assert plan['revision'] == revision
@@ -246,6 +292,7 @@ def test_terminal_gate_checks_full_cold_foundation_identity(checkout, monkeypatc
         return {'status': 'PASS'}
 
     monkeypatch.setattr(pr_native, 'aggregate', aggregate)
+    monkeypatch.setattr(pr_native.pr_pilot, 'verify', verify_pilot)
     directory = evidence / 'checked/execution/foundation'
     directory.mkdir(parents=True)
     for path in (evidence / 'selection.json', evidence / 'checked/plan.json'):
@@ -253,7 +300,8 @@ def test_terminal_gate_checks_full_cold_foundation_identity(checkout, monkeypatc
     (evidence / 'checked/result.json').write_text(json.dumps({
         'schema': pr_native.SCHEMA, 'status': 'PASS', 'revision': revision,
         'plan_sha256': plan['sha256'], 'classification': 'native',
-        'foundation': 'current-source-build', 'foundation_sdk': None, 'suites': suites}))
+        'foundation': 'current-source-build', 'foundation_sdk': None, 'suites': suites,
+        'implementation_pilot': {'status': 'PASS', 'dependent': True}}))
     source = {**foundation, 'source_tree': 'a' * 40}
     effective = {'CLANG_OBJC3_PATCH_DIGEST': foundation['patch_digest'],
                  'CLANG_OBJC3_CONFIG_DIGEST': foundation['build_config_digest']}
@@ -269,10 +317,12 @@ def test_terminal_gate_checks_full_cold_foundation_identity(checkout, monkeypatc
     if defect is None:
         assert pr_native.verify(repo, evidence, execution='success', **revision)['status'] == 'PASS'
         assert reached == [directory.parent]
+        assert pilot_reached == [directory.parent.parent]
     else:
         with pytest.raises(ValueError, match='built a different foundation'):
             pr_native.verify(repo, evidence, execution='success', **revision)
         assert reached == []
+        assert pilot_reached == []
 
 
 def test_focused_frontend_receipt_cannot_satisfy_full_suite_or_different_selection(tmp_path):
