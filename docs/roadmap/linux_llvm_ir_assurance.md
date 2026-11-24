@@ -7,18 +7,25 @@ Verification alone does not establish semantic equivalence.
 
 ## Selected execution surface
 
-[The corpus](../../toolchains/llvm/ir-corpus.json) selects eight authored witnesses:
+[The corpus](../../toolchains/llvm/ir-corpus.json) selects eleven cases covering
 explicit captures in ARC/source and MRC/PCH modes; managed function/message/Block
-calls; guard cleanup; carrier transfers; native async frames; typed keypath PCH;
-and managed semantic-interface imports. C17, C++20 and C++23 are represented.
+calls; borrowed callable templates and packed ARC records; guard cleanup; carrier
+transfers; native async frames; typed keypath PCH; and managed semantic-interface
+imports. C17, C++20 and C++23 are represented.
 Every case runs O0/O2. Captures add a public `-Os` canary. Captures, managed calls
 and async also run the actual production ThinLTO route.
 
-This is **17 configurations, 29 translation units and 37 runtime executions**,
-not the full language/ownership/import Cartesian product. Runtime success uses
+This selects **23 configurations, 41 translation units and 49 runtime executions**
+across representative language, ownership and import combinations. Runtime success uses
 the existing assertions, destruction counters, active-arm checks, cleanup/event
 ordering and operand-evaluation checks. Production and split routes must each
 pass those assertions independently.
+
+The borrowed callable source and PCH cases check distinct template specialization
+counters, function and Block invocation, borrowed-return forwarding, and a packed
+strong C++ field's copy, move and destruction. The C17 PCH case reuses the installed
+record witness for packed fields and arrays, active and inactive carrier arms,
+exact destruction, and exception cleanup of a constructed prefix.
 
 For each translation unit the runner retains:
 
@@ -161,10 +168,15 @@ runtime from the verified SDK. This mode reuses the release archive directly.
 The development lane owns pass-level verification, ThinLTO stages, debugger
 execution, and reduction.
 
-The complete bounded source/PCH/interface matrix passed: 17 configurations,
+The initial eight-case source/PCH/interface matrix passed 17 configurations,
 29 translation units, 37 runtime executions and 764 recorded commands. The
 independent control campaign and real reduction also passed. Final results belong
 to their machine-readable receipts; the accepted SDK archive remains unchanged.
+
+The three ownership cases passed 12 x86-64 executions through the combined
+compiler route and the split `opt`/`llc` route. AArch64 cross checks passed real
+frontend lowering, verifier and optimizer stages, backend verification, and
+object DWARF. The expanded matched development campaign awaits a native receipt.
 
 The isolated ASan/UBSan LLDB consumer also passed after matching the foundation's
 TableGen, Debuginfod and HTTP development archives. Its receipt verifies 921 LLDB

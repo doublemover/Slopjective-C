@@ -51,11 +51,17 @@ def test_installed_ir_reuses_the_exact_sdk_and_checks_both_executable_routes(tmp
 
 def test_corpus_keeps_authored_oracles_and_lowering_transports():
     document = corpus(ROOT)
-    assert len(document['cases']) == 8
+    assert len(document['cases']) == 11
     assert {row['transport'] for row in document['cases']} == {'source', 'pch', 'interface'}
     assert sum(row.get('thinlto', False) for row in document['cases']) == 3
     assert {'arc', 'mrc'} == {row['ownership'] for row in document['cases']}
     assert {'c17', 'c++20', 'c++23'} == {row['standard'] for row in document['cases']}
+    cases = {row['name']: row for row in document['cases']}
+    for transport in ('source', 'pch'):
+        row = cases['borrowed-packed-' + transport]
+        assert row['transport'] == transport and row['language'] == 'objective-c++'
+        assert row['sources'] == ['carrier-record-native.m', 'ownership-callable.mm']
+    assert cases['packed-record-pch']['marker'] == 'OBJC3_IR_ASSURANCE_PACKED_RECORDS'
 
 
 def test_module_facts_reject_an_optimizer_with_no_work():

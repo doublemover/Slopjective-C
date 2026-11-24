@@ -1,4 +1,6 @@
+#ifndef OBJC3_IR_ASSURANCE_PACKED_RECORDS
 #include "carrier-record-call.h"
+#endif
 #include <stdio.h>
 #define CHECK(x) do { if (!(x)) { fprintf(stderr,"record failure %d: %s\n",__LINE__,#x); return __LINE__; } } while(0)
 
@@ -436,11 +438,15 @@ static int native_return_failures(void) {
   return 0;
 }
 int main(void) {
+#ifndef OBJC3_IR_ASSURANCE_PACKED_RECORDS
   CHECK(ordinary()==0);CHECK(failures()==0);CHECK(calls()==0);CHECK(typed_exits()==0);CHECK(hybrid()==0);CHECK(native_return_failures()==0);
 #ifdef __cplusplus
   CHECK(cpp()==0);
 #else
   CHECK(separated_bit_fields() == 0);
+#endif
+#endif
+#ifndef __cplusplus
   CHECK(packed_record_storage() == 0);
   CHECK(packed_result_lifetimes() == 0);
 #endif
