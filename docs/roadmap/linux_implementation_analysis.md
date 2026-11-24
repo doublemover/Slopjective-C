@@ -257,6 +257,23 @@ python3 -B -m scripts.objc3c_implementation_assurance.replay \
   --host linux-x86_64 --archive-directory /path/to/retained-artifacts
 ```
 
+## AArch64 shared producer checkpoint
+
+At `af41a499`, the release's AArch64 `compiler-asan-ubsan` producer passed all
+ten foundation phases in 2,983.87 seconds from a cold build directory. Its
+retained tests record 633 lit passes, two unsupported cases and 508 selected
+native unit cases. The audit recomputed the profile identity from that commit
+and verified all retained phase logs against the foundation receipt. [Producer job](https://github.com/doublemover/Slopjective-C/actions/runs/45289389357/job/138094150878) · [Diagnostics archive](https://github.com/doublemover/Slopjective-C/actions/runs/45289389357/artifacts/14876947110)
+
+The identical compiler and diagnostics feed the eight-partition complete
+implementation plan. The analysis producer receipt binds the sanitizer
+producer's SHA-256, the exact selection and the inner transport digest
+`dbbb7aa32e6d89ef05fd25310634b776858965ba4d28138f016ce08427ff4232`.
+The transport declares 4,455 owned entries, including `llvm-tblgen` and the
+original Ninja graph. All eight AArch64 jobs downloaded the shared input and
+the standalone producer skipped. Partition and terminal results were pending
+at this checkpoint. [Analysis plan](https://github.com/doublemover/Slopjective-C/actions/runs/45289389357/artifacts/14875979912) · [Shared transport](https://github.com/doublemover/Slopjective-C/actions/runs/45289389357/artifacts/14876987066)
+
 ## Required executor analysis pilot
 
 The native PR job checks `service_executor.cpp` with the reviewed
