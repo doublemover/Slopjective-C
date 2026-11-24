@@ -115,14 +115,14 @@ Every listed program exited zero and its log contained zero ASan, UBSan or
 LeakSanitizer findings. The independent model check compared the full state
 and cleanup traces.
 
-| Program on seed 7 | Model comparison | First observed difference |
-| --- | --- | --- |
-| Corrected control | Equal | None |
-| Flipped Result arm | `value-or-lifetime` | Expected Ok, observed Err |
-| Omitted defer | `cleanup-order` | Nine expected events, seven observed |
-| Duplicate destructor event | `cleanup-order` | Nine expected events, eleven observed |
-| Changed provider result | `value-or-lifetime` | Expected 6, observed 7 |
-| Changed error propagation | `value-or-lifetime` | Expected 9, observed 10 |
+| Program on seed 7          | Model comparison    | First observed difference             |
+| -------------------------- | ------------------- | ------------------------------------- |
+| Corrected control          | Equal               | None                                  |
+| Flipped Result arm         | `value-or-lifetime` | Expected Ok, observed Err             |
+| Omitted defer              | `cleanup-order`     | Nine expected events, seven observed  |
+| Duplicate destructor event | `cleanup-order`     | Nine expected events, eleven observed |
+| Changed provider result    | `value-or-lifetime` | Expected 6, observed 7                |
+| Changed error propagation  | `value-or-lifetime` | Expected 9, observed 10               |
 
 Eight deletion trials reduced the 24-operation Result-arm mismatch to
 `err(slot=1, value=-16)`. The model expected Err(-16), and the executable
@@ -130,11 +130,11 @@ produced Ok(-16). A fresh matched build retained both sanitizer flags and
 reproduced the same trace with SHA-256
 `2e7b9cd73b6364f22b006606dab367c8a77a3539a20ccc3538a80bd80d3988b7`.
 
-| Retained native evidence | SHA-256 |
-| --- | --- |
+| Retained native evidence                           | SHA-256                                                            |
+| -------------------------------------------------- | ------------------------------------------------------------------ |
 | Controls and reduction trials `qualification.json` | `e95c19cfb188837ea3a1f36f075edee9e2265e8a77338ff7cdba0a66bf14607e` |
-| Reduction input `reduction.json` | `8c248c5243ba12ed73a4ca9dca848ed1e5bd52022ae103d9d9b28d6ff35ee70e` |
-| Fresh replay `qualification.json` | `711fe716263e459e7b50811e00aaa51cb0df21b40b9c863ec36e45003e0a10b2` |
+| Reduction input `reduction.json`                   | `8c248c5243ba12ed73a4ca9dca848ed1e5bd52022ae103d9d9b28d6ff35ee70e` |
+| Fresh replay `qualification.json`                  | `711fe716263e459e7b50811e00aaa51cb0df21b40b9c863ec36e45003e0a10b2` |
 
 This local checkpoint covers the installed x86-64 compiler and instrumented
 generated programs using the shipped runtime. The hosted matched development

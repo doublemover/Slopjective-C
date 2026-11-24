@@ -141,14 +141,14 @@ first-party partitions. Component command totals add work across partitions.
 The partition wall time is the longest observation. Archive bytes include
 compiler, first-party and reader-control evidence.
 
-| Observation | x86-64 | AArch64 |
-| --- | ---: | ---: |
-| Instrumented foundation build, s | 2,752.1 | 2,411.3 |
-| Longest first-party partition, s | 1,772.9 | 1,885.3 |
+| Observation                                           |                    x86-64 |                   AArch64 |
+| ----------------------------------------------------- | ------------------------: | ------------------------: |
+| Instrumented foundation build, s                      |                   2,752.1 |                   2,411.3 |
+| Longest first-party partition, s                      |                   1,772.9 |                   1,885.3 |
 | Frontend build / execution / export command totals, s | 1,041.8 / 5,316.1 / 184.6 | 1,165.6 / 6,942.4 / 206.9 |
-| Runtime build / execution / export command totals, s | 31.5 / 0.455 / 2.85 | 37.0 / 0.736 / 3.57 |
-| Peak raw frontend profile bytes per suite | 200,187,104 | 200,179,520 |
-| Compressed evidence archive bytes | 7,889,238 | 7,892,097 |
+| Runtime build / execution / export command totals, s  |       31.5 / 0.455 / 2.85 |       37.0 / 0.736 / 3.57 |
+| Peak raw frontend profile bytes per suite             |               200,187,104 |               200,179,520 |
+| Compressed evidence archive bytes                     |                 7,889,238 |                 7,892,097 |
 
 A local x86-64 pilot used the published SDK compiler and identical text-service
 source at O0, with three interleaved builds per profile. Each execution verified
