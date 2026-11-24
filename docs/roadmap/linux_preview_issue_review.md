@@ -28,7 +28,7 @@ delivery and Darwin bootstrap ran separately. Assurance and integration used
 the published SDK for bounded native checks and reserve refreshed SDK builds
 for the integrated changes.
 
-The reviewed backlog now has 38 closed issues. The local source checks
+The reviewed backlog now has 40 closed issues. The local source checks
 below use the published SDK or a compiler and facade relinked from reviewed
 objects. The refreshed Linux SDK and native Apple Silicon runs keep their own
 exact-revision receipts.
@@ -40,7 +40,7 @@ exact-revision receipts.
 | Runtime collections                      | #8280, #8294, #8300–#8305         | The native sanitizer, lifetime, rollback, retained-storage, and scaling checks passed. Hosted x86-64 and AArch64 calibration each measured 39 standard workloads and 48 collection and text cases. The timings are advisory.                                                                                                                                                                                                                                                      |
 | Runtime lifecycle and schedules          | #8289, #8293, #8295–#8299         | The fixed campaign passed 96 generated histories, 24 maintained scenarios, five semantic controls, and fresh replay. The additional split-epoch sample passed 24 sanitizer runs and a fresh 12-variant replay. All eight fixed release history digests are unchanged.                                                                                                                                                                                                             |
 | Implementation assurance                 | #8282, #8284–#8288, #8290         | Both published analyzer gates replayed all 246 variants. Fresh native checks detected a dependent unchanged-TU finding after a same-mtime header edit. The generated oracle covers 50 transitions and nine ordered ownership pairs, and reproduced a sanitizer-clean reduced mismatch. The relocated transitive interface check passed eight cases. The exact hosted optimizer/reducer, analyzer pilot, source feedback, and compiler graph checks remain in progress or pending. |
-| Linux installation and Darwin bootstrap  | #8206, #8228, #8229               | Linux x86-64 package admission and compatibility controls passed. The Apple Silicon C bootstrap and its independent archived Mach-O and DWARF verification passed. The experimental registrar, stateless instances and inheritance, and isolated SDK install have local compiler and tooling evidence. Native Objective-C 3 execution and experimental package/installed qualification remain open.                                                                               |
+| Linux installation and Darwin bootstrap  | #8206, #8228, #8229               | Linux x86-64 package admission and compatibility controls passed. The Apple Silicon C bootstrap and its independent archived Mach-O and DWARF verification passed. The repaired registrar, stateless instances, and portable services passed native Apple Silicon execution. Inheritance, fixed storage, typed integer arguments, ARC, and the isolated SDK install have local compiler and tooling evidence. The expanded native package run remains open.                       |
 | Build identity, PR gate, and measurement | #8281, #8283, #8291, #8322, #8323 | CMake changes invalidate SDK admission, and both native test roots invalidate stale objects. A warm exact-input PR passed 16 selected CTests and its terminal check. The release producer now has a strict warm archive replay. The cold PR, full-size warm archive replay, and refreshed architecture SDK runs retain separate acceptance evidence.                                                                                                                              |
 
 The published frontend and schedule artifacts can be identified after
@@ -83,11 +83,21 @@ and source identity in the retained proof. The native execution took 133.84
 seconds with a fresh consumer build. The tested fixture commit was
 `05c97fcbf7a765b9842760d9fd94c3196b9f9809`.
 
-The experimental Darwin compiler now emits an owned Mach-O registration
-initializer and dispatches stateless Objective-C 3 root-class methods.
-Local cross-compilation verified arm64 object format, DWARF, and the emitted
-defer operation. Native Apple Silicon registration qualification and the full
-Darwin runtime and SDK remain separate milestones.
+The repaired Apple Silicon registrar passed at
+\`ebb30539dd68d63f18e1a0f41e9f724d674028ea\`. The native report records
+39 bootstrap commands and 60 registration commands. The preflight linked
+and ran with Xcode 16.4 libc++ and SDK 15.5. Static and dynamic registration,
+stateless instances, ordered map operations, and text scalar boundaries
+passed natively. Replaying the retained archive verified the command logs,
+Mach-O bytes, and source hashes. Its ZIP SHA-256 is
+\`7f46ec3d0f861484837947bae70b78611b949de93e3d94aa67a7210b1ca6229f\`.
+[Native registrar receipt](https://github.com/doublemover/Slopjective-C/actions/runs/45292115173/artifacts/14876712288)
+
+The expanded candidate adds stateless inheritance, fixed root storage,
+one signed integer argument, and an owned ARC lifetime runtime. The SDK
+qualifier compiles and executes from a fresh relocated install and can check
+an optional package with ASan and UBSan consumer variants. Hosted package
+and expanded runtime evidence are pending.
 
 ## Release CI cost
 
