@@ -280,7 +280,12 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
         'inheritance': 'owned Objective-C 3 Darwin inheritance: PASS',
         'fixed-layout': 'owned Objective-C 3 Darwin fixed root layout: PASS',
         'int-method': 'owned Objective-C 3 Darwin int-argument methods: PASS',
+        'two-int-method': 'owned Objective-C 3 Darwin two-int-argument methods: PASS',
     }
+    method_families = (
+        ('int-method', 1, 'int_arg', 'int_argument_methods'),
+        ('two-int-method', 2, 'two_int_args', 'two_int_argument_methods'),
+    )
     names = ['provider', 'main', 'late']
     for family in hierarchy_witnesses:
         prefix = family.replace('-', '_')
@@ -292,7 +297,9 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
     dynamic = layout / 'bin/dynamic'
     run(*defaults, '-std=c17', '-Wall', '-Wextra', '-Werror', '-O2', '-g', '-c', RUNTIME, '-o', runtime_object)
     for name, obj in fixture_objects.items():
-        run(*objective_c, '-Wall', '-Wextra', '-Werror', '-O2', '-g', '-c', FIXTURES / (name + '.m'), '-o', obj)
+        label = {'label': name.replace('_', '-') + '-object'} if name.startswith('two_int_method_') else {}
+        run(*objective_c, '-Wall', '-Wextra', '-Werror', '-O2', '-g', '-c', FIXTURES / (name + '.m'), '-o', obj,
+            **label)
     layout_arc = stages / 'fixed_layout_arc.o'
     run(*objective_c, '-fobjc-arc', '-Wall', '-Wextra', '-Werror', '-O2', '-g',
         '-c', FIXTURES / 'fixed_layout_arc.m', '-o', layout_arc, label='fixed-layout-arc-object')
@@ -330,14 +337,16 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
     run(*link, layout_arc, fixed_child, runtime_dylib,
         '-Wl,-rpath,@loader_path/../lib', '-o', layout / 'bin/fixed-layout-arc')
     required_libraries['bin/fixed-layout-arc'] = ['@rpath/' + fixed_child.name, runtime_id]
-    int_main_arc = stages / 'int_method_main_arc.o'
-    int_child = layout / 'lib/libint-method-child.dylib'
-    run(*objective_c, '-fobjc-arc', '-Wall', '-Wextra', '-Werror', '-O2', '-g',
-        '-c', FIXTURES / 'int_method_main.m', '-o', int_main_arc, label='int-method-arc-object')
-    fixture_objects['int_method_main_arc'] = int_main_arc
-    run(*link, int_main_arc, int_child, runtime_dylib,
-        '-Wl,-rpath,@loader_path/../lib', '-o', layout / 'bin/int-method-arc')
-    required_libraries['bin/int-method-arc'] = ['@rpath/' + int_child.name, runtime_id]
+    for family, _, _, _ in method_families:
+        prefix = family.replace('-', '_') + '_main'
+        main_arc = stages / (prefix + '_arc.o')
+        child = layout / f'lib/lib{family}-child.dylib'
+        run(*objective_c, '-fobjc-arc', '-Wall', '-Wextra', '-Werror', '-O2', '-g',
+            '-c', FIXTURES / (prefix + '.m'), '-o', main_arc, label=family + '-arc-object')
+        fixture_objects[prefix + '_arc'] = main_arc
+        binary = f'bin/{family}-arc'
+        run(*link, main_arc, child, runtime_dylib, '-Wl,-rpath,@loader_path/../lib', '-o', layout / binary)
+        required_libraries[binary] = ['@rpath/' + child.name, runtime_id]
     run(*link, fixture_objects['main'], fixture_archive, '-o', stages / 'no-runtime',
         rejects=('objc3_darwin_lookup_v1', 'objc3_darwin_register_v1',
                  'objc3_darwin_allocate_v1', 'objc3_darwin_deallocate_v1'), label='missing-runtime-at-link')
@@ -345,7 +354,7 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
         ('unsupported.m', 'unsupported-subclass-layout', 'a single plain int root ivar'),
         ('unsupported_instance_layout.m', 'unsupported-instance-layout', 'a single plain int root ivar'),
         ('unsupported_instance_signature.m', 'unsupported-instance-signature',
-         'ordinary int methods with at most one int argument'),
+         'ordinary int methods with at most two int arguments'),
     ):
         artifact = stages / (label + '.o')
         run(*objective_c, '-c', FIXTURES / fixture, '-o', artifact,
@@ -355,7 +364,19 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
     run(*objective_c, '-DDARWIN_UNSUPPORTED_SEND=1',
         '-c', FIXTURES / 'unsupported_instance_signature.m',
         '-o', stages / 'unsupported-instance-send.o', label='unsupported-instance-send',
-        rejects=('experimental Darwin registration requires an ordinary int message with at most one int argument',))
+        rejects=('experimental Darwin registration requires an ordinary int message with at most two int arguments',))
+    for kind, flags in (('type', []), ('arity', ['-DDARWIN_UNSUPPORTED_ARITY=1'])):
+        for form, options, diagnostic in (
+            ('', [], 'ordinary int methods'),
+            ('send-', ['-DDARWIN_UNSUPPORTED_SEND=1'], 'an ordinary int message'),
+        ):
+            label = 'unsupported-two-int-method-' + form + kind
+            artifact = stages / (label + '.o')
+            run(*objective_c, *flags, *options, '-c', FIXTURES / 'unsupported_two_int_method.m',
+                '-o', artifact, label=label,
+                rejects=(f'experimental Darwin registration requires {diagnostic} with at most two int arguments',))
+            if artifact.exists():
+                raise ValueError(f'rejected Darwin int method emitted an object: {label}')
     run(*objective_c, '-fobjc-link-runtime', '-c', FIXTURES / 'provider.m', '-o', stages / 'apple-runtime.o',
         rejects=(profile['compiler_runtime_flag'], '-fobjc-link-runtime'), label='unsupported-apple-runtime')
     run(*objective_c, '--target=x86_64-apple-macos15.0', '-c', FIXTURES / 'provider.m', '-o', stages / 'x86.o',
@@ -377,16 +398,19 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
     if (not all(name in metadata for name in ('@llvm.global_ctors', '@objc3_darwin_register_v1', '@objc3_darwin_lookup_v1')) or
             re.search(r'@__objc_load\b|@__start___objc_|\bcomdat\b', metadata)):
         raise ValueError('the provider uses an unexpected registration lowering')
-    method_ir = {}
-    for optimization in ('O0', 'O2'):
-        for unit, lookup in (('child', 'objc3_darwin_lookup_super_int_arg_v1'),
-                             ('main', 'objc3_darwin_lookup_int_arg_v1')):
-            label = f'int-method-{unit}-{optimization.lower()}-ir'
-            artifact = stages / (label + '.ll')
-            run(*objective_c, '-' + optimization, '-S', '-emit-llvm',
-                FIXTURES / f'int_method_{unit}.m', '-o', artifact, label=label)
-            verify_int_method_ir(artifact.read_text(), lookup)
-            method_ir[label] = {'path': str(artifact), 'sha256': file_digest(artifact)}
+    methods = {}
+    for family, arity, abi_suffix, _ in method_families:
+        prefix = family.replace('-', '_')
+        method_ir = {}
+        for optimization in ('O0', 'O2'):
+            for unit, dispatch in (('child', 'lookup_super'), ('main', 'lookup')):
+                label = f'{family}-{unit}-{optimization.lower()}-ir'
+                artifact = stages / (label + '.ll')
+                run(*objective_c, '-' + optimization, '-S', '-emit-llvm',
+                    FIXTURES / f'{prefix}_{unit}.m', '-o', artifact, label=label)
+                verify_int_method_ir(artifact.read_text(), f'objc3_darwin_{dispatch}_{abi_suffix}_v1', arity=arity)
+                method_ir[label] = {'path': str(artifact), 'sha256': file_digest(artifact)}
+        methods[family] = method_ir
 
     layout = layout.rename(output / 'Relocated install')
     artifacts = {name: verify_macho(obj, 'object') for name, obj in fixture_objects.items()}
@@ -414,21 +438,23 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
     if (run(layout / 'bin/fixed-layout-arc', label='fixed-layout-arc-native') !=
             'owned Objective-C 3 Darwin fixed root layout ARC lifetime: PASS'):
         raise ValueError('the native fixed-layout ARC consumer failed')
-    if run(layout / 'bin/int-method-arc', label='int-method-arc-native') != hierarchy_witnesses['int-method']:
-        raise ValueError('the native int-argument ARC consumer failed')
-    method_imports = {}
-    for relative, required in (
-        ('lib/libint-method-child.dylib', 'objc3_darwin_lookup_super_int_arg_v1'),
-        ('bin/int-method-dynamic', 'objc3_darwin_lookup_int_arg_v1'),
-        ('bin/int-method-arc', 'objc3_darwin_lookup_int_arg_v1'),
-        ('bin/int-method-static', None),
-    ):
-        names = _owned_objc_imports(run, layout / relative, Path(relative).name + '-imports')
-        if (required and required not in names) or (required is None and any(
-                name.startswith('objc3_darwin_') for name in names)):
-            raise ValueError(f'{relative} has inconsistent int-argument method linkage')
-        method_imports[relative] = names
-    report['int_argument_methods'] = {'status': 'PASS', 'ir': method_ir, 'imports': method_imports}
+    for family, _, abi_suffix, receipt in method_families:
+        if run(layout / f'bin/{family}-arc', label=family + '-arc-native') != hierarchy_witnesses[family]:
+            raise ValueError(f'the native {family} ARC consumer failed')
+        method_imports = {}
+        lookup = f'objc3_darwin_lookup_{abi_suffix}_v1'
+        for relative, required in (
+            (f'lib/lib{family}-child.dylib', f'objc3_darwin_lookup_super_{abi_suffix}_v1'),
+            (f'bin/{family}-dynamic', lookup),
+            (f'bin/{family}-arc', lookup),
+            (f'bin/{family}-static', None),
+        ):
+            names = _owned_objc_imports(run, layout / relative, Path(relative).name + '-imports')
+            if (required and required not in names) or (required is None and any(
+                    name.startswith('objc3_darwin_') for name in names)):
+                raise ValueError(f'{relative} has inconsistent int-argument method linkage')
+            method_imports[relative] = names
+        report[receipt] = {'status': 'PASS', 'ir': methods[family], 'imports': method_imports}
     for binary, filename, label in (
         ('dynamic', 'libobjc3darwin.dylib', 'missing-runtime-at-load'),
         ('inheritance-dynamic', 'libinheritance-base.dylib', 'missing-superclass-at-load'),
@@ -472,15 +498,17 @@ def verify_fixed_layout_dwarf(transcript: str, class_name: str) -> None:
             raise ValueError('fixed Darwin layout DWARF lost the inherited base')
 
 
-def verify_int_method_ir(ir: str, lookup: str) -> None:
+def verify_int_method_ir(ir: str, lookup: str, *, arity: int = 1) -> None:
     """Check that each versioned lookup result is called with the typed ABI."""
-    if 'i20@0:8i16' not in ir:
+    encodings = {1: 'i20@0:8i16', 2: 'i24@0:8i16i20'}
+    if arity not in encodings or encodings[arity] not in ir:
         raise ValueError('Darwin int argument method is missing its exact selector encoding')
+    arguments = r'ptr [^,\n]+, ptr [^,\n]+' + r', i32 [^,)\n]+' * arity
     seen = 0
     for function in re.findall(r'(?ms)^define[^\n]*\n.*?^\}', ir):
         for name in re.findall(rf'(?m)^\s*(%[-\w.]+) = .*\bcall ptr @{re.escape(lookup)}\(', function):
             seen += 1
-            if not re.search(rf'\bcall i32 {re.escape(name)}\(ptr [^,\n]+, ptr [^,\n]+, i32 [^)\n]+\)', function):
+            if not re.search(rf'\bcall i32 {re.escape(name)}\({arguments}\)', function):
                 raise ValueError('Darwin int argument method lookup lacks a matching indirect call')
     if seen < 2:
         raise ValueError(f'Darwin int argument method fixture did not exercise {lookup} twice')
