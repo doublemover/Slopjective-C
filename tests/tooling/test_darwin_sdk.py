@@ -103,6 +103,28 @@ def test_archive_replays_in_a_fresh_relocated_prefix(tmp_path, structural_host):
         sdk.install(archive, _file_hash(archive), prefix)
 
 
+def test_package_manifest_admits_only_its_sealed_portable_files(tmp_path, structural_host):
+    services = sdk.portable_services
+    stage = tmp_path / 'stage'
+    manifest = staged_product(stage, structural_host)
+    sources = {name: _file_hash(sdk.ROOT / name) for name in services._witness_sources()}
+    for target, source in {**services.HEADERS, services.EXAMPLE: services.EXAMPLE_SOURCE}.items():
+        put(stage, target, (sdk.ROOT / source).read_bytes())
+        sources[source] = _file_hash(sdk.ROOT / source)
+    put(stage, services.LIBRARY, thin_archive('runtime.o', macho(1)))
+    manifest['files'] = inventory(stage)
+    manifest['compiler_host_libcxx'] = {'header_config_sha256': 'a'*64, 'library_stub_sha256': 'b'*64,
+                                      'reported_version': 'Xcode libc++ 190102'}
+    manifest[services.KEY] = {'schema': services.SCHEMA, 'abi': services.ABI, 'build_inputs': sources,
+                              'objects': {name: 'c'*64 for name in services.MEMBERS},
+                              'files': {name: manifest['files'][name]['sha256']
+                                        for name in (services.LIBRARY, services.EXAMPLE, *services.HEADERS)}}
+    assert sdk._validate_manifest(manifest, structural_host) == manifest['resource_dir']
+    manifest.pop(services.KEY)
+    with pytest.raises(ValueError, match='payload inventory'):
+        sdk._validate_manifest(manifest, structural_host)
+
+
 @pytest.mark.parametrize(('fault', 'diagnostic'), (
     ('arch', 'arm64 Mach-O executable'), ('sdk', 'admitted experimental Darwin host'),
     ('extra', 'payload inventory'), ('sha256', 'SHA-256 does not match')))

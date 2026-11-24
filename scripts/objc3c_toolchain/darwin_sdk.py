@@ -19,6 +19,7 @@ import unicodedata
 
 from .darwin_bootstrap import DEPLOYMENT_TARGET, ROOT, require_apple_silicon, verify_macho
 from . import darwin_sdk_arc as arc_consumer
+from . import darwin_sdk_portable_services as portable_services
 from . import darwin_sdk_sanitizers as sanitizers
 from .package import MANIFEST, SCHEMA, _digest, _file_hash, inventory, normalize_permissions, verify_sdk
 
@@ -224,6 +225,7 @@ def _validate_manifest(data, host):
                 *(DEMO + '/' + name for name in DEMO_FILES), 'share/licenses/slopjective-c/LICENSE',
                 *(f'share/licenses/{name}/LICENSE.TXT' for name in ('llvm', 'clang', 'compiler-rt'))}
     required.update(sanitizers.manifest_files(data, resource))
+    required.update(portable_services.manifest_files(data))
     files = {name for name, row in data['files'].items() if row['kind'] == 'file'}
     if not required <= files or any(not name.startswith(resource + '/include/') for name in files - required):
         raise ValueError('the Darwin SDK payload inventory differs from the experimental profile')
@@ -249,6 +251,8 @@ def _validate_product(prefix, data, host, commands=None):
     _deployment(otool, dylib, commands)
     if sanitizers.KEY in data:
         sanitizers.validate_runtimes(prefix, data, host, commands)
+    if portable_services.KEY in data:
+        portable_services.validate_payload(prefix, data, commands)
 
 
 def _write_archive(prefix, destination):
@@ -345,6 +349,7 @@ def package_registration(clang: Path, llvm_source: Path, bootstrap_report: Path,
         for project in ('llvm', 'clang', 'compiler-rt'):
             _copied_file(llvm_source / project / 'LICENSE.TXT', prefix / 'share/licenses' / project / 'LICENSE.TXT')
         _copied_file(ROOT / 'LICENSE', prefix / 'share/licenses/slopjective-c/LICENSE')
+        portable_payload = portable_services.stage_payload(prefix, registration, commands)
         sanitizer_payload = sanitizers.stage_payload(prefix, resource, resource_dir) if sdk_sanitizers else None
         normalize_permissions(prefix)
         data = {'schema': SCHEMA, 'payload_schema': PAYLOAD_SCHEMA, 'profile': PROFILE, 'target': TARGET,
@@ -356,7 +361,7 @@ def package_registration(clang: Path, llvm_source: Path, bootstrap_report: Path,
                 'bootstrap_builtins_sha256': registration['compiler_builtins']['sha256'],
                 'compiler_build': {key: producer[key] for key in ('base_build_id', 'patch_digest', 'configuration_sha256')},
                 'host_requirements': _host_requirements(host), 'resource_dir': resource_dir,
-                'files': inventory(prefix)}
+                'files': inventory(prefix), portable_services.KEY: portable_payload}
         if cxx := registration.get('cxx_toolchain'):
             data['compiler_host_libcxx'] = {key: cxx[key] for key in
                                           ('header_config_sha256', 'library_stub_sha256', 'reported_version')}
@@ -373,7 +378,8 @@ def package_registration(clang: Path, llvm_source: Path, bootstrap_report: Path,
         pending.rename(archive)
     receipt = {'schema': RECEIPT_SCHEMA, 'status': 'PASS', 'support_truth': False, 'profile': PROFILE,
                'revision': revision, 'archive': archive.name, 'archive_sha256': _file_hash(archive),
-               'archive_bytes': archive.stat().st_size, 'seal_sha256': seal, 'host': host, 'commands': commands}
+               'archive_bytes': archive.stat().st_size, 'seal_sha256': seal, 'host': host, 'commands': commands,
+               portable_services.KEY: portable_payload}
     if sanitizer_payload is not None:
         receipt[sanitizers.KEY] = sanitizer_payload
     (output / 'package.json').write_text(json.dumps(receipt, indent=2) + '\n')
@@ -479,6 +485,8 @@ def install(archive: Path, expected_sha256: str, prefix: Path, *, commands=None)
                'archive_sha256': expected_sha256, 'seal_sha256': product['seal_sha256'], 'prefix': str(prefix), 'host': host}
     if sanitizers.KEY in product:
         receipt[sanitizers.KEY] = product[sanitizers.KEY]
+    if portable_services.KEY in product:
+        receipt[portable_services.KEY] = product[portable_services.KEY]
     return receipt
 
 
@@ -608,6 +616,9 @@ def qualify(archive: Path, expected_sha256: str, output: Path) -> dict:
         if native(project / 'static') != WITNESS or native(project / 'dynamic', project / 'liblate.dylib') != WITNESS:
             raise ValueError('cold relocated compiler/runtime witness failed')
         report['arc'] = arc_consumer.qualify_consumer(prefix, manifest, host, output / arc_consumer.DIRECTORY, commands)
+        if portable_services.KEY in manifest:
+            report[portable_services.KEY] = portable_services.qualify_consumer(
+                prefix, manifest, host, output / portable_services.DIRECTORY, commands)
         if sanitizers.KEY in manifest:
             report[sanitizers.KEY] = sanitizers.qualify_consumers(
                 prefix, manifest, host, output / sanitizers.WITNESS_DIRECTORY, commands)
