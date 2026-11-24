@@ -69,3 +69,62 @@ Local tests cover the archive format, relocation structure, manifest and content
 hashes, path admission, wrong-architecture files, and host prerequisites. The
 cold Apple Silicon compiler build, package, install, and execution remain the
 platform acceptance gate. [Package owner](../../scripts/objc3c_toolchain/darwin_sdk.py)
+
+## Optional ASan and UBSan consumers
+
+Set `runtime_sanitizers: true` in a manual run of **Darwin arm64 bootstrap probe**
+to select runtime registration, SDK packaging, and the native sanitizer check.
+Both workflow inputs default to `false`. Set `runtime_registration: true` with
+`runtime_sanitizers: false` for the ordinary experimental SDK package.
+[Workflow](../../.github/workflows/darwin-bootstrap.yml)
+
+```sh
+gh workflow run darwin-bootstrap.yml \
+  -f runtime_registration=true -f runtime_sanitizers=true
+```
+
+On the same native Apple Silicon setup described above, add `--sdk-sanitizers`
+to `--package-sdk` and use a fresh output directory.
+
+```sh
+python3 -B -m scripts.objc3c_toolchain.darwin_registration \
+  --profile macos-arm64-registration-experimental --fetch \
+  --package-sdk --sdk-sanitizers \
+  --bootstrap-report "$PWD/darwin-bootstrap-result/report.json" \
+  --output-dir "$PWD/darwin-registration-sanitizers"
+```
+
+Install and qualify the optional archive using its trusted package receipt. The
+sealed archive selects the sanitizer checks during qualification.
+
+```sh
+package="$PWD/darwin-registration-sanitizers/sdk/package"
+archive="$package/objc3-darwin-sdk.tar.gz"
+archive_sha=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["archive_sha256"])' "$package/package.json")
+
+python3 -B -m scripts.objc3c_toolchain.darwin_sdk install \
+  --archive "$archive" --archive-sha256 "$archive_sha" \
+  --prefix "$PWD/Objective-C 3 Experimental Sanitizer SDK"
+
+python3 -B -m scripts.objc3c_toolchain.darwin_sdk qualify \
+  --archive "$archive" --archive-sha256 "$archive_sha" \
+  --output-dir "$PWD/darwin-sdk-sanitizer-replay"
+```
+
+The manifest seals `libclang_rt.asan_osx_dynamic.dylib` and
+`libclang_rt.ubsan_osx_dynamic.dylib` under `lib/clang/23/lib/darwin`. The
+`consumer_sanitizers` descriptor binds both SHA-256 digests to the pinned
+upstream LLVM 23.1.5 macOS ARM64 archive. The installed compiler builds the
+packaged stateless Objective-C 3 fixture separately in plain, ASan, and UBSan
+modes. The witness exercises allocation, dispatch, and cleanup under manual
+reference counting. Instrumentation covers the consumer object, which links
+the SDK's private runtime archive. [Witness source](../../tests/clang_foundation/darwin_sanitizers/stateless.m)
+
+Qualification requires successful native execution of all three arm64 Mach-O
+binaries on Apple Silicon from a fresh, relocated SDK. The evidence binds the
+compiler-generated sanitizer and dispatch imports, relative library search
+paths, and the exact installed compiler-rt dylib loaded by each sanitized
+process. Local replay writes `darwin-sdk-sanitizer-replay/qualification.json`.
+The workflow retains the native receipts and a terminal receipt in
+`package-sanitizers` mode. The optional profile remains experimental with
+`support_truth: false`. [Terminal verifier](../../scripts/objc3c_toolchain/darwin_evidence.py)
