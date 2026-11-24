@@ -81,7 +81,7 @@ def adopt(configuration: dict, build: Path, previous: dict) -> dict:
 
 
 def qualify_shared_sanitizer_route(*, output: Path, run, compiler: Path,
-        sanitizer: Path, libraries: list[Path]) -> list[dict]:
+        sanitizer: Path, sanitizer_sha256: str, libraries: list[Path]) -> list[dict]:
     """Prove the shared-ASan link route with clean and detecting controls."""
     fixtures = Path(__file__).resolve().parents[2] / 'tests/tooling/fixtures/native_sanitizer_controls'
     flags = ['--no-default-config', '--driver-mode=g++', '--target='+native_target(),
@@ -104,6 +104,7 @@ def qualify_shared_sanitizer_route(*, output: Path, run, compiler: Path,
                 outputs=[binary])
             graph = loaded_graph(binary, native_loader(),
                 [*libraries, sanitizer], required=(*libraries, sanitizer),
+                sha256_pins={sanitizer: sanitizer_sha256},
                 run=lambda suffix, cmd, name=name: run(name+'-'+suffix, cmd))
             diagnostic = run(name+'-execute', [binary, *DETECTORS[detector][3]],
                 expected=86 if bad else 0)
@@ -181,15 +182,18 @@ def qualify(repo: Path, output: Path, *, jobs=3, tools_receipt: Path | None = No
         libraries = [installed_shared_library(stage / 'lib', name)
                      for name in ('libLLVM.so', 'libclang-cpp.so')]
         sanitizer = Path(configuration['sanitizer_library'])
+        sanitizer_sha256 = configuration['sanitizer_library_sha256']
         report['shared_sanitizer_controls'] = qualify_shared_sanitizer_route(output=output, run=run,
-            compiler=bootstrap / 'bin/clang++', sanitizer=sanitizer, libraries=libraries)
+            compiler=bootstrap / 'bin/clang++', sanitizer=sanitizer, sanitizer_sha256=sanitizer_sha256,
+            libraries=libraries)
         libraries += [path.resolve() for path in (build / 'lib').glob('liblldb.so*') if path.is_file()]
         libraries.append(sanitizer)
         report['tools'] = {}
         for name in configuration['targets']:
             tool = build / 'bin' / name
             graph = loaded_graph(tool, native_loader(), libraries,
-                required=(libraries[0], libraries[-1]), run=lambda suffix, cmd, name=name: run(name+'-'+suffix, cmd))
+                required=(libraries[0], sanitizer), sha256_pins={sanitizer: sanitizer_sha256},
+                run=lambda suffix, cmd, name=name: run(name+'-'+suffix, cmd))
             version = run(name+'-version', [tool, 'version' if name == 'lldb-server' else '--version'])
             report['tools'][name] = {'path': str(tool), 'sha256': digest(tool), 'version': version, 'loaded_graph': graph}
         immutable_inputs = {

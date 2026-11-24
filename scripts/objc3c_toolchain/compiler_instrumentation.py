@@ -398,7 +398,7 @@ def verify_owned_shared_libraries(build: Path, libraries: list[Path], records: l
     return evidence
 
 
-def elf_gnu_build_id(path: Path) -> str:
+def elf_gnu_build_id(path: Path, *, allow_missing: bool = False) -> str | None:
     """Read one canonical SHA-1 NT_GNU_BUILD_ID without executing the ELF."""
     data = path.read_bytes()
     if data[:6] != b'\x7fELF\x02\x01' or len(data) < 64:
@@ -433,38 +433,49 @@ def elf_gnu_build_id(path: Path) -> str:
                     raise ValueError('loaded dependency lacks a canonical SHA-1 build identity: '+str(path))
                 identities.append(data[value_start:value_end].hex())
             cursor = next_note
+    if not identities and allow_missing:
+        return None
     if len(identities) != 1:
         raise ValueError('loaded dependency lacks one GNU build identity: '+str(path))
     return identities[0]
 
 
-def loaded_graph(binary: Path, loader: Path, libraries: list[Path], *, required=(), run) -> dict:
-    """Admit the loader's real graph and bind every resolved DSO to its build ID."""
+def loaded_graph(binary: Path, loader: Path, libraries: list[Path], *, required=(),
+                 sha256_pins: dict[Path, str] | None = None, run) -> dict:
+    """Admit resolved ELF images by GNU build ID or explicitly pinned vendor SHA-256."""
     owned = {path.resolve(strict=True) for path in libraries}
+    required = {path.resolve(strict=True) for path in required}
+    pins = {path.resolve(strict=True): value for path, value in (sha256_pins or {}).items()}
+    if not pins.keys() <= owned & required or any(
+            path.name.startswith(('libLLVM', 'libclang-cpp')) or digest(path) != value
+            for path, value in pins.items()):
+        raise ValueError('loaded dependency differs from its required vendor SHA-256 pin')
     # Snapshot selection before asking the loader to resolve the graph. Exact
     # paths alone cannot detect replacement at the admitted pathname between
     # selection and resolution.
-    expected_build_ids = {str(path): elf_gnu_build_id(path) for path in sorted(owned)}
+    expected_build_ids = {str(path): elf_gnu_build_id(path, allow_missing=path in pins) for path in sorted(owned)}
     output = run('loader', [loader, '--list', binary])
     paths = set()
     for line in output.splitlines():
         value = line.split(' => ', 1)[-1].strip().rsplit(' (0x', 1)[0]
         if value.startswith('/'):
             paths.add(Path(value).resolve(strict=True))
-    if not paths or 'not found' in output or not set(required).issubset(paths):
+    if not paths or 'not found' in output or not required.issubset(paths):
         raise ValueError('compiler executable did not load its required instrumented libraries')
     for path in paths:
         if path.name.startswith(('libLLVM', 'libclang-cpp')) and path not in owned:
             raise ValueError('compiler executable loaded an unselected LLVM/Clang library')
-    build_ids = {str(path): elf_gnu_build_id(path) for path in sorted(paths)}
+    build_ids = {str(path): elf_gnu_build_id(path, allow_missing=path in pins) for path in sorted(paths)}
     # Exact paths prevent same-SONAME substitution. The pre-resolution build-ID
     # snapshot also rejects replacement at an otherwise admitted pathname.
-    selected_build_ids = {str(path): elf_gnu_build_id(path) for path in sorted(paths & owned)}
-    if any(build_ids[path] != identity or expected_build_ids[path] != identity
-           for path, identity in selected_build_ids.items()):
+    selected_build_ids = {str(path): build_ids[str(path)] for path in sorted(paths & owned)}
+    if any(expected_build_ids[path] != identity for path, identity in selected_build_ids.items()):
         raise ValueError('loaded LLVM/Clang build identity differs from its selected build')
+    observed_sha256 = {str(path): digest(path) for path in sorted(paths)}
+    if any(observed_sha256[str(path)] != value for path, value in pins.items()):
+        raise ValueError('resolved dependency differs from its required vendor SHA-256 pin')
     return {'binary': str(binary), 'sha256': digest(binary),
-            'libraries': {str(path): digest(path) for path in sorted(paths)},
+            'libraries': observed_sha256, 'sha256_pins': {str(path): value for path, value in pins.items()},
             'build_ids': build_ids, 'expected_build_ids': expected_build_ids,
             'selected_build_ids': selected_build_ids}
 

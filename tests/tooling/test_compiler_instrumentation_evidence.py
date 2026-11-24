@@ -263,6 +263,35 @@ def test_actual_loader_rejects_same_path_build_identity_replacement(tmp_path):
                      run=replace_before_resolution)
 
 
+def test_loader_requires_a_digest_for_selected_elf_without_a_build_id(native_graph):
+    from scripts.objc3c_toolchain.binary_packages import digest
+    from scripts.objc3c_toolchain.compiler_instrumentation import loaded_graph
+    from scripts.objc3c_toolchain.linux_host import native_loader
+
+    source, build, compiler, _, run, _ = native_graph
+    implementation = source / 'library.cpp'
+    implementation.write_text('extern "C" int value() { return 4; }\n')
+    main = source / 'main.cpp'
+    main.write_text('extern "C" int value(); int main() { return value() != 4; }\n')
+    library = build / 'libAdmittedVendor.so'
+    binary = build / 'vendor-client'
+    run('shared', [compiler, '-shared', '-fPIC', '-fuse-ld=lld', '-Wl,--build-id=none',
+                   implementation, '-o', library])
+    run('link', [compiler, '-fuse-ld=lld', main, library, '-o', binary])
+
+    checksum = digest(library)
+    graph = loaded_graph(binary, native_loader(), [library], required=(library,),
+                         sha256_pins={library: checksum}, run=run)
+    assert graph['build_ids'][str(library)] is None
+    assert graph['libraries'][str(library)] == graph['sha256_pins'][str(library)] == checksum
+    with pytest.raises(ValueError, match='lacks one GNU build identity'):
+        loaded_graph(binary, native_loader(), [library], required=(library,), run=run)
+    with pytest.raises(ValueError, match='required vendor SHA-256 pin'):
+        loaded_graph(binary, native_loader(), [library], required=(library,),
+                     sha256_pins={library: '0'*64}, run=run)
+    run('execute', [binary])
+
+
 def test_real_cxx20_module_scanning_does_not_duplicate_compiler_objects(native_graph):
     source, build, compiler, nm, run, collect = native_graph
     with (source / 'CMakeLists.txt').open('a') as stream:
