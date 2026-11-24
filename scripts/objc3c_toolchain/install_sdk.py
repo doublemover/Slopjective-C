@@ -223,7 +223,7 @@ export LD_LIBRARY_PATH="$OBJC3C_SDK_ROOT/lib"
         raise
 
 
-def install(archive: Path, expected_sha256: str, root: Path) -> dict:
+def install(archive: Path, expected_sha256: str, root: Path, *, reuse_existing: bool = False) -> dict:
     started = time.monotonic()
     costs = {}
     if platform.system() != 'Linux' or platform.machine().lower() not in MACHINES:
@@ -270,6 +270,8 @@ def install(archive: Path, expected_sha256: str, root: Path) -> dict:
                 if prefix.is_dir() and not prefix.is_symlink():
                     existing = prefix
             if existing is None:
+                if reuse_existing:
+                    raise ValueError('exact release reuse requires an existing sealed prefix and archive admission')
                 destination = Path(temporary.name)
                 with subprocess.Popen([str(decoder_path), '-dc', str(archive)], stdout=subprocess.PIPE) as decoder:
                     try:

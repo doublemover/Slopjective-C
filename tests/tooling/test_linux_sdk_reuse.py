@@ -340,6 +340,9 @@ def test_native_test_edit_enters_fresh_qualification_instead_of_installing_old_r
     source.write_text('return 1;')
     os.utime(source, ns=(stamp.st_atime_ns, stamp.st_mtime_ns))
     edited = linux_sdk.input_identity(repo, prefix)
+    with pytest.raises(linux_sdk.ReleaseInputChanged, match='differ from requested qualification'):
+        linux_sdk.build_sdk(repo, foundation_sdk=prefix, reuse_input_identity=original['sha256'])
+    assert not candidates and not (builds / edited['sha256']).exists()
     with pytest.raises(ValueError, match='fresh candidate reached'):
         linux_sdk.build_sdk(repo, foundation_sdk=prefix)
     assert len(installations) == 1

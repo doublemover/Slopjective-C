@@ -93,4 +93,19 @@ A focused Release build uses the published x86-64 SDK's compiler and runtime
 archive with the registered keypath test. Its original and restored inputs pass
 CTest. Flipping one assertion with the same source size and timestamp causes
 the warm build to recompile and CTest to record the edited assertion failure.
-The full warmed SDK archive publication replay remains open.
+
+## Warm release archive replay
+
+The x86-64 native assurance producer now reenters the Linux SDK owner after
+publication. The replay requires the current qualification identity and the
+matching active generation. It reads the archive admission records and verifies
+the sealed prefix without rebuilding tools, extracting the payload, or writing
+another archive. Its ten-minute step retains `archive-reuse.json` alongside the
+producer evidence. The receipt compares the before and after archive,
+sidecar, and release receipt digests and records identity, readmission, and
+installation timings. A stale qualification request must fail before activation.
+
+Local controls run the same replay against an actual packaged zstd fixture with
+build, repackaging, and extraction hooks disabled. The same-size test-edit
+control also exercises the production qualification identity calculation. A
+hosted full-size replay receipt is pending.

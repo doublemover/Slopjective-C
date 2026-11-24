@@ -373,6 +373,15 @@ jobs:
             --plan out/native-assurance/selection/plan.json \
             --output out/release-matrix/results/product-producer \
             --group product-producer
+      - name: Replay the exact published archive without rebuilding or extracting the payload
+        if: inputs.linux_host != 'linux-aarch64'
+        timeout-minutes: 10
+        shell: bash
+        run: |
+          source /opt/objc3c-host/activate.sh
+          python3 -B -m scripts.objc3c_toolchain.linux_archive_reuse \
+            --producer-receipt out/release-matrix/results/product-producer/package/release.json \
+            --output out/release-matrix/evidence/product-producer/archive-reuse.json
       - name: Preserve qualified SDK archive
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

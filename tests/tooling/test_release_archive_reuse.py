@@ -1,15 +1,19 @@
 """A published archive outlives the mutable build candidate that produced it."""
-from compression import zstd
+import hashlib
 import json
 from pathlib import Path
 import shutil
+import subprocess
 import tarfile
 
 import pytest
 
-from scripts.objc3c_toolchain import linux_sdk, package
-from scripts.objc3c_toolchain.linux_host import native_target
-from scripts.objc3c_toolchain.install_sdk import file_hash, install
+from scripts.objc3c_toolchain import linux_archive_reuse, linux_sdk, package
+from scripts.objc3c_toolchain.linux_host import native_linux_host, native_target
+from scripts.objc3c_toolchain.install_sdk import install
+
+
+IDENTITY = hashlib.sha256(b'current-inputs').hexdigest()
 
 
 def cached_release(tmp_path, monkeypatch):
@@ -30,19 +34,18 @@ def cached_release(tmp_path, monkeypatch):
     data['seal_sha256'] = package._digest(data)
     (foundation / package.MANIFEST).write_text(json.dumps(data))
     (foundation / package.MANIFEST).chmod(0o644)
-    archive = tmp_path / 'sdk.tar.zst'
-    with zstd.ZstdFile(archive, 'wb') as stream:
-        with tarfile.open(fileobj=stream, mode='w|') as tar:
-            tar.add(foundation, arcname='objc3-sdk')
-    directory = repo / 'out/toolchains/linux-sdk-builds/current-inputs'
+    archive = repo / 'out/toolchains/sdk-cache/sdk.tar.zst'
+    archive.parent.mkdir(parents=True)
+    published = package._archive_sdk(foundation, archive, {
+        'archive': str(archive), 'seal_sha256': data['seal_sha256'], 'source_build_id': 'test-release',
+        'host': native_linux_host(), 'target': native_target()})
+    directory = repo / 'out/toolchains/linux-sdk-builds' / IDENTITY
     directory.mkdir(parents=True)
-    receipt = {'status': 'PASS', 'build_prefix': str(directory / 'prefix'), 'input_identity': 'current-inputs',
-               'archive': str(archive), 'archive_sha256': file_hash(archive),
-               'seal_sha256': data['seal_sha256'], 'source_build_id': 'test-release'}
+    receipt = {**published, 'status': 'PASS', 'build_prefix': str(directory / 'prefix'), 'input_identity': IDENTITY}
     (directory / 'release.json').write_text(json.dumps(receipt))
     monkeypatch.setenv('OBJC3C_BOOTSTRAP_LLVM_ROOT', str(foundation))
     monkeypatch.setattr(linux_sdk, 'verify_development', lambda _: {**recipe, 'build_id': 'test-release'})
-    monkeypatch.setattr(linux_sdk, 'input_identity', lambda *args: {'sha256': 'current-inputs'})
+    monkeypatch.setattr(linux_sdk, 'input_identity', lambda *args: {'sha256': IDENTITY})
     return repo, foundation, receipt
 
 
@@ -76,3 +79,51 @@ def test_corrupted_cached_archive_preserves_the_active_installation(tmp_path, mo
         linux_sdk.build_sdk(repo, foundation_sdk=foundation)
     assert (root / 'current').resolve() == Path(installed['prefix'])
     package.verify_sdk(Path(installed['prefix']), receipt['seal_sha256'])
+
+
+def test_exact_replay_requires_existing_archive_admission(tmp_path, monkeypatch):
+    repo, foundation, _ = cached_release(tmp_path, monkeypatch)
+    with pytest.raises(ValueError, match='existing sealed prefix and archive admission'):
+        linux_sdk.build_sdk(repo, foundation_sdk=foundation, reuse_input_identity=IDENTITY)
+    assert not (repo / 'out/toolchains/linux-sdk/current').exists()
+
+
+def test_same_run_replay_records_measured_readmission_without_build_or_extraction(tmp_path, monkeypatch):
+    repo, _, receipt = cached_release(tmp_path, monkeypatch)
+    root = repo / 'out/toolchains/linux-sdk'
+    receipt['installed'] = install(Path(receipt['archive']), receipt['archive_sha256'], root)
+    canonical = Path(receipt['build_prefix']).with_name('release.json')
+    canonical.write_text(json.dumps(receipt))
+    producer_receipt = repo / 'producer.json'
+    producer_receipt.write_text(json.dumps(receipt))
+    subprocess.run(['git', 'init', '-q'], cwd=repo, check=True)
+    subprocess.run(['git', '-c', 'user.name=Archive Replay', '-c', 'user.email=replay@example.com',
+                    'commit', '-qm', 'Producer revision', '--allow-empty'], cwd=repo, check=True)
+
+    def reject_work(*args, **kwargs):
+        pytest.fail('warm replay entered archive production, extraction or compilation')
+
+    for name in ('build_foundation', 'copy_foundation', 'package_sdk', '_archive_sdk'):
+        monkeypatch.setattr(linux_sdk, name, reject_work)
+    monkeypatch.setattr(tarfile.TarFile, 'extractall', reject_work)
+    output = repo / 'replay.json'
+    assert linux_archive_reuse.main(['--repo', str(repo), '--producer-receipt', str(producer_receipt),
+                                     '--output', str(output)]) == 0
+    replay = json.loads(output.read_text())
+    assert replay['status'] == 'PASS'
+    assert replay['input_identity'] == IDENTITY
+    assert replay['before'] == replay['after']
+    assert replay['after']['archive'] == {'sha256': receipt['archive_sha256'], 'bytes': receipt['archive_bytes']}
+    cost = replay['installation']['installed']['cost']
+    assert cost['prefix_reused'] and cost['seal_sha256'] == receipt['seal_sha256']
+    assert replay['stale_request']['status'] == 'REJECTED'
+    assert replay['stale_request']['requested_input_identity'] != IDENTITY
+    assert set(replay['phases_seconds']) == {'foundation_admission', 'qualification_identity',
+                                            'receipt_and_archive_readmission'}
+    assert 0 < sum(replay['phases_seconds'].values()) <= replay['replay_elapsed_seconds']
+
+    sidecar = Path(receipt['archive']).with_suffix('.json')
+    sidecar.write_text(json.dumps({**json.loads(sidecar.read_text()), 'seal_sha256': 'other'}))
+    with pytest.raises(ValueError, match='package receipt differs'):
+        linux_archive_reuse.qualify(repo, producer_receipt)
+    assert (root / 'current').resolve() == Path(receipt['installed']['prefix'])

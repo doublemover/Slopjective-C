@@ -156,7 +156,9 @@ def input_identity(repo: Path, sdk: Path) -> dict:
 
 
 def build_sdk(repo: Path, *, fetch: bool = False, install_root: Path | None = None, foundation_sdk: Path | None = None,
-              compiler_instrumentation_profile: str | None = None) -> dict:
+              compiler_instrumentation_profile: str | None = None, reuse_input_identity: str | None = None) -> dict:
+    if reuse_input_identity is not None and (fetch or compiler_instrumentation_profile is not None):
+        raise ValueError('exact release reuse cannot fetch inputs or build an instrumentation profile')
     repo = repo.resolve()
     base = repo / 'out/toolchains/linux-sdk-builds'
     base.mkdir(parents=True, exist_ok=True)
@@ -166,7 +168,8 @@ def build_sdk(repo: Path, *, fetch: bool = False, install_root: Path | None = No
         if compiler_instrumentation_profile:
             from .compiler_instrumentation import build_and_qualify
             instrumentation = build_and_qualify(repo, profile=compiler_instrumentation_profile, fetch=fetch)
-        report = _build_sdk(repo, base, fetch, install_root or repo / 'out/toolchains/linux-sdk', foundation_sdk)
+        report = _build_sdk(repo, base, fetch, install_root or repo / 'out/toolchains/linux-sdk', foundation_sdk,
+                            reuse_input_identity)
         # This is evidence about a distinct compiler-process graph, not a claim
         # that the ordinary shipped archive contains instrumented libraries.
         if instrumentation is not None:
@@ -199,7 +202,12 @@ def _install_qualified_archive(report: dict, directory: Path, install_root: Path
     return report
 
 
-def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundation_sdk: Path | None) -> dict:
+class ReleaseInputChanged(ValueError):
+    """A reuse-only request selected a different qualification identity."""
+
+
+def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundation_sdk: Path | None,
+               reuse_input_identity: str | None = None) -> dict:
     started = time.monotonic()
     # Pin the bootstrap before activating or installing a product SDK. A product
     # build must never silently replace the compiler which builds itself.
@@ -214,7 +222,8 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
         try:
             development = verify_development(repo)
         except FoundationConfigurationChanged:
-            pass
+            if reuse_input_identity is not None:
+                raise
         if (development is not None and
                 json.loads((active / 'objc3-sdk.json').read_text())['source_build_id'] == development['build_id']):
             foundation_sdk = active
@@ -234,21 +243,41 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
         foundation = {'status': 'passed', 'cache_hit': True, 'prefix': str(sdk),
                       'source_identity': cached['source_build_id'], 'seal_sha256': cached['seal_sha256']}
     else:
+        if reuse_input_identity is not None:
+            raise ValueError('exact release reuse requires the active verified SDK foundation')
         foundation = build_foundation(repo, host=native_linux_host(), fetch=fetch, stage=True)
+    foundation_admitted = time.monotonic()
     identity = input_identity(repo, sdk)
+    inputs_identified = time.monotonic()
+    if reuse_input_identity is not None and identity['sha256'] != reuse_input_identity:
+        raise ReleaseInputChanged(f'current release inputs {identity["sha256"]} differ from requested '
+                                  f'qualification {reuse_input_identity}')
     directory = base / identity['sha256']
-    directory.mkdir(exist_ok=True)
     receipt_path = directory / 'release.json'
     if receipt_path.exists():
-        receipt = json.loads(receipt_path.read_text())
+        receipt_bytes = receipt_path.read_bytes()
+        receipt = json.loads(receipt_bytes)
         if (not isinstance(receipt, dict) or receipt.get('status') != 'PASS' or
                 receipt.get('input_identity') != identity['sha256']):
             raise ValueError('cached release receipt does not match the qualification identity')
         # Publication makes the checked archive authoritative. The mutable
         # candidate may have been reclaimed or edited after release.
-        installed = install(Path(receipt['archive']), receipt['archive_sha256'], install_root)
-        return {**receipt, 'installed': installed, 'cache_hit': True,
-                'elapsed_seconds': round(time.monotonic() - started, 6)}
+        install_options = {'reuse_existing': True} if reuse_input_identity is not None else {}
+        installed = install(Path(receipt['archive']), receipt['archive_sha256'], install_root, **install_options)
+        finished = time.monotonic()
+        replay = {}
+        if reuse_input_identity is not None:
+            replay = {'release_reuse': {
+                'release_receipt_sha256': hashlib.sha256(receipt_bytes).hexdigest(),
+                'phases_seconds': {'foundation_admission': foundation_admitted - started,
+                                   'qualification_identity': inputs_identified - foundation_admitted,
+                                   'receipt_and_archive_readmission': finished - inputs_identified},
+            }}
+        return {**receipt, **replay, 'installed': installed, 'cache_hit': True,
+                'elapsed_seconds': round(finished - started, 6)}
+    if reuse_input_identity is not None:
+        raise ValueError('exact release reuse requires a published release receipt')
+    directory.mkdir(exist_ok=True)
     pending = directory / 'qualified-archive.json'
     if pending.is_file():
         report = json.loads(pending.read_text())
