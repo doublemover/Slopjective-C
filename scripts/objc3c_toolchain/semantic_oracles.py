@@ -18,6 +18,7 @@ from .llvm_ir_execution import Execution, StageFailure
 from .llvm_tools import identity, selected, verify_receipt
 from .sanitizer_policy import OPTIONS
 from .sdk_example import dependencies
+from .semantic_interface_locks import exercise_reexport
 from .semantic_model import (VERSION, EligibilityFailure, Operation, candidates, coverage,
                             eligibility, generate, interpret, mismatch, transition_witnesses, verify_eligibility)
 from .semantic_sources import HEADER, consumer, provider
@@ -108,6 +109,7 @@ class Campaign:
             *(installed_shared_library(stage / 'lib', name)
               for name in ('libLLVM.so', 'libclang-cpp.so'))]}
         for name in ('llvm_ir_execution.py', 'compiler_instrumentation.py', 'llvm_tools.py',
+                     'semantic_interface_locks.py',
                      'binary_packages.py', 'sanitizer_policy.py', 'linux_host.py', 'sdk_example.py'):
             path = Path(__file__).with_name(name)
             self.inputs[str(path)] = digest(path)
@@ -342,6 +344,13 @@ class Campaign:
             raise ValueError('stale ownership contract produced a consumer object')
         self.report['controls'].append({'name': name, 'status': 'PASS', 'old': old_fingerprint, 'changed': changed})
 
+    def source_free_reexport(self, program, *, origin):
+        name = 'control-source-free-reexport'
+        cases = exercise_reexport(self.output / name, self.run, facade=self.facade,
+            clang=self.tools['clang++'], services=self.services, runtime=self.runtime, flags=self.flags,
+            program=program, origin=origin, prepare_bundle=source_bundle, exports=EXPORTS)
+        self.report['controls'].append({'name': name, 'status': 'PASS', 'cases': cases})
+
     def reduce(self, program, *, origin=None, mutant='', mismatch_class='value-or-lifetime',
                transport='source', optimization='O2', standard='c++20', relation='', bias=0, sanitized=False):
         attempts = 0
@@ -429,7 +438,8 @@ def qualify(repo: Path, output: Path, *, facade: Path, services: Path, runtime: 
         base, changed = campaign.report['cases'][-2:]
         if base['module_identity'] != changed['module_identity']:
             raise ValueError('private implementation edit changed public interface identity')
-        campaign.stale_effect(generate(seeds[0]), base['module_identity']['semantic_fingerprint'])
+        campaign.stale_effect(generated[seeds[0]], base['module_identity']['semantic_fingerprint'])
+        campaign.source_free_reexport(generated[seeds[0]], origin={'seed': seeds[0]})
         campaign.reduce(generated[seeds[0]], origin={'seed': seeds[0]}, mutant='tag', sanitized=True)
         if {row['name'] for row in campaign.report['cases']} != set(expected):
             raise ValueError('generated semantic execution inventory is incomplete')
