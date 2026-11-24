@@ -18,18 +18,48 @@ def qualify_installed(repo: Path, prefix: Path, output: Path) -> dict:
     with tempfile.TemporaryDirectory(prefix='objc3-installed-') as temporary:
         client = Path(temporary)
         shutil.copytree(repo / 'tests/clang_foundation/installed_sdk', client, dirs_exist_ok=True)
-        def run(name, args):
+        def run(name, args, *, diagnostic=None):
             start = time.monotonic()
-            with (output / f'{name}.log').open('w') as log:
+            log_path = output / f'{name}.log'
+            with log_path.open('w') as log:
                 result = subprocess.run([str(arg) for arg in args], cwd=client, env=env,
                                         stdout=log, stderr=subprocess.STDOUT, timeout=180)
+            expected = 1 if diagnostic else 0
             records.append({'name': name, 'exit_code': result.returncode,
+                            'expected_exit_code': expected,
                             'elapsed_seconds': round(time.monotonic() - start, 6)})
-            if result.returncode:
-                raise ValueError(f'installed SDK {name} failed; see {output / (name + ".log")}')
+            if result.returncode != expected or (diagnostic and diagnostic not in log_path.read_text()):
+                raise ValueError(f'installed SDK {name} failed; see {log_path}')
         compiler = prefix / 'bin/objc3c'
         run('version', [compiler, '--version'])
         run('help', [compiler, '--help'])
+        language_source = 'driver-language.objc3'
+        run('driver-language-c', [compiler, '--objc3', '-Werror', '-x', 'c', '-std=c17',
+            '-c', language_source, '-o', 'driver-language.o'])
+        run('driver-language-cxx', [compiler, '--objcxx', '-Werror', '-xc++', '-std=c++20',
+            '-DEXPECT_CXX=1', '-fsyntax-only', language_source])
+        shutil.copyfile(client / language_source, client / 'driver-language.m')
+        run('driver-language-c-on-m', [compiler, '-Werror', '--language=c',
+            '-std=c17', '-fsyntax-only', 'driver-language.m'])
+        explicit_source = 'driver-language-explicit.objc3'
+        (client / explicit_source).write_text(
+            '#define EXPECT_CXX 1\n#include "driver-language.objc3"\n')
+        run('driver-language-objc-arc', [compiler, '-Werror', '-fsyntax-only',
+            '-DEXPECT_OBJC=1', '-DEXPECT_ARC=1',
+            '-x', 'objective-c++', explicit_source, '-x', 'none', language_source])
+        run('driver-language-objcxx-mrc', [compiler, '--objcxx', '-Werror', '-std=c++20',
+            '-fno-objc-arc', '-DEXPECT_OBJC=1', '-DEXPECT_CXX=1', '-fsyntax-only', language_source])
+        run('driver-language-object-link', [compiler, '--objcxx', '-Werror',
+            'driver-language.o', '-o', 'driver-language-application'])
+        run('driver-language-object-run', [client / 'driver-language-application'])
+        run('driver-language-missing-operand', [compiler, '-x'],
+            diagnostic="argument to '-x' is missing (expected 1 value)")
+        run('driver-language-invalid', [compiler, '-x', 'unsupported-driver-language',
+            '-fsyntax-only', language_source],
+            diagnostic="language not recognized: 'unsupported-driver-language'")
+        run('driver-language-explicit-objc-version', [compiler, '-xc', '-fobjc-version=3',
+            '-fsyntax-only', language_source],
+            diagnostic="invalid argument '-fobjc-version=3' not allowed with 'C'")
         for standard in ('c++20', 'c++23'):
             pch = client / ('driver-' + standard + '.pch')
             consumer = client / ('pch-consumer-' + standard + '.o')
