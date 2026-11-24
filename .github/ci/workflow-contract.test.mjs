@@ -11,6 +11,7 @@ import {
   validateNativePR,
   validateNativeRelease,
   validateOptionalLLVM,
+  validatePreviewArchiveCache,
   validateQuickChecks,
   validateWorkflowContracts,
 } from "./workflow-contract.mjs";
@@ -36,6 +37,10 @@ const native = await readFile(
   "utf8",
 );
 const nativePR = await readFile(new URL("../workflows/native-pr.yml", import.meta.url), "utf8");
+const previewArchiveCache = await readFile(
+  new URL("../actions/linux-preview-archive-cache/action.yml", import.meta.url),
+  "utf8",
+);
 const implementation = await readFile(
   new URL("../workflows/implementation-analysis.yml", import.meta.url),
   "utf8",
@@ -99,6 +104,13 @@ test("native PR gate verifies the exact merge and retains failure evidence", () 
     (workflow) => {
       workflow.jobs["native-pr-execution"].steps.at(-1).with.name = "latest";
     },
+    (workflow) => {
+      workflow.jobs["native-pr-execution"].steps.find((step) => step.id === "preview-cache").with.save = "true";
+    },
+    (workflow) => {
+      workflow.jobs["native-pr-execution"].steps.find((step) => step.id === "preview-manifest").run =
+        "cp docs/releases/preview-manifest.json /tmp/manifest.json";
+    },
     (workflow) => { delete workflow.jobs["native-pr"].if; },
     (workflow) => { delete workflow.jobs["native-pr"].needs; },
     (workflow) => { workflow.jobs["native-pr"].steps.splice(2, 1); },
@@ -107,6 +119,20 @@ test("native PR gate verifies the exact merge and retains failure evidence", () 
     const workflow = yaml.load(nativePR);
     edit(workflow);
     assert.throws(() => validateNativePR(yaml.dump(workflow)), /Native PR gate must/);
+  }
+});
+
+test("published SDK cache binds the archive digest and limits cache writes to manual jobs", () => {
+  validatePreviewArchiveCache(previewArchiveCache);
+  for (const edit of [
+    ([coordinates]) => { coordinates.run = "echo key=linux-preview >> $GITHUB_OUTPUT"; },
+    ([, save]) => { save.if = "inputs.save == 'true'"; },
+    ([, , restore]) => { restore.with["restore-keys"] = "objc3-linux-preview"; },
+    ([, , restore]) => { restore.uses = "actions/cache/restore@main"; },
+  ]) {
+    const action = yaml.load(previewArchiveCache);
+    edit(action.runs.steps);
+    assert.throws(() => validatePreviewArchiveCache(yaml.dump(action)), /Preview cache must restore exact/);
   }
 });
 test("workflow changes run the pinned actionlint and ShellCheck integration", () => {

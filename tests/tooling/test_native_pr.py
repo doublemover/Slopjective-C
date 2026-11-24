@@ -1,6 +1,9 @@
+from concurrent.futures import ThreadPoolExecutor
+import hashlib
 import json
 from pathlib import Path
 import subprocess
+from threading import Barrier
 
 import pytest
 
@@ -364,10 +367,12 @@ def test_download_pins_release_archive_and_cleans_temporary_bytes(tmp_path, monk
         assert command[-1] == f'{preview_download.DOWNLOADS}/{tag}/{name}'
         Path(command[-2]).write_bytes(b'released bytes\n')
 
-    def install(path, digest, root):
+    def install(path, digest, root, *, expected_seal_sha256, expected_source_build_id):
         assert path.name == name
         assert digest == archive['sha256']
         assert root == destination / 'sdk'
+        assert expected_seal_sha256 == archive['seal_sha256']
+        assert expected_source_build_id == archive['source_build_id']
         return {'seal_sha256': 'c'*64 if defect == 'seal' else archive['seal_sha256'],
                 'cost': {'source_build_id': 'wrong-source' if defect == 'source' else 'pinned-source'}}
 
@@ -379,3 +384,71 @@ def test_download_pins_release_archive_and_cleans_temporary_bytes(tmp_path, monk
     else:
         assert preview_download.install_preview(manifest, destination)['seal_sha256'] == archive['seal_sha256']
     assert not list(destination.glob('preview-download-*'))
+
+
+def test_preview_cache_reuses_verified_archive_and_replaces_same_length_corruption(tmp_path, monkeypatch):
+    data = b'released bytes\n'
+    record = {'file': 'sdk.tar.zst', 'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
+    transfers = []
+
+    def curl(command, *, check):
+        assert check and command[command.index('--max-filesize') + 1] == str(record['bytes'])
+        Path(command[-2]).write_bytes(data)
+        transfers.append(command[-1])
+
+    monkeypatch.setattr(preview_download.subprocess, 'run', curl)
+    cache = tmp_path / 'cache'
+    archive, first_source = preview_download.acquire_archive(tmp_path, 'v0.1.0-preview.1', record, cache)
+    assert first_source == 'download'
+    assert archive == cache / (record['sha256'] + '.tar.zst')
+    assert preview_download.acquire_archive(tmp_path, 'v0.1.0-preview.1', record, cache) == (archive, 'cache')
+    assert len(transfers) == 1
+
+    archive.write_bytes(b'0' * len(data))
+    assert preview_download.acquire_archive(tmp_path, 'v0.1.0-preview.1', record, cache) == (archive, 'download')
+    assert archive.read_bytes() == data and len(transfers) == 2
+    assert not list(cache.glob('.preview-download-*'))
+
+
+@pytest.mark.parametrize('interrupted', [False, True])
+def test_preview_cache_does_not_publish_failed_transfer_or_invalid_bytes(tmp_path, monkeypatch, interrupted):
+    data = b'expected bytes\n'
+    record = {'file': 'sdk.tar.zst', 'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
+
+    def curl(command, *, check):
+        assert check
+        Path(command[-2]).write_bytes(b'0' * len(data))
+        if interrupted:
+            raise subprocess.CalledProcessError(18, command)
+
+    monkeypatch.setattr(preview_download.subprocess, 'run', curl)
+    cache = tmp_path / 'cache'
+    failure = subprocess.CalledProcessError if interrupted else ValueError
+    with pytest.raises(failure, match=None if interrupted else 'SHA-256 differs'):
+        preview_download.acquire_archive(tmp_path, 'v0.1.0-preview.1', record, cache)
+    assert not list(cache.glob('*.tar.zst'))
+    assert not list(cache.glob('.preview-download-*'))
+
+
+def test_concurrent_preview_cache_acquisition_downloads_once(tmp_path, monkeypatch):
+    data = b'one verified preview archive'
+    record = {'file': 'sdk.tar.zst', 'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
+    transfers = []
+    start = Barrier(2)
+    cache = tmp_path / 'cache'
+
+    def curl(command, *, check):
+        assert check
+        transfers.append(command[-1])
+        Path(command[-2]).write_bytes(data)
+
+    def acquire(_):
+        start.wait(timeout=5)
+        return preview_download.acquire_archive(tmp_path, 'v0.1.0-preview.1', record, cache)
+
+    monkeypatch.setattr(preview_download.subprocess, 'run', curl)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(acquire, range(2)))
+    assert {source for _, source in results} == {'cache', 'download'}
+    assert len(transfers) == 1
+    assert all(path.read_bytes() == data for path, _ in results)

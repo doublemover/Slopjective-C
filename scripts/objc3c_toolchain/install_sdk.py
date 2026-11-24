@@ -223,7 +223,15 @@ export LD_LIBRARY_PATH="$OBJC3C_SDK_ROOT/lib"
         raise
 
 
-def install(archive: Path, expected_sha256: str, root: Path, *, reuse_existing: bool = False) -> dict:
+def admit_release(data: dict, *, expected_seal_sha256: str | None, expected_source_build_id: str | None) -> None:
+    if expected_seal_sha256 is not None and data.get('seal_sha256') != expected_seal_sha256:
+        raise ValueError('SDK seal differs from the release manifest')
+    if expected_source_build_id is not None and data.get('source_build_id') != expected_source_build_id:
+        raise ValueError('SDK source build differs from the release manifest')
+
+
+def install(archive: Path, expected_sha256: str, root: Path, *, reuse_existing: bool = False,
+            expected_seal_sha256: str | None = None, expected_source_build_id: str | None = None) -> dict:
     started = time.monotonic()
     costs = {}
     if platform.system() != 'Linux' or platform.machine().lower() not in MACHINES:
@@ -240,6 +248,8 @@ def install(archive: Path, expected_sha256: str, root: Path, *, reuse_existing: 
     admission = read_archive_admission(archive, decoder_path)
     host_abi = None
     if admission is not None:
+        admit_release(admission[0], expected_seal_sha256=expected_seal_sha256,
+                      expected_source_build_id=expected_source_build_id)
         admit_target(admission[0])
         host_abi = admit_host_abi(admission[0])
     if sys.version_info < (3, 11) or not hasattr(tarfile, 'data_filter'):
@@ -303,6 +313,8 @@ def install(archive: Path, expected_sha256: str, root: Path, *, reuse_existing: 
                 data = verify(candidate)
             if admission is not None and data['seal_sha256'] != admission[0]['seal_sha256']:
                 raise ValueError('verified SDK prefix differs from the archive admission seal')
+            admit_release(data, expected_seal_sha256=expected_seal_sha256,
+                          expected_source_build_id=expected_source_build_id)
             admit_native_sdk(candidate, data)
             if host_abi is None:
                 host_abi = admit_host_abi(data)

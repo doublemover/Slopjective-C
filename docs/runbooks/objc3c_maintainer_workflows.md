@@ -64,6 +64,13 @@ Fresh Debian/Ubuntu archive qualification is a separate operation owned by
 receipt and requested qualification scope. Record the archive checksum, SDK
 seal, native build identity and actual checks in the acceptance receipt.
 
+The native PR, preview calibration, and installed LLVM assurance jobs can
+restore one compressed preview archive by native host and its reviewed
+SHA-256. The installer checks the archive, source build, and seal before
+activation. Manual preview calibration or installed LLVM assurance runs can
+populate the cache after success. Native PR jobs remove the compressed file
+after installation to leave room for compilation.
+
 For public delivery use the [Linux release owner checklist](../releases/linux.md#release-owner-checklist).
 The draft workflow accepts two successful native qualification runs for its
 checked-out revision. The release owner reviews and publishes the draft.

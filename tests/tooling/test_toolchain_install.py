@@ -58,6 +58,29 @@ def test_install_reuse_and_relocation(tmp_path):
     package.verify_sdk((moved / 'current').resolve(), first['seal_sha256'])
 
 
+@pytest.mark.parametrize('admission', [False, True])
+@pytest.mark.parametrize('field', ['seal_sha256', 'source_build_id'])
+def test_manifest_identity_mismatch_leaves_the_active_sdk_untouched(tmp_path, admission, field):
+    original, original_digest = release(tmp_path / 'original', 'first compiler', admission=True)
+    candidate, candidate_digest = release(tmp_path / 'candidate', 'second compiler', admission=admission)
+    root = tmp_path / 'installed'
+    current = install(original, original_digest, root)
+    manifest = json.loads((tmp_path / 'candidate/source' / package.MANIFEST).read_text())
+    identity = {'expected_seal_sha256': manifest['seal_sha256'],
+                'expected_source_build_id': manifest['source_build_id']}
+    wrong = {**identity, 'expected_' + field: '0' * 64}
+
+    with pytest.raises(ValueError, match='differs from the release manifest'):
+        install(candidate, candidate_digest, root, **wrong)
+
+    assert (root / 'current').resolve() == Path(current['prefix'])
+    assert list((root / 'sdks').iterdir()) == [Path(current['prefix'])]
+    assert not list(root.glob('.install-*'))
+    accepted = install(candidate, candidate_digest, root, **identity)
+    assert (root / 'current').resolve() == Path(accepted['prefix'])
+    assert accepted['seal_sha256'] == manifest['seal_sha256']
+
+
 @pytest.mark.parametrize(('abi', 'diagnostic'), [
     ({'glibc_minimum': '999.0', 'libstdcxx_symbol_minimum': 'GLIBCXX_3.4'},
      'requires glibc >= 999.0 (detected glibc '),

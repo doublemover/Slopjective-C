@@ -42,14 +42,21 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: ./.github/actions/linux-preview-archive-cache
+        id: preview-cache
+        with:
+          manifest: docs/releases/preview-manifest.json
+          save: "true"
       - name: Install exact published preview
         env:
           EXPECTED_HOST: ${{ matrix.linux_host }}
+          PREVIEW_CACHE: ${{ steps.preview-cache.outputs.directory }}
         run: |
           mkdir -p out/calibration
           python3 -B scripts/objc3c_toolchain/linux_host.py --expect-host "$EXPECTED_HOST" --field host
           python3 -B -m scripts.objc3c_assurance.preview_download \
             --manifest docs/releases/preview-manifest.json --directory "$RUNNER_TEMP/objc3-calibration" \
+            --archive-cache "$PREVIEW_CACHE" \
             > out/calibration/install.json
       - name: Measure two complete observations on one admitted host
         id: measure

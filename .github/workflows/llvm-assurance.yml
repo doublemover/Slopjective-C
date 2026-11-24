@@ -165,13 +165,21 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: ./.github/actions/linux-preview-archive-cache
+        id: preview-cache
+        with:
+          manifest: docs/releases/preview-manifest.json
+          save: "true"
       - name: Install the exact preview and verify its compiler output
         shell: bash
+        env:
+          PREVIEW_CACHE: ${{ steps.preview-cache.outputs.directory }}
         run: |
           mkdir -p out/installed-ir
           python3 -B scripts/objc3c_toolchain/linux_host.py --expect-host "$OBJC3C_REQUESTED_HOST" --field host
           python3 -B -m scripts.objc3c_assurance.preview_download \
             --manifest docs/releases/preview-manifest.json --directory "$RUNNER_TEMP/objc3-ir" \
+            --archive-cache "$PREVIEW_CACHE" \
             > out/installed-ir/install.json
           seal=$(python3 -c 'import json; print(json.load(open("out/installed-ir/install.json"))["seal_sha256"])')
           python3 -B -m scripts.objc3c_toolchain.llvm_installed_ir \

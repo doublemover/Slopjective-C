@@ -7,8 +7,10 @@ import { validateConfig } from "./adaptive-ci.mjs";
 const dependencyActions = ["linux-host-tools", "python-tools"].map(
   (name) => `./.github/actions/${name}`,
 );
+const previewArchiveCache = "./.github/actions/linux-preview-archive-cache";
 const pinnedAction = (uses) =>
-  /^[^@]+@[a-f0-9]{40}$/.test(uses) || dependencyActions.includes(uses);
+  /^[^@]+@[a-f0-9]{40}$/.test(uses) || dependencyActions.includes(uses) ||
+  uses === previewArchiveCache;
 
 export function validateDependencyRouting(workflows) {
   for (const name of [
@@ -94,6 +96,33 @@ export function validateDependencyActions(actions) {
   }
 }
 
+export function validatePreviewArchiveCache(text) {
+  const action = yaml.load(text);
+  const steps = action.runs?.steps ?? [];
+  const [coordinates, save, restore] = steps;
+  const cacheInputs = {
+    path: "${{ steps.coordinates.outputs.archive }}",
+    key: "${{ steps.coordinates.outputs.key }}",
+  };
+  if (
+    action.runs?.using !== "composite" || steps.length !== 3 ||
+    action.inputs?.save?.default !== "false" ||
+    steps.some((step) => step["continue-on-error"]) ||
+    coordinates.id !== "coordinates" ||
+    !coordinates.run?.includes("published_archive(manifest, host)['sha256']") ||
+    !coordinates.run.includes("checksum + '.tar.zst'") ||
+    !/^actions\/cache@[0-9a-f]{40}$/.test(save.uses) ||
+    !/^actions\/cache\/restore@[0-9a-f]{40}$/.test(restore.uses) ||
+    save.if !== "inputs.save == 'true' && github.event_name == 'workflow_dispatch'" ||
+    restore.if !== "inputs.save != 'true' || github.event_name != 'workflow_dispatch'" ||
+    [save, restore].some((step) =>
+      Object.entries(cacheInputs).some(([key, value]) => step.with?.[key] !== value) ||
+      step.with?.["restore-keys"],
+    )
+  )
+    throw new Error("Preview cache must restore exact pinned archives and save only on explicit dispatch");
+}
+
 export function validateNativePR(text) {
   const workflow = yaml.load(text);
   const owner = workflow.jobs?.["native-pr-execution"];
@@ -112,6 +141,9 @@ export function validateNativePR(text) {
     throw new Error("Native PR gate must cover every PR with pinned, read-only execution");
 
   const checkout = steps.find((step) => step.uses?.startsWith("actions/checkout@"));
+  const previewManifest = steps.find((step) => step.id === "preview-manifest");
+  const previewCache = steps.find((step) => step.uses === previewArchiveCache);
+  const previewInstall = steps.find((step) => step.run?.includes("-m scripts.objc3c_assurance.preview_download"));
   const execute = steps.find((step) => step.run?.includes("-m scripts.objc3c_assurance.pr_native"));
   const upload = steps.find((step) => step.uses?.startsWith("actions/upload-artifact@"));
   const gates = gate.steps ?? [];
@@ -122,6 +154,13 @@ export function validateNativePR(text) {
     checkout?.with?.["persist-credentials"] !== false ||
     checkout.with["fetch-depth"] !== 0 ||
     !steps.some((step) => step.uses === "./.github/actions/linux-host-tools") ||
+    !previewManifest?.run?.includes('git show "$PR_BASE:docs/releases/preview-manifest.json"') ||
+    previewCache?.with?.save ||
+    previewCache?.with?.manifest !== "${{ steps.preview-manifest.outputs.path }}" ||
+    previewCache?.if !== "steps.preview-manifest.outputs.path != ''" ||
+    previewInstall?.if !== previewCache?.if ||
+    previewInstall?.env?.PREVIEW_CACHE !== "${{ steps.preview-cache.outputs.directory }}" ||
+    !previewInstall?.run.includes('--archive-cache "$PREVIEW_CACHE"') ||
     !execute ||
     execute.if ||
     !execute.run.includes('--head "$PR_HEAD" --base "$PR_BASE" --tested "$TESTED_SHA"') ||
@@ -971,6 +1010,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       ),
     ),
   );
+  validatePreviewArchiveCache(await readFile(resolve(root, "../..", previewArchiveCache, "action.yml"), "utf8"));
   const config = JSON.parse(await readFile(new URL("./adaptive-ci.json", import.meta.url), "utf8"));
   await validateWorkflowContracts(config, (name) => readFile(join(root, name), "utf8"));
   const allWorkflows = Object.fromEntries(

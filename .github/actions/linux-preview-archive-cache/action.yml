@@ -1,0 +1,50 @@
+name: Verified Linux preview archive cache
+description: Restore a compressed preview artifact by native host and manifest digest.
+inputs:
+  manifest:
+    description: Reviewed Linux preview manifest to admit
+    required: true
+  save:
+    description: Save verified downloads after a successful job
+    default: "false"
+outputs:
+  directory:
+    description: Directory used by preview_download to verify and cache the archive
+    value: ${{ steps.coordinates.outputs.directory }}
+  archive:
+    description: Exact compressed archive path in the cache directory
+    value: ${{ steps.coordinates.outputs.archive }}
+runs:
+  using: composite
+  steps:
+    - id: coordinates
+      shell: bash
+      env:
+        PREVIEW_MANIFEST: ${{ inputs.manifest }}
+      run: |
+        python3 -B - <<'PY'
+        import json
+        import os
+        from pathlib import Path
+        from scripts.objc3c_toolchain.linux_host import native_linux_host
+        from scripts.objc3c_toolchain.release_install import published_archive
+
+        host = native_linux_host()
+        manifest = json.loads(Path(os.environ['PREVIEW_MANIFEST']).read_bytes())
+        checksum = published_archive(manifest, host)['sha256']
+        directory = Path(os.environ['RUNNER_TEMP']) / 'objc3-preview-archives'
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+            print('key=objc3-linux-preview-v1-' + host + '-' + checksum, file=output)
+            print('directory=' + str(directory), file=output)
+            print('archive=' + str(directory / (checksum + '.tar.zst')), file=output)
+        PY
+    - if: inputs.save == 'true' && github.event_name == 'workflow_dispatch'
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.coordinates.outputs.archive }}
+        key: ${{ steps.coordinates.outputs.key }}
+    - if: inputs.save != 'true' || github.event_name != 'workflow_dispatch'
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.coordinates.outputs.archive }}
+        key: ${{ steps.coordinates.outputs.key }}

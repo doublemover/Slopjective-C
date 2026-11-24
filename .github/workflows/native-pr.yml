@@ -62,7 +62,8 @@ jobs:
         if: steps.plan.outputs.native == 'true'
         with:
           output: out/native-pr/startup
-      - name: Fetch the base revision's published foundation candidate
+      - name: Select the base revision's published foundation candidate
+        id: preview-manifest
         if: steps.plan.outputs.native == 'true' && (steps.plan.outputs.reuse == 'true' || steps.plan.outputs.install == 'true')
         shell: bash
         env:
@@ -78,13 +79,30 @@ jobs:
           fi
           mkdir -p "$RUNNER_TEMP/native-pr-preview"
           git show "$PR_BASE:docs/releases/preview-manifest.json" > "$RUNNER_TEMP/native-pr-preview/manifest.json"
+          printf 'path=%s\n' "$RUNNER_TEMP/native-pr-preview/manifest.json" >> "$GITHUB_OUTPUT"
+      - uses: ./.github/actions/linux-preview-archive-cache
+        id: preview-cache
+        if: steps.preview-manifest.outputs.path != ''
+        with:
+          manifest: ${{ steps.preview-manifest.outputs.path }}
+      - name: Install the exact base SDK and execute the selected relocation witness
+        if: steps.preview-manifest.outputs.path != ''
+        shell: bash
+        env:
+          PREVIEW_MANIFEST: ${{ steps.preview-manifest.outputs.path }}
+          PREVIEW_CACHE: ${{ steps.preview-cache.outputs.directory }}
+          PREVIEW_ARCHIVE: ${{ steps.preview-cache.outputs.archive }}
+          INSTALL_WITNESS: ${{ steps.plan.outputs.install }}
+        run: |
           witness=()
           if [[ "$INSTALL_WITNESS" == true ]]; then
             witness=(--witness-log out/native-pr/install-witness.log)
           fi
           python3 -B -m scripts.objc3c_assurance.preview_download \
-            --manifest "$RUNNER_TEMP/native-pr-preview/manifest.json" --directory "$RUNNER_TEMP/native-pr-preview" \
+            --manifest "$PREVIEW_MANIFEST" --directory "$RUNNER_TEMP/native-pr-preview" \
+            --archive-cache "$PREVIEW_CACHE" \
             "${witness[@]}" > out/native-pr/preview-install.json
+          unlink "$PREVIEW_ARCHIVE"
       - name: Execute the native source suites and bounded implementation analysis
         id: run
         shell: bash
