@@ -93,7 +93,9 @@ jobs:
           tests/tooling/test_toolchain_package.py
           tests/tooling/test_toolchain_install.py
           tests/tooling/test_darwin_bootstrap.py
+          tests/tooling/test_darwin_evidence.py
           tests/tooling/test_darwin_registration.py
+          tests/tooling/test_darwin_sdk.py
           tests/tooling/test_linux_archive_debugger_gate.py
           tests/tooling/test_stage_linux_release.py
           tests/tooling/test_workspace_cleanup.py

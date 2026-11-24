@@ -10,6 +10,7 @@ on:
     paths:
       - ".github/workflows/darwin-bootstrap.yml"
       - "scripts/objc3c_toolchain/darwin_bootstrap.py"
+      - "scripts/objc3c_toolchain/darwin_evidence.py"
       - "scripts/objc3c_toolchain/darwin_registration.py"
       - "scripts/objc3c_toolchain/darwin_sdk.py"
       - "scripts/objc3c_toolchain_runtime/runtime-profile.json"
@@ -17,6 +18,7 @@ on:
       - "native/objc3c/src/runtime/platform/darwin_registration.c"
       - "tests/clang_foundation/darwin_registration/**"
       - "tests/tooling/test_darwin_bootstrap.py"
+      - "tests/tooling/test_darwin_evidence.py"
       - "tests/tooling/test_darwin_registration.py"
       - "tests/tooling/test_darwin_sdk.py"
       - "toolchains/llvm/manifest.json"
@@ -31,6 +33,8 @@ jobs:
     name: Probe Apple Silicon toolchain and Mach-O prerequisites
     runs-on: macos-15
     timeout-minutes: 215
+    outputs:
+      runtime_selected: ${{ steps.runtime.outputs.selected }}
     env:
       DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
       LLVM_ARCHIVE: LLVM-23.1.5-macOS-ARM64.tar.zst
@@ -61,6 +65,9 @@ jobs:
         env:
           RUN_RUNTIME: ${{ inputs.runtime_registration }}
         run: |
+          if [[ "$RUN_RUNTIME" != true ]]; then
+            RUN_RUNTIME=false
+          fi
           if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
             changes=$(git diff --name-only HEAD^1 HEAD -- toolchains/llvm/experimental \
               scripts/objc3c_toolchain/darwin_registration.py \
@@ -114,6 +121,46 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: darwin-arm64-bootstrap-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/darwin-bootstrap-evidence
+          path: |
+            ${{ runner.temp }}/darwin-bootstrap-evidence
+            !${{ runner.temp }}/darwin-bootstrap-evidence/runtime/sdk/qualification/Relocated Objective-C 3 SDK/**
+          if-no-files-found: error
+          retention-days: 7
+  verify:
+    name: Verify retained Apple Silicon evidence
+    if: always()
+    needs: bootstrap
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    env:
+      NATIVE_OUTCOME: ${{ needs.bootstrap.result }}
+      RUNTIME_SELECTED: ${{ needs.bootstrap.outputs.runtime_selected }}
+    steps:
+      - name: Require successful native execution
+        shell: bash
+        run: |
+          test "$NATIVE_OUTCOME" = success
+          case "$RUNTIME_SELECTED" in
+            false) echo 'DARWIN_EVIDENCE_MODE=bootstrap' >> "$GITHUB_ENV" ;;
+            true) echo 'DARWIN_EVIDENCE_MODE=package' >> "$GITHUB_ENV" ;;
+            *) echo 'Missing Apple Silicon execution selection' >&2; exit 1 ;;
+          esac
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: darwin-arm64-bootstrap-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/native-darwin-evidence
+      - name: Check exact revision and native artifacts
+        shell: bash
+        run: |
+          python3 -B -m scripts.objc3c_toolchain.darwin_evidence \
+            --evidence out/native-darwin-evidence --revision "$GITHUB_SHA" \
+            --outcome "$NATIVE_OUTCOME" --mode "$DARWIN_EVIDENCE_MODE" | tee out/darwin-terminal.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: darwin-terminal-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/darwin-terminal.json
           if-no-files-found: error
           retention-days: 7
