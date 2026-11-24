@@ -513,6 +513,11 @@ def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str,
         cost_bytes = saved_costs['bytes']
     elif 'operational_costs' in receipt or cost_file.exists() or cost_file.is_symlink():
         raise ValueError('native operational measurements have no selected owner')
+    if 'archive_reuse' in receipt:
+        saved = receipt['archive_reuse']
+        if shard != 'core' or 'package' not in expected or artifact(root, root / 'archive-reuse.json') != saved:
+            raise ValueError('native archive replay evidence is missing, changed or belongs to another owner')
+        cost_bytes += saved['bytes']
     total += cost_bytes
     validate_evidence_sizes(records, cost_bytes)
     if total > evidence_budget(expected):

@@ -1085,5 +1085,6 @@ jobs:
           path: |
             out/native-assurance/release-evidence/core/result.json
             out/native-assurance/release-evidence/core/operational-costs.json
+            out/native-assurance/release-evidence/core/archive-reuse.json
           if-no-files-found: error
           retention-days: 7

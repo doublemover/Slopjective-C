@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 import re
 import subprocess
@@ -13,17 +14,81 @@ from .install_sdk import file_hash
 from .linux_host import native_linux_host
 from .linux_sdk import ReleaseInputChanged, build_sdk
 from .sdk_example import write_json
-from .semantic_build_costs import bounded_installation_receipt
+from .semantic_build_costs import INSTALL_PHASES, bounded_installation_receipt
 
 
 SCHEMA = 'objc3c.linux-archive-reuse.v1'
 PACKAGE_KEYS = ('archive', 'archive_sha256', 'archive_bytes', 'seal_sha256', 'source_build_id', 'host', 'target')
+PHASES = {'foundation_admission', 'qualification_identity', 'receipt_and_archive_readmission'}
+REPLAY_RECEIPT_LIMIT = 64 * 1024
 
 
 def fingerprint(path: Path) -> dict:
     if path.is_symlink() or not path.is_file():
         raise ValueError(f'archive replay requires an owned regular file: {path}')
     return {'bytes': path.stat().st_size, 'sha256': file_hash(path)}
+
+
+def verify_retained(path: Path, producer_receipt: Path, *, revision: str, host: str) -> None:
+    """Bind the relocated replay to the exact native package producer."""
+    if not path.is_file() or path.is_symlink():
+        raise ValueError('archive replay requires its retained regular receipt')
+    if not 0 < path.stat().st_size <= REPLAY_RECEIPT_LIMIT:
+        raise ValueError('archive replay receipt is empty or exceeds its evidence budget')
+    proof = fingerprint(path)
+    try:
+        replay = json.loads(path.read_bytes())
+        producer = json.loads(producer_receipt.read_bytes())
+        release = {key: value for key, value in producer.items() if key != 'cache_hit'}
+        # The canonical package may have retained its own archive cache flag.
+        # The enclosing SDK producer replaces that field in the public result.
+        release_fingerprints = []
+        for record in (release, {**release, 'cache_hit': False}, {**release, 'cache_hit': True}):
+            rendered = (json.dumps(record, indent=2, sort_keys=True) + '\n').encode()
+            release_fingerprints.append({'bytes': len(rendered), 'sha256': hashlib.sha256(rendered).hexdigest()})
+        identity = producer['input_identity']
+        archive = {'bytes': producer['archive_bytes'], 'sha256': producer['archive_sha256']}
+        installation = replay['installation']
+        installed = installation['installed']
+        cost = installed['cost']
+        before, after = replay['before'], replay['after']
+        expected = {'schema': SCHEMA, 'status': 'PASS', 'revision': revision, 'host': host,
+                    'input_identity': identity, 'source_build_id': producer['source_build_id'],
+                    'archive_name': Path(producer['archive']).name, 'seal_sha256': producer['seal_sha256']}
+        if (any(replay.get(key) != value for key, value in expected.items()) or
+                producer['status'] != 'PASS' or producer['cache_hit'] is not False or producer['host'] != host):
+            raise ValueError('archive replay differs from the exact producer revision, archive or seal')
+        if (before != after or before.keys() != {'archive', 'package_receipt', 'release_receipt', 'producer_receipt'} or
+                before['archive'] != archive or before['producer_receipt'] != fingerprint(producer_receipt) or
+                before['release_receipt'] not in release_fingerprints or
+                any(type(row['bytes']) is not int or row['bytes'] <= 0 or not re.fullmatch(r'[0-9a-f]{64}', row['sha256'])
+                    for row in before.values())):
+            raise ValueError('archive replay did not preserve its exact producer and archive bytes')
+        keys = ('archive_sha256', 'archive_bytes', 'seal_sha256', 'source_build_id')
+        if (installation['status'] != 'PASS' or installed['status'] != 'PASS' or installed['activated'] is not True or
+                installed['prefix'] != producer['installed']['prefix'] or installed['seal_sha256'] != producer['seal_sha256'] or
+                cost['schema'] != 'objc3c.sdk-install-cost.v1' or cost['prefix_reused'] is not True or
+                any(installation[key] != producer[key] or cost[key] != producer[key] for key in keys)):
+            raise ValueError('archive replay lacks the exact existing sealed installation')
+        phases = replay['phases_seconds']
+        install_phases = cost['phases_seconds']
+        installed_elapsed = cost['elapsed_seconds']
+        elapsed = replay['replay_elapsed_seconds']
+        stale = replay['stale_request']
+        if (phases.keys() != PHASES or install_phases.keys() != INSTALL_PHASES or
+                any(type(seconds) not in (int, float) or not math.isfinite(seconds) or seconds < 0 for seconds in (
+                    *phases.values(), *install_phases.values(), installed_elapsed, elapsed, stale['elapsed_seconds'])) or
+                not 0 < sum(install_phases.values()) <= installed_elapsed+0.000001 or
+                not 0 < installed_elapsed <= phases['receipt_and_archive_readmission']+0.000001 or
+                not 0 < sum(phases.values()) <= elapsed+0.000001 or
+                stale['status'] != 'REJECTED' or
+                stale['requested_input_identity'] != hashlib.sha256(('stale release ' + identity).encode()).hexdigest() or
+                not isinstance(stale['reason'], str) or stale['requested_input_identity'] not in stale['reason']):
+            raise ValueError('archive replay lacks complete warm phases or the stale-input rejection')
+    except (AttributeError, KeyError, TypeError) as error:
+        raise ValueError('archive replay receipt is incomplete') from error
+    if fingerprint(path) != proof:
+        raise ValueError('archive replay receipt changed during verification')
 
 
 def qualify(repo: Path, producer_receipt: Path) -> dict:
