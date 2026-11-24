@@ -125,7 +125,7 @@ export function summarizeAttempt(run, jobs, suite) {
   const started = children.some((job) => job.runner_id > 0 && job.started_at);
   const inProgress = ['queued', 'in_progress', 'waiting', 'pending'].includes(run.status) ||
     children.some((job) => ['queued', 'in_progress', 'waiting', 'pending'].includes(job.status));
-  const complete = suite.expectedJobs.every((expected) => {
+  const complete = run.status === 'completed' && run.conclusion === 'success' && suite.expectedJobs.every((expected) => {
     const matches = children.filter((job) => job.name.slice(prefix.length) === expected.name);
     return matches.length === 1 && matches[0].conclusion === 'success' && matches[0].runner_id > 0 &&
       (matches[0].steps ?? []).length > 0 &&
@@ -202,13 +202,14 @@ export async function collectSnapshot({ github, context, suite, now, defaultBran
   return { suite, now, history, changes };
 }
 
-export async function resolveSource({ github, context, sourceRef }) {
-  if (typeof sourceRef !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(sourceRef) || sourceRef.includes('..')) {
-    throw new Error('A trusted source branch is required');
+export function resolveSource({ context, sourceRef, defaultBranch }) {
+  if (typeof sourceRef !== 'string' || sourceRef !== defaultBranch || context.ref !== `refs/heads/${sourceRef}`) {
+    throw new Error('Adaptive maintenance must run from the configured default branch');
   }
-  const { data } = await github.rest.repos.getCommit({ ...context.repo, ref: sourceRef });
-  if (!/^[a-f0-9]{40}$/.test(data.sha)) throw new Error('Source did not resolve to an immutable commit');
-  return { sourceRef, sourceSha: data.sha };
+  if (!/^[a-f0-9]{40}$/.test(context.sha) || context.sha === '0'.repeat(40)) {
+    throw new Error('Adaptive maintenance requires an immutable dispatcher commit');
+  }
+  return { sourceRef, sourceSha: context.sha };
 }
 
 export async function run({ github, context, core, now = new Date().toISOString() }) {
@@ -219,10 +220,7 @@ export async function run({ github, context, core, now = new Date().toISOString(
   for (const suite of config.suites) core.setOutput(`run_${suite.id.replaceAll('-', '_')}`, 'false');
   if (selected.length !== 1) throw new Error('A maintenance invocation must select exactly one configured suite');
   const { data: repository } = await github.rest.repos.get(context.repo);
-  if (context.ref !== `refs/heads/${repository.default_branch}`) {
-    throw new Error('Adaptive maintenance must run from the actual default branch');
-  }
-  const source = await resolveSource({ github, context, sourceRef: config.sourceRef });
+  const source = resolveSource({ context, sourceRef: config.sourceRef, defaultBranch: repository.default_branch });
   core.setOutput('source_sha', source.sourceSha);
   core.setOutput('source_ref', source.sourceRef);
   core.info(`Source checkout: ${source.sourceRef} at ${source.sourceSha}; dispatcher: ${context.sha}`);

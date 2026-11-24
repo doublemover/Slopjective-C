@@ -18,7 +18,7 @@ import {
 const config = JSON.parse(await readFile(new URL("./adaptive-ci.json", import.meta.url), "utf8"));
 const workflows = Object.fromEntries(
   await Promise.all(
-    ["adaptive-maintenance.yml", ...config.suites.map((suite) => suite.workflow)].map(
+    ["adaptive-maintenance.yml", "native-assurance.yml", ...config.suites.map((suite) => suite.workflow)].map(
       async (name) => [
         name,
         await readFile(new URL(`../workflows/${name}`, import.meta.url), "utf8"),
@@ -476,7 +476,7 @@ test("native containers admit TSan personality and debugger process controls", a
   const llvm = await readFile(new URL("../workflows/llvm-assurance.yml", import.meta.url), "utf8");
   for (const [text, name] of [
     [native, "diagnostic-native"],
-    [workflows["adaptive-closeout.yml"], "compiler-closeout"],
+    [native, "product-producer"],
     [llvm, "llvm-assurance"],
   ]) {
     const job = yaml.load(text).jobs[name];
@@ -536,107 +536,45 @@ for (const [name, before, after] of [
 test("current cadence resolves to actual jobs and required workload/verification steps", async () => {
   await check();
 });
-for (const [name, mutate] of [
-  [
-    "dangling reference",
-    (files) => {
-      delete files["adaptive-closeout.yml"];
-    },
-  ],
-  [
-    "renamed job",
-    (files) => {
-      files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
-        "name: compiler-closeout",
-        "name: silently-renamed",
-      );
-    },
-  ],
-  [
-    "missing native command",
-    (files) => {
-      files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
-        "Build full native objc3c closeout surface",
-        "Tooling mocks only",
-      );
-    },
-  ],
-  [
-    "mutable source ref",
-    (files) => {
-      files["adaptive-maintenance.yml"] = files["adaptive-maintenance.yml"].replace(
-        "source_sha: ${{ needs.decide.outputs.source_sha }}",
-        "source_sha: main",
-      );
-    },
-  ],
-  [
-    "new cadence",
-    (files) => {
-      files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
-        "  workflow_call:",
-        "  schedule: []\n  workflow_call:",
-      );
-    },
-  ],
-  [
-    "conditional workload",
-    (files) => {
-      files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
-        "    timeout-minutes: 360",
-        "    if: false\n    timeout-minutes: 360",
-      );
-    },
-  ],
-  [
-    "failure normalized",
-    (files) => {
-      files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
-        "    timeout-minutes: 360",
-        "    continue-on-error: true\n    timeout-minutes: 360",
-      );
-    },
-  ],
-  [
-    "missing final verifier",
-    (files) => {
-      files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
-        "scripts.objc3c_assurance verify",
-        "echo pretending-to-verify",
-      );
-    },
-  ],
-  [
-    "missing coverage shard",
-    (files) => {
-      files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
-        "shard: [core, frontend-fuzz, source-coverage]",
-        "shard: [core, frontend-fuzz]",
-      );
-    },
-  ],
-  [
-    "duplicate matrix names",
-    (files) => {
-      files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
-        "shard: [core, frontend-fuzz, source-coverage]",
-        "shard: [core, core, source-coverage]",
-      );
-    },
-  ],
-  [
-    "periodic aggregate without prerequisites",
-    (files) => {
-      files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
-        "needs: compiler-closeout",
-        "needs: nonexistent",
-      );
-    },
-  ],
+const closeout = "adaptive-closeout.yml";
+const dispatcher = "adaptive-maintenance.yml";
+const canonical = "native-assurance.yml";
+for (const [name, target, mutate] of [
+  ["dangling closeout", closeout, null],
+  ["dangling native owner", canonical, null],
+  ["renamed terminal job", closeout, (workflow) => { workflow.jobs.gate.name = "renamed"; }],
+  ["missing source check", closeout, (workflow) => { workflow.jobs.source.steps[0].run = "true"; }],
+  ["mutable source ref", dispatcher, (workflow) => { workflow.jobs["run-closeout"].with.source_sha = "main"; }],
+  ["new dispatcher cadence", dispatcher, (workflow) => { workflow.on.schedule.push({ cron: "3 4 * * *" }); }],
+  ["dangling dispatcher cadence", dispatcher, (workflow) => { workflow.on.schedule = []; }],
+  ["new reusable cadence", closeout, (workflow) => { workflow.on.schedule = []; }],
+  ["conditional native owner", closeout, (workflow) => { workflow.jobs.native.if = "false"; }],
+  ["release-only work", closeout, (workflow) => { workflow.jobs.native.with.archive_install = true; }],
+  ["failure normalized", closeout, (workflow) => { workflow.jobs.gate["continue-on-error"] = true; }],
+  ["missing final verifier", closeout, (workflow) => { workflow.jobs.gate.steps[0].run = "true"; }],
+  ["substituted native result", closeout, (workflow) => { workflow.jobs.gate.steps[0].env.NATIVE_RESULT = "success"; }],
+  ["missing canonical coverage outcome", canonical, (workflow) => {
+    workflow.jobs.gate.needs = workflow.jobs.gate.needs.filter((job) => job !== "coverage-aggregate");
+  }],
+  ["wrong canonical periodic revision", canonical, (workflow) => {
+    const plan = workflow.jobs.plan.steps.find(({ run }) => run?.includes("--periodic-sha"));
+    plan.run = plan.run.replace('--periodic-sha "$GITHUB_SHA"', '--periodic-sha main');
+  }],
+  ["periodic aggregate without prerequisites", closeout, (workflow) => { workflow.jobs.gate.needs = ["source"]; }],
 ]) {
   test(`workflow contract rejects ${name}`, async () => {
     const files = { ...workflows };
-    mutate(files);
+    if (mutate === null) delete files[target];
+    else {
+      const value = yaml.load(files[target]);
+      mutate(value);
+      files[target] = yaml.dump(value);
+    }
     await assert.rejects(check(files));
   });
 }
+
+test("unreviewed PR callers cannot reach adaptive native work", () => {
+  const extra = `on: pull_request\njobs:\n  heavy:\n    uses: ./.github/workflows/adaptive-closeout.yml\n`;
+  assert.throws(() => validateNativeRelease(native, release, { "extra.yml": extra }), /admitted adaptive closeout/);
+});

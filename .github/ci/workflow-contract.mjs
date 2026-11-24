@@ -15,7 +15,6 @@ export function validateDependencyRouting(workflows) {
     "native-assurance.yml",
     "implementation-analysis.yml",
     "llvm-assurance.yml",
-    "adaptive-closeout.yml",
   ]) {
     const workflow = yaml.load(workflows[name]);
     const owners =
@@ -620,9 +619,16 @@ export function validateNativeRelease(nativeText, releaseText, workflows = {}) {
   }
   for (const [name, text] of Object.entries(workflows)) {
     if (name === "platform-host-evidence.yml") continue;
-    for (const job of Object.values(yaml.load(text).jobs ?? {})) {
-      if (/\/(?:native-assurance|platform-host-evidence)\.yml(?:@|$)/.test(job.uses ?? ""))
-        throw new Error("Only the manual SDK release may call extended native qualification");
+    const caller = yaml.load(text);
+    for (const [id, job] of Object.entries(caller.jobs ?? {})) {
+      if (!/\/(?:adaptive-closeout|native-assurance|platform-host-evidence)\.yml(?:@|$)/.test(job.uses ?? "")) continue;
+      if (name === "adaptive-closeout.yml" && id === "native" &&
+          Object.keys(caller.on ?? {}).join() === "workflow_call" && job.needs === "source" &&
+          job.uses === "./.github/workflows/native-assurance.yml" && job.with?.archive_install === false) continue;
+      if (name === "adaptive-maintenance.yml" && id === "run-closeout" &&
+          job.uses === "./.github/workflows/adaptive-closeout.yml" &&
+          job.if === "needs.decide.outputs.run_closeout == 'true'") continue;
+      throw new Error("Only manual SDK release and admitted adaptive closeout may call extended native qualification");
     }
   }
 }
@@ -875,123 +881,81 @@ export function validateQuickChecks(toolingText, documentationText) {
   }
 }
 
-function concreteJobNames(id, job) {
-  const name = job.name ?? id;
-  if (!name.includes("${{")) return [name];
-  const matrix = job.strategy?.matrix;
-  if (!matrix || typeof matrix !== "object" || Array.isArray(matrix))
-    throw new Error("Expected a bounded static workload matrix");
-  let names = [name];
-  for (const [key, values] of Object.entries(matrix)) {
-    if (
-      !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(key) ||
-      !Array.isArray(values) ||
-      values.length === 0 ||
-      values.length > 16 ||
-      values.some((value) => typeof value !== "string" || value.includes("${{"))
-    )
-      throw new Error("Invalid static workload matrix");
-    names = names.flatMap((value) =>
-      values.map((item) => value.replaceAll(`\${{ matrix.${key} }}`, item)),
-    );
-    if (names.length > 16) throw new Error("Workload matrix exceeds its reviewed bound");
-  }
-  if (names.some((value) => value.includes("${{")) || new Set(names).size !== names.length)
-    throw new Error("Unresolved or duplicate workload matrix names");
-  return names;
-}
-
 export async function validateWorkflowContracts(config, readWorkflow) {
   validateConfig(config);
   const dispatcher = yaml.load(await readWorkflow("adaptive-maintenance.yml"));
+  const slots = (dispatcher.on?.schedule ?? []).map(({ cron }) => String(cron));
+  const suiteIds = config.suites.map((suite) => suite.id);
+  if (
+    JSON.stringify(Object.keys(dispatcher.on ?? {}).sort()) !== JSON.stringify(["schedule", "workflow_dispatch"]) ||
+    JSON.stringify(slots.toSorted()) !== JSON.stringify(config.suites.map(({ cron }) => cron).toSorted()) ||
+    JSON.stringify(dispatcher.on?.workflow_dispatch?.inputs?.suite?.options) !== JSON.stringify(suiteIds) ||
+    dispatcher.jobs?.decide?.outputs?.source_sha !== "${{ steps.cadence.outputs.source_sha }}" ||
+    dispatcher["concurrency"]?.["cancel-in-progress"] !== false
+  ) throw new Error("Adaptive dispatcher differs from its reviewed cadence, identity or budget");
+
   for (const suite of config.suites) {
     const call = dispatcher.jobs?.[`run-${suite.id}`];
     if (
-      call?.uses !== `./.github/workflows/${suite.workflow}` ||
+      call?.uses !== `./.github/workflows/${suite.workflow}` || call.needs !== "decide" ||
+      call.if !== `needs.decide.outputs.run_${suite.id.replaceAll("-", "_")} == 'true'` ||
       call.with?.source_sha !== "${{ needs.decide.outputs.source_sha }}"
-    ) {
-      throw new Error(`Missing immutable-source caller for ${suite.id}`);
-    }
+    ) throw new Error(`Missing immutable-source caller for ${suite.id}`);
     const workflow = yaml.load(await readWorkflow(suite.workflow));
     const event = workflow.on?.workflow_call;
     if (
-      !event?.inputs?.source_sha?.required ||
-      event.inputs.source_sha.type !== "string" ||
-      Object.keys(workflow.on).some((name) => name !== "workflow_call")
-    ) {
-      throw new Error(
-        `Workload ${suite.workflow} must remain reusable-only with a required source SHA`,
-      );
+      !event?.inputs?.source_sha?.required || event.inputs.source_sha.type !== "string" ||
+      Object.keys(workflow.on).join() !== "workflow_call" ||
+      workflow.permissions?.contents !== "read" || workflow.permissions?.actions !== "read"
+    ) throw new Error(`Workload ${suite.workflow} must remain reusable-only with a required source SHA`);
+
+    const { source, native, gate } = workflow.jobs ?? {};
+    if (native?.uses !== "./.github/workflows/native-assurance.yml" || native.needs !== "source" ||
+        Object.hasOwn(native, "if") || native["continue-on-error"] ||
+        native.with?.linux_host !== "${{ inputs.linux_host }}" || native.with?.archive_install !== false) {
+      throw new Error("Periodic closeout must use the canonical native workflow after source admission");
+    }
+    const canonical = await readWorkflow("native-assurance.yml");
+    const nativeWorkflow = yaml.load(canonical);
+    const nativeEvent = nativeWorkflow.on?.workflow_call;
+    if (nativeEvent?.inputs?.linux_host?.type !== "string" || nativeEvent.inputs.archive_install?.type !== "boolean")
+      throw new Error("Periodic native target must accept the canonical reusable inputs");
+    for (const [id, command] of [["plan", "plan"], ["gate", "verify --sharded"]]) {
+      if (!(nativeWorkflow.jobs?.[id]?.steps ?? []).some(({ run }) =>
+        run?.includes(`scripts.objc3c_assurance ${command}`) &&
+        run.includes('"$GITHUB_EVENT_NAME" == schedule') && run.includes('--periodic-sha "$GITHUB_SHA"') &&
+        run.includes('"${periodic[@]}"'))) {
+        throw new Error("Canonical periodic selection and verification must use the immutable dispatcher SHA");
+      }
+    }
+    validateNativeGate(canonical);
+
+    const guard = source?.steps?.[0];
+    const verifier = gate?.steps?.[0];
+    if (Object.hasOwn(source ?? {}, "if") || guard?.env?.SOURCE_SHA !== "${{ inputs.source_sha }}" ||
+        !guard.run?.includes('"$SOURCE_SHA" != "$GITHUB_SHA"') || !guard.run?.includes("exit 1") ||
+        gate?.if !== "always()" || JSON.stringify(gate.needs?.toSorted()) !== JSON.stringify(["native", "source"]) ||
+        verifier?.env?.SOURCE_RESULT !== "${{ needs.source.result }}" ||
+        verifier?.env?.NATIVE_RESULT !== "${{ needs.native.result }}" ||
+        verifier?.env?.SOURCE_SHA !== "${{ inputs.source_sha }}" ||
+        !verifier.run?.includes('"$SOURCE_RESULT" != success || "$NATIVE_RESULT" != success || "$SOURCE_SHA" != "$GITHUB_SHA"') ||
+        !verifier.run?.includes("exit 1")) {
+      throw new Error("Periodic gate must require the exact source and every native outcome");
+    }
+    const localJobs = [source, gate];
+    if (Object.keys(workflow.jobs).length !== 3 || localJobs.some((job) =>
+      job["continue-on-error"] || job["timeout-minutes"] <= 0 || job["timeout-minutes"] > 5 ||
+      job.steps.length !== 1 || job.steps.some((step) => !step.run || step.if || step["continue-on-error"])
+    ) || JSON.stringify(localJobs.map(({ name }) => name).toSorted()) !==
+         JSON.stringify(suite.expectedJobs.map(({ name }) => name).toSorted())) {
+      throw new Error("Periodic workflow must preserve its bounded required job inventory");
     }
     for (const expected of suite.expectedJobs) {
-      const jobs = Object.entries(workflow.jobs ?? {}).filter(([id, job]) =>
-        concreteJobNames(id, job).includes(expected.name),
-      );
-      if (jobs.length !== 1) throw new Error(`Missing or duplicate expected job ${expected.name}`);
-      const [id, job] = jobs[0];
-      const receiptGate =
-        job.if === "always()" &&
-        (job.steps ?? []).some(
-          (step) =>
-            step.run?.includes("scripts.objc3c_assurance verify --sharded") &&
-            step.if === "always()",
-        );
-      if ((job.steps ?? []).some((step) => step.run?.includes("scripts.objc3c_assurance run"))) {
-        validateNativeContainer(job);
-      }
-      if (
-        (Object.hasOwn(job, "if") && !receiptGate) ||
-        job["continue-on-error"] ||
-        !(job["timeout-minutes"] > 0 && job["timeout-minutes"] <= 360)
-      ) {
-        throw new Error(
-          `Workload ${expected.name} must execute with a bounded failure-preserving job`,
-        );
-      }
-      for (const pattern of expected.requiredSteps) {
-        const steps = (job.steps ?? []).filter((step) => new RegExp(pattern).test(step.name ?? ""));
-        if (
-          steps.length !== 1 ||
-          !steps[0].run ||
-          (steps[0].if && !(receiptGate && steps[0].if === "always()")) ||
-          steps[0]["continue-on-error"]
-        ) {
-          throw new Error(`Missing or conditional workload step ${pattern}`);
-        }
-      }
-      if (!receiptGate) {
-        const gate = workflow.jobs.gate;
-        const needs = Array.isArray(gate?.needs) ? gate.needs : [gate?.needs];
-        if (
-          job.strategy?.["fail-fast"] !== false ||
-          job.env?.NATIVE_SHARD !== "${{ matrix.shard }}" ||
-          !(job.steps ?? []).some(
-            (step) =>
-              step.run?.includes('run --periodic-sha "$SOURCE_SHA"') &&
-              step.run.includes('--shard "$NATIVE_SHARD"'),
-          ) ||
-          gate?.if !== "always()" ||
-          !needs.includes(id) ||
-          !(gate.steps ?? []).some(
-            (step) =>
-              step.if === "always()" &&
-              step.run?.includes("scripts.objc3c_assurance verify --sharded"),
-          )
-        ) {
-          throw new Error(
-            `Workload ${expected.name} lacks independent profiles and a complete receipt verifier`,
-          );
-        }
-      }
+      const job = localJobs.find(({ name }) => name === expected.name);
+      if (!expected.requiredSteps.length || expected.requiredSteps.some((pattern) =>
+        job.steps.filter(({ name }) => new RegExp(pattern).test(name)).length !== 1))
+        throw new Error(`Periodic workflow omitted required steps for ${expected.name}`);
     }
-    const actual = Object.entries(workflow.jobs ?? {}).flatMap(([id, job]) =>
-      concreteJobNames(id, job),
-    );
-    if (
-      JSON.stringify(actual.toSorted()) !==
-      JSON.stringify(suite.expectedJobs.map((job) => job.name).toSorted())
-    )
-      throw new Error("Configured workload inventory differs from the concrete native jobs");
   }
 }
 
