@@ -645,15 +645,29 @@ def main() -> int:
         subparser = commands.add_parser(action)
         subparser.add_argument('--archive', type=Path, required=True)
         subparser.add_argument('--archive-sha256', required=True)
-        subparser.add_argument('--prefix' if action == 'install' else '--output-dir', type=Path, required=True)
+        if action == 'install':
+            destination = subparser.add_mutually_exclusive_group(required=True)
+            destination.add_argument('--prefix', type=Path, help='install into a fresh standalone prefix')
+            destination.add_argument('--root', type=Path, help='install or update a managed SDK root')
+        else:
+            subparser.add_argument('--output-dir', type=Path, required=True)
+    uninstall = commands.add_parser('uninstall', help='remove an exact admitted managed SDK')
+    uninstall.add_argument('--root', type=Path, required=True)
+    uninstall.add_argument('--seal-sha256', required=True)
     args = parser.parse_args()
     try:
         if args.action == 'pack':
             result = package_registration(args.stage_compiler, args.llvm_source, args.bootstrap_report,
                                           json.loads(args.registration_report.read_bytes()), args.output_dir,
                                           sdk_sanitizers=args.sdk_sanitizers)
-        elif args.action == 'install':
+        elif args.action == 'install' and args.prefix is not None:
             result = install(args.archive, args.archive_sha256, args.prefix)
+        elif args.action in ('install', 'uninstall'):
+            from . import darwin_sdk_activation
+            if args.action == 'install':
+                result = darwin_sdk_activation.install(args.archive, args.archive_sha256, args.root)
+            else:
+                result = darwin_sdk_activation.uninstall(args.root, args.seal_sha256)
         else:
             result = qualify(args.archive, args.archive_sha256, args.output_dir)
     except (OSError, ValueError, KeyError, subprocess.SubprocessError, tarfile.TarError) as error:

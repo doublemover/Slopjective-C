@@ -11,7 +11,8 @@ import tarfile
 import pytest
 
 from scripts.objc3c_toolchain import darwin_sdk as sdk, darwin_sdk_arc as arc
-from scripts.objc3c_toolchain.package import MANIFEST, SCHEMA, _digest, _file_hash, inventory, normalize_permissions
+from scripts.objc3c_toolchain import darwin_sdk_activation as activation
+from scripts.objc3c_toolchain.package import MANIFEST, SCHEMA, _digest, _file_hash, inventory, normalize_permissions, verify_sdk
 
 
 def macho(kind, *, cpu=0x0100000c):
@@ -325,6 +326,116 @@ def test_archive_rejects_invalid_transports(tmp_path, fault):
     with archive.open('rb') as compressed, pytest.raises(ValueError):
         sdk._unpack(compressed, tmp_path / 'unpacked')
     assert not (tmp_path / 'escape').exists()
+
+
+def managed_packages(tmp_path, host):
+    products = []
+    for index in range(2):
+        stage = tmp_path / f'candidate-stage-{index}'
+        initial = staged_product(stage, host)
+        put(stage, 'share/licenses/slopjective-c/LICENSE', f'candidate {index}\n'.encode())
+        manifest = sealed(stage, {key: value for key, value in initial.items() if key not in ('files', 'seal_sha256')})
+        archive = tmp_path / f'candidate-{index}.tar.gz'
+        sdk._write_archive(stage, archive)
+        products.append((archive, _file_hash(archive), manifest['seal_sha256']))
+    return products
+
+
+def test_managed_install_reuses_updates_and_removes_only_the_admitted_sdk(tmp_path, structural_host, monkeypatch):
+    monkeypatch.setattr(sdk, 'require_apple_silicon', lambda: None)
+    root = tmp_path / 'Managed Darwin SDK'
+    first, second = managed_packages(tmp_path, structural_host)
+    installed = activation.install(*first[:2], root)
+    current = root / 'current'
+    before = current.resolve()
+    keep = root / 'user-notes.txt'
+    keep.write_text('preserve user files\n')
+    assert installed['action'] == 'installed'
+    assert installed['seal_sha256'] == first[2]
+    assert installed['active_prefix'] == str(current)
+    stamp = (before / 'bin/clang').stat().st_ino
+    assert activation.install(*first[:2], root)['action'] == 'reused'
+    assert current.resolve() == before and (before / 'bin/clang').stat().st_ino == stamp
+
+    updated = activation.install(*second[:2], root)
+    assert updated['action'] == 'updated' and updated['seal_sha256'] == second[2]
+    assert not before.exists()
+    assert current.resolve() == root / ('sdk-' + second[2]) / 'sdk'
+    with pytest.raises(ValueError, match='differs from the active Darwin SDK'):
+        activation.uninstall(root, first[2])
+    removed = activation.uninstall(root, second[2])
+    assert removed['action'] == 'uninstalled' and removed['active_prefix'] is None
+    assert not current.is_symlink()
+    assert not (root / ('sdk-' + second[2])).exists()
+    assert keep.read_text() == 'preserve user files\n'
+
+
+def test_managed_install_failure_leaves_previous_activation(tmp_path, structural_host, monkeypatch):
+    root = tmp_path / 'Managed Darwin SDK'
+    first, second = managed_packages(tmp_path, structural_host)
+    activation.install(*first[:2], root)
+    current = root / 'current'
+    before = current.resolve()
+    prior_replace = activation.os.replace
+
+    def fail_to_publish(source, destination):
+        if destination == current:
+            raise OSError('interrupted before activation')
+        return prior_replace(source, destination)
+
+    monkeypatch.setattr(activation.os, 'replace', fail_to_publish)
+    with pytest.raises(OSError, match='interrupted before activation'):
+        activation.install(*second[:2], root)
+    assert current.resolve() == before
+    assert verify_sdk(before, first[2])['seal_sha256'] == first[2]
+    assert {path.name for path in root.glob('sdk-*')} == {'sdk-' + first[2]}
+    assert not list(root.glob('.incoming-*'))
+
+
+def test_managed_install_retries_verified_cleanup_after_activation(tmp_path, structural_host, monkeypatch):
+    root = tmp_path / 'Managed Darwin SDK'
+    first, second = managed_packages(tmp_path, structural_host)
+    activation.install(*first[:2], root)
+    retired = root / ('sdk-' + first[2])
+    prior_rmtree = activation.shutil.rmtree
+
+    def fail_to_remove(path, *args, **kwargs):
+        if Path(path) == retired:
+            raise PermissionError('retired generation still open')
+        return prior_rmtree(path, *args, **kwargs)
+
+    with monkeypatch.context() as failure:
+        failure.setattr(activation.shutil, 'rmtree', fail_to_remove)
+        updated = activation.install(*second[:2], root)
+    assert updated['action'] == 'updated'
+    assert updated['cleanup_error'] == 'retired generation still open'
+    assert retired.is_dir() and (root / 'current').resolve() == root / ('sdk-' + second[2]) / 'sdk'
+    assert activation.install(*second[:2], root)['action'] == 'reused'
+    assert not retired.exists()
+
+
+def test_managed_uninstall_preserves_modified_or_foreign_paths(tmp_path, structural_host, monkeypatch):
+    monkeypatch.setattr(sdk, 'require_apple_silicon', lambda: None)
+    root = tmp_path / 'Managed Darwin SDK'
+    first, _ = managed_packages(tmp_path, structural_host)
+    unrelated = tmp_path / 'unrelated'
+    unrelated.mkdir()
+    with pytest.raises(ValueError, match='no managed installation'):
+        activation.uninstall(unrelated, first[2])
+    assert not list(unrelated.iterdir())
+    activation.install(*first[:2], root)
+    current = root / 'current'
+    before = current.resolve()
+    user_data = before / 'user-content'
+    user_data.write_text('personal file\n')
+    with pytest.raises(ValueError, match='differ from the seal'):
+        activation.uninstall(root, first[2])
+    assert current.resolve() == before and user_data.read_text() == 'personal file\n'
+    current.unlink()
+    current.symlink_to(tmp_path / 'candidate-stage-0')
+    with pytest.raises(ValueError, match='outside the managed installation'):
+        activation.uninstall(root, first[2])
+    assert current.resolve() == tmp_path / 'candidate-stage-0'
 
 
 def test_archive_admission_checks_every_arm64_object(tmp_path):

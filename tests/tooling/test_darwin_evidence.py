@@ -76,6 +76,24 @@ def test_command_evidence_can_be_empty_but_never_linked(tmp_path):
         evidence.retained(tmp_path, alias.name, allow_empty=True)
 
 
+def test_candidate_admission_requires_matching_pinned_terminal_bytes(tmp_path):
+    result = {'status': 'PASS', 'mode': 'package-sanitizers', 'revision': 'a' * 40, 'support_truth': False,
+              'bootstrap_sha256': 'a' * 64, 'registration_sha256': 'b' * 64,
+              'archive_sha256': 'c' * 64, 'seal_sha256': 'd' * 64}
+    file = tmp_path / 'darwin-terminal.json'
+    file.write_text(json.dumps(result) + '\n')
+    checksum = evidence.file_digest(file)
+    admitted = evidence.admit_terminal(result, file, checksum)
+    assert admitted == {**result, 'terminal_sha256': checksum, 'admission': 'experimental-package-verified'}
+    file.write_text(json.dumps({**result, 'archive_sha256': 'e' * 64}) + '\n')
+    with pytest.raises(ValueError, match='receipt SHA-256'):
+        evidence.admit_terminal(result, file, checksum)
+    with pytest.raises(ValueError, match='differs from independent'):
+        evidence.admit_terminal(result, file, evidence.file_digest(file))
+    with pytest.raises(ValueError, match='requires exact native package'):
+        evidence.admit_terminal({**result, 'mode': 'bootstrap'}, file, checksum)
+
+
 @pytest.mark.parametrize('defect', [None, 'missing', 'prefix-changed', 'wrong-archive', 'unchanged-linker'])
 def test_sealed_package_requires_all_verified_installer_rejections(defect):
     archive = {'archive_sha256': 'a' * 64, 'seal_sha256': 'b' * 64,

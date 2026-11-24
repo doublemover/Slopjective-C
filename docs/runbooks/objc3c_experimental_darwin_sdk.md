@@ -78,6 +78,52 @@ hashes, path admission, wrong-architecture files, and host prerequisites. The
 cold Apple Silicon compiler build, package, install, and execution remain the
 platform acceptance gate. [Package owner](../../scripts/objc3c_toolchain/darwin_sdk.py)
 
+## Managed SDK root
+
+Use `--root` to keep a stable `current` SDK path. A repeat command verifies and
+reuses the admitted archive. A command with a different admitted package
+switches `current` to the new seal and reclaims the previous SDK. Complete jobs
+using the previous SDK before switching. Use a dedicated root with an existing
+writable parent.
+
+```sh
+root="$PWD/Managed Objective-C 3 SDK"
+python3 -B -m scripts.objc3c_toolchain.darwin_sdk install \
+  --archive "$archive" --archive-sha256 "$archive_sha" --root "$root"
+"$root/current/bin/clang" --version
+```
+
+Retain the `seal_sha256` from the install result. Pass that exact seal when
+removing the managed SDK. Uninstall verifies the payload and leaves unrelated
+root files in place. Edited or additional payload files cause rejection.
+
+```sh
+python3 -B -m scripts.objc3c_toolchain.darwin_sdk uninstall \
+  --root "$root" --seal-sha256 "$installed_seal"
+```
+
+If activation returns `cleanup_error`, the new SDK is active. Repeating that
+install retries cleanup of the previously admitted SDK.
+
+## Re-admit a retained native package receipt
+
+Use the checkout revision recorded by the workflow and download its native
+evidence and terminal receipt. Supply the expected byte digest of the
+terminal receipt from the reviewed evidence record. The command replays the
+native checks and compares the result with the pinned receipt. A matching
+result carries `admission: experimental-package-verified` and
+`support_truth: false`.
+
+```sh
+python3 -B -m scripts.objc3c_toolchain.darwin_evidence \
+  --evidence "$native_evidence" --revision "$tested_revision" \
+  --outcome success --mode "$package_mode" \
+  --terminal-receipt "$terminal_receipt" --terminal-sha256 "$terminal_sha256"
+```
+
+Choose `package` for the ordinary SDK or `package-sanitizers` for the optional
+consumer sanitizer package.
+
 ## Optional ASan and UBSan consumers
 
 Set `runtime_sanitizers: true` in a manual run of **Darwin arm64 bootstrap probe**

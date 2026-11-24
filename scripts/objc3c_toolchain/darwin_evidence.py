@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -390,14 +391,41 @@ def verify(root: Path, revision: str, *, outcome: str, mode: str) -> dict:
     return result
 
 
+def admit_terminal(replayed: dict, terminal: Path, expected_sha256: str) -> dict:
+    """Bind a replay of native package evidence to the retained terminal receipt."""
+    if (replayed.get('status') != 'PASS' or replayed.get('mode') not in ('package', 'package-sanitizers') or
+            replayed.get('support_truth') is not False or
+            any(not isinstance(replayed.get(key), str) or not re.fullmatch(r'[0-9a-f]{64}', replayed[key])
+                for key in ('bootstrap_sha256', 'registration_sha256', 'archive_sha256', 'seal_sha256'))):
+        raise ValueError('Darwin admission requires exact native package verification')
+    terminal = terminal.resolve(strict=True)
+    if not terminal.is_file():
+        raise ValueError('Darwin terminal receipt must be a bounded regular file')
+    with terminal.open('rb') as stream:
+        payload = stream.read(RECEIPT_BYTES + 1)
+    if not 0 < len(payload) <= RECEIPT_BYTES:
+        raise ValueError('Darwin terminal receipt must be a bounded regular file')
+    if hashlib.sha256(payload).hexdigest() != expected_sha256:
+        raise ValueError('Darwin terminal receipt SHA-256 differs from its pin')
+    if json.loads(payload) != replayed:
+        raise ValueError('Darwin terminal receipt differs from independent native package verification')
+    return {**replayed, 'terminal_sha256': expected_sha256, 'admission': 'experimental-package-verified'}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--evidence', type=Path, required=True)
     parser.add_argument('--revision', required=True)
     parser.add_argument('--outcome', required=True)
     parser.add_argument('--mode', required=True, choices=('bootstrap', 'registration', 'package', 'package-sanitizers'))
+    parser.add_argument('--terminal-receipt', type=Path)
+    parser.add_argument('--terminal-sha256')
     args = parser.parse_args()
+    if (args.terminal_receipt is None) != (args.terminal_sha256 is None):
+        parser.error('--terminal-receipt and --terminal-sha256 are required together')
     result = verify(args.evidence, args.revision, outcome=args.outcome, mode=args.mode)
+    if args.terminal_receipt is not None:
+        result = admit_terminal(result, args.terminal_receipt, args.terminal_sha256)
     print(json.dumps(result, indent=2))
 
 
