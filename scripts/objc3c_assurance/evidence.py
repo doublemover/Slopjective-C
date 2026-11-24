@@ -325,10 +325,18 @@ def suite_results(root: Path, name: str, *, frontend_names: frozenset[str] | Non
         store = result.get('product_evidence_store', {})
         store_path = directory / 'campaign/product-evidence-blobs'
         store_files = list(store_path.iterdir()) if store_path.is_dir() and not store_path.is_symlink() else []
-        from scripts.objc3c_toolchain.sanitizer_partitions import OWNERS, PARTITIONS, select, profiles, evidence_owners
+        from scripts.objc3c_toolchain.sanitizer_partitions import (
+            OWNERS, PARTITION_TASKS, PARTITIONS, SPLIT_FEATURES, evidence_owners,
+            owner_tasks, profiles, select, verify_feature_receipt,
+        )
         index = result.get('partition_index')
         expected = set(select(index))
-        if index is not None and (result.get('partition_count') != len(PARTITIONS) or
+        partition_tasks = result.get('partition_tasks')
+        if partition_tasks is not None and (index is not None or partition_tasks != list(PARTITION_TASKS) or
+                result.get('partition_count') != len(PARTITIONS)):
+            raise ValueError('sanitizer product transport union differs from its source assignment')
+        evidence_tasks = partition_tasks if partition_tasks is not None else expected
+        if (index is not None or partition_tasks is not None) and (result.get('partition_count') != len(PARTITIONS) or
                 result.get('owner_catalogue') != list(OWNERS) or
                 {(row.get('sanitizer'), row.get('optimization')) for row in result.get('runtime_profiles', [])}
                 != set(profiles(expected))):
@@ -339,7 +347,7 @@ def suite_results(root: Path, name: str, *, frontend_names: frozenset[str] | Non
                 result.get('expected_owners') != [row['name'] for row in rows] and
                 set(result.get('expected_owners', [])) != expected or
                 store.get('schema') != 'objc3c.product-evidence-shared-store.v1' or
-                store.get('owners') != evidence_owners(expected) or not store.get('references') or
+                store.get('owners') != evidence_owners(evidence_tasks) or not store.get('references') or
                 store.get('references') != len(store_files) or
                 store.get('stored_bytes') != sum(path.stat().st_size for path in store_files) or
                 store.get('private_bytes', 0) < store.get('stored_bytes', 0) or
@@ -350,6 +358,18 @@ def suite_results(root: Path, name: str, *, frontend_names: frozenset[str] | Non
                     any(char not in '0123456789abcdef' for char in path.stem)
                     for path in store_files)):
             raise ValueError('sanitizer product owner/profile matrix is incomplete')
+        if index is not None or partition_tasks is not None:
+            for task in evidence_tasks:
+                if task.startswith('features-'):
+                    verify_feature_receipt(directory / 'campaign', task)
+        if partition_tasks is not None:
+            for row in rows:
+                owner = row['name']
+                if owner in SPLIT_FEATURES:
+                    transports = row.get('transport_results', ())
+                    if (tuple(part.get('name') for part in transports) != owner_tasks(owner) or
+                            any(part.get('status') != 'PASS' for part in transports)):
+                        raise ValueError('sanitizer product owner has an incomplete transport union: '+owner)
         return sorted(rows, key=lambda row: row['name'])
     if name == 'runtime-schedules':
         from scripts.objc3c_toolchain.runtime_schedules import (BACKENDS, DEFAULT_SEEDS, OPTIMIZATIONS,

@@ -7,7 +7,9 @@ import shutil
 
 from scripts.objc3c_toolchain.binary_packages import write_json
 from scripts.objc3c_toolchain.product_evidence import blob_bytes
-from scripts.objc3c_toolchain.sanitizer_partitions import GROUPS, OWNERS, PARTITIONS, SOURCE_FILES, select
+from scripts.objc3c_toolchain.sanitizer_partitions import (
+    GROUPS, OWNERS, PARTITION_TASKS, PARTITIONS, SOURCE_FILES, owner_tasks, select,
+)
 from .evidence import SCHEMA, artifact, digest, native_files, suite_results
 
 
@@ -111,8 +113,17 @@ def merge(plan: dict, partials: Path, output: Path, *, repo: Path | None = None)
         proof.append({'group': group, 'result_sha256': digest(root / 'result.json'),
                       'campaign_sha256': digest(root / 'sanitizer-products/campaign/qualification.json'),
                       'owners': list(select(index))})
-    if set(owners) != set(OWNERS):
-        raise ValueError('sanitizer disjoint union differs from the complete product catalogue')
+    if set(owners) != set(PARTITION_TASKS):
+        raise ValueError('sanitizer disjoint union differs from the complete transport catalogue')
+    complete = []
+    for name in OWNERS:
+        tasks = owner_tasks(name)
+        if len(tasks) == 1:
+            complete.append(owners[name])
+            continue
+        selected = [owners[task] for task in tasks]
+        complete.append({'name': name, 'status': 'PASS', 'transport_results': selected,
+                         'seconds': sum(row['seconds'] for row in selected)})
     receipts = sorted(campaign.glob('**/product-evidence/qualification.json'))
     verified = set()
     def verify(value, root):
@@ -136,10 +147,12 @@ def merge(plan: dict, partials: Path, output: Path, *, repo: Path | None = None)
         'stored_bytes': stored_bytes, 'deduplicated_bytes': private_bytes-stored_bytes,
         'path': 'product-evidence-blobs'}
     write_json(campaign / 'partition-union.json', {'status': 'PASS', 'partitions': proof,
-        'product': product, 'source_inputs': source_inputs, 'owners': list(OWNERS)})
+        'product': product, 'source_inputs': source_inputs, 'owners': list(OWNERS),
+        'partition_tasks': list(PARTITION_TASKS)})
     write_json(campaign / 'qualification.json', {'schema': 'objc3c.sanitizer-products-campaign.v1',
-        'status': 'PASS', 'owners': [owners[name] for name in OWNERS], 'expected_owners': list(OWNERS),
+        'status': 'PASS', 'owners': complete, 'expected_owners': list(OWNERS),
         'partition_index': None, 'partition_count': len(PARTITIONS), 'owner_catalogue': list(OWNERS),
+        'partition_tasks': list(PARTITION_TASKS),
         'runtime_profiles': list(profiles.values()), 'partition_runtime_profiles': partition_profiles,
         'source_inputs': source_inputs, 'product_evidence_store': store_report})
     executions = suite_results(output, 'sanitizer-products')

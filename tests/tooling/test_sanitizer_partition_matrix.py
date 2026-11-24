@@ -9,21 +9,37 @@ from types import SimpleNamespace
 import pytest
 
 from scripts.objc3c_toolchain import sanitizer_products as products
-from scripts.objc3c_toolchain.sanitizer_partitions import OWNERS, PARTITIONS, GROUPS, SOURCE_FILES, select, profiles, evidence_owners
+from scripts.objc3c_toolchain.sanitizer_partitions import (
+    CASE_RECEIPT, GROUPS, OWNERS, PARTITION_TASKS, PARTITIONS, SOURCE_FILES, SPLIT_FEATURES,
+    TASK_OWNERS, evidence_owners, feature_cases, feature_receipt, feature_scope, owner_tasks, profiles, select,
+)
 from scripts.objc3c_assurance import evidence
 from scripts.objc3c_assurance.sanitizer_matrix import merge
 
 
 def test_owner_partitions_are_a_complete_disjoint_union_and_use_only_needed_profiles():
     assigned = [owner for index in range(len(PARTITIONS)) for owner in select(index)]
-    assert len(assigned) == len(set(assigned)) == len(OWNERS) == 13
-    assert set(assigned) == set(OWNERS)
+    assert len(PARTITIONS) == 10
+    assert len(assigned) == len(set(assigned)) == len(PARTITION_TASKS) == 16
+    assert {TASK_OWNERS[task] for task in assigned} == set(select()) == set(OWNERS)
+    assert len(OWNERS) == 13
     assert len(profiles(select())) == 6
-    assert [len(profiles(part)) for part in PARTITIONS] == [4, 4, 4, 2, 1, 1, 2, 2, 1, 1]
-    assert sum(evidence_owners(part) for part in PARTITIONS) == 14
+    assert [len(profiles(part)) for part in PARTITIONS] == [4, 1, 1, 2, 1, 1, 4, 1, 1, 1]
+    assert sum(evidence_owners(part) for part in PARTITIONS) == 17
+    assert evidence_owners(select()) == 14
     for bad in (-1, len(PARTITIONS), True, '0'):
         with pytest.raises(ValueError, match='partition'):
             select(bad)
+
+
+@pytest.mark.parametrize('owner', SPLIT_FEATURES)
+def test_feature_transports_are_the_exact_disjoint_local_case_inventory(owner):
+    source, pch = owner_tasks(owner)
+    all_cases = set(feature_cases(feature_scope(owner)))
+    source_cases, pch_cases = (set(feature_cases(feature_scope(task))) for task in (source, pch))
+    assert len(source_cases) == len(pch_cases) == 60
+    assert source_cases.isdisjoint(pch_cases)
+    assert source_cases | pch_cases == all_cases
 
 
 def test_qualification_selects_exact_owners_without_building_unused_profiles(tmp_path, monkeypatch):
@@ -66,6 +82,20 @@ def test_qualification_selects_exact_owners_without_building_unused_profiles(tmp
         products.qualify(repo, sdk, sdk, None, resource, repo / 'out/missing-facade', partition=6)
 
 
+def feature_batch(output, task):
+    names = feature_cases(feature_scope(task))
+    payload = b'passing case transcript\n'
+    signature = hashlib.sha256(payload).hexdigest()
+    for name in names:
+        (output / (name+'-execute.log')).write_bytes(payload)
+    report = {'cases': [{'name': name, 'status': 'pass'} for name in names],
+              'commands': [{'name': name+'-execute', 'status': 'PASS', 'phase': 'execute',
+                            'exit_code': 0, 'timed_out': False, 'log_sha256': signature} for name in names],
+              'status': 'pass', 'sanitizer': feature_scope(task)['sanitizer']}
+    (output / 'batch.json').write_text(json.dumps(report))
+    (output / CASE_RECEIPT).write_text(json.dumps(feature_receipt(task, output, report)))
+
+
 def partition_receipts(tmp_path):
     root = tmp_path / 'partials';root.mkdir()
     plan = {'revision': {'tested': 'f'*40}, 'sha256': 'e'*64}
@@ -85,8 +115,10 @@ def partition_receipts(tmp_path):
                 receipt.parent.mkdir(parents=True)
                 receipt.write_text(json.dumps({'schema': 'objc3c.sanitizer-product-evidence.v1',
                     'status': 'PASS', 'records': [record]}))
+            if owner.startswith('features-'):
+                feature_batch(campaign / owner, owner)
         count = evidence_owners(select(index))
-        qualification = {'status': 'PASS', 'owners': [{'name': name, 'status': 'PASS'} for name in select(index)],
+        qualification = {'status': 'PASS', 'owners': [{'name': name, 'status': 'PASS', 'seconds': 1.0} for name in select(index)],
             'expected_owners': list(select(index)), 'partition_index': index, 'partition_count': len(PARTITIONS),
             'owner_catalogue': list(OWNERS), 'source_inputs': {name: hashlib.sha256(b'sealed source').hexdigest() for name in SOURCE_FILES},
             'runtime_profiles': [{'sanitizer': mode, 'optimization': opt} for mode, opt in profiles(select(index))],
@@ -115,6 +147,11 @@ def test_terminal_union_retains_each_real_replay_byte_once_without_changing_owne
     campaign = output / 'sanitizer-products/campaign'
     assert len(list((campaign / 'product-evidence-blobs').iterdir())) == 1
     assert len(json.loads((campaign / 'partition-union.json').read_text())['partitions']) == len(PARTITIONS)
+    result = json.loads((campaign / 'qualification.json').read_text())
+    assert result['partition_tasks'] == list(PARTITION_TASKS)
+    for row in result['owners']:
+        if row['name'] in SPLIT_FEATURES:
+            assert tuple(part['name'] for part in row['transport_results']) == owner_tasks(row['name'])
     from scripts.objc3c_toolchain.product_evidence import blob_bytes
     for path in campaign.glob('**/product-evidence/qualification.json'):
         assert path.read_bytes() in original.values()
@@ -142,6 +179,45 @@ def test_terminal_union_rejects_incomplete_substituted_or_changed_evidence(tmp_p
         (first / 'sanitizer-products/campaign/product-evidence-blobs' / Path(record['blob']).name).write_bytes(b'changed')
     with pytest.raises(ValueError):
         merge(plan, root, tmp_path / 'merged')
+
+
+@pytest.mark.parametrize('fault', ('wrong-transport', 'missing', 'duplicate', 'failed', 'wrong-profile',
+                                   'changed-batch', 'changed-log'))
+def test_terminal_requires_every_passing_case_in_each_assigned_transport(tmp_path, fault):
+    root, plan, _ = partition_receipts(tmp_path)
+    task = 'features-address-undefined-O2-source'
+    group = GROUPS[next(index for index, part in enumerate(PARTITIONS) if task in part)]
+    path = root / group / 'sanitizer-products/campaign' / task / CASE_RECEIPT
+    receipt = json.loads(path.read_text())
+    if fault == 'wrong-transport':
+        receipt['transports'] = ['pch']
+    elif fault == 'missing':
+        receipt['cases'].pop()
+    elif fault == 'duplicate':
+        receipt['cases'][1] = receipt['cases'][0]
+    elif fault == 'failed':
+        receipt['cases'][0]['status'] = 'FAIL'
+    elif fault == 'wrong-profile':
+        receipt['sanitizer'] = 'thread'
+    elif fault == 'changed-batch':
+        (path.parent / 'batch.json').write_text('{}')
+    else:
+        (path.parent / (receipt['cases'][0]['name']+'-execute.log')).write_text('substituted output')
+    path.write_text(json.dumps(receipt))
+    with pytest.raises(ValueError, match='sanitizer feature transport or case identity|case outcome or log identity'):
+        merge(plan, root, tmp_path / 'merged')
+
+
+def test_folded_logical_owner_requires_both_passing_transport_results(tmp_path):
+    root, plan, _ = partition_receipts(tmp_path)
+    merged = merge(plan, root, tmp_path / 'merged')
+    path = merged / 'sanitizer-products/campaign/qualification.json'
+    receipt = json.loads(path.read_text())
+    owner = next(row for row in receipt['owners'] if row['name'] == SPLIT_FEATURES[0])
+    owner['transport_results'][1]['status'] = 'FAIL'
+    path.write_text(json.dumps(receipt))
+    with pytest.raises(ValueError, match='incomplete transport union'):
+        evidence.suite_results(merged, 'sanitizer-products')
 
 
 def test_core_aggregate_consumes_the_canonical_union_and_removes_temporary_merge_tree(tmp_path, monkeypatch):

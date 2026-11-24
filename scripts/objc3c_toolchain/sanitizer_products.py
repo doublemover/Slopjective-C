@@ -12,7 +12,8 @@ from .binary_packages import digest, write_json
 from .package import verify_sdk
 from .runtime_instrumentation import RuntimeProfiles
 from .product_evidence import consolidate_campaign_blobs
-from .sanitizer_partitions import OWNERS, PARTITIONS, SOURCE_FILES, select, profiles as required_profiles
+from .sanitizer_partitions import (CASE_RECEIPT, OWNERS, PARTITION_TASKS, PARTITIONS, SOURCE_FILES,
+                                   TASK_OWNERS, feature_receipt, feature_scope, select, profiles as required_profiles)
 from . import qualify_native_async_sanitizers as native_async
 from . import qualify_task_coroutine_sanitizers as coroutines
 from . import qualify_structured_sanitizers as structured
@@ -55,6 +56,14 @@ def campaign_sources(repo: Path) -> list[Path]:
     if actual != expected:
         raise ValueError('sanitizer campaign implementation belongs to another source checkout')
     return sorted(actual)
+
+
+def run_feature_task(sdk, output, *, task, **options):
+    scope = feature_scope(task)
+    report = features.run_batch(sdk, output, **options, sanitizer=scope['sanitizer'],
+                                optimizations=(scope['optimization'],), transports=scope['transports'])
+    write_json(output / CASE_RECEIPT, feature_receipt(task, output, report))
+    return report
 
 
 def qualify(repo: Path, sdk: Path, compiler_root: Path, facade: Path | None, resource: Path, output: Path, *, jobs=4, partition: int | None = None):
@@ -102,22 +111,23 @@ def qualify(repo: Path, sdk: Path, compiler_root: Path, facade: Path | None, res
         for sanitizer in ('address,undefined', 'thread'):
             for optimization in ('O0', 'O2'):
                 label = sanitizer.replace(',', '-')+'-'+optimization
-                if not any(kind+'-'+label in selected for kind in ('features', 'factories')):
+                feature_tasks = [task for task in selected if TASK_OWNERS[task] == 'features-'+label]
+                if not feature_tasks and 'factories-'+label not in selected:
                     continue
                 profile = profiles.get(sanitizer, optimization)
-                if 'features-'+label in selected:
-                    tasks.append(('features-'+label, partial(features.run_batch, sdk,
+                for task in feature_tasks:
+                    tasks.append((task, partial(run_feature_task, sdk, task=task,
                         compiler=compiler_root / 'bin/clang', headers=repo / 'native/objc3c/src/runtime/public',
                         include_root=repo / 'stdlib/include', fixtures=repo / 'tests/clang_foundation',
-                        runtime_library=profile.archive, objc_runtime=profile.objc_runtime,
-                        sanitizer=sanitizer, resource_root=resource, optimizations=(optimization,))))
+                        runtime_library=profile.archive, objc_runtime=profile.objc_runtime, resource_root=resource)))
                 if 'factories-'+label in selected:
                     tasks.append(('factories-'+label, partial(factories.qualify, sdk, facade, compiler_root,
                         profile.archive, profile.objc_runtime,
                         sanitizer=sanitizer, resource_root=resource, optimizations=(optimization,))))
         if 'installed-ownership' in selected:
             tasks.append(('installed-ownership', partial(ownership.qualify, sdk, resource)))
-        if tuple(name for name, _ in tasks) != tuple(name for name in OWNERS if name in selected):
+        catalogue = OWNERS if partition is None else PARTITION_TASKS
+        if tuple(name for name, _ in tasks) != tuple(name for name in catalogue if name in selected):
             raise ValueError('sanitizer product task selection differs from the catalogue')
         report['expected_owners'] = [name for name, _ in tasks]
         execute_owners(tasks, output, report, jobs)
