@@ -15,6 +15,7 @@ def qualify_installed(repo: Path, prefix: Path, output: Path) -> dict:
     output.mkdir(parents=True, exist_ok=True)
     env = {**os.environ, 'LD_LIBRARY_PATH': str(prefix / 'lib')}
     records = []
+    diagnostics = []
     with tempfile.TemporaryDirectory(prefix='objc3-installed-') as temporary:
         client = Path(temporary)
         shutil.copytree(repo / 'tests/clang_foundation/installed_sdk', client, dirs_exist_ok=True)
@@ -25,11 +26,14 @@ def qualify_installed(repo: Path, prefix: Path, output: Path) -> dict:
                 result = subprocess.run([str(arg) for arg in args], cwd=client, env=env,
                                         stdout=log, stderr=subprocess.STDOUT, timeout=180)
             expected = 1 if diagnostic else 0
-            records.append({'name': name, 'exit_code': result.returncode,
-                            'expected_exit_code': expected,
-                            'elapsed_seconds': round(time.monotonic() - start, 6)})
             if result.returncode != expected or (diagnostic and diagnostic not in log_path.read_text()):
                 raise ValueError(f'installed SDK {name} failed; see {log_path}')
+            record = {'name': name, 'exit_code': result.returncode,
+                      'elapsed_seconds': round(time.monotonic() - start, 6)}
+            if diagnostic:
+                diagnostics.append({**record, 'expected_exit_code': expected, 'diagnostic': diagnostic})
+            else:
+                records.append(record)
         compiler = prefix / 'bin/objc3c'
         run('version', [compiler, '--version'])
         run('help', [compiler, '--help'])
@@ -118,7 +122,7 @@ def qualify_installed(repo: Path, prefix: Path, output: Path) -> dict:
         if any(expected not in debugger for expected in
                ('cleanup_order = 0', ' = 42', 'exited with status = 0')):
             raise ValueError('installed debugger did not inspect, evaluate and run the native application')
-    report = {'status': 'PASS', 'prefix': str(prefix), 'commands': records,
+    report = {'status': 'PASS', 'prefix': str(prefix), 'commands': records, 'diagnostics': diagnostics,
               'onboarding': onboarding}
     (output / 'summary.json').write_text(json.dumps(report, indent=2) + '\n')
     return report
