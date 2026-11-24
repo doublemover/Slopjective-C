@@ -34,6 +34,14 @@ from .source_coverage import binary_ids, coverage_section_command, elf_build_id
 STRATEGIES = ('uniform', 'source-feedback')
 GENERATOR_VERSION = 'source-feedback.v1'
 MAX_POINTS = 500_000
+MAX_ROUNDS = 16
+DEFAULT_ROUNDS = 3
+# The x86-64 release-sized graph measured 109 s to merge and 179 s to export.
+# Give each stage room for host variance while keeping both strategies bounded.
+PROFILE_MERGE_TIMEOUT = 240
+PROFILE_EXPORT_TIMEOUT = 420
+SECONDS_PER_ROUND = 700
+PROFILE_PATTERN = '%b-%m.profraw'
 
 
 def indexed(path: Path, document) -> dict:
@@ -191,7 +199,9 @@ class Feedback:
     def begin(self, name):
         directory = self.root / name
         directory.mkdir()
-        self.campaign.executor.environment['LLVM_PROFILE_FILE'] = str(directory / '%b-%8m.profraw')
+        # Each case owns its directory. The profile runtime can merge repeated
+        # invocations of the same binary into one slot before indexing.
+        self.campaign.executor.environment['LLVM_PROFILE_FILE'] = str(directory / PROFILE_PATTERN)
         return directory
 
     def collect(self, name: str, directory: Path) -> tuple[set, dict]:
@@ -208,13 +218,14 @@ class Feedback:
                     selected.append(path)
             require_binary_ids(observed, required={self.owner_id}, allowed=set(self.identities.values()), kind='source-feedback raw profiles')
             merged = directory / 'compiler.profdata'
-            self.campaign.run(name+'-merge', [self.campaign.tools['llvm-profdata'], 'merge', '--sparse', *selected, '-o', merged])
+            self.campaign.run(name+'-merge', [self.campaign.tools['llvm-profdata'], 'merge', '--sparse', *selected, '-o', merged],
+                              timeout=PROFILE_MERGE_TIMEOUT)
             observed = binary_ids(self.campaign.run(name+'-profile-ids',
                 [self.campaign.tools['llvm-profdata'], 'show', '--binary-ids', merged]))
             require_binary_ids(observed, required={self.owner_id}, allowed={self.owner_id}, kind='source-feedback indexed profile')
             text = self.campaign.run(name+'-export', [self.campaign.tools['llvm-cov'], 'export', self.owner,
                 *EXPORT_FLAGS, '--instr-profile='+str(merged), '--compilation-dir='+str(self.build),
-                *(self.source / entry for entry in self.eligible)])
+                *(self.source / entry for entry in self.eligible)], timeout=PROFILE_EXPORT_TIMEOUT)
             mapped, covered = source_points(text, self.source, self.eligible)
             if self.mapping is None:
                 self.mapping = tuple(sorted(mapped))
@@ -231,7 +242,7 @@ class Feedback:
             export['log_sha256'] = digest(Path(export['log']))
             return covered, {'covered_points': len(covered), 'mapping_points': len(mapped),
                 'indexed_hits': hits, 'raw_export': raw_export, 'profile_sha256': digest(merged),
-                'profile_pattern': str(directory / '%b-%8m.profraw'), 'temporary_profiles_reclaimed': True,
+                'profile_pattern': str(directory / PROFILE_PATTERN), 'temporary_profiles_reclaimed': True,
                 'raw_profiles': {'count': len(profiles), 'bytes': sum(path.stat().st_size for path in profiles),
                                  'sha256': {path.name: digest(path) for path in profiles}}}
         finally:
@@ -280,11 +291,15 @@ def paired_summary(rows: list[dict], seeds) -> dict:
 
 
 def measure(repo: Path, output: Path, baseline: Path | None = None, *, services: Path, runtime: Path,
-            coverage_qualification: Path | None = None, seeds=(7, 19, 41), rounds=6, budget=180):
+            coverage_qualification: Path | None = None, seeds=(7, 19, 41), rounds=DEFAULT_ROUNDS, budget=None):
     repo, output = repo.resolve(strict=True), output.resolve()
     services, runtime = services.resolve(strict=True), runtime.resolve(strict=True)
+    if type(rounds) is not int or not 3 <= rounds <= MAX_ROUNDS:
+        raise ValueError('source-feedback comparison requires 3..16 rounds')
+    if budget is None:
+        budget = rounds * SECONDS_PER_ROUND
     if (output.exists() or not output.is_relative_to(repo / 'out') or
-            type(rounds) is not int or not 3 <= rounds <= 16 or type(budget) is not int or not 30 <= budget <= 600 or
+            type(budget) is not int or not 30 <= budget <= rounds * SECONDS_PER_ROUND or
             not 3 <= len(seeds) <= 8 or len(set(seeds)) != len(seeds) or
             any(type(seed) is not int or not 0 <= seed < 2**32 for seed in seeds)):
         raise ValueError('source-feedback comparison requires fresh owned output, 3..8 seeds and bounded rounds/time')
@@ -314,6 +329,9 @@ def measure(repo: Path, output: Path, baseline: Path | None = None, *, services:
         report = campaign.report
         report.update(schema='objc3c.semantic-source-feedback.v1', generator_version=GENERATOR_VERSION,
             subject='non-promoting-paired-source-feedback-measurement', seeds=list(seeds), rounds=rounds,
+            case_limits={'profile_merge_timeout_seconds': PROFILE_MERGE_TIMEOUT,
+                         'profile_export_timeout_seconds': PROFILE_EXPORT_TIMEOUT,
+                         'wall_and_cpu_budget_seconds_per_strategy': budget},
             revision=revision, measurements=[],
             baseline={'kind': 'paired-uniform-source-oracle' if normal is None else 'independent-semantic-qualification'},
             qualification_receipts={name: {'path': str(path), 'sha256': sha256}
@@ -394,8 +412,8 @@ def main():
     parser.add_argument('--baseline', type=Path, help='complete independent semantic-oracle receipt')
     parser.add_argument('--coverage-qualification', type=Path, help='current qualified source-coverage receipt')
     parser.add_argument('--seeds', type=int, nargs='+', default=[7, 19, 41])
-    parser.add_argument('--rounds', type=int, default=6)
-    parser.add_argument('--budget', type=int, default=180)
+    parser.add_argument('--rounds', type=int, default=DEFAULT_ROUNDS)
+    parser.add_argument('--budget', type=int, help='wall and CPU seconds per strategy; defaults to 700 per round')
     report = measure(**vars(parser.parse_args()))
     print(json.dumps({'status': report['status'], 'paired_samples': len(report['measurements'])//2,
                       'adaptive_generation_enabled': report['adaptive_generation_enabled']}))

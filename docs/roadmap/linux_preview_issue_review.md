@@ -97,6 +97,16 @@ branch and delegates to the canonical native qualification. A read-only check
 against the live GitHub history found the next run was still subject to the
 existing cadence. The default branch has yet to run the revised dispatcher.
 
+The optional source-feedback run qualified its covered Clang on 268 owned
+sources, then exhausted the paired experiment's first strategy budget. Its
+full profile merge and export took 109 and 179 seconds. The revised three-round
+comparison has equal, bounded wall and CPU budgets on both strategies, with
+separate per-command limits. Each case pools its own binary profiles before
+indexing. A native LLVM 23.1.5 replay reduced three raw profiles to one and
+preserved the exact entry points, branch counts, and regions. The new
+release-sized comparison awaits hosted verification.
+[Retained source-feedback timings](https://github.com/doublemover/Slopjective-C/actions/runs/45289388519)
+
 The repaired Apple Silicon registrar passed at
 `ebb30539dd68d63f18e1a0f41e9f724d674028ea`. The native report records
 39 bootstrap commands and 60 registration commands. The preflight linked

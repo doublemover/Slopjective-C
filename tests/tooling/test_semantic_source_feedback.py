@@ -181,6 +181,44 @@ def test_foreign_profile_identity_fails_before_merge_and_is_reclaimed(tmp_path):
     assert not directory.exists()
 
 
+def test_case_profiles_use_one_owned_pool_and_keep_explicit_tool_deadlines(tmp_path, monkeypatch):
+    owner = feedback.Feedback.__new__(feedback.Feedback)
+    owner.root = owner.source = owner.build = tmp_path
+    owner.owner, owner.owner_id, owner.mapping = tmp_path / 'libclang-cpp.so', 'a'*40, None
+    owner.eligible = {'clang/lib/Sema/ObjC3.cpp': 'digest'}
+    owner.identities = {str(owner.owner): owner.owner_id}
+    owner.campaign = SimpleNamespace(executor=SimpleNamespace(environment={}), output=tmp_path,
+        tools={tool: tool for tool in ('llvm-profdata', 'llvm-cov')},
+        report={'compiler_source_coverage': {}, 'commands': []})
+    calls = {}
+
+    def run(name, args, *, timeout=None):
+        calls[name] = timeout
+        if name.endswith('-merge'):
+            Path(args[-1]).write_bytes(b'indexed profile')
+            return ''
+        if name.endswith('-profile-ids'):
+            return owner.owner_id
+        log = tmp_path / 'export.log'
+        log.write_text(export(tmp_path))
+        owner.campaign.report['commands'].append({'name': name, 'log': str(log), 'log_sha256': digest(log)})
+        return log.read_text()
+
+    owner.campaign.run = run
+    monkeypatch.setattr(feedback, 'binary_ids', lambda text: {text})
+    directory = owner.begin('case')
+    pattern = str(directory / '%b-%m.profraw')
+    assert owner.campaign.executor.environment['LLVM_PROFILE_FILE'] == pattern
+    (directory / (owner.owner_id+'-identifier_0.profraw')).write_bytes(b'pooled profile')
+    points, receipt = owner.collect('case', directory)
+    assert points == {('clang/lib/Sema/ObjC3.cpp', 2, 1)}
+    assert receipt['profile_pattern'] == pattern and receipt['raw_profiles']['count'] == 1
+    assert calls == {'case-merge': feedback.PROFILE_MERGE_TIMEOUT, 'case-profile-ids': None,
+                     'case-export': feedback.PROFILE_EXPORT_TIMEOUT}
+    assert feedback.DEFAULT_ROUNDS * feedback.SECONDS_PER_ROUND > feedback.PROFILE_EXPORT_TIMEOUT
+    assert not directory.exists()
+
+
 def test_completed_coverage_tool_selection_checks_all_followup_commands(tmp_path, monkeypatch):
     build, stage = tmp_path / 'build', tmp_path / 'stage'
     (build / 'bin').mkdir(parents=True);(build / 'lib').mkdir();(stage / 'lib').mkdir(parents=True)
