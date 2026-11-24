@@ -92,6 +92,13 @@ reported ZIP SHA-256 is
 `52d5303175f331aaa9761279071965d7f433485656105128e661f11ac6c67c7e`.
 [Cold PR run and retained evidence](https://github.com/doublemover/Slopjective-C/actions/runs/45289344500)
 
+The refreshed x86-64 producer passed warm replay at `4a7e25d76`. Its 505.6 MB
+archive and three producer receipts retained their SHA-256 values. The replay
+took 12.85 seconds, including 1.92 seconds to readmit the installed generation,
+and rejected a stale input identity. An independent verifier checked the
+published producer archive against the exact recipe and SDK seal.
+[Retained x86-64 archive replay](https://github.com/doublemover/Slopjective-C/actions/runs/45299864647/artifacts/14883262054)
+
 The adaptive dispatcher scopes its history to recent runs on the default
 branch and delegates to the canonical native qualification. A read-only check
 against the live GitHub history found the next run was still subject to the
@@ -134,8 +141,12 @@ independent terminal passed at `4a7e25d76` and recorded SDK seal
 `ecd5e4f0b8396dd23373f37f0012f5d70a86facb2c38a993d9af8b1e32bd3e88`.
 The separate managed replay installed that exact package, ran the installed ARC
 consumer, reused the verified generation, and uninstalled it on native macOS
-15.8.2 arm64. The hard-cutover update requires a second admitted package.
+15.8.2 arm64. A second native package passed qualification without the
+optional sanitizer payload. Its retained terminal matched independent verifier
+output and records a distinct seal with the same Apple toolchain requirements.
+Both packages are pinned in the managed hard-cutover replay.
 [Expanded native SDK qualification](https://github.com/doublemover/Slopjective-C/actions/runs/45299864475) · [Managed lifecycle replay](https://github.com/doublemover/Slopjective-C/actions/runs/45305498679)
+[Plain package qualification](https://github.com/doublemover/Slopjective-C/actions/runs/45305603658) · [Managed cutover replay](https://github.com/doublemover/Slopjective-C/actions/runs/45312431420)
 
 ## Release CI cost
 
