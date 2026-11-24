@@ -1,5 +1,5 @@
 diff --git a/clang/lib/CodeGen/CGObjCGNU.cpp b/clang/lib/CodeGen/CGObjCGNU.cpp
-index dc61dffce..5abfd5c46 100644
+index dc61dffce..a19ca2491 100644
 --- a/clang/lib/CodeGen/CGObjCGNU.cpp
 +++ b/clang/lib/CodeGen/CGObjCGNU.cpp
 @@ -19,6 +19,7 @@
@@ -171,14 +171,39 @@ index dc61dffce..5abfd5c46 100644
      // A COFF translation unit with no Objective-C metadata needs no runtime
      // registration. Emitting only zero-sized section sentinels creates an
      // entirely empty .objcrt section, which COFF linkers may discard even
-@@ -1773,6 +1873,25 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -1749,6 +1849,16 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+                               const ObjCIvarDecl *Ivar) override {
+     const ObjCInterfaceDecl *ContainingInterface =
+         Ivar->getContainingInterface();
++    if (isObjC3DarwinRegistration(CGM)) {
++      if (Ivar != getDarwinFixedRootIvar(ContainingInterface)) {
++        CGM.Error(Ivar->getLocation(),
++                  "experimental Darwin registration requires a single plain int root ivar");
++        return llvm::ConstantInt::get(PtrDiffTy, 0);
++      }
++      const auto *Layout = getDarwinFixedRootLayout(CGM);
++      return llvm::ConstantInt::get(
++          PtrDiffTy, Layout->getElementOffset(1).getFixedValue());
++    }
+     const std::string Name =
+         GetIVarOffsetVariableName(ContainingInterface, Ivar);
+     llvm::GlobalVariable *IvarOffsetPointer = TheModule.getNamedGlobal(Name);
+@@ -1773,6 +1883,33 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
      // Get the class name
      ObjCInterfaceDecl *classDecl =
          const_cast<ObjCInterfaceDecl *>(OID->getClassInterface());
 +    bool DarwinRegistration = isObjC3DarwinRegistration(CGM);
++    const llvm::StructLayout *DarwinLayout = nullptr;
 +    if (DarwinRegistration) {
++      if (classDecl->all_declared_ivar_begin()) {
++        if (!getDarwinFixedRootIvar(classDecl)) {
++          CGM.Error(OID->getLocation(),
++                    "experimental Darwin registration requires a single plain int root ivar");
++          return;
++        }
++        DarwinLayout = getDarwinFixedRootLayout(CGM);
++      }
 +      if ((!classDecl->hasAttr<ObjCRootClassAttr>() && !classDecl->getSuperClass()) ||
-+          classDecl->all_declared_ivar_begin() ||
 +          classDecl->all_referenced_protocol_begin() !=
 +              classDecl->all_referenced_protocol_end() ||
 +          !classDecl->properties().empty() || !OID->property_impls().empty()) {
@@ -197,7 +222,64 @@ index dc61dffce..5abfd5c46 100644
      std::string className = classDecl->getObjCRuntimeNameAsString().str();
      auto *classNameConstant = MakeConstantString(className);
  
-@@ -2023,7 +2142,8 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -1865,22 +2002,22 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+     // const char *name;
+     classFields.add(classNameConstant);
+     // long version;
+-    classFields.addInt(LongTy, 0);
++    classFields.addInt(LongTy, DarwinLayout ? 1 : 0);
+     // unsigned long info;
+     // !objc_class_flag_meta
+     classFields.addInt(LongTy, 0);
+     // long instance_size;
+     int superInstanceSize = !SuperClassDecl ? 0 :
+       Context.getASTObjCInterfaceLayout(SuperClassDecl).getSize().getQuantity();
+-    // Instance size is negative for classes that have not yet had their ivar
+-    // layout calculated.
+-    classFields.addInt(
+-        LongTy,
+-        0 - (Context.getASTObjCInterfaceLayout(OID->getClassInterface())
+-                 .getSize()
+-                 .getQuantity() -
+-             superInstanceSize),
+-        /*isSigned=*/true);
++    // Fixed Darwin layouts include the ISA word. GNUstep computes instance
++    // size after resolving the negative relative layout at registration.
++    int64_t InstanceSize = DarwinLayout
++        ? DarwinLayout->getSizeInBytes().getFixedValue()
++        : 0 - (Context.getASTObjCInterfaceLayout(classDecl)
++                   .getSize()
++                   .getQuantity() -
++               superInstanceSize);
++    classFields.addInt(LongTy, InstanceSize, /*isSigned=*/true);
+ 
+     if (classDecl->all_declared_ivar_begin() == nullptr)
+       classFields.addNullPointer(PtrTy);
+@@ -1920,8 +2057,10 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+         uint64_t BaseOffset = ComputeIvarBaseOffset(CGM, OID, IVD);
+         // A subclass may reuse superclass tail padding. The nonfragile
+         // displacement is signed even when the absolute layout offsets are not.
+-        int64_t Offset = static_cast<int64_t>(BaseOffset) -
+-                         static_cast<int64_t>(superInstanceSize);
++        int64_t Offset = DarwinLayout
++            ? DarwinLayout->getElementOffset(1).getFixedValue()
++            : static_cast<int64_t>(BaseOffset) -
++                  static_cast<int64_t>(superInstanceSize);
+         if (!llvm::isIntN(IntTy->getBitWidth(), Offset)) {
+           CGM.Error(IVD->getLocation(), "GNUstep ivar offset exceeds the signed runtime ABI range");
+           Offset = 0;
+@@ -1935,6 +2074,10 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+           OffsetVar = new llvm::GlobalVariable(TheModule, IntTy,
+             false, llvm::GlobalValue::ExternalLinkage,
+             OffsetValue, OffsetName);
++        if (DarwinLayout) {
++          OffsetVar->setConstant(true);
++          OffsetVar->setLinkage(llvm::GlobalValue::InternalLinkage);
++        }
+         auto ivarVisibility =
+             (IVD->getAccessControl() == ObjCIvarDecl::Private ||
+              IVD->getAccessControl() == ObjCIvarDecl::Package ||
+@@ -2023,7 +2166,8 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
          CGM.getPointerAlign(), false, llvm::GlobalValue::ExternalLinkage);
  
      auto *classRefSymbol = GetClassVar(className);
@@ -207,7 +289,7 @@ index dc61dffce..5abfd5c46 100644
      classRefSymbol->setInitializer(classStruct);
  
      if (IsCOFF) {
-@@ -2063,6 +2183,11 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -2063,6 +2207,11 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
      }
      assert(classStruct->getName() == SymbolForClass(className));
  
@@ -219,7 +301,7 @@ index dc61dffce..5abfd5c46 100644
      auto classInitRef = new llvm::GlobalVariable(TheModule,
          classStruct->getType(), false, llvm::GlobalValue::ExternalLinkage,
          classStruct, ManglePublicSymbol("OBJC_INIT_CLASS_") + className);
-@@ -2829,6 +2954,10 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
+@@ -2829,6 +2978,10 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
                                      const CallArgList &CallArgs,
                                      const ObjCMethodDecl *Method) {
    CGBuilderTy &Builder = CGF.Builder;
@@ -230,7 +312,7 @@ index dc61dffce..5abfd5c46 100644
    if (CGM.getLangOpts().getGC() == LangOptions::GCOnly) {
      if (Sel == RetainSel || Sel == AutoreleaseSel) {
        return RValue::get(EnforceType(Builder, Receiver,
-@@ -2839,7 +2968,7 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
+@@ -2839,7 +2992,7 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
      }
    }
  
@@ -239,7 +321,7 @@ index dc61dffce..5abfd5c46 100644
    CallArgList ActualArgs;
  
    ActualArgs.add(RValue::get(EnforceType(Builder, Receiver, IdTy)), ASTIdTy);
-@@ -2947,6 +3076,10 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
+@@ -2947,6 +3100,10 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
                                 const ObjCInterfaceDecl *Class,
                                 const ObjCMethodDecl *Method) {
    CGBuilderTy &Builder = CGF.Builder;
@@ -250,7 +332,7 @@ index dc61dffce..5abfd5c46 100644
  
    // Strip out message sends to retain / release in GC mode
    if (CGM.getLangOpts().getGC() == LangOptions::GCOnly) {
-@@ -3097,6 +3230,8 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
+@@ -3097,6 +3254,8 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
    // If this is a direct method, just emit it here.
    if (isDirect)
      imp = GenerateMethod(Method, Method->getClassInterface());
@@ -478,10 +560,10 @@ index 230fd92b3..127beb647 100644
      return runtime;
 diff --git a/clang/lib/CodeGen/CGObjC3Darwin.h b/clang/lib/CodeGen/CGObjC3Darwin.h
 new file mode 100644
-index 000000000..d4ae84d29
+index 000000000..d1ccce6c1
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Darwin.h
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,49 @@
 +//===--- CGObjC3Darwin.h - Experimental owned Darwin runtime -----*- C++ -*-===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -494,6 +576,7 @@ index 000000000..d4ae84d29
 +#define LLVM_CLANG_LIB_CODEGEN_CGOBJC3DARWIN_H
 +
 +#include "CodeGenModule.h"
++#include "clang/AST/DeclObjC.h"
 +
 +namespace clang::CodeGen {
 +
@@ -510,6 +593,64 @@ index 000000000..d4ae84d29
 +  return CGM.getLangOpts().ObjCAutoRefCount && isObjC3DarwinRegistration(CGM);
 +}
 +
++inline const ObjCIvarDecl *getDarwinFixedRootIvar(const ObjCInterfaceDecl *Class) {
++  if (Class->getSuperClass() || !Class->hasAttr<ObjCRootClassAttr>())
++    return nullptr;
++  const ObjCIvarDecl *Ivar = Class->all_declared_ivar_begin();
++  if (!Ivar || Ivar->getNextIvar() || Ivar->isBitField() || Ivar->hasAttrs() ||
++      Ivar->getType().hasQualifiers() ||
++      !Ivar->getType()->isSpecificBuiltinType(BuiltinType::Int))
++    return nullptr;
++  return Ivar;
++}
++
++inline const llvm::StructLayout *getDarwinFixedRootLayout(CodeGenModule &CGM) {
++  auto *Type = llvm::StructType::get(
++      CGM.getLLVMContext(), {CGM.Int8PtrTy, CGM.Int32Ty});
++  return CGM.getDataLayout().getStructLayout(Type);
++}
++
 +} // namespace clang::CodeGen
 +
 +#endif
+diff --git a/clang/lib/CodeGen/CGDebugInfo.cpp b/clang/lib/CodeGen/CGDebugInfo.cpp
+index d8775093c..65c53120a 100644
+--- a/clang/lib/CodeGen/CGDebugInfo.cpp
++++ b/clang/lib/CodeGen/CGDebugInfo.cpp
+@@ -11,6 +11,7 @@
+ //===----------------------------------------------------------------------===//
+ 
+ #include "CGDebugInfo.h"
++#include "CGObjC3Darwin.h"
+ #include "CGBlocks.h"
+ #include "CGObjC3BlockCaptures.h"
+ #include "CGCXXABI.h"
+@@ -3613,6 +3614,17 @@ llvm::DIType *CGDebugInfo::CreateTypeDefinition(const ObjCInterfaceType *Ty,
+   // Bit size, align and offset of the type.
+   uint64_t Size = CGM.getContext().getTypeSize(Ty);
+   auto Align = getTypeAlignIfRequired(Ty, CGM.getContext());
++  const ObjCIvarDecl *DarwinFixedRootIvar = nullptr;
++  const llvm::StructLayout *DarwinLayout = nullptr;
++  if (isObjC3DarwinRegistration(CGM)) {
++    const ObjCInterfaceDecl *Root = ID;
++    while (const auto *Super = Root->getSuperClass())
++      Root = Super;
++    if ((DarwinFixedRootIvar = getDarwinFixedRootIvar(Root))) {
++      DarwinLayout = getDarwinFixedRootLayout(CGM);
++      Size = DarwinLayout->getSizeInBits().getFixedValue();
++    }
++  }
+ 
+   llvm::DINode::DIFlags Flags = llvm::DINode::FlagZero;
+   if (ID->getImplementation())
+@@ -3718,7 +3730,9 @@ llvm::DIType *CGDebugInfo::CreateTypeDefinition(const ObjCInterfaceType *Ty,
+     }
+ 
+     uint64_t FieldOffset;
+-    if (CGM.getLangOpts().ObjCRuntime.isNonFragile()) {
++    if (Field == DarwinFixedRootIvar) {
++      FieldOffset = DarwinLayout->getElementOffsetInBits(1).getFixedValue();
++    } else if (CGM.getLangOpts().ObjCRuntime.isNonFragile()) {
+       // We don't know the runtime offset of an ivar if we're using the
+       // non-fragile ABI.  For bitfields, use the bit offset into the first
+       // byte of storage of the bitfield.  For other fields, use zero.

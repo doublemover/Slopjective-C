@@ -58,7 +58,7 @@ capability and has `support_truth: false`.
 
 The `macos-arm64-registration-experimental` build uses a Darwin-only compiler
 patch on top of the locked LLVM source. It emits one Mach-O initializer per
-translation unit that defines a root class. The initializer hands that unit's
+translation unit that defines a class. The initializer hands that unit's
 class table to the owned runtime. Class sends use the metaclass method table,
 and instance sends use the class method table through the live object's ISA.
 Both lookups match the selector and exact no-argument `int` encoding. The compiler
@@ -92,8 +92,16 @@ class and instance selectors, the most-derived override, and explicit
 `super` sends. Its static link places child metadata before base metadata.
 Its relocated dynamic link puts the strong base reference in a separate
 dylib. The controls check a missing runtime at link and load, the prior
-GNUstep driver guard, a subclass with an ivar, a stateful root, a parameterized
-method, Apple runtime linking, and a wrong architecture.
+GNUstep driver guard, a subclass with an added ivar, a root bit-field, a
+parameterized method, Apple runtime linking, and a wrong architecture.
+
+The `fixed-root-int-v1` fixture has one naturally aligned plain `int` in a
+root class. Its child lives in a separate dylib and inherits the same field.
+The static, relocated dylib, and ARC lifetime routes verify zero-initialized
+storage, writes through `super`, and independence of live instances. The ARC
+consumer checks that release zeros a weak reference while another instance
+keeps its own value. DWARF checks a 16-byte class extent, the field at byte
+8, and the child's base at byte 0.
 
 The ARC exercise compiles Objective-C C17 stateless classes with `-fobjc-arc`
 at O0 and O2. It checks owned allocation, strong references, weak zeroing,
@@ -121,14 +129,18 @@ An x86-64 replay built the modified driver and CodeGen translation units with
 the preview toolchain. They emitted arm64 Mach-O provider and plugin objects
 with startup initializers and owned runtime symbols. DWARF verified. The
 class method lowers its deferred result to `42`, and the same-named instance
-method returns `17`. The compiler diagnosed subclass ivars, root ivars, and
+method returns `17`. The compiler diagnosed subclass ivars, root bit-fields, and
 parameterized methods. The allocation and lookup controls passed the separate
 native Linux C runtime replay with ASan and UBSan.
 The inheritance replay also emitted Mach-O startup records and the owned
 `super` lookup symbol, verified both objects' DWARF, and linked the child dylib
 with a strong dependency on the base dylib. The C runtime test exercised
 child-first registration, missing and cyclic ancestors, and an invalid super
-start under ASan and UBSan.
+start under ASan and UBSan. The fixed-layout replay verified the arm64 field
+loads and stores, DWARF, and the child's strong Mach-O base dependency.
+The MRC and ARC fixtures also executed with the Darwin LLVM lowering
+retargeted to x86-64 Linux and linked to the owned C runtime under ASan and
+UBSan.
 
 Native execution evidence for this step is pending. The receipt has
 `support_truth: false`, and the release profile still requires SDK packaging,
@@ -174,24 +186,26 @@ and qualification receipts carry `support_truth: false`.
 ### Instance lifetime and the next ABI boundary
 
 The experimental MRC entry points `objc3_darwin_allocate_v1` and
-`objc3_darwin_deallocate_v1` allocate and reclaim one ISA header with private
-registry bookkeeping. Allocation admits the exact registered class pointer
-and its stateless, zero-size compiler metadata through the registered parent
-chain. Constructors may register child and parent metadata in either order.
+`objc3_darwin_deallocate_v1` allocate and reclaim an object whose ISA begins
+at byte 0. The runtime keeps private reference and registry bookkeeping
+before the object pointer. Allocation admits only the exact registered class
+pointer. Constructors may register child and parent metadata in either order.
 Name lookup, allocation, and dispatch require a complete acyclic chain.
 `objc3_darwin_lookup_super_v1` starts at the compiler-selected ancestor and
 keeps the original receiver. The owner keeps an instance live
 for the entire send, including nested sends and calls from other threads.
 Deallocation removes the live registry entry and releases the allocation.
 
-A stateful ABI must resolve the compiler's relative instance-size and
-ivar-offset records, validate alignment and overflow, and initialize the
-resulting storage before it becomes visible to a sender. Native controls need
-invalid or stale layout records, inherited offsets, and field inspection in
-debug information.
+Class metadata version 0 contributes zero additional bytes. Version 1
+describes the fixed root's full 16-byte extent and an absolute offset for its
+single `int`. Registration validates the extent, ivar record size, encoding,
+alignment and offset. The runtime caches the admitted extent and allocates
+zeroed storage using the registered root's layout. General subclass fields
+would require resolving relative class sizes, offsets and alignment across
+the lineage.
 
-Broader ARC support requires native evidence for stateful instances, Blocks,
-custom finalization, and exception-aware cleanup across images and threads.
+Broader ARC support requires native evidence for owned ivars, Blocks, custom
+finalization, and exception-aware cleanup across images and threads.
 
 ## Evidence required for a port
 
@@ -206,10 +220,11 @@ custom finalization, and exception-aware cleanup across images and threads.
   runtime and ARC, exceptions, async and carrier paths have Linux-specific
   gates. The released driver rejects GNUstep 2.2 for Mach-O. Its GNUstep
   registration emits ELF section boundaries, COMDAT groups and an ELF
-  constructor section. The separate experimental compiler handles stateless root
-  classes, subclasses, and instances with ordinary no-argument `int` methods.
-  Instance storage, properties, protocols, categories, broader ARC, exceptions and
-  cross-image runtime lifecycle still need a design and native workloads. Inspect the linked
+  constructor section. The separate experimental compiler handles root
+  classes, subclasses, and instances with ordinary no-argument `int` methods,
+  including a fixed-root scalar layout. General instance storage, properties,
+  protocols, categories, broader ARC, exceptions and cross-image runtime
+  lifecycle still need a design and native workloads. Inspect the linked
   dependency closure for accidental Apple ObjC2 use. [Driver guard](https://github.com/llvm/llvm-project/blob/392dfff97d29b59d77e5cac6d4b6ef2585fe7117/clang/lib/Driver/ToolChains/Clang.cpp#L8628)
   · [Registration lowering](https://github.com/llvm/llvm-project/blob/392dfff97d29b59d77e5cac6d4b6ef2585fe7117/clang/lib/CodeGen/CGObjCGNU.cpp#L1518)
 - A native patched Clang and runtime build plan, a Mach-O distribution layout

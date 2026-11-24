@@ -13,11 +13,28 @@ def test_experimental_profile_binds_separate_patch_and_native_job_budget():
     profile, patch = darwin_registration.load_profile()
     assert profile['profile'] == 'macos-arm64-registration-experimental'
     assert profile['inheritance'] == 'stateless-super-v1'
+    assert profile['layout'] == 'fixed-root-int-v1'
     assert patch.parent.name == 'experimental'
     assert patch.name not in (darwin_registration.ROOT / 'toolchains/llvm/patches/series').read_text()
     assert darwin_registration.compile_jobs(3, 7 * 1024 ** 3) == 2
     assert darwin_registration.compile_jobs(12, 24 * 1024 ** 3) == 11
     assert darwin_registration.compile_jobs(2, 64 * 1024 ** 3) == 2
+
+
+def test_fixed_layout_dwarf_requires_exact_class_extent_and_field_offset():
+    transcript = '''0x00000025: DW_TAG_structure_type
+        DW_AT_name ("DarwinFixedBase")
+        DW_AT_byte_size (0x10)
+0x0000002b:   DW_TAG_member
+        DW_AT_name ("value")
+        DW_AT_type (0x0000005c "int")
+        DW_AT_data_member_location (0x08)
+'''
+    darwin_registration.verify_fixed_layout_dwarf(transcript, 'DarwinFixedBase')
+    with pytest.raises(ValueError, match='wrong int ivar offset'):
+        darwin_registration.verify_fixed_layout_dwarf(transcript.replace('0x08', '0x00'), 'DarwinFixedBase')
+    with pytest.raises(ValueError, match='wrong size'):
+        darwin_registration.verify_fixed_layout_dwarf(transcript.replace('0x10', '0x08'), 'DarwinFixedBase')
 
 
 def test_experimental_driver_rejects_other_hosts_before_build(monkeypatch, tmp_path):
@@ -194,6 +211,25 @@ int main(int argc, char **argv) {
     const struct class_record *bad[] = {&stateful};
     objc3_darwin_register_v1(bad, 1);
   }
+  if (strncmp(control, "fixed-", 6) == 0) {
+    int offset = 8;
+    struct {
+      int count;
+      size_t stride;
+      struct ivar_record ivars[1];
+    } ivars = {1, sizeof(struct ivar_record), {{"value", "i", &offset, 4, fixed_int_ivar_flags}}};
+    struct class_record fixed = {.isa = &meta, .name = "Fixed", .version = 1,
+                                 .instance_size = 16, .ivars = (const void *)&ivars};
+    if (strcmp(control, "fixed-offset") == 0)
+      offset = 0;
+    if (strcmp(control, "fixed-stride") == 0)
+      ivars.stride = 16;
+    if (strcmp(control, "fixed-extent") == 0)
+      fixed.instance_size = 8;
+    const struct class_record *bad[] = {&fixed};
+    objc3_darwin_register_v1(bad, 1);
+    return 12;
+  }
   if (strcmp(control, "wrong-method-table") == 0) {
     const struct class_record *bad[] = {&wrong_methods_class};
     objc3_darwin_register_v1(bad, 1);
@@ -251,6 +287,9 @@ int main(int argc, char **argv) {
         ('allocate-unregistered', 'allocation requires a registered class'),
         ('deallocate-class', 'deallocation requires a live instance'),
         ('stateful', 'invalid stateless class metadata'),
+        ('fixed-offset', 'invalid fixed root ivar layout'),
+        ('fixed-stride', 'invalid fixed root class layout'),
+        ('fixed-extent', 'invalid fixed root class layout'),
         ('wrong-method-table', 'invalid no-argument int method'),
         ('wrong-selector-type', 'method selector is missing'),
         ('missing-superclass', 'class has an unregistered superclass'),

@@ -1,8 +1,8 @@
 __attribute__((objc_root_class))
-@interface DarwinStatefulRoot {
-  int value;
+@interface DarwinUnsupportedRoot {
+  int : 2;
 }
 @end
 
-@implementation DarwinStatefulRoot
+@implementation DarwinUnsupportedRoot
 @end

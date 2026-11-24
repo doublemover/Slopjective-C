@@ -8,6 +8,25 @@
 
 struct class_record;
 
+struct ivar_record {
+  const char *name;
+  const char *type;
+  const int *offset;
+  uint32_t size;
+  uint32_t flags;
+};
+
+struct ivar_list {
+  int count;
+  size_t stride;
+  struct ivar_record ivars[];
+};
+
+struct fixed_root_object {
+  const struct class_record *isa;
+  int value;
+};
+
 struct selector_record {
   const char *name;
   const char *type;
@@ -36,8 +55,13 @@ struct class_record {
   long version;
   unsigned long flags;
   long instance_size;
-  const void *ivars;
+  const struct ivar_list *ivars;
   const struct method_list *methods;
+};
+
+struct registered_class {
+  const struct class_record *metadata;
+  size_t own_instance_size;
 };
 
 struct weak_slot {
@@ -70,13 +94,17 @@ struct super_record {
 _Static_assert(offsetof(struct class_record, methods) == 56, "arm64 class ABI");
 _Static_assert(offsetof(struct method_list, methods) == 24, "arm64 method list ABI");
 _Static_assert(sizeof(struct method_record) == 24, "arm64 method ABI");
+_Static_assert(offsetof(struct fixed_root_object, value) == 8, "arm64 fixed ivar ABI");
+_Static_assert(sizeof(struct fixed_root_object) == 16, "arm64 fixed instance ABI");
+_Static_assert(offsetof(struct ivar_list, ivars) == 16, "arm64 ivar list ABI");
+_Static_assert(sizeof(struct ivar_record) == 32, "arm64 ivar record ABI");
 _Static_assert(sizeof(struct instance_record) ==
                offsetof(struct instance_record, isa) + sizeof(void *),
                "the object starts at isa, after all private runtime state");
 _Static_assert(sizeof(struct super_record) == 16, "arm64 super dispatch ABI");
 
 static pthread_mutex_t registry_lock = PTHREAD_MUTEX_INITIALIZER;
-static const struct class_record **registry;
+static struct registered_class *registry;
 static size_t class_count;
 static struct instance_record *instances;
 static _Thread_local struct autorelease_pool *current_pool;
@@ -88,8 +116,8 @@ static _Noreturn void registration_error(const char *message) {
 
 static const struct class_record *find_class(const char *name) {
   for (size_t i = 0; i < class_count; ++i)
-    if (strcmp(registry[i]->name, name) == 0)
-      return registry[i];
+    if (strcmp(registry[i].metadata->name, name) == 0)
+      return registry[i].metadata;
   return NULL;
 }
 
@@ -106,34 +134,63 @@ static void check_method_list(const struct method_list *list) {
   }
 }
 
-static void check_class(const struct class_record *cls) {
-  if (!cls || !cls->name || !*cls->name || !cls->isa ||
-      cls->flags != 0 || cls->instance_size != 0 || cls->ivars || cls->version != 0 ||
-      cls->isa->flags != 1 || cls->isa->superclass || cls->isa->instance_size != 0 ||
-      cls->isa->ivars || cls->isa->version != 0)
+/* Extended encoding and 4-byte alignment without an owned reference. */
+enum { fixed_int_ivar_flags = (2 << 3) | (1 << 2) };
+
+static void check_fixed_root(const struct class_record *cls) {
+  const struct ivar_list *ivars = cls->ivars;
+  if (cls->superclass || cls->instance_size != sizeof(struct fixed_root_object) ||
+      !ivars || ivars->count != 1 || ivars->stride != sizeof(struct ivar_record))
+    registration_error("invalid fixed root class layout");
+  const struct ivar_record *ivar = &ivars->ivars[0];
+  if (!ivar->name || !*ivar->name || !ivar->type || strcmp(ivar->type, "i") ||
+      !ivar->offset || *ivar->offset != offsetof(struct fixed_root_object, value) ||
+      ivar->size != sizeof(int) || ivar->flags != fixed_int_ivar_flags)
+    registration_error("invalid fixed root ivar layout");
+}
+
+static size_t check_class(const struct class_record *cls) {
+  if (!cls || !cls->name || !*cls->name || !cls->isa || cls->flags ||
+      cls->isa->flags != 1 || cls->isa->superclass || cls->isa->instance_size ||
+      cls->isa->ivars || cls->isa->version)
+    registration_error("invalid class metadata");
+  if (cls->version == 1)
+    check_fixed_root(cls);
+  else if (cls->version || cls->instance_size || cls->ivars)
     registration_error("invalid stateless class metadata");
   check_method_list(cls->methods);
   check_method_list(cls->isa->methods);
+  return cls->version == 1 ? sizeof(struct fixed_root_object) : 0;
+}
+
+static const struct registered_class *find_registration(const void *cls) {
+  for (size_t i = 0; i < class_count; ++i)
+    if (registry[i].metadata == cls)
+      return &registry[i];
+  return NULL;
 }
 
 static int class_is_registered(const void *cls) {
-  for (size_t i = 0; i < class_count; ++i)
-    if (registry[i] == cls)
-      return 1;
-  return 0;
+  return find_registration(cls) != NULL;
 }
 
-/* Image constructors can run in either order. Resolve the complete chain
- * before an allocation or send and before exposing the record by name. */
-static void check_class_lineage(const struct class_record *cls) {
+/* Constructors may run child-first. Resolve the complete chain before making
+ * the class visible or allocating storage. The sole nonzero extent is owned
+ * by the fixed root, and every descendant carries zero additional bytes. */
+static size_t check_class_lineage(const struct class_record *cls) {
   size_t remaining = class_count;
+  size_t instance_size = sizeof(const struct class_record *);
   for (; cls; cls = cls->superclass) {
-    if (!class_is_registered(cls))
+    const struct registered_class *entry = find_registration(cls);
+    if (!entry)
       registration_error("class has an unregistered superclass");
     if (!remaining)
       registration_error("class hierarchy has a cycle");
     --remaining;
+    if (entry->own_instance_size)
+      instance_size = entry->own_instance_size;
   }
+  return instance_size;
 }
 
 static struct instance_record **find_instance(const void *receiver) {
@@ -148,15 +205,15 @@ void objc3_darwin_register_v1(const struct class_record *const *classes, size_t 
   pthread_mutex_lock(&registry_lock);
   if (!classes || !count || count > (SIZE_MAX / sizeof(*registry)) - class_count)
     registration_error("invalid class registration batch");
-  const struct class_record **updated = realloc(registry, (class_count + count) * sizeof(*registry));
+  struct registered_class *updated = realloc(registry, (class_count + count) * sizeof(*registry));
   if (!updated)
     registration_error("class registry allocation failed");
   registry = updated;
   for (size_t i = 0; i < count; ++i) {
-    check_class(classes[i]);
+    size_t own_instance_size = check_class(classes[i]);
     if (find_class(classes[i]->name))
       registration_error("duplicate class name");
-    registry[class_count++] = classes[i];
+    registry[class_count++] = (struct registered_class){classes[i], own_instance_size};
   }
   pthread_mutex_unlock(&registry_lock);
 }
@@ -175,8 +232,9 @@ void *objc3_darwin_allocate_v1(const struct class_record *cls) {
   pthread_mutex_lock(&registry_lock);
   if (!class_is_registered(cls))
     registration_error("allocation requires a registered class");
-  check_class_lineage(cls);
-  struct instance_record *instance = malloc(sizeof(*instance));
+  size_t instance_size = check_class_lineage(cls);
+  struct instance_record *instance =
+      calloc(1, offsetof(struct instance_record, isa) + instance_size);
   if (instance) {
     *instance = (struct instance_record){.next = instances, .references = 1,
                                          .isa = cls};

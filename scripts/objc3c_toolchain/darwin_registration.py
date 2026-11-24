@@ -51,6 +51,7 @@ def load_profile() -> tuple[dict, Path]:
             profile.get('compiler_runtime_flag') != '-fobjc-runtime=gnustep-2.99' or
             profile.get('runtime_abi') != 'objc3-darwin-registration-v1' or
             profile.get('inheritance') != 'stateless-super-v1' or
+            profile.get('layout') != 'fixed-root-int-v1' or
             file_digest(patch) != profile.get('patch_sha256')):
         raise ValueError('experimental Darwin registration profile or patch differs from its pin')
     return profile, patch
@@ -272,7 +273,14 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
     runtime_object = stages / 'runtime.o'
     runtime_archive = layout / 'lib/libobjc3darwin.a'
     runtime_dylib = layout / 'lib/libobjc3darwin.dylib'
-    names = ('provider', 'main', 'late', 'inheritance_base', 'inheritance_child', 'inheritance_main')
+    hierarchy_witnesses = {
+        'inheritance': 'owned Objective-C 3 Darwin inheritance: PASS',
+        'fixed-layout': 'owned Objective-C 3 Darwin fixed root layout: PASS',
+    }
+    names = ['provider', 'main', 'late']
+    for family in hierarchy_witnesses:
+        prefix = family.replace('-', '_')
+        names.extend(prefix + '_' + unit for unit in ('base', 'child', 'main'))
     fixture_objects = {name: stages / (name + '.o') for name in names}
     fixture_archive = layout / 'lib/libprovider.a'
     late_dylib = layout / 'lib/liblate.dylib'
@@ -281,6 +289,10 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
     run(*defaults, '-std=c17', '-Wall', '-Wextra', '-Werror', '-O2', '-g', '-c', RUNTIME, '-o', runtime_object)
     for name, obj in fixture_objects.items():
         run(*objective_c, '-Wall', '-Wextra', '-Werror', '-O2', '-g', '-c', FIXTURES / (name + '.m'), '-o', obj)
+    layout_arc = stages / 'fixed_layout_arc.o'
+    run(*objective_c, '-fobjc-arc', '-Wall', '-Wextra', '-Werror', '-O2', '-g',
+        '-c', FIXTURES / 'fixed_layout_arc.m', '-o', layout_arc, label='fixed-layout-arc-object')
+    fixture_objects['fixed_layout_arc'] = layout_arc
     run(ar, '--format=darwin', 'rcs', fixture_archive, fixture_objects['provider'])
     run(ar, '--format=darwin', 'rcs', runtime_archive, runtime_object)
     run(*link, '-dynamiclib', runtime_object, '-Wl,-install_name,@rpath/libobjc3darwin.dylib', '-o', runtime_dylib)
@@ -288,27 +300,45 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
         '-Wl,-install_name,@rpath/liblate.dylib', '-Wl,-rpath,@loader_path', '-o', late_dylib)
     run(*link, fixture_objects['main'], fixture_archive, runtime_archive, '-o', static)
     run(*link, fixture_objects['main'], fixture_archive, runtime_dylib, '-Wl,-rpath,@loader_path/../lib', '-o', dynamic)
-    base = layout / 'lib/libinheritance-base.dylib'
-    child = layout / 'lib/libinheritance-child.dylib'
-    run(*link, '-dynamiclib', fixture_objects['inheritance_base'], runtime_dylib,
-        '-Wl,-install_name,@rpath/libinheritance-base.dylib', '-Wl,-rpath,@loader_path', '-o', base)
-    run(*link, '-dynamiclib', fixture_objects['inheritance_child'], base, runtime_dylib,
-        '-Wl,-install_name,@rpath/libinheritance-child.dylib', '-Wl,-rpath,@loader_path', '-o', child)
-    # The static path links the child's constructor before the base's.
-    run(*link, fixture_objects['inheritance_main'], fixture_objects['inheritance_child'],
-        fixture_objects['inheritance_base'], runtime_archive, '-o', layout / 'bin/inheritance-static')
-    run(*link, fixture_objects['inheritance_main'], child, runtime_dylib,
-        '-Wl,-rpath,@loader_path/../lib', '-o', layout / 'bin/inheritance-dynamic')
+    runtime_id = '@rpath/libobjc3darwin.dylib'
+    required_libraries = {'bin/static': [], 'bin/dynamic': [runtime_id],
+                          'lib/libobjc3darwin.dylib': [runtime_id],
+                          'lib/liblate.dylib': ['@rpath/liblate.dylib', runtime_id]}
+    for family in hierarchy_witnesses:
+        prefix = family.replace('-', '_')
+        base = layout / f'lib/lib{family}-base.dylib'
+        child = layout / f'lib/lib{family}-child.dylib'
+        base_id = '@rpath/' + base.name
+        child_id = '@rpath/' + child.name
+        run(*link, '-dynamiclib', fixture_objects[prefix + '_base'], runtime_dylib,
+            '-Wl,-install_name,' + base_id, '-Wl,-rpath,@loader_path', '-o', base)
+        run(*link, '-dynamiclib', fixture_objects[prefix + '_child'], base, runtime_dylib,
+            '-Wl,-install_name,' + child_id, '-Wl,-rpath,@loader_path', '-o', child)
+        # Static links admit the child's constructor before the base's.
+        run(*link, fixture_objects[prefix + '_main'], fixture_objects[prefix + '_child'],
+            fixture_objects[prefix + '_base'], runtime_archive, '-o', layout / f'bin/{family}-static')
+        run(*link, fixture_objects[prefix + '_main'], child, runtime_dylib,
+            '-Wl,-rpath,@loader_path/../lib', '-o', layout / f'bin/{family}-dynamic')
+        required_libraries.update({f'lib/{base.name}': [base_id, runtime_id],
+                                   f'lib/{child.name}': [child_id, base_id, runtime_id],
+                                   f'bin/{family}-static': [], f'bin/{family}-dynamic': [child_id, runtime_id]})
+    fixed_child = layout / 'lib/libfixed-layout-child.dylib'
+    run(*link, layout_arc, fixed_child, runtime_dylib,
+        '-Wl,-rpath,@loader_path/../lib', '-o', layout / 'bin/fixed-layout-arc')
+    required_libraries['bin/fixed-layout-arc'] = ['@rpath/' + fixed_child.name, runtime_id]
     run(*link, fixture_objects['main'], fixture_archive, '-o', stages / 'no-runtime',
         rejects=('objc3_darwin_lookup_v1', 'objc3_darwin_register_v1',
                  'objc3_darwin_allocate_v1', 'objc3_darwin_deallocate_v1'), label='missing-runtime-at-link')
-    unsupported = FIXTURES / 'unsupported.m'
-    run(*objective_c, '-c', unsupported, '-o', stages / 'unsupported.o',
-        rejects=('experimental Darwin registration requires a stateless class',), label='unsupported-subclass-layout')
-    for name, diagnostic in (('layout', 'a stateless class'), ('signature', 'ordinary no-argument int methods')):
-        fixture = FIXTURES / f'unsupported_instance_{name}.m'
-        run(*objective_c, '-c', fixture, '-o', stages / f'unsupported-instance-{name}.o',
-            rejects=(f'experimental Darwin registration requires {diagnostic}',), label=f'unsupported-instance-{name}')
+    for fixture, label, diagnostic in (
+        ('unsupported.m', 'unsupported-subclass-layout', 'a single plain int root ivar'),
+        ('unsupported_instance_layout.m', 'unsupported-instance-layout', 'a single plain int root ivar'),
+        ('unsupported_instance_signature.m', 'unsupported-instance-signature', 'ordinary no-argument int methods'),
+    ):
+        artifact = stages / (label + '.o')
+        run(*objective_c, '-c', FIXTURES / fixture, '-o', artifact,
+            rejects=(f'experimental Darwin registration requires {diagnostic}',), label=label)
+        if artifact.exists():
+            raise ValueError(f'rejected Darwin fixture emitted an object: {fixture}')
     run(*objective_c, '-fobjc-link-runtime', '-c', FIXTURES / 'provider.m', '-o', stages / 'apple-runtime.o',
         rejects=(profile['compiler_runtime_flag'], '-fobjc-link-runtime'), label='unsupported-apple-runtime')
     run(*objective_c, '--target=x86_64-apple-macos15.0', '-c', FIXTURES / 'provider.m', '-o', stages / 'x86.o',
@@ -317,6 +347,13 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
         rejects=('GNUstep Objective-C runtime version 2 incompatible with target binary format',), label='legacy-runtime')
     run(dwarf, '--verify', fixture_objects['provider'])
     run(dwarf, '--verify', fixture_objects['inheritance_child'])
+    for kind in ('base', 'child'):
+        obj = fixture_objects['fixed_layout_' + kind]
+        class_name = 'DarwinFixed' + kind.title()
+        run(dwarf, '--verify', obj, label=f'fixed-layout-{kind}-verify')
+        transcript = run(dwarf, '--name=' + class_name, '--show-children', obj,
+                         label=f'fixed-layout-{kind}-dwarf')
+        verify_fixed_layout_dwarf(transcript, class_name)
     ir = stages / 'provider.ll'
     run(*objective_c, '-O0', '-S', '-emit-llvm', FIXTURES / 'provider.m', '-o', ir)
     metadata = ir.read_text()
@@ -331,15 +368,6 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
         if run(ar, 't', archive).splitlines() != members:
             raise ValueError(f'unexpected members in Darwin archive {archive}')
         artifacts[name] = {'path': str(archive), 'format': 'Darwin ar', 'members': members, 'sha256': file_digest(archive)}
-    runtime_id = '@rpath/libobjc3darwin.dylib'
-    base_id = '@rpath/libinheritance-base.dylib'
-    child_id = '@rpath/libinheritance-child.dylib'
-    required_libraries = {'bin/static': [], 'bin/dynamic': [runtime_id],
-                          'lib/libobjc3darwin.dylib': [runtime_id],
-                          'lib/liblate.dylib': ['@rpath/liblate.dylib', runtime_id],
-                          'lib/libinheritance-base.dylib': [base_id, runtime_id],
-                          'lib/libinheritance-child.dylib': [child_id, base_id, runtime_id],
-                          'bin/inheritance-static': [], 'bin/inheritance-dynamic': [child_id, runtime_id]}
     for relative, library_paths in required_libraries.items():
         path = layout / relative
         kind = 'executable' if relative.startswith('bin/') else 'dynamic_library'
@@ -351,10 +379,14 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
     expected = 'owned Objective-C 3 Darwin registration: PASS\nowned Objective-C 3 Darwin instances: PASS'
     if run(layout / 'bin/static') != expected or run(layout / 'bin/dynamic', layout / 'lib/liblate.dylib') != expected:
         raise ValueError('the registered native consumers did not return the runtime success witness')
-    inheritance_output = 'owned Objective-C 3 Darwin inheritance: PASS'
-    for route in ('static', 'dynamic'):
-        if run(layout / f'bin/inheritance-{route}', label=f'inheritance-{route}-native') != inheritance_output:
-            raise ValueError(f'the native {route} inheritance consumer failed')
+    for family, witness in hierarchy_witnesses.items():
+        for route in ('static', 'dynamic'):
+            label = f'{family}-{route}'
+            if run(layout / 'bin' / label, label=label + '-native') != witness:
+                raise ValueError(f'the native {label} consumer failed')
+    if (run(layout / 'bin/fixed-layout-arc', label='fixed-layout-arc-native') !=
+            'owned Objective-C 3 Darwin fixed root layout ARC lifetime: PASS'):
+        raise ValueError('the native fixed-layout ARC consumer failed')
     for binary, filename, label in (
         ('dynamic', 'libobjc3darwin.dylib', 'missing-runtime-at-load'),
         ('inheritance-dynamic', 'libinheritance-base.dylib', 'missing-superclass-at-load'),
@@ -372,6 +404,30 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
                                   link, stages, layout, dwarf)
     report['portable_services'] = _exercise_portable_services(
         run, defaults, linker, stages, layout, cxx_flags=report['cxx_toolchain']['flags'])
+
+
+def verify_fixed_layout_dwarf(transcript: str, class_name: str) -> None:
+    """Verify the class extent and the exact ivar or inherited DWARF offset."""
+    records = re.split(r'(?m)^0x[0-9a-f]+:\s*', transcript)[1:]
+
+    def attr(record, name, value):
+        return re.search(rf'(?m)^\s*DW_AT_{name}\s*\({value}\)$', record)
+
+    classes = [record for record in records if record.startswith('DW_TAG_structure_type\n') and
+               attr(record, 'name', re.escape(f'"{class_name}"'))]
+    if len(classes) != 1 or not attr(classes[0], 'byte_size', r'0x0*10'):
+        raise ValueError(f'fixed Darwin layout DWARF has the wrong size for {class_name}')
+    if class_name == 'DarwinFixedBase':
+        members = [record for record in records if record.startswith('DW_TAG_member\n') and
+                   attr(record, 'name', '"value"')]
+        if (len(members) != 1 or not attr(members[0], 'type', r'0x[0-9a-f]+ "int"') or
+                not attr(members[0], 'data_member_location', r'0x0*8')):
+            raise ValueError('fixed Darwin layout DWARF has the wrong int ivar offset')
+    else:
+        inherited = [record for record in records if record.startswith('DW_TAG_inheritance\n')]
+        if (len(inherited) != 1 or not attr(inherited[0], 'type', r'0x[0-9a-f]+ "DarwinFixedBase"') or
+                not attr(inherited[0], 'data_member_location', r'0x0*')):
+            raise ValueError('fixed Darwin layout DWARF lost the inherited base')
 
 
 def _exercise_arc(run, defaults, runtime_flag: str, link, stages: Path,
