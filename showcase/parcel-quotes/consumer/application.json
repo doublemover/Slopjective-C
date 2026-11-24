@@ -1,0 +1,10 @@
+{
+  "schema": "objc3c.binary-consumer.v3",
+  "source": "main.mm",
+  "language": "objective-c++",
+  "standard": "c++20",
+  "ownership": "arc",
+  "dependencies": [
+    { "name": "Parcel.Quotes", "package": "parcel-quotes-v1", "visibility": "private" }
+  ]
+}

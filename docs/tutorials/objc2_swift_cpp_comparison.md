@@ -17,3 +17,6 @@ feature scope. Experimental C/C++ runtime task adapters and reserved migration
 intrinsics do not imply public concurrency syntax or compiler-enforced actor
 isolation. Try the [installed walkthrough](guided_walkthrough.md), or return to
 [Getting started](getting_started.md).
+
+For a C++20 client that imports an Objective-C 3 API from an installed binary
+package, try the [source-free parcel quote example](../../showcase/parcel-quotes/README.md).
