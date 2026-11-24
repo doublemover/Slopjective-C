@@ -18,11 +18,13 @@ def require_label(label: str) -> None:
 
 
 def checked_command(label, argv, *, repo: Path, environment: dict, directory: Path, records: list,
-                    timeout: float = 1800):
+                    timeout: float | None = None):
     require_label(label)
     argv = list(map(str, argv))
-    if (not argv or type(timeout) not in (int, float) or not math.isfinite(timeout) or timeout <= 0):
-        raise ValueError('native command requires an executable and a finite positive timeout')
+    if not argv:
+        raise ValueError('native command requires an executable')
+    if timeout is not None and (type(timeout) not in (int, float) or not math.isfinite(timeout) or timeout <= 0):
+        raise ValueError('native command timeout must be finite and positive when supplied')
     start = time.monotonic()
     log = directory / (label + '.log')
     result_file = None

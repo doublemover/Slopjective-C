@@ -68,6 +68,22 @@ def test_native_commands_reject_previous_log_and_ctest_results(tmp_path, filenam
                         directory=tmp_path, records=[])
 
 
+def test_native_command_can_run_under_the_job_deadline(tmp_path, monkeypatch):
+    original_wait, deadlines = subprocess.Popen.wait, []
+
+    def wait(process, timeout=None):
+        deadlines.append(timeout)
+        return original_wait(process, timeout=timeout)
+
+    monkeypatch.setattr(subprocess.Popen, 'wait', wait)
+    records = []
+    checked_command('native-build', [sys.executable, '-c', 'print("complete")'],
+                    repo=tmp_path, environment=dict(os.environ), directory=tmp_path, records=records)
+    assert deadlines and all(timeout is None for timeout in deadlines)
+    assert records[0]['exit_code'] == 0 and not records[0]['timed_out']
+    assert Path(records[0]['log']).read_text() == 'complete\n'
+
+
 def test_native_package_uses_the_sdk_pipeline_install_without_requalifying_the_archive():
     result = {'status': 'PASS', 'archive_sha256': 'a' * 64,
               'installed': {'prefix': '/content-addressed/sdk'},
