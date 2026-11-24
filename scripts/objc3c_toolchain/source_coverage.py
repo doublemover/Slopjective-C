@@ -28,9 +28,6 @@ from .analysis_partition import balance_indices
 
 LIMIT = 64 * 1024**2
 FIRST_PARTY_PROFILE_LIMIT = 256 * 1024**2
-COMMAND_TIMEOUT = 900
-# Clang-facing façade units remain separately bounded from execution/export.
-BUILD_TIMEOUT = 3600
 MAX_TEST_TIMEOUT = 900
 COVERAGE_SECTIONS = ('__llvm_covmap', '__llvm_prf_cnts', '__llvm_prf_data')
 IMPLEMENTATION_ROOTS = {'frontend': 'native/objc3c/src/clang_foundation',
@@ -456,7 +453,7 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None,
     def save():
         report['seconds'] = round(time.monotonic()-started, 6)
         write_json(output / 'qualification.json', report)
-    def run(name, argv, *, environment=None, expected=0, cwd=repo, timeout=COMMAND_TIMEOUT):
+    def run(name, argv, *, environment=None, expected=0, cwd=repo, timeout=None):
         environment = env if environment is None else environment
         if any(row['name'] == name for row in report['commands']): raise ValueError('duplicate coverage command')
         row = {'name': name, 'environment': dict(environment), **command(argv, cwd=cwd, environment=environment,
@@ -543,7 +540,7 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None,
                 target = targets[name]
                 common = ['objc3c_frontend_v2'] if component == 'frontend' else []
                 run(component+'-'+name+'-build', [plan['host_environment']['cmake_path'], '--build', build,
-                    '--target', target, *common, '--parallel', str(jobs)], timeout=BUILD_TIMEOUT)
+                    '--target', target, *common, '--parallel', str(jobs)])
                 graph = run(component+'-'+name+'-graph', [plan['host_environment']['ninja_path'], '-C', build,
                     '-t', 'commands', target, *common])
                 objects = compile_inventory(build, graph, required_flags=policy['compile_flags'])

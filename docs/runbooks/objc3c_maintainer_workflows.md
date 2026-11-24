@@ -71,6 +71,10 @@ activation. Manual preview calibration or installed LLVM assurance runs can
 populate the cache after success. Native PR jobs remove the compressed file
 after installation to leave room for compilation.
 
+Hosted compiler builds and coverage measurements use the GitHub Actions job
+deadline. Coverage records elapsed work and preserves separately declared
+test deadlines where a nonterminating fixture would hide its failure.
+
 For public delivery use the [Linux release owner checklist](../releases/linux.md#release-owner-checklist).
 The draft workflow accepts two successful native qualification runs for its
 checked-out revision. The release owner reviews and publishes the draft.

@@ -223,10 +223,10 @@ def qualify(bootstrap_report: Path, output: Path, *, fetch: bool, package_sdk: b
             report['compiler_build'] = {'base_build_id': base['build_id'], 'patch_digest': patch_digest,
                                         'configuration_sha256': config_digest}
             run(cmake, '-S', source / 'llvm', '-B', build, *configure,
-                f'-DCLANG_OBJC3_CONFIG_DIGEST={config_digest}', label='configure', timeout=300)
+                f'-DCLANG_OBJC3_CONFIG_DIGEST={config_digest}', label='configure', timeout=None)
             print(f'Building a native arm64 Clang with {jobs} compile job(s)', flush=True)
             run(cmake, '--build', build, '--parallel', jobs, '--target', 'clang', 'clang-resource-headers',
-                label='build', timeout=180 * 60)
+                label='build', timeout=None)
             clang = build / 'bin/clang'
             report['compiler_build']['artifact'] = verify_macho(clang, 'executable')
             version = run(clang, '--version', label='patched-clang')

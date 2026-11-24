@@ -77,7 +77,7 @@ def qualify(repo: Path, output: Path, *, fetch=False, prepared=False, jobs=3,
         # Configure/build commands need pinned CMake/Ninja as well as Clang.
         environment['PATH'] = ':'.join([str(Path(host[key]).parent) for key in ('cmake_path', 'ninja_path')]
                                       + [environment['PATH']])
-        executor = Execution(output, environment, report, timeout=1800)
+        executor = Execution(output, environment, report, timeout=None)
         run = executor.run
         stage, build = (Path(foundation['paths'][key]) for key in ('stage', 'build'))
         report['foundation'] = json.loads((build / 'foundation-build-report.json').read_text())
