@@ -107,6 +107,15 @@ preserved the exact entry points, branch counts, and regions. The new
 release-sized comparison awaits hosted verification.
 [Retained source-feedback timings](https://github.com/doublemover/Slopjective-C/actions/runs/45289388519)
 
+The refreshed AArch64 producer measured 268 patch-owned Clang files.
+The retained report lists 234 executed files, five mapped files with zero hits,
+and 29 files without emitted mappings. Independent replay checked the SHA-256
+of the plan, producer, and all eight first-party partition archives and verified
+the disjoint union of 74 suites at `af41a499e`. A subsequent x86-64 coverage
+run of the standalone text test linked the production runtime archive and
+measured both arms of the text bounds check. The updated coverage catalogue
+contains 75 suites. [AArch64 release run](https://github.com/doublemover/Slopjective-C/actions/runs/45289389357) · [Source coverage policy](linux_source_coverage.md)
+
 The repaired Apple Silicon registrar passed at
 `ebb30539dd68d63f18e1a0f41e9f724d674028ea`. The native report records
 39 bootstrap commands and 60 registration commands. The preflight linked
@@ -123,8 +132,10 @@ Apple Silicon run qualified all of them and replayed collection, text, ARC,
 ASan, and UBSan consumers from the relocated experimental SDK. The
 independent terminal passed at `4a7e25d76` and recorded SDK seal
 `ecd5e4f0b8396dd23373f37f0012f5d70a86facb2c38a993d9af8b1e32bd3e88`.
-The later managed upgrade and uninstall path requires a separate native
-replay. [Expanded native SDK qualification](https://github.com/doublemover/Slopjective-C/actions/runs/45299864475)
+The separate managed replay installed that exact package, ran the installed ARC
+consumer, reused the verified generation, and uninstalled it on native macOS
+15.8.2 arm64. The hard-cutover update requires a second admitted package.
+[Expanded native SDK qualification](https://github.com/doublemover/Slopjective-C/actions/runs/45299864475) · [Managed lifecycle replay](https://github.com/doublemover/Slopjective-C/actions/runs/45305498679)
 
 ## Release CI cost
 
