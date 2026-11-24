@@ -423,21 +423,89 @@ def test_managed_install_retries_verified_cleanup_after_activation(tmp_path, str
     first, second = managed_packages(tmp_path, structural_host)
     activation.install(*first[:2], root)
     retired = root / ('sdk-' + first[2])
-    prior_rmtree = activation.shutil.rmtree
+    previous_unlink = Path.unlink
+    deleted = []
 
-    def fail_to_remove(path, *args, **kwargs):
-        if Path(path) == retired:
-            raise PermissionError('retired generation still open')
-        return prior_rmtree(path, *args, **kwargs)
+    def fail_after_one_file(path, *args, **kwargs):
+        if path.is_relative_to(retired):
+            if deleted:
+                raise PermissionError('retired generation partially removed')
+            deleted.append(path)
+        return previous_unlink(path, *args, **kwargs)
 
     with monkeypatch.context() as failure:
-        failure.setattr(activation.shutil, 'rmtree', fail_to_remove)
+        failure.setattr(Path, 'unlink', fail_after_one_file)
         updated = activation.install(*second[:2], root)
     assert updated['action'] == 'updated'
-    assert updated['cleanup_error'] == 'retired generation still open'
+    assert updated['cleanup_error'] == 'retired generation partially removed'
+    assert len(deleted) == 1 and not deleted[0].exists()
+    assert activation._retirement_path(retired).is_file()
     assert retired.is_dir() and (root / 'current').resolve() == root / ('sdk-' + second[2]) / 'sdk'
+    added = retired / 'sdk/unmanaged-content'
+    added.write_text('leave this data intact')
+    with pytest.raises(ValueError, match='retirement preserved modified or unowned files'):
+        activation.install(*second[:2], root)
+    assert added.read_text() == 'leave this data intact'
+    added.unlink()
+    modified = retired / 'sdk/bin/clang'
+    original_bytes = modified.read_bytes()
+    modified.write_bytes(b'modified compiler')
+    with pytest.raises(ValueError, match='retirement preserved modified or unowned files'):
+        activation.install(*second[:2], root)
+    assert modified.read_bytes() == b'modified compiler'
+    modified.write_bytes(original_bytes)
     assert activation.install(*second[:2], root)['action'] == 'reused'
     assert not retired.exists()
+    assert not activation._retirement_path(retired).exists()
+
+
+def test_managed_uninstall_retries_after_its_payload_manifest_was_removed(tmp_path, structural_host, monkeypatch):
+    monkeypatch.setattr(sdk, 'require_apple_silicon', lambda: None)
+    root = tmp_path / 'Managed Darwin SDK'
+    first, _ = managed_packages(tmp_path, structural_host)
+    activation.install(*first[:2], root)
+    prefix = (root / 'current').resolve()
+    previous_rmdir = Path.rmdir
+
+    def stop_after_payload_erasure(path):
+        if path == prefix:
+            raise PermissionError('controlled removal failure after manifest')
+        return previous_rmdir(path)
+
+    with monkeypatch.context() as failure:
+        failure.setattr(Path, 'rmdir', stop_after_payload_erasure)
+        with pytest.raises(PermissionError, match='after manifest'):
+            activation.uninstall(root, first[2])
+    assert not (root / 'current').is_symlink()
+    assert prefix.is_dir() and not list(prefix.iterdir())
+    assert activation._retirement_path(prefix.parent).is_file()
+    assert activation.uninstall(root, first[2])['action'] == 'uninstalled'
+    assert not prefix.parent.exists()
+    assert not activation._retirement_path(prefix.parent).exists()
+
+
+def test_managed_install_can_reuse_an_intact_sdk_after_interrupted_unpublish(tmp_path, structural_host, monkeypatch):
+    monkeypatch.setattr(sdk, 'require_apple_silicon', lambda: None)
+    root = tmp_path / 'Managed Darwin SDK'
+    first, _ = managed_packages(tmp_path, structural_host)
+    activation.install(*first[:2], root)
+    current = root / 'current'
+    generation = current.resolve().parent
+    previous_unlink = Path.unlink
+
+    def interrupt_unpublish(path, *args, **kwargs):
+        if path == current:
+            raise PermissionError('controlled stop before unpublishing')
+        return previous_unlink(path, *args, **kwargs)
+
+    with monkeypatch.context() as failure:
+        failure.setattr(Path, 'unlink', interrupt_unpublish)
+        with pytest.raises(PermissionError, match='before unpublishing'):
+            activation.uninstall(root, first[2])
+    assert activation._retirement_path(generation).is_file()
+    assert activation.install(*first[:2], root)['action'] == 'reused'
+    assert current.resolve().parent == generation
+    assert not activation._retirement_path(generation).exists()
 
 
 def test_managed_uninstall_preserves_modified_or_foreign_paths(tmp_path, structural_host, monkeypatch):
