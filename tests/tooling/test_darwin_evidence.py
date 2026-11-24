@@ -74,3 +74,33 @@ def test_command_evidence_can_be_empty_but_never_linked(tmp_path):
     alias.symlink_to(log)
     with pytest.raises(ValueError, match='missing, linked or excessive'):
         evidence.retained(tmp_path, alias.name, allow_empty=True)
+
+
+@pytest.mark.parametrize('defect', [None, 'missing', 'prefix-changed', 'wrong-archive', 'unchanged-linker'])
+def test_sealed_package_requires_all_verified_installer_rejections(defect):
+    archive = {'archive_sha256': 'a' * 64, 'seal_sha256': 'b' * 64,
+               'host': {'tools': {'ld': {'sha256': 'c' * 64}}}}
+    results = {}
+    for name, diagnostic in evidence.INSTALL_CONTROLS.items():
+        existing = name in ('damaged-prefix', 'incomplete-prefix')
+        prefix = 'd' * 64 if existing else None
+        results[name] = {'status': 'REJECTED', 'diagnostic': diagnostic,
+                         'requested_archive_sha256': ('a' if existing else 'e') * 64,
+                         'prefix_before_sha256': prefix, 'prefix_after_sha256': prefix}
+    results['apple-linker-identity'].update(
+        tool='ld', observed_tool_sha256='c' * 64, required_tool_sha256='f' * 64, manifest_seal_sha256='0' * 64)
+    qualified = {'installer_controls': {'schema': 'objc3c.experimental-darwin-sdk-installer-controls.v1',
+                                        'archive_sha256': archive['archive_sha256'], 'observations': results}}
+    if defect == 'missing':
+        del results['archive-digest']
+    elif defect == 'prefix-changed':
+        results['damaged-prefix']['prefix_after_sha256'] = 'a' * 64
+    elif defect == 'wrong-archive':
+        results['incomplete-prefix']['requested_archive_sha256'] = 'e' * 64
+    elif defect == 'unchanged-linker':
+        results['apple-linker-identity']['required_tool_sha256'] = 'c' * 64
+    if defect is None:
+        evidence.installer_controls(qualified, archive)
+    else:
+        with pytest.raises(ValueError, match='Darwin installer'):
+            evidence.installer_controls(qualified, archive)

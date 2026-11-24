@@ -8,14 +8,23 @@ import re
 import signal
 import tarfile
 
+from . import darwin_sdk_sanitizers as sanitizers
 from .darwin_bootstrap import DEPLOYMENT_TARGET, ROOT, verify_macho
-from .darwin_registration import NATIVE, PORTABLE_HEADERS, PORTABLE_SERVICES, RUNTIME, file_digest, load_profile
+from .darwin_registration import (
+    NATIVE, PORTABLE_HEADERS, PORTABLE_SERVICES, RUNTIME, file_digest, load_profile, verify_fixed_layout_dwarf,
+)
 from .darwin_sdk import ARCHIVE_NAME, ARCHIVE_ROOT, PAYLOAD_SCHEMA, PROFILE, RECEIPT_SCHEMA, SDK_VERSION, WITNESS, XCODE
 from .package import MANIFEST, _digest
 
 RECEIPT_BYTES = 16 * 1024**2
 PRODUCT_BYTES = 1024**3
 LOADER_ABSENCE_CONTROLS = {'missing-runtime-at-load', 'missing-superclass-at-load'}
+INSTALL_CONTROLS = {
+    'archive-digest': 'Darwin package archive SHA-256 does not match the receipt',
+    'incomplete-prefix': 'install requires a fresh prefix',
+    'damaged-prefix': 'install requires a fresh prefix',
+    'apple-linker-identity': 'this package does not match the admitted experimental Darwin host and ABI',
+}
 
 
 def retained(root: Path, relative: str | Path, *, limit=RECEIPT_BYTES, allow_empty=False) -> Path:
@@ -133,6 +142,20 @@ def registration(root: Path, first: dict, revision: str, *, require_arc: bool) -
         if not {'@rpath/libinheritance-base.dylib', '@rpath/libobjc3darwin.dylib'} <= set(
                 report['artifacts']['lib/libinheritance-child.dylib']['load_paths']):
             raise ValueError('Darwin inheritance omitted the strong parent and owned runtime dependencies')
+    if profile.get('layout') == 'fixed-root-int-v1':
+        for kind in ('base', 'child'):
+            name = 'fixed_layout_' + kind
+            require_macho(path, 'build/' + name + '.o', report['artifacts'][name], 'object')
+            logs = labels.get(f'fixed-layout-{kind}-dwarf', [])
+            if len(logs) != 1 or logs[0]['exit_status'] != 0:
+                raise ValueError(f'Darwin layout omitted exact {kind} DWARF evidence')
+            verify_fixed_layout_dwarf(retained(path, logs[0]['log']).read_text(), 'DarwinFixed' + kind.title())
+        for route in ('static', 'dynamic', 'arc'):
+            name = 'fixed-layout-' + route
+            witness = ('owned Objective-C 3 Darwin fixed root layout ARC lifetime: PASS' if route == 'arc' else
+                       'owned Objective-C 3 Darwin fixed root layout: PASS')
+            executable_witness(path, 'Relocated install/bin/' + name, report['artifacts']['bin/' + name],
+                               labels.get(name + '-native', []), witness)
     if require_arc or profile.get('arc') == 'stateless-owned-reference-v1':
         arc = report['arc']
         if arc['status'] != 'PASS' or set(arc['routes']) != {'O0', 'O2'}:
@@ -163,7 +186,72 @@ def registration(root: Path, first: dict, revision: str, *, require_arc: bool) -
     return report
 
 
-def package(root: Path, runtime: dict, revision: str) -> dict:
+def installer_controls(qualified: dict, archived: dict) -> None:
+    controls = qualified['installer_controls']
+    archive_sha256 = archived['archive_sha256']
+    results = controls['observations']
+    if (controls['schema'] != 'objc3c.experimental-darwin-sdk-installer-controls.v1' or
+            controls['archive_sha256'] != archive_sha256 or results.keys() != INSTALL_CONTROLS.keys()):
+        raise ValueError('Darwin installer rejection inventory differs from the admitted archive')
+    for name, diagnostic in INSTALL_CONTROLS.items():
+        row = results[name]
+        prefix = row['prefix_before_sha256']
+        request = row['requested_archive_sha256']
+        existing = name in ('damaged-prefix', 'incomplete-prefix')
+        if (row['status'] != 'REJECTED' or row['diagnostic'] != diagnostic or
+                prefix != row['prefix_after_sha256'] or (prefix is not None) != existing or
+                not re.fullmatch(r'[0-9a-f]{64}', request) or (request == archive_sha256) != existing or
+                (existing and not re.fullmatch(r'[0-9a-f]{64}', prefix))):
+            raise ValueError(f'Darwin installer rejection evidence changed: {name}')
+    linker = results['apple-linker-identity']
+    if (linker['tool'] != 'ld' or linker['observed_tool_sha256'] != archived['host']['tools']['ld']['sha256'] or
+            any(not re.fullmatch(r'[0-9a-f]{64}', linker[key]) for key in
+                ('required_tool_sha256', 'manifest_seal_sha256')) or
+            linker['required_tool_sha256'] == linker['observed_tool_sha256'] or
+            linker['manifest_seal_sha256'] == archived['seal_sha256']):
+        raise ValueError('Darwin installer omitted the exact Apple linker identity rejection')
+
+
+def sanitizer_consumers(path: Path, manifest: dict, packed: dict, qualified: dict, *, selected: bool) -> None:
+    key = sanitizers.KEY
+    installed = qualified['installation']
+    if not selected:
+        if any(key in row for row in (manifest, packed, installed, qualified)):
+            raise ValueError('unselected Darwin package contains sanitizer evidence')
+        return
+    sanitizers.manifest_files(manifest, manifest['resource_dir'])
+    expected = sanitizers.descriptor(manifest['resource_dir'])
+    profile = qualified[key]
+    if (any(row.get(key) != expected for row in (manifest, packed, installed)) or
+            profile['schema'] != sanitizers.SCHEMA or profile['status'] != 'PASS' or
+            profile['support_truth'] is not False or profile['scope'] != expected['scope'] or
+            profile['routes'].keys() != sanitizers.FLAGS.keys()):
+        raise ValueError('Darwin SDK sanitizer evidence differs from the specified consumer profile')
+    directory = 'qualification/' + sanitizers.WITNESS_DIRECTORY + '/'
+    prefix = Path(installed['prefix'])
+    compiler = str(prefix / 'bin/clang')
+    source = str(prefix / expected['fixture'])
+    for mode, route in profile['routes'].items():
+        obj, executable = route['object'], route['executable']
+        require_macho(path, directory + mode + '.o', obj, 'object')
+        require_macho(path, directory + mode, executable, 'executable')
+        sanitizers.validate_imports(mode, '\n'.join(obj['imports']))
+        pinned = expected['runtimes'].get(mode)
+        loaded = str(prefix / pinned['path']) if pinned else None
+        checksum = pinned['sha256'] if pinned else None
+        lines = [sanitizers.WITNESS, *([loaded] if loaded else [])]
+        if (not any(command['argv'][0] == compiler and command['exit_status'] == 0 and
+                    command['argv'][-4:] == ['-c', source, '-o', obj['path']] and
+                    set(sanitizers.FLAGS[mode]) <= set(command['argv']) for command in qualified['commands']) or
+                route['loaded_runtime'] != loaded or route['runtime_sha256'] != checksum or
+                not any(command['argv'] == [executable['path']] and command['exit_status'] == 0 and
+                        command['sanitizer_options'] == sanitizers.RUNTIME_OPTIONS[mode] and
+                        not command['stderr'] and command['stdout'].splitlines() == lines
+                        for command in qualified['commands'])):
+            raise ValueError(f'Darwin SDK {mode} did not execute with its exact admitted runtime')
+
+
+def package(root: Path, runtime: dict, revision: str, *, require_sanitizers: bool) -> dict:
     path = root / 'runtime/sdk'
     packed = info(path, 'package/package.json')
     qualified = info(path, 'qualification/qualification.json')
@@ -179,6 +267,7 @@ def package(root: Path, runtime: dict, revision: str) -> dict:
             any(row['support_truth'] is not False for row in (packed, qualified, installed)) or
             any(installed[key] != packed[key] for key in ('seal_sha256', 'archive_sha256', 'host'))):
         raise ValueError('Darwin SDK archive, install and cold qualification evidence differ')
+    installer_controls(qualified, packed)
     with tarfile.open(archive, 'r|gz') as contents:
         member = contents.next()
         if (member is None or not member.isfile() or member.name != f'{ARCHIVE_ROOT}/{MANIFEST}' or
@@ -198,6 +287,7 @@ def package(root: Path, runtime: dict, revision: str) -> dict:
                 for name, key in (('libobjc3darwin.a', 'libobjc3darwin.a'),
                                   ('libobjc3darwin.dylib', 'lib/libobjc3darwin.dylib')))):
         raise ValueError('Darwin SDK seal does not represent the executed compiler and runtime')
+    sanitizer_consumers(path, manifest, packed, qualified, selected=require_sanitizers)
     consumer = 'qualification/Fresh native consumer/'
     for name, relative, kind in (
         ('provider.o', 'provider.o', 'object'), ('static', 'static', 'executable'),
@@ -214,13 +304,14 @@ def package(root: Path, runtime: dict, revision: str) -> dict:
 
 
 def verify(root: Path, revision: str, *, outcome: str, mode: str) -> dict:
-    if (outcome != 'success' or not re.fullmatch(r'[0-9a-f]{40}', revision) or
-            revision == '0' * 40 or mode not in ('bootstrap', 'registration', 'package')):
+    if (outcome != 'success' or not re.fullmatch(r'[0-9a-f]{40}', revision) or revision == '0' * 40 or
+            mode not in ('bootstrap', 'registration', 'package', 'package-sanitizers')):
         raise ValueError('Darwin producer did not complete successfully for an exact source revision')
     root = root.resolve(strict=True)
     first = bootstrap(root, revision)
-    runtime = registration(root, first, revision, require_arc=mode == 'package') if mode != 'bootstrap' else None
-    packed = package(root, runtime, revision) if mode == 'package' else None
+    packaged = mode in ('package', 'package-sanitizers')
+    runtime = registration(root, first, revision, require_arc=packaged) if mode != 'bootstrap' else None
+    packed = package(root, runtime, revision, require_sanitizers=mode == 'package-sanitizers') if packaged else None
     result = {'status': 'PASS', 'revision': revision, 'mode': mode, 'platform': first['platform_identity'],
               'support_truth': False, 'bootstrap_sha256': file_digest(root / 'result/report.json')}
     if runtime is not None:
@@ -235,7 +326,7 @@ def main() -> None:
     parser.add_argument('--evidence', type=Path, required=True)
     parser.add_argument('--revision', required=True)
     parser.add_argument('--outcome', required=True)
-    parser.add_argument('--mode', required=True, choices=('bootstrap', 'registration', 'package'))
+    parser.add_argument('--mode', required=True, choices=('bootstrap', 'registration', 'package', 'package-sanitizers'))
     args = parser.parse_args()
     result = verify(args.evidence, args.revision, outcome=args.outcome, mode=args.mode)
     print(json.dumps(result, indent=2))

@@ -6,6 +6,10 @@ on:
         description: Build and exercise the experimental Objective-C 3 runtime
         type: boolean
         default: false
+      runtime_sanitizers:
+        description: Include native installed ASan and UBSan consumer witnesses
+        type: boolean
+        default: false
   pull_request:
     paths:
       - ".github/workflows/darwin-bootstrap.yml"
@@ -13,20 +17,23 @@ on:
       - "scripts/objc3c_toolchain/darwin_evidence.py"
       - "scripts/objc3c_toolchain/darwin_registration.py"
       - "scripts/objc3c_toolchain/darwin_sdk.py"
+      - "scripts/objc3c_toolchain/darwin_sdk_sanitizers.py"
       - "scripts/objc3c_toolchain_runtime/runtime-profile.json"
       - "scripts/objc3c_toolchain_runtime/verify_runtime_profile.py"
       - "native/objc3c/src/runtime/platform/darwin_registration.c"
       - "tests/clang_foundation/darwin_registration/**"
+      - "tests/clang_foundation/darwin_sanitizers/**"
       - "tests/tooling/test_darwin_bootstrap.py"
       - "tests/tooling/test_darwin_evidence.py"
       - "tests/tooling/test_darwin_registration.py"
       - "tests/tooling/test_darwin_sdk.py"
+      - "tests/tooling/test_darwin_sdk_sanitizers.py"
       - "toolchains/llvm/manifest.json"
       - "toolchains/llvm/experimental/**"
 permissions:
   contents: read
 concurrency:
-  group: darwin-bootstrap-${{ github.event.pull_request.number || github.ref }}
+  group: darwin-bootstrap-${{ github.event.pull_request.number || github.ref }}${{ inputs.runtime_sanitizers && '-sanitizers' || '' }}
   cancel-in-progress: true
 jobs:
   bootstrap:
@@ -35,6 +42,7 @@ jobs:
     timeout-minutes: 215
     outputs:
       runtime_selected: ${{ steps.runtime.outputs.selected }}
+      sanitizers_selected: ${{ steps.runtime.outputs.sanitizers }}
     env:
       DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
       LLVM_ARCHIVE: LLVM-23.1.5-macOS-ARM64.tar.zst
@@ -64,9 +72,15 @@ jobs:
         shell: bash
         env:
           RUN_RUNTIME: ${{ inputs.runtime_registration }}
+          RUN_SANITIZERS: ${{ inputs.runtime_sanitizers }}
         run: |
           if [[ "$RUN_RUNTIME" != true ]]; then
             RUN_RUNTIME=false
+          fi
+          if [[ "$RUN_SANITIZERS" == true ]]; then
+            RUN_RUNTIME=true
+          else
+            RUN_SANITIZERS=false
           fi
           if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
             changes=$(git diff --name-only HEAD^1 HEAD -- toolchains/llvm/experimental \
@@ -79,6 +93,7 @@ jobs:
             fi
           fi
           printf 'selected=%s\n' "$RUN_RUNTIME" >> "$GITHUB_OUTPUT"
+          printf 'sanitizers=%s\n' "$RUN_SANITIZERS" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.15.0"
@@ -128,10 +143,16 @@ jobs:
         if: steps.runtime.outputs.selected == 'true'
         timeout-minutes: 195
         shell: bash
+        env:
+          RUN_SANITIZERS: ${{ steps.runtime.outputs.sanitizers }}
         run: |
           evidence="$RUNNER_TEMP/darwin-bootstrap-evidence"
+          options=(--package-sdk)
+          if [[ "$RUN_SANITIZERS" == true ]]; then
+            options+=(--sdk-sanitizers)
+          fi
           python -B -m scripts.objc3c_toolchain.darwin_registration \
-            --profile macos-arm64-registration-experimental --fetch --package-sdk \
+            --profile macos-arm64-registration-experimental --fetch "${options[@]}" \
             --bootstrap-report "$evidence/result/report.json" \
             --output-dir "$evidence/runtime" 2>&1 | tee "$evidence/runtime.log"
       - name: Preserve the probe result and diagnostics
@@ -153,14 +174,16 @@ jobs:
     env:
       NATIVE_OUTCOME: ${{ needs.bootstrap.result }}
       RUNTIME_SELECTED: ${{ needs.bootstrap.outputs.runtime_selected }}
+      SANITIZERS_SELECTED: ${{ needs.bootstrap.outputs.sanitizers_selected }}
     steps:
       - name: Require successful native execution
         shell: bash
         run: |
           test "$NATIVE_OUTCOME" = success
-          case "$RUNTIME_SELECTED" in
-            false) echo 'DARWIN_EVIDENCE_MODE=bootstrap' >> "$GITHUB_ENV" ;;
-            true) echo 'DARWIN_EVIDENCE_MODE=package' >> "$GITHUB_ENV" ;;
+          case "$RUNTIME_SELECTED:$SANITIZERS_SELECTED" in
+            false:false) echo 'DARWIN_EVIDENCE_MODE=bootstrap' >> "$GITHUB_ENV" ;;
+            true:false) echo 'DARWIN_EVIDENCE_MODE=package' >> "$GITHUB_ENV" ;;
+            true:true) echo 'DARWIN_EVIDENCE_MODE=package-sanitizers' >> "$GITHUB_ENV" ;;
             *) echo 'Missing Apple Silicon execution selection' >&2; exit 1 ;;
           esac
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
