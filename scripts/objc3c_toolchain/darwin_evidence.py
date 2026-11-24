@@ -15,6 +15,7 @@ from . import darwin_sdk_portable_services as services
 from .darwin_bootstrap import DEPLOYMENT_TARGET, ROOT, verify_macho
 from .darwin_registration import (
     NATIVE, PORTABLE_HEADERS, PORTABLE_SERVICES, RUNTIME, file_digest, load_profile, verify_fixed_layout_dwarf,
+    verify_int_method_ir,
 )
 from .darwin_sdk import (
     ARCHIVE_NAME, ARCHIVE_ROOT, DEMO, LIBRARY, PAYLOAD_SCHEMA, PROFILE, RECEIPT_SCHEMA, SDK_VERSION,
@@ -56,6 +57,83 @@ def executable_witness(root: Path, relative: str, record: dict, rows: list[dict]
     if not any(row['argv'][0] == record['path'] and row['exit_status'] == 0 and
                retained(root, row['log']).read_text().strip() == expected for row in rows):
         raise ValueError(f'Darwin qualification omitted native execution of {relative}')
+
+
+def typed_dispatch(path: Path, report: dict, labels: dict, *, arity: int) -> None:
+    if arity == 1:
+        family, field, suffix = 'int-method', 'int_argument_methods', 'int_arg_v1'
+        witness = 'owned Objective-C 3 Darwin int-argument methods: PASS'
+    else:
+        family, field, suffix = 'two-int-method', 'two_int_argument_methods', 'two_int_args_v1'
+        witness = 'owned Objective-C 3 Darwin two-int-argument methods: PASS'
+    proof = report.get(field, {})
+    lookups = {'child': 'objc3_darwin_lookup_super_' + suffix, 'main': 'objc3_darwin_lookup_' + suffix}
+    ir_labels = {f'{family}-{unit}-{optimization.lower()}-ir': (unit, optimization)
+                 for unit in lookups for optimization in ('O0', 'O2')}
+    dynamic = f'lib/lib{family}-child.dylib'
+    imports = {dynamic: lookups['child'], f'bin/{family}-dynamic': lookups['main'],
+               f'bin/{family}-arc': lookups['main'], f'bin/{family}-static': None}
+    if (proof.get('status') != 'PASS' or set(proof.get('ir', {})) != set(ir_labels) or
+            set(proof.get('imports', {})) != set(imports)):
+        raise ValueError(f'Darwin {family} omitted exact typed dispatch evidence')
+    for label, (unit, optimization) in ir_labels.items():
+        record = proof['ir'][label]
+        artifact = retained(path, 'build/' + label + '.ll')
+        rows = labels.get(label, [])
+        fixture = f'/tests/clang_foundation/darwin_registration/{family.replace("-", "_")}_{unit}.m'
+        if (file_digest(artifact) != record['sha256'] or len(rows) != 1 or rows[0]['exit_status'] != 0 or
+                rows[0]['argv'][-1] != record['path'] or Path(record['path']).name != artifact.name or
+                not {'-' + optimization, '-S', '-emit-llvm'} <= set(rows[0]['argv']) or
+                not any(arg.endswith(fixture) for arg in rows[0]['argv'])):
+            raise ValueError(f'Darwin {family} IR differs from its exact compile step: {label}')
+        verify_int_method_ir(artifact.read_text(), lookups[unit], arity=arity)
+    for relative, lookup in imports.items():
+        artifact = report['artifacts'][relative]
+        name = Path(relative).name
+        rows = labels.get(name + '-imports', [])
+        if len(rows) != 1 or rows[0]['argv'] != ['/usr/bin/nm', '-u', '-j', artifact['path']]:
+            raise ValueError(f'Darwin {family} omitted exact native imports: {relative}')
+        log = retained(path, rows[0]['log'], allow_empty=True).read_text()
+        names = sorted({symbol.removeprefix('_') for symbol in log.splitlines()})
+        if (names != proof['imports'][relative] or (lookup is not None and lookup not in names) or
+                (lookup is None and any(name.startswith('objc3_darwin_') for name in names))):
+            raise ValueError(f'Darwin {family} native imports differ: {relative}')
+        if relative == dynamic:
+            require_macho(path, 'Relocated install/' + relative, artifact, 'dynamic_library')
+            if not {f'@rpath/lib{family}-base.dylib', '@rpath/libobjc3darwin.dylib'} <= set(artifact['load_paths']):
+                raise ValueError(f'Darwin {family} child omitted its strong base and owned runtime dependencies')
+        else:
+            executable_witness(path, 'Relocated install/' + relative, artifact,
+                               labels.get(name + '-native', []), witness)
+    if arity == 2:
+        for unit in ('base', 'child', 'main', 'arc'):
+            object_unit = 'main_arc' if unit == 'arc' else unit
+            name = 'two_int_method_' + object_unit
+            artifact = report['artifacts'][name]
+            require_macho(path, 'build/' + name + '.o', artifact, 'object')
+            rows = labels.get(f'two-int-method-{unit}-object', [])
+            fixture_unit = 'main' if unit == 'arc' else unit
+            fixture = f'/darwin_registration/two_int_method_{fixture_unit}.m'
+            if (len(rows) != 1 or rows[0]['argv'][-1] != artifact['path'] or '-c' not in rows[0]['argv'] or
+                    not any(arg.endswith(fixture) for arg in rows[0]['argv']) or
+                    (unit == 'arc') != ('-fobjc-arc' in rows[0]['argv'])):
+                raise ValueError(f'Darwin two-int method omitted its exact object compilation: {unit}')
+        base = 'lib/libtwo-int-method-base.dylib'
+        require_macho(path, 'Relocated install/' + base, report['artifacts'][base], 'dynamic_library')
+        for label in ('unsupported-two-int-method-type', 'unsupported-two-int-method-arity',
+                      'unsupported-two-int-method-send-type', 'unsupported-two-int-method-send-arity'):
+            rows = labels.get(label, [])
+            send = '-send-' in label
+            three_arguments = label.endswith('-arity')
+            subject = 'an ordinary int message' if send else 'ordinary int methods'
+            diagnostic = f'experimental Darwin registration requires {subject} with at most two int arguments'
+            argv = rows[0]['argv'] if len(rows) == 1 else []
+            if (len(argv) < 4 or rows[0].get('expected_diagnostic') != [diagnostic] or
+                    ('-DDARWIN_UNSUPPORTED_SEND=1' in argv) != send or
+                    ('-DDARWIN_UNSUPPORTED_ARITY=1' in argv) != three_arguments or
+                    argv[-2] != '-o' or Path(argv[-1]).name != label + '.o' or '-c' not in argv or not any(
+                        arg.endswith('/darwin_registration/unsupported_two_int_method.m') for arg in argv)):
+                raise ValueError(f'Darwin two-int method omitted an exact rejection control: {label}')
 
 
 def bootstrap(root: Path, revision: str) -> dict:
@@ -176,11 +254,8 @@ def registration(root: Path, first: dict, revision: str, *, require_arc: bool) -
                 binary = name + '-' + linkage
                 executable_witness(path, 'Relocated install/bin/' + binary, route[linkage],
                                    labels.get(binary + '-native', []), sdk_arc.WITNESS)
-    if require_arc:
-        for route in ('static', 'dynamic', 'arc'):
-            binary = 'int-method-' + route
-            executable_witness(path, 'Relocated install/bin/' + binary, report['artifacts']['bin/' + binary],
-                               labels.get(binary + '-native', []), 'owned Objective-C 3 Darwin int-argument methods: PASS')
+    typed_dispatch(path, report, labels, arity=1)
+    typed_dispatch(path, report, labels, arity=2)
     portable = report['portable_services']
     inputs = {NATIVE / name for name in PORTABLE_HEADERS}
     for service, fixture in PORTABLE_SERVICES.values():

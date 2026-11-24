@@ -62,7 +62,7 @@ translation unit that defines a class. The initializer hands that unit's
 class table to the owned runtime. Class sends use the metaclass method table,
 and instance sends use the class method table through the live object's ISA.
 Both lookups match the selector and exact signature for an `int` result with
-zero or one signed `int` argument. The compiler
+up to two signed `int` arguments. The compiler
 driver reserves `-fobjc-runtime=gnustep-2.99` for Objective-C 3 on macOS arm64
 and rejects Apple runtime linking for this profile.
 
@@ -96,12 +96,14 @@ dylib. The controls check a missing runtime at link and load, the prior
 GNUstep driver guard, a subclass with an added ivar, a root bit-field, a
 `double` method argument, Apple runtime linking, and a wrong architecture.
 
-The int-argument fixture uses separate parent and child dylibs. Class and
-instance overrides pass a signed argument through `super`. The consumer
-checks that a nil send evaluates its argument once and returns zero. Static,
-relocated dynamic, and ARC consumer routes qualify the typed runtime lookups.
-The O0/O2 IR checks bind those lookup results to indirect calls with an `i32`
-argument. Runtime controls reject calls that request the wrong selector encoding.
+The one- and two-argument fixtures use separate parent and child dylibs. Class
+and instance overrides pass signed arguments through `super`. The two-argument
+fixture distinguishes the argument positions, and nil sends evaluate each
+argument once and return zero. Static, relocated dynamic, and ARC consumers
+qualify the typed runtime lookups. The O0/O2 IR checks bind each lookup result
+to an indirect call with the expected `i32` arguments. Runtime controls reject
+the wrong selector encoding. Compiler controls reject mixed parameter types
+and three-argument method definitions and sends.
 
 The `fixed-root-int-v1` fixture has one naturally aligned plain `int` in a
 root class. Its child lives in a separate dylib and inherits the same field.
