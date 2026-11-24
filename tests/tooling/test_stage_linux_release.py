@@ -2,6 +2,8 @@ import errno
 import hashlib
 import io
 import json
+import os
+import shutil
 from compression import zstd
 import subprocess
 import tarfile
@@ -9,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.objc3c_toolchain import preview_support, stage_linux_release as owner
+from scripts.objc3c_toolchain import package, preview_support, stage_linux_release as owner
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -44,23 +46,58 @@ def test_preview_matrix_projects_only_exact_native_clean_install_receipts(defect
         assert preview_support.render(release) == (ROOT / preview_support.TABLE).read_text()
 
 
-@pytest.mark.parametrize('changed', [False, True])
-def test_draft_rehearsal_uses_the_archive_digest_in_the_native_manifest(tmp_path, monkeypatch, changed):
+@pytest.mark.skipif(not shutil.which('zstd'), reason='release rehearsal needs zstd')
+@pytest.mark.parametrize(('defect', 'error'), [
+    (None, None),
+    ('archive', 'archive SHA-256 differs from the published manifest'),
+    ('seal_sha256', 'SDK admission differs from the declared seal'),
+    ('source_build_id', 'SDK admission differs from the declared seal'),
+    ('changed companion', 'installer companion differs from the qualified SDK'),
+    ('missing companion', 'installer companion differs from the qualified SDK'),
+    ('checksum omission', 'checksum index omitted or changed a required asset'),
+    ('checksum duplicate', 'checksum index has an invalid or duplicate entry'),
+])
+def test_draft_rehearsal_admits_exact_sealed_published_installers(tmp_path, monkeypatch, defect, error):
     host = owner.release_install.host_identity()['host']
     release = json.loads((ROOT / preview_support.MANIFEST).read_bytes())
     archive = release['archives'][host]
-    original = b'qualified archive'
-    selected = b'substitute bytes!' if changed else original
-    assert len(selected) == len(original)
-    archive['bytes'] = len(original)
-    archive['sha256'] = hashlib.sha256(original).hexdigest()
+    prefix = tmp_path / 'sdk'
+    members = prefix / 'share/objc3c'
+    members.mkdir(parents=True)
+    shutil.copyfile(package.__file__, members / 'verify-sdk.py')
+    for name in owner.release_install.INSTALLER_COMPANIONS:
+        (members / name).write_text(f'Qualified {name}\n')
+        shutil.copyfile(members / name, tmp_path / name)
+    package.normalize_permissions(prefix)
+    sdk = {'schema': package.SCHEMA, 'source_build_id': archive['source_build_id'],
+           'target': archive['target'], 'files': package.inventory(prefix)}
+    sdk['seal_sha256'] = package._digest(sdk)
+    manifest = prefix / package.MANIFEST
+    manifest.write_text(json.dumps(sdk))
+    manifest.chmod(0o644)
+    archive_path = tmp_path / archive['file']
+    packed = package._archive_sdk(prefix, archive_path, {'seal_sha256': sdk['seal_sha256']})
+    archive.update(bytes=packed['archive_bytes'], sha256=packed['archive_sha256'], seal_sha256=sdk['seal_sha256'])
+    if defect in ('seal_sha256', 'source_build_id'):
+        archive[defect] = '0' * 64
     for row in archive['clean_installs']:
-        row['archive_sha256'] = archive['sha256']
+        row.update(archive_sha256=archive['sha256'], seal_sha256=archive['seal_sha256'],
+                   source_build_id=archive['source_build_id'])
     (tmp_path / 'linux-release.json').write_text(json.dumps(release))
-    (tmp_path / archive['file']).write_bytes(selected)
-    # The checksum index can agree with a substituted asset. Rehearsal must
-    # still use the immutable digest admitted by the qualification receipts.
-    (tmp_path / 'SHA256SUMS').write_text(f'{hashlib.sha256(selected).hexdigest()}  {archive["file"]}\n')
+    if defect == 'archive':
+        contents = archive_path.read_bytes()
+        archive_path.write_bytes(contents[:-1] + bytes([contents[-1] ^ 1]))
+    elif defect == 'changed companion':
+        (tmp_path / 'install-sdk.py').write_text('Different standalone installer\n')
+    elif defect == 'missing companion':
+        (tmp_path / 'install-sdk.py').unlink()
+    files = [archive_path, tmp_path / 'linux-release.json', tmp_path / 'install-linux.sh']
+    if defect not in ('missing companion', 'checksum omission'):
+        files += [tmp_path / 'install-sdk.py']
+    if defect == 'checksum duplicate':
+        files += [tmp_path / 'install-linux.sh']
+    # A rewritten index can agree with a substituted asset.
+    (tmp_path / 'SHA256SUMS').write_text(''.join(f'{package._file_hash(file)}  {file.name}\n' for file in files))
     receipts = {item['image']: item['image_id'] for item in archive['clean_installs']}
     resolved, commands = [], []
 
@@ -70,8 +107,8 @@ def test_draft_rehearsal_uses_the_archive_digest_in_the_native_manifest(tmp_path
 
     monkeypatch.setattr(owner.release_install, '_container', image)
     monkeypatch.setattr(owner.release_install.subprocess, 'run', lambda command, *, check: commands.append(command))
-    if changed:
-        with pytest.raises(ValueError, match='SHA-256 differs from the published manifest'):
+    if error:
+        with pytest.raises(ValueError, match=error):
             owner.release_install.rehearse(tmp_path, host)
         assert not resolved and not commands
     else:
@@ -79,7 +116,8 @@ def test_draft_rehearsal_uses_the_archive_digest_in_the_native_manifest(tmp_path
         assert resolved == list(receipts)
         assert len(commands) == len(receipts)
         for command in commands:
-            assert command[-2:] == [archive['file'], archive['sha256']]
+            assert command[-4:] == [archive[key] for key in ('file', 'sha256', 'seal_sha256', 'source_build_id')]
+            assert 'activated SDK differs from the declared release seal or source build' in command[-6]
 
 
 def test_draft_rehearsal_rejects_a_non_native_host_before_reading_release(tmp_path):
@@ -87,6 +125,56 @@ def test_draft_rehearsal_rejects_a_non_native_host_before_reading_release(tmp_pa
     other, = set(owner.HOSTS) - {native}
     with pytest.raises(ValueError, match='differs from the native host'):
         owner.release_install.rehearse(tmp_path, other)
+
+
+@pytest.mark.parametrize('case', ['valid', 'already provisioned', 'bad digest', 'missing archive',
+                                 'missing companion', 'bad option', 'help'])
+def test_release_bootstrap_admits_the_public_pair_and_archive_before_provisioning(tmp_path, case):
+    assets = tmp_path / 'downloaded release'
+    assets.mkdir()
+    launcher = assets / 'install-linux.sh'
+    shutil.copyfile(ROOT / 'scripts/install_objc3c_linux.sh', launcher)
+    companion = assets / 'install-sdk.py'
+    if case != 'missing companion':
+        companion.write_text('Public companion fixture\n')
+    nested = assets / 'objc3c_toolchain'
+    nested.mkdir()
+    (nested / 'install_sdk.py').write_text('Nested checkout fixture\n')
+    archive = assets / 'objc3-sdk-v0.1.0-preview.1-linux-x86_64.tar.zst'
+    if case != 'missing archive':
+        archive.write_bytes(b'release archive input')
+    trace = tmp_path / 'executions'
+    commands = tmp_path / 'bin'
+    commands.mkdir()
+    for name, body in {
+        'id': 'printf "0\\n"\n',
+        'dpkg-query': ('shift 2; for package do printf "installed\\n"; done\n'
+                       if case == 'already provisioned' else 'exit 1\n'),
+        'apt-get': 'printf "apt %s\\n" "$1" >> "$TRACE"\n',
+        'python3': 'printf "%s\\n" "$@" >> "$TRACE"\n',
+    }.items():
+        command = commands / name
+        command.write_text('#!/bin/sh\n' + body)
+        command.chmod(0o700)
+    digest = '0' * 64 if case == 'bad digest' else hashlib.sha256(b'release archive input').hexdigest().upper()
+    arguments = ['--archive=' + str(archive), '--sha256', digest, '--root', str(tmp_path / 'installed')]
+    if case == 'bad option':
+        arguments.append('--unknown')
+    elif case == 'help':
+        arguments = ['--help']
+    result = subprocess.run(['sh', str(launcher), '--provision', *arguments], capture_output=True, text=True,
+                            env={**os.environ, 'PATH': f'{commands}:{os.environ["PATH"]}', 'TRACE': str(trace)},
+                            timeout=15)
+    if case in ('valid', 'already provisioned'):
+        assert result.returncode == 0, result.stderr
+        setup = [] if case == 'already provisioned' else ['apt update', 'apt install']
+        assert trace.read_text().splitlines() == [*setup, str(companion), *arguments]
+    elif case == 'help':
+        assert result.returncode == 0 and 'Usage:' in result.stdout
+        assert not trace.exists()
+    else:
+        assert result.returncode == 2 and result.stderr.startswith('objc3c install:')
+        assert not trace.exists()
 
 
 @pytest.mark.parametrize('fault', [None, 'missing', 'failed', 'duplicate', 'image', 'archive', 'transcript'])

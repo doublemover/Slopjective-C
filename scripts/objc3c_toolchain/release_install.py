@@ -7,11 +7,14 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
 import time
 
+from .install_sdk import file_hash, read_archive_admission
 from .linux_host import HOSTS, host_identity
+from .package import SCHEMA as SDK_SCHEMA, _digest
 
 
 DISTRIBUTIONS = ('debian:13', 'ubuntu:26.04')
@@ -23,6 +26,7 @@ IMAGE = re.compile(r'[^\s@]+@sha256:[a-f0-9]{64}')
 IMAGE_ID = re.compile(r'sha256:[a-f0-9]{64}')
 RELEASE_SCHEMA = 'objc3c.linux-release.v1'
 SHA256 = re.compile(r'[a-f0-9]{64}')
+INSTALLER_COMPANIONS = ('install-linux.sh', 'install-sdk.py')
 
 
 def validate_clean_install(row: dict, *, host: str, distribution: str, revision: str,
@@ -156,17 +160,59 @@ def aggregate(directory: Path, output: Path, distribution: str, *, host: str) ->
                    'scopes': {scope: rows[scope][1] for scope in SCOPES}})
 
 
-def rehearse(bundle: Path, host: str) -> None:
-    host_identity(host, require_native=True)
-    manifest = json.loads((bundle / 'linux-release.json').read_bytes())
+def admit_rehearsal(bundle: Path, host: str) -> tuple[dict, list[dict]]:
+    manifest_path = bundle / 'linux-release.json'
+    if manifest_path.is_symlink() or not manifest_path.is_file():
+        raise ValueError('draft rehearsal needs a regular release manifest')
+    manifest_bytes = manifest_path.read_bytes()
+    manifest = json.loads(manifest_bytes)
     record = published_archive(manifest, host)
     tests = published_installs(manifest, host, record)
     archive = bundle / record['file']
-    if archive.is_symlink() or archive.stat().st_size != record['bytes']:
+    if archive.is_symlink() or not archive.is_file() or archive.stat().st_size != record['bytes']:
         raise ValueError('draft rehearsal archive length differs from the published bytes')
-    with archive.open('rb') as stream:
-        if hashlib.file_digest(stream, 'sha256').hexdigest() != record['sha256']:
-            raise ValueError('draft rehearsal archive SHA-256 differs from the published manifest')
+    if file_hash(archive) != record['sha256']:
+        raise ValueError('draft rehearsal archive SHA-256 differs from the published manifest')
+
+    decoder = shutil.which('zstd')
+    if decoder is None:
+        raise ValueError('draft rehearsal needs zstd to read the qualified archive admission')
+    admission = read_archive_admission(archive, Path(decoder))
+    if admission is None:
+        raise ValueError('draft rehearsal archive is missing its sealed admission')
+    sdk, _ = admission
+    sealed = {key: value for key, value in sdk.items() if key != 'seal_sha256'}
+    if (sdk.get('schema') != SDK_SCHEMA or sdk.get('seal_sha256') != _digest(sealed) or
+            any(sdk.get(key) != record[key] for key in ('seal_sha256', 'source_build_id', 'target'))):
+        raise ValueError('draft rehearsal SDK admission differs from the declared seal, source build or target')
+
+    expected = {'linux-release.json': hashlib.sha256(manifest_bytes).hexdigest(), archive.name: record['sha256']}
+    for name in INSTALLER_COMPANIONS:
+        companion = bundle / name
+        member = sdk['files'].get(f'share/objc3c/{name}', {})
+        if (companion.is_symlink() or not companion.is_file() or
+                member.get('kind') != 'file' or file_hash(companion) != member.get('sha256')):
+            raise ValueError(f'draft rehearsal installer companion differs from the qualified SDK: {name}')
+        expected[name] = member['sha256']
+
+    checksum_path = bundle / 'SHA256SUMS'
+    if (checksum_path.is_symlink() or not checksum_path.is_file() or
+            not 0 < checksum_path.stat().st_size <= 64 * 1024):
+        raise ValueError('draft rehearsal needs its complete bounded checksum index')
+    checksums = {}
+    for line in checksum_path.read_text().splitlines():
+        row = re.fullmatch(r'([a-f0-9]{64})  ([A-Za-z0-9][A-Za-z0-9._-]*)', line)
+        if row is None or row[2] in checksums:
+            raise ValueError('draft rehearsal checksum index has an invalid or duplicate entry')
+        checksums[row[2]] = row[1]
+    if any(checksums.get(name) != signature for name, signature in expected.items()):
+        raise ValueError('draft rehearsal checksum index omitted or changed a required asset')
+    return record, tests
+
+
+def rehearse(bundle: Path, host: str) -> None:
+    host_identity(host, require_native=True)
+    record, tests = admit_rehearsal(bundle, host)
     for test in tests:
         image, image_id = _container(test['image'])
         if image != test['image'] or image_id != test['image_id']:
@@ -178,11 +224,20 @@ sha256sum --check --ignore-missing SHA256SUMS
 archive=$1
 sh install-linux.sh --provision --archive "$archive" --sha256 "$2" --root /opt/objc3c
 . /opt/objc3c/activate.sh
+python3 - "$OBJC3C_SDK_ROOT/objc3-sdk.json" "$3" "$4" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1]) as stream:
+    installed = json.load(stream)
+if (installed.get('seal_sha256'), installed.get('source_build_id')) != tuple(sys.argv[2:]):
+    sys.exit('activated SDK differs from the declared release seal or source build')
+PY
 objc3c --version
 objc3c "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/main.objc3" -O2 -o /tmp/application
 /tmp/application
 sh "$OBJC3C_SDK_ROOT/share/objc3c/examples/log-summary/verify.sh"
-''', 'sh', record['file'], record['sha256']], check=True)
+''', 'sh', record['file'], record['sha256'], record['seal_sha256'], record['source_build_id']], check=True)
 
 
 def main() -> None:
