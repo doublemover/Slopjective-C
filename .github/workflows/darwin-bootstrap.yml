@@ -10,6 +10,14 @@ on:
         description: Include native installed ASan and UBSan consumer witnesses
         type: boolean
         default: false
+      candidate:
+        description: Optional immutable package pin for managed SDK lifecycle replay
+        required: false
+        type: string
+      replacement:
+        description: Optional second package pin for the managed hard-cutover replay
+        required: false
+        type: string
   pull_request:
     paths:
       - ".github/workflows/darwin-bootstrap.yml"
@@ -48,11 +56,12 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: darwin-bootstrap-${{ github.event.pull_request.number || github.ref }}${{ inputs.runtime_sanitizers && '-sanitizers' || '' }}
+  group: darwin-bootstrap-${{ github.event.pull_request.number || github.ref }}${{ (inputs.candidate || inputs.replacement) && format('-managed-{0}', github.run_id) || inputs.runtime_sanitizers && '-sanitizers' || '' }}
   cancel-in-progress: true
 jobs:
   bootstrap:
     name: Probe Apple Silicon toolchain and Mach-O prerequisites
+    if: ${{ !inputs.candidate && !inputs.replacement }}
     runs-on: macos-15
     timeout-minutes: 360
     outputs:
@@ -195,7 +204,7 @@ jobs:
           retention-days: 7
   verify:
     name: Verify retained Apple Silicon evidence
-    if: always()
+    if: ${{ always() && !inputs.candidate && !inputs.replacement }}
     needs: bootstrap
     runs-on: ubuntu-26.04
     timeout-minutes: 10
@@ -233,3 +242,12 @@ jobs:
           path: out/darwin-terminal.json
           if-no-files-found: error
           retention-days: 7
+  managed_replay:
+    if: ${{ inputs.candidate || inputs.replacement }}
+    uses: ./.github/workflows/darwin-managed-replay.yml
+    with:
+      candidate: ${{ inputs.candidate }}
+      replacement: ${{ inputs.replacement }}
+    permissions:
+      actions: read
+      contents: read

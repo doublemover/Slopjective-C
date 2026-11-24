@@ -7,11 +7,13 @@ import struct
 import subprocess
 import sys
 import tarfile
+from zipfile import ZipFile
 
 import pytest
 
 from scripts.objc3c_toolchain import darwin_sdk as sdk, darwin_sdk_arc as arc
 from scripts.objc3c_toolchain import darwin_sdk_activation as activation
+from scripts.objc3c_toolchain import darwin_sdk_replay as replay
 from scripts.objc3c_toolchain.package import MANIFEST, SCHEMA, _digest, _file_hash, inventory, normalize_permissions, verify_sdk
 
 
@@ -436,6 +438,70 @@ def test_managed_uninstall_preserves_modified_or_foreign_paths(tmp_path, structu
     with pytest.raises(ValueError, match='outside the managed installation'):
         activation.uninstall(root, first[2])
     assert current.resolve() == tmp_path / 'candidate-stage-0'
+
+
+def test_managed_replay_admits_only_the_exact_run_attempt_and_artifact_pins(tmp_path):
+    values = {'run_id': 17, 'run_attempt': 2, 'evidence_artifact_id': 301, 'terminal_artifact_id': 302,
+              'revision': 'a' * 40, 'evidence_zip_sha256': 'b' * 64, 'terminal_zip_sha256': 'c' * 64,
+              'terminal_sha256': 'd' * 64}
+    pin = replay.parse_pin(json.dumps(values))
+    repo = {'full_name': 'owner/Repository', 'id': 11}
+    run = {'id': 17, 'run_attempt': 2, 'head_sha': 'a' * 40, 'path': replay.SOURCE_WORKFLOW,
+           'status': 'completed', 'conclusion': 'success', 'repository': repo, 'head_repository': repo}
+    replay.verify_run(run, repo['full_name'], pin)
+    with pytest.raises(ValueError, match='successful exact attempt'):
+        replay.verify_run({**run, 'run_attempt': 1}, repo['full_name'], pin)
+    artifact = {'id': 302, 'name': 'darwin-terminal-17-2', 'digest': 'sha256:' + 'c' * 64,
+                'expired': False, 'size_in_bytes': 383,
+                'workflow_run': {'id': 17, 'head_sha': 'a' * 40, 'repository_id': 11, 'head_repository_id': 11}}
+    replay.verify_artifact(artifact, pin, run, role='terminal')
+    for field, wrong in (('id', 301), ('name', 'darwin-terminal-17-1'), ('digest', 'sha256:' + 'b' * 64),
+                         ('expired', True)):
+        with pytest.raises(ValueError, match='immutable run, attempt and digest pins'):
+            replay.verify_artifact({**artifact, field: wrong}, pin, run, role='terminal')
+    archive = tmp_path / 'terminal.zip'
+    with ZipFile(archive, 'w') as contents:
+        contents.writestr('darwin-terminal.json', '{}')
+    replay.extract(archive, _file_hash(archive), tmp_path / 'accepted', terminal=True)
+    with ZipFile(archive, 'a') as contents:
+        contents.writestr('../foreign', '{}')
+    with pytest.raises(ValueError, match='unowned or excessive'):
+        replay.extract(archive, _file_hash(archive), tmp_path / 'rejected', terminal=True)
+    assert not (tmp_path / 'rejected').exists()
+
+
+@pytest.mark.parametrize('update', [False, True])
+def test_managed_replay_runs_exact_admitted_generation_then_reclaims_it(tmp_path, structural_host, monkeypatch, update):
+    monkeypatch.setattr(sdk, 'require_apple_silicon', lambda: None)
+    primary, replacement = managed_packages(tmp_path, structural_host)
+    incoming = tmp_path / 'pinned inputs'
+    if update:
+        (incoming / 'replacement').mkdir(parents=True)
+
+    def admit(directory):
+        archive, digest, seal = primary if directory.name == 'primary' else replacement
+        return archive, {'archive_sha256': digest, 'seal_sha256': seal}, {'source': directory.name}
+
+    attempted = []
+
+    def execute(prefix, manifest, host, output, commands):
+        assert host == structural_host
+        seal = verify_sdk(prefix)['seal_sha256']
+        assert manifest['seal_sha256'] == seal
+        attempted.append(seal)
+        return {'status': 'PASS', 'seal_sha256': seal}
+
+    monkeypatch.setattr(replay, '_admit', admit)
+    monkeypatch.setattr(replay.darwin_sdk_arc, 'qualify_consumer', execute)
+    output = tmp_path / 'managed replay evidence'
+    report = replay.qualify(incoming, output, receiver_revision='a' * 40)
+    assert report['status'] == 'PASS' and not report['support_truth']
+    assert report['receiver_revision'] == 'a' * 40
+    assert attempted == [primary[2], *([replacement[2]] if update else [])]
+    assert report['operations']['uninstall']['seal_sha256'] == attempted[-1]
+    assert set(report['operations']) == {'install', 'install_arc', 'reuse', 'uninstall'} | (
+        {'update', 'update_arc'} if update else set())
+    assert not list((output / 'Managed Apple Silicon SDK').glob('sdk-*'))
 
 
 def test_archive_admission_checks_every_arm64_object(tmp_path):

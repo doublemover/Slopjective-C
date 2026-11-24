@@ -124,6 +124,30 @@ python3 -B -m scripts.objc3c_toolchain.darwin_evidence \
 Choose `package` for the ordinary SDK or `package-sanitizers` for the optional
 consumer sanitizer package.
 
+## Replay managed installation on Apple Silicon
+
+While both workflow artifacts are retained, pass a JSON pin to the registered
+`darwin-bootstrap.yml` workflow. The pin contains four positive integers
+`run_id`, `run_attempt`, `evidence_artifact_id`, and `terminal_artifact_id`.
+It also contains the exact 40-character `revision`, the GitHub-reported
+archive hashes `evidence_zip_sha256` and `terminal_zip_sha256`, and the
+`terminal_sha256` of the extracted `darwin-terminal.json` receipt. Use
+lowercase hex values without the `sha256:` prefix.
+
+```sh
+gh workflow run darwin-bootstrap.yml --ref "$replay_ref" -f candidate="$candidate"
+```
+
+The replay job checks that the exact native and terminal jobs passed on the
+producing attempt. It verifies both ZIP files and replays the terminal verifier
+from the recorded producer revision before installing the SDK. It exercises
+install, repeat install, an installed ARC consumer, and verified uninstall
+without rebuilding LLVM. Supply `-f replacement="$replacement"` with a second
+independently pinned package of a different seal to exercise hard cutover and
+reclamation. The `darwin-managed-replay` artifact records both revisions, the
+admitted package hashes, native commands and lifecycle outcomes.
+[Replay workflow](../../.github/workflows/darwin-managed-replay.yml)
+
 ## Optional ASan and UBSan consumers
 
 Set `runtime_sanitizers: true` in a manual run of **Darwin arm64 bootstrap probe**

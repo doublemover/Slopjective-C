@@ -1,0 +1,79 @@
+name: Replay a retained Apple Silicon SDK lifecycle
+on:
+  workflow_call:
+    inputs:
+      candidate:
+        description: JSON pin for a successful Darwin package run and both retained artifacts
+        required: true
+        type: string
+      replacement:
+        description: Optional independent package pin for a hard-cutover update
+        required: false
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  replay:
+    name: Verify retained SDK and replay managed installation
+    runs-on: macos-15
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.15.0"
+          architecture: arm64
+      - name: Admit exact producer and artifact identities
+        id: pins
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DARWIN_REPLAY_CANDIDATE: ${{ inputs.candidate }}
+          DARWIN_REPLAY_REPLACEMENT: ${{ inputs.replacement }}
+        run: |
+          python -B -m scripts.objc3c_toolchain.darwin_sdk_replay prepare \
+            --repo "$GITHUB_REPOSITORY" --receiver-revision "$GITHUB_SHA" \
+            --output-dir "$RUNNER_TEMP/darwin-managed-inputs" --github-output "$GITHUB_OUTPUT"
+      - name: Download the admitted package and terminal ZIPs
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.pins.outputs.primary_run_id }}
+          artifact-ids: ${{ steps.pins.outputs.primary_artifact_ids }}
+          path: ${{ runner.temp }}/darwin-managed-inputs/primary/download
+          merge-multiple: true
+          skip-decompress: true
+          digest-mismatch: error
+      - name: Download the optional independently admitted replacement
+        if: steps.pins.outputs.replacement_run_id != ''
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.pins.outputs.replacement_run_id }}
+          artifact-ids: ${{ steps.pins.outputs.replacement_artifact_ids }}
+          path: ${{ runner.temp }}/darwin-managed-inputs/replacement/download
+          merge-multiple: true
+          skip-decompress: true
+          digest-mismatch: error
+      - name: Re-admit the terminal proof and execute managed lifecycle
+        shell: bash
+        run: |
+          python -B -m scripts.objc3c_toolchain.darwin_sdk_replay qualify \
+            --receiver-revision "$GITHUB_SHA" \
+            --input-dir "$RUNNER_TEMP/darwin-managed-inputs" \
+            --output-dir "$RUNNER_TEMP/darwin-managed-evidence"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: darwin-managed-replay-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/darwin-managed-evidence
+            !${{ runner.temp }}/darwin-managed-evidence/Managed Apple Silicon SDK/**
+          if-no-files-found: warn
+          retention-days: 7
