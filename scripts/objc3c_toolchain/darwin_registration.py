@@ -118,7 +118,10 @@ int main(int argc, char **argv) {
             'reported_version': version, 'hash_probe': {**artifact, 'load_paths': libraries}}
 
 
-def qualify(bootstrap_report: Path, output: Path, *, fetch: bool, package_sdk: bool = False) -> dict:
+def qualify(bootstrap_report: Path, output: Path, *, fetch: bool, package_sdk: bool = False,
+            sdk_sanitizers: bool = False) -> dict:
+    if sdk_sanitizers and not package_sdk:
+        raise ValueError('--sdk-sanitizers requires --package-sdk')
     require_apple_silicon()
     profile, patch = load_profile()
     output = output.resolve()
@@ -236,7 +239,7 @@ def qualify(bootstrap_report: Path, output: Path, *, fetch: bool, package_sdk: b
                 package_output = output / 'sdk/package'
                 registration = {**report, 'status': 'registration-verified'}
                 report['sdk_package'] = darwin_sdk.package_registration(
-                    clang, source, bootstrap_report, registration, package_output)
+                    clang, source, bootstrap_report, registration, package_output, sdk_sanitizers=sdk_sanitizers)
         if package_sdk:
             report['sdk_qualification'] = darwin_sdk.qualify(
                 package_output / darwin_sdk.ARCHIVE_NAME, report['sdk_package']['archive_sha256'],
@@ -543,9 +546,11 @@ def main() -> int:
     parser.add_argument('--output-dir', type=Path, required=True)
     parser.add_argument('--fetch', action='store_true', help='fetch the pinned upstream LLVM Git source')
     parser.add_argument('--package-sdk', action='store_true', help='package the admitted build and qualify a relocated SDK')
+    parser.add_argument('--sdk-sanitizers', action='store_true', help='qualify the optional SDK ASan and UBSan consumers')
     args = parser.parse_args()
     try:
-        qualify(args.bootstrap_report, args.output_dir, fetch=args.fetch, package_sdk=args.package_sdk)
+        qualify(args.bootstrap_report, args.output_dir, fetch=args.fetch, package_sdk=args.package_sdk,
+                sdk_sanitizers=args.sdk_sanitizers)
     except (OSError, ValueError, KeyError, ToolchainError, subprocess.SubprocessError, tarfile.TarError) as error:
         parser.exit(2, f'objc3c Darwin registration: {error}\n')
     print(args.output_dir.resolve() / 'report.json')

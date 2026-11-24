@@ -18,6 +18,7 @@ import tempfile
 import unicodedata
 
 from .darwin_bootstrap import DEPLOYMENT_TARGET, ROOT, require_apple_silicon, verify_macho
+from . import darwin_sdk_sanitizers as sanitizers
 from .package import MANIFEST, SCHEMA, _digest, _file_hash, inventory, normalize_permissions, verify_sdk
 
 PROFILE = 'macos-arm64-registration-experimental'
@@ -199,6 +200,7 @@ def _validate_manifest(data, host):
                 resource + '/include/stddef.h', resource + '/lib/darwin/libclang_rt.osx.a',
                 *(DEMO + '/' + name for name in DEMO_FILES), 'share/licenses/slopjective-c/LICENSE',
                 *(f'share/licenses/{name}/LICENSE.TXT' for name in ('llvm', 'clang', 'compiler-rt'))}
+    required.update(sanitizers.manifest_files(data, resource))
     files = {name for name, row in data['files'].items() if row['kind'] == 'file'}
     if not required <= files or any(not name.startswith(resource + '/include/') for name in files - required):
         raise ValueError('the Darwin SDK payload inventory differs from the experimental profile')
@@ -222,6 +224,8 @@ def _validate_product(prefix, data, host, commands=None):
     _load_paths(otool, dylib, [SYSTEM, '@rpath/' + dylib.name], commands)
     _rpaths(otool, dylib, [], commands)
     _deployment(otool, dylib, commands)
+    if sanitizers.KEY in data:
+        sanitizers.validate_runtimes(prefix, data, host, commands)
 
 
 def _write_archive(prefix, destination):
@@ -247,7 +251,7 @@ def _write_archive(prefix, destination):
 
 
 def package_registration(clang: Path, llvm_source: Path, bootstrap_report: Path, registration: dict,
-                         output: Path) -> dict:
+                         output: Path, *, sdk_sanitizers: bool = False) -> dict:
     """Package live compiler and runtime outputs from the registration owner."""
     commands = []
     host = _host(commands)
@@ -325,6 +329,7 @@ def package_registration(clang: Path, llvm_source: Path, bootstrap_report: Path,
         for project in ('llvm', 'clang', 'compiler-rt'):
             _copied_file(llvm_source / project / 'LICENSE.TXT', prefix / 'share/licenses' / project / 'LICENSE.TXT')
         _copied_file(ROOT / 'LICENSE', prefix / 'share/licenses/slopjective-c/LICENSE')
+        sanitizer_payload = sanitizers.stage_payload(prefix, resource, resource_dir) if sdk_sanitizers else None
         normalize_permissions(prefix)
         data = {'schema': SCHEMA, 'payload_schema': PAYLOAD_SCHEMA, 'profile': PROFILE, 'target': TARGET,
                 'runtime_abi': RUNTIME_ABI, 'compiler_runtime_flag': RUNTIME_FLAG, 'support_truth': False,
@@ -339,6 +344,8 @@ def package_registration(clang: Path, llvm_source: Path, bootstrap_report: Path,
         if cxx := registration.get('cxx_toolchain'):
             data['compiler_host_libcxx'] = {key: cxx[key] for key in
                                           ('header_config_sha256', 'library_stub_sha256', 'reported_version')}
+        if sanitizer_payload is not None:
+            data[sanitizers.KEY] = sanitizer_payload
         seal = _digest(data)
         (prefix / MANIFEST).write_text(json.dumps({**data, 'seal_sha256': seal}, indent=2) + '\n')
         (prefix / MANIFEST).chmod(0o644)
@@ -351,6 +358,8 @@ def package_registration(clang: Path, llvm_source: Path, bootstrap_report: Path,
     receipt = {'schema': RECEIPT_SCHEMA, 'status': 'PASS', 'support_truth': False, 'profile': PROFILE,
                'revision': revision, 'archive': archive.name, 'archive_sha256': _file_hash(archive),
                'archive_bytes': archive.stat().st_size, 'seal_sha256': seal, 'host': host, 'commands': commands}
+    if sanitizer_payload is not None:
+        receipt[sanitizers.KEY] = sanitizer_payload
     (output / 'package.json').write_text(json.dumps(receipt, indent=2) + '\n')
     return receipt
 
@@ -450,8 +459,11 @@ def install(archive: Path, expected_sha256: str, prefix: Path, *, commands=None)
         except OSError:
             prefix.rmdir()
             raise
-    return {'schema': 'objc3c.experimental-darwin-sdk-install.v1', 'status': 'PASS', 'support_truth': False,
-            'archive_sha256': expected_sha256, 'seal_sha256': product['seal_sha256'], 'prefix': str(prefix), 'host': host}
+    receipt = {'schema': 'objc3c.experimental-darwin-sdk-install.v1', 'status': 'PASS', 'support_truth': False,
+               'archive_sha256': expected_sha256, 'seal_sha256': product['seal_sha256'], 'prefix': str(prefix), 'host': host}
+    if sanitizers.KEY in product:
+        receipt[sanitizers.KEY] = product[sanitizers.KEY]
+    return receipt
 
 
 def _qualify_installer_controls(archive, expected_sha256, output, manifest, host, commands):
@@ -579,6 +591,9 @@ def qualify(archive: Path, expected_sha256: str, output: Path) -> dict:
         reports['debug'] = verify_macho(debug_file, 'debug_info')
         if native(project / 'static') != WITNESS or native(project / 'dynamic', project / 'liblate.dylib') != WITNESS:
             raise ValueError('cold relocated compiler/runtime witness failed')
+        if sanitizers.KEY in manifest:
+            report[sanitizers.KEY] = sanitizers.qualify_consumers(
+                prefix, manifest, host, output / sanitizers.WITNESS_DIRECTORY, commands)
         verify_sdk(prefix, installed['seal_sha256'])
         report['installer_controls'] = _qualify_installer_controls(archive, expected_sha256, output,
                                                                   manifest, host, commands)
@@ -597,6 +612,7 @@ def main() -> int:
     pack = commands.add_parser('pack', help='assemble from a verified registration producer and its live compiler')
     for name in ('stage-compiler', 'llvm-source', 'bootstrap-report', 'registration-report', 'output-dir'):
         pack.add_argument('--' + name, required=True, type=Path)
+    pack.add_argument('--sdk-sanitizers', action='store_true', help='include the pinned ASan and UBSan consumer variant')
     for action in ('install', 'qualify'):
         subparser = commands.add_parser(action)
         subparser.add_argument('--archive', type=Path, required=True)
@@ -606,7 +622,8 @@ def main() -> int:
     try:
         if args.action == 'pack':
             result = package_registration(args.stage_compiler, args.llvm_source, args.bootstrap_report,
-                                          json.loads(args.registration_report.read_bytes()), args.output_dir)
+                                          json.loads(args.registration_report.read_bytes()), args.output_dir,
+                                          sdk_sanitizers=args.sdk_sanitizers)
         elif args.action == 'install':
             result = install(args.archive, args.archive_sha256, args.prefix)
         else:
