@@ -175,14 +175,16 @@ def test_interruption_kills_and_reaps_the_detached_command_session(tmp_path, mon
 
 def elf(runpath: str, capacity: int, tag: int = 29) -> bytes:
     """Small ELF64 with dynamic/string sections, plus observable code payload."""
-    data = bytearray(512)
+    encoded = runpath.encode()
+    assert len(encoded) < capacity
+    data = bytearray(288 + capacity + 16)
     data[:6] = b'\x7fELF\x02\x01'
     struct.pack_into('<Q', data, 40, 64)
     struct.pack_into('<HH', data, 58, 64, 3)
     struct.pack_into('<IIQQQQIIQQ', data, 128, 0, 6, 0, 0, 256, 32, 2, 0, 8, 16)
     struct.pack_into('<IIQQQQIIQQ', data, 192, 0, 3, 0, 0, 288, capacity, 0, 0, 1, 0)
     struct.pack_into('<QQ', data, 256, tag, 0)
-    data[288:288+len(runpath)] = runpath.encode()
+    data[288:288+len(encoded)] = encoded
     data[-16:] = b'code-must-match!!'
     return bytes(data)
 
@@ -190,16 +192,17 @@ def elf(runpath: str, capacity: int, tag: int = 29) -> bytes:
 def test_install_identity_allows_only_exact_cmake_runpath_transition(tmp_path):
     expected = '$ORIGIN/../lib:$ORIGIN/../lib/x86_64-unknown-linux-gnu'
     before = expected+':'+str(tmp_path / 'build/lib')+':'
+    capacity = len(before.encode()) + 1
     canonical, installed = tmp_path / 'build.elf', tmp_path / 'installed.elf'
-    canonical.write_bytes(elf(before, 160, 15))
-    installed.write_bytes(elf(expected, 160, 15))
+    canonical.write_bytes(elf(before, capacity, 15))
+    installed.write_bytes(elf(expected, capacity, 15))
     assert verify_installation(canonical, installed, tmp_path / 'build')['status'] == 'PASS'
     data = bytearray(installed.read_bytes())
     data[-1] ^= 1
     installed.write_bytes(data)
     with pytest.raises(ValueError, match='outside its exact'):
         verify_installation(canonical, installed, tmp_path / 'build')
-    installed.write_bytes(elf('/tmp/unowned', 160, 15))
+    installed.write_bytes(elf('/tmp/unowned', capacity, 15))
     with pytest.raises(ValueError, match='RPATH transition'):
         verify_installation(canonical, installed, tmp_path / 'build')
 
@@ -207,9 +210,10 @@ def test_install_identity_allows_only_exact_cmake_runpath_transition(tmp_path):
 def test_install_identity_rejects_lower_precedence_runpath(tmp_path):
     expected = '$ORIGIN/../lib:$ORIGIN/../lib/x86_64-unknown-linux-gnu'
     before = expected+':'+str(tmp_path / 'build/lib')+':'
+    capacity = len(before.encode()) + 1
     canonical, installed = tmp_path / 'build.elf', tmp_path / 'installed.elf'
-    canonical.write_bytes(elf(before, 160))
-    installed.write_bytes(elf(expected, 160))
+    canonical.write_bytes(elf(before, capacity))
+    installed.write_bytes(elf(expected, capacity))
     with pytest.raises(ValueError, match='RPATH transition'):
         verify_installation(canonical, installed, tmp_path / 'build')
 
@@ -217,9 +221,10 @@ def test_install_identity_rejects_lower_precedence_runpath(tmp_path):
 def test_install_identity_preserves_old_dtag_rpath_precedence(tmp_path):
     expected = '$ORIGIN/../lib:$ORIGIN/../lib/x86_64-unknown-linux-gnu'
     before = expected+':'+str(tmp_path / 'build/lib')+':'
+    capacity = len(before.encode()) + 1
     canonical, installed = tmp_path / 'build.elf', tmp_path / 'installed.elf'
-    canonical.write_bytes(elf(before, 160, 15))
-    installed.write_bytes(elf(expected, 160, 15))
+    canonical.write_bytes(elf(before, capacity, 15))
+    installed.write_bytes(elf(expected, capacity, 15))
     result = verify_installation(canonical, installed, tmp_path / 'build')
     assert result['status'] == 'PASS' and result['dynamic_tag'] == 'RPATH'
 
