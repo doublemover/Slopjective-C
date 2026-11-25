@@ -225,9 +225,44 @@ def build_graph(sdk: Path, workspace: Path, output: Path, optimization='O2', *, 
         return _build(sdk, graph, output, optimization, jobs)
 
 
+def dependency_graph(configs: dict) -> dict:
+    return {name: tuple(edge['name'] for edge in config['dependencies'])
+            for name, config in configs.items()}
+
+
+def workspace_plan(workspace: Path) -> dict:
+    graph = load_graph(workspace)
+    configs, order = graph['packages'], graph['order']
+    selected = {name: configs[name] for name in order}
+    schedule = TopologicalSorter(dependency_graph({**selected, APP: graph['application']}))
+    schedule.prepare()
+    stages = []
+    while schedule.is_active():
+        ready = schedule.get_ready()
+        stages.append(list(ready))
+        schedule.done(*ready)
+
+    workspace = graph['workspace']
+    root = workspace.parent
+    mode = ('language', 'standard', 'ownership')
+    keys = (*mode, 'dependencies')
+    app = {key: graph['application'][key] for key in keys}
+    app['source'] = graph['application']['input'].relative_to(root).as_posix()
+    packages = {}
+    for name, config in sorted(configs.items()):
+        packages[name] = {key: config[key] for key in (*keys, 'package', 'provider_ownership', 'exports')}
+        packages[name]['manifest'] = config['manifest'].relative_to(root).as_posix()
+        packages[name]['source'] = config['input'].relative_to(root).as_posix()
+    return {'schema': 'objc3c.source-workspace-plan.v1', 'status': 'PASS',
+            'workspace': workspace.name, 'application': app, 'packages': packages,
+            'selected': order, 'unused': sorted(configs.keys() - selected.keys()),
+            'readiness_stages': stages,
+            'manifests': {path.relative_to(root).as_posix(): signature
+                          for path, signature in sorted(graph['manifests'].items())}}
+
+
 def _build_nodes(configs, compile_node, jobs):
-    dependencies = {name: tuple(edge['name'] for edge in config['dependencies'])
-                    for name, config in configs.items()}
+    dependencies = dependency_graph(configs)
     schedule = TopologicalSorter(dependencies)
     schedule.prepare()
     ready = deque(schedule.get_ready())
@@ -428,25 +463,38 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str, jobs: int) -
     return report
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+def add_build_arguments(parser):
     parser.add_argument('--sdk-root', type=Path)
     parser.add_argument('--workspace', type=Path, required=True)
-    parser.add_argument('--output-dir', type=Path, required=True)
+    action = parser.add_mutually_exclusive_group(required=True)
+    action.add_argument('--output-dir', type=Path)
+    action.add_argument('--plan', action='store_true', help='validate and print the locked graph without building')
     parser.add_argument('--optimization', choices=('O0', 'O2'), default='O2')
     parser.add_argument('--jobs', type=int, default=1, help='maximum concurrent package compile workers')
-    args = parser.parse_args()
+
+
+def run_workspace(args):
+    if args.plan:
+        return workspace_plan(args.workspace)
     sdk = args.sdk_root
     if sdk is None:
         default = (Path.cwd() / 'out/toolchains/linux-sdk/current' if __package__
                    else Path(__file__).resolve().parents[3])
         sdk = Path(os.environ.get('OBJC3C_SDK_ROOT', default))
+    report = build_graph(sdk, args.workspace, args.output_dir, args.optimization, jobs=args.jobs)
+    return {'status': report['status'], 'report': str(args.output_dir / 'build-report.json'),
+            'reused': [name for name, node in report['nodes'].items() if node['reused']]}
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    add_build_arguments(parser)
+    args = parser.parse_args()
     try:
-        report = build_graph(sdk, args.workspace, args.output_dir, args.optimization, jobs=args.jobs)
+        result = run_workspace(args)
     except (OSError, ValueError, subprocess.SubprocessError) as error:
         parser.exit(1, f'package build failed: {error}\n')
-    print(json.dumps({'status': report['status'], 'report': str(args.output_dir / 'build-report.json'),
-                      'reused': [name for name, node in report['nodes'].items() if node['reused']]}))
+    print(json.dumps(result))
 
 
 if __name__ == '__main__':

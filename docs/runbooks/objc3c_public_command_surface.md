@@ -25,7 +25,7 @@ python -B -m scripts.objc3c_toolchain compile --help
 | `darwin` | Build and manage the [experimental Apple Silicon SDK](objc3c_experimental_darwin_sdk.md). |
 | `package-sdk` | Seal and cache an installed SDK using its validation report. |
 | `compile` | Invoke the public compiler from the selected installed SDK. |
-| `build-packages` | Build a locked source-package workspace. |
+| `build-packages` | Plan or build a locked source-package workspace. |
 | `packages` | Publish, install and consume immutable offline packages. |
 
 These commands are maintained directly; this appendix is not generated from the

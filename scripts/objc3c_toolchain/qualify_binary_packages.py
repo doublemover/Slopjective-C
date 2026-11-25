@@ -5,6 +5,7 @@ import argparse
 import json
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -48,8 +49,17 @@ def qualify_case(sdk: Path, output: Path, language: str, standard: str, ownershi
         if packages.publish(sdk, built, root / 'publication') != published:
             raise ValueError('unchanged publication did not reproduce its content identity')
         package = Path(published['package'])
-        installed = packages.install(package, published['content_sha256'], root / 'installed')
-        if packages.install(package, published['content_sha256'], root / 'installed') != installed:
+        identity = published['content_sha256']
+        archive = root / 'provider.zip'
+        exported = packages.export_archive(package, identity, archive)
+        if packages.export_archive(package, identity, root / 'repeated.zip')['archive_sha256'] != exported['archive_sha256']:
+            raise ValueError('unchanged package did not reproduce its archive bytes')
+        selection = [(edge['name'], edge['package']) for edge in app['dependencies']]
+        inspection = packages.inspect(archive, identity, selection)
+        if inspection != packages.inspect(package, identity, selection):
+            raise ValueError('archive inspection differs from the original package directory')
+        installed = packages.install(archive, identity, root / 'installed')
+        if packages.install(package, identity, root / 'installed') != installed:
             raise ValueError('unchanged installation was not idempotent')
         relocated = root / 'relocated packages'
         (root / 'installed').rename(relocated)
@@ -62,6 +72,7 @@ def qualify_case(sdk: Path, output: Path, language: str, standard: str, ownershi
         shutil.rmtree(sources)
         shutil.rmtree(built)
         shutil.rmtree(root / 'publication')
+        archive.unlink()
         report = packages.consume(sdk, package, published['content_sha256'], application, root / 'consumer')
         if report['provider_compilations'] or len(report['commands']) != 2 or len(report['modules']) != 4:
             raise ValueError('binary consumer rebuilt a provider or lost its dependency closure')
@@ -133,9 +144,82 @@ def qualify_case(sdk: Path, output: Path, language: str, standard: str, ownershi
                     damaged.chmod(0o444)
         return {'language': language, 'standard': standard, 'ownership': ownership, 'optimization': optimization,
                 'content_sha256': published['content_sha256'], 'sdk_seal': report['sdk_seal'],
+                'archive_sha256': exported['archive_sha256'], 'archive_inspection_reproduced': True,
                 'modules': report['modules'], 'provider_compilations': 0, 'relocated': True,
                 'producer_sources_removed': True, 'failed_consumer_record_removed': True,
                 'rejected_object_preserved': True, 'rejections': negatives}
+
+
+def qualify_composition(sdk: Path, output: Path) -> dict:
+    """Build independent publishers and link their shared native provider once."""
+    with tempfile.TemporaryDirectory(prefix="objc3 composed 'packages ") as temporary:
+        root = Path(temporary)
+        sources = root / 'producer'
+        shutil.copytree(sdk / 'share/objc3c/examples/packages', sources)
+        workspace = sources / 'workspace.json'
+        config = json.loads(workspace.read_text())
+        app = config['application']
+        provider_main = sources / app['root'] / app['source']
+        closures = []
+        direct = []
+        for side, value, visibility in (('Left', 41, 'public'), ('Right', 42, 'private')):
+            name, package = 'fixture.' + side, side.lower() + '-v1'
+            edge = {'name': name, 'package': package, 'visibility': visibility}
+            direct.append(edge)
+            app['dependencies'] = [edge]
+            config['packages'] = ['leaf/package.json', side.lower() + '/package.json']
+            workspace.write_text(json.dumps(config))
+            provider_main.write_text(f'@import {name};\nint main(void) {{ return @{name}.{side.lower()}() != {value}; }}\n')
+            build = root / ('build-' + side)
+            build_graph(sdk, workspace, build, 'O2')
+            published = packages.publish(sdk, build, root / 'publication')
+            signature = published['content_sha256']
+            installed = packages.install(Path(published['package']), signature, root / 'installed')
+            closures.append((Path(installed['package']).name, signature))
+            shutil.rmtree(build)
+        shutil.rmtree(sources)
+        shutil.rmtree(root / 'publication')
+        relocated = root / 'relocated packages'
+        (root / 'installed').rename(relocated)
+        primary, additional = ((relocated / name, signature) for name, signature in closures)
+        client = root / 'client'
+        client.mkdir()
+        source = client / 'main.m'
+        source.write_text('@import fixture.Left;\n@import fixture.Right;\n'
+                          'int main(void) {\n'
+                          '  return @fixture.Left.left() != 41 || @fixture.Right.right() != 42 ||\n'
+                          '         @fixture.Leaf.leaf() != 40;\n}\n')
+        application = client / 'application.json'
+        config = {'schema': packages.CONSUMER, 'source': source.name, 'dependencies': direct,
+                  **{key: app[key] for key in packages.MODE}}
+        application.write_text(json.dumps(config))
+        result = packages.consume(sdk, *primary, application, root / 'consumer', additional=(additional,))
+        expected = {'fixture.Leaf': primary[1], 'fixture.Left': primary[1], 'fixture.Right': additional[1]}
+        objects = [name for name in result['commands'][1] if name.endswith('/module.o')]
+        if (result['provider_compilations'] or result['modules'] != list(expected) or
+                result['module_package_content_sha256'] != expected or len(objects) != len(expected)):
+            raise ValueError('composed consumer did not link the expected unique provider objects')
+
+        # The presence of the left closure cannot expose its public path when
+        # the client imports only the right closure's private dependency.
+        config['dependencies'] = direct[1:]
+        application.write_text(json.dumps(config))
+        source.write_text('@import fixture.Right;\nint main(void) { return @fixture.Leaf.leaf(); }\n')
+        rejection = root / 'private-rejection'
+        try:
+            packages.consume(sdk, *primary, application, rejection, additional=(additional,))
+        except subprocess.CalledProcessError as error:
+            log = rejection / 'command-0.log'
+            if ('fixture.Leaf' not in log.read_text() or
+                    (rejection / 'consumer-report.json').exists()):
+                raise ValueError('composed consumer rejected for an unexpected reason') from error
+            shutil.copyfile(log, output / 'composition-private-rejection.log')
+        else:
+            raise ValueError('unselected package exposed a private transitive module')
+        packages.write_json(output / 'composition-consumer.json', result)
+        return {'status': 'PASS', 'packages': result['package_content_sha256s'],
+                'module_packages': expected, 'linked_objects': len(objects),
+                'relocated': True, 'producer_sources_removed': True, 'private_visibility_rejected': True}
 
 
 def qualify(sdk: Path, output: Path) -> dict:
@@ -152,12 +236,14 @@ def qualify(sdk: Path, output: Path) -> dict:
         for mode in modes:
             for optimization in ('O0', 'O2'):
                 cases.append(qualify_case(sdk, output, *mode, optimization))
+        composition = qualify_composition(sdk, output)
     except Exception as error:
         packages.write_json(receipt, {'schema': 'objc3c.binary-package-qualification.v1', 'status': 'FAIL', 'cases': cases, 'error': str(error)})
         raise
     report = {'schema': 'objc3c.binary-package-qualification.v1', 'status': 'PASS',
               'outside_checkout': True, 'paths_with_spaces_and_quotes': True, 'executions': len(cases),
-              'rejections': sum(len(row['rejections']) for row in cases), 'cases': cases}
+              'rejections': sum(len(row['rejections']) for row in cases), 'cases': cases,
+              'composition': composition}
     packages.write_json(receipt, report)
     return report
 

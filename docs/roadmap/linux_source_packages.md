@@ -51,6 +51,14 @@ Unknown fields, duplicate modules/edges, unresolved locks and cycles are errors.
 Unused declarations are validated, but only the application's dependency closure
 is built.
 
+Use `objc3c-build --workspace ./packages/workspace.json --plan` or
+`npm run objc3c -- build-packages --workspace ./packages/workspace.json --plan`
+to validate the same locks without invoking the compiler. The JSON includes
+mode and visibility for every package, the selected dependency-first order,
+unused packages, and the application and package readiness stages. Paths are
+relative to the workspace and the report includes the manifest hashes.
+Planning needs no SDK or output directory.
+
 The v4 manifests require every mode field and reject earlier versions. Supported modes are:
 
 | Language        | Standard         | Ownership      | Source suffix         |

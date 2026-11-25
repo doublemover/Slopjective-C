@@ -3,11 +3,13 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import shutil
+import subprocess
+import sys
 from threading import Barrier, Lock
 
 import pytest
 
-from scripts.objc3c_toolchain.source_graph import APP, _build_nodes, build_graph, load_graph, source_inputs, validate_exports, locks
+from scripts.objc3c_toolchain.source_graph import APP, _build_nodes, build_graph, load_graph, source_inputs, validate_exports, locks, workspace_plan
 
 
 @pytest.mark.parametrize('values', [None, [], [''], ['*', 'answer'], ['x', 'x'],
@@ -49,6 +51,38 @@ def test_resolves_locked_diamond_once_in_dependency_order(workspace):
     assert graph['order'] == ['fixture.Leaf', 'fixture.Left', 'fixture.Right', 'fixture.Top']
     assert graph['packages']['fixture.Left']['dependencies'][0]['visibility'] == 'public'
     assert graph['packages']['fixture.Right']['dependencies'][0]['visibility'] == 'private'
+
+
+def test_workspace_plan_reports_the_locked_graph_without_sdk_or_build_products(workspace, tmp_path):
+    unused = workspace.parent / 'unused'
+    shutil.copytree(workspace.parent / 'leaf', unused)
+    unused_manifest = unused / 'package.json'
+    edit(unused_manifest, lambda data: data.update(name='fixture.Unused', package='unused-v1'))
+    edit(workspace, lambda data: data['packages'].append('unused/package.json'))
+    repo = Path(__file__).resolve().parents[2]
+    arguments = ['--workspace', str(workspace), '--plan', '--sdk-root', str(tmp_path / 'absent')]
+    result = subprocess.run([sys.executable, '-B', '-m', 'scripts.objc3c_toolchain', 'build-packages',
+                             *arguments], cwd=repo, text=True, capture_output=True, timeout=30)
+    assert result.returncode == 0, result.stderr
+    report = json.loads(result.stdout)
+    assert report == workspace_plan(workspace)
+    assert report['selected'] == ['fixture.Leaf', 'fixture.Left', 'fixture.Right', 'fixture.Top']
+    assert report['unused'] == ['fixture.Unused']
+    assert report['readiness_stages'] == [
+        ['fixture.Leaf'], ['fixture.Left', 'fixture.Right'], ['fixture.Top'], [APP]]
+    assert report['packages']['fixture.Unused']['manifest'] == 'unused/package.json'
+    assert report['packages']['fixture.Right']['dependencies'][0]['visibility'] == 'private'
+    assert not (tmp_path / 'absent').exists()
+    assert sorted(path.name for path in workspace.parent.iterdir()) == [
+        'app', 'leaf', 'left', 'right', 'top', 'unused', 'workspace.json']
+
+    moved = tmp_path / 'relocated'
+    workspace.parent.rename(moved)
+    assert workspace_plan(moved / workspace.name) == report
+    edit(moved / 'unused/package.json', lambda data: data.update(dependencies=[
+        {'name': 'fixture.Leaf', 'package': 'stale-v0', 'visibility': 'private'}]))
+    with pytest.raises(ValueError, match='identity lock'):
+        workspace_plan(moved / workspace.name)
 
 
 @pytest.mark.parametrize('fail', [False, True])
