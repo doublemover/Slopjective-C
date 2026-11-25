@@ -734,9 +734,23 @@ index 91ab85d94..4c3046b99 100644
 \ No newline at end of file
 +}
 diff --git a/class.h b/class.h
-index 081feab48..f879fa60f 100644
+index 081feab48..b42e4bd63 100644
 --- a/class.h
 +++ b/class.h
+@@ -93,10 +93,10 @@ struct objc_class
+ 	 */
+ 	struct objc_method_list   *methods;
+ 	/**
+-	 * The dispatch table for this class.  Intialized and maintained by the
+-	 * runtime.
++	 * The runtime publishes this dispatch table to lock-free message lookups.
++	 * Keep the native pointer layout expected by compiler-emitted classes.
+ 	 */
+-	void                      *dtable;
++	_Atomic(void *)             dtable;
+ 	/**
+ 	 * A pointer to the first subclass for this class.  Filled in by the
+ 	 * runtime.
 @@ -374,20 +374,20 @@ enum objc_class_flags
  };
  
@@ -1419,6 +1433,23 @@ index 8fd8ab8d9..c8c4845c9 100644
  	 */
  	unsigned long int reserved;
  	/** Size of the block. */
+diff --git a/objc_msgSend.aarch64.S b/objc_msgSend.aarch64.S
+index a41cba566..c535eed76 100644
+--- a/objc_msgSend.aarch64.S
++++ b/objc_msgSend.aarch64.S
+@@ -71,9 +71,10 @@
+ 	ubfx    x9, \receiver, #0, #SMALLOBJ_BITS
+ 	cbnz   x9, 6f
+ 
+-	ldr    x9, [\receiver]                 // Load class to x9 if not a small int
++	ldar   x9, [\receiver]                 // Acquire the published class
+ 1:
+-	ldr    x9, [x9, #DTABLE_OFFSET]        // Dtable -> x9
++	add    x9, x9, #DTABLE_OFFSET
++	ldar   x9, [x9]                        // Acquire the initialized dtable
+ 	ldr    w10, [\sel]                     // selector->index -> x10
+ 	ldr    w11, [x9, #SHIFT_OFFSET]        // dtable->shift -> x11
+ 	
 diff --git a/objcxx_eh.cc b/objcxx_eh.cc
 index 8ef5baf33..a1f588e86 100644
 --- a/objcxx_eh.cc
