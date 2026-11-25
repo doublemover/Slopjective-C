@@ -14,7 +14,8 @@ from . import darwin_sdk_arc as sdk_arc
 from . import darwin_sdk_portable_services as services
 from .darwin_bootstrap import DEPLOYMENT_TARGET, ROOT, verify_macho
 from .darwin_registration import (
-    CARRIER_METHOD_DIAGNOSTIC, MANAGED_LAYOUT_IMPORTS, MANAGED_LAYOUT_SOURCES, MANAGED_LAYOUT_WITNESS,
+    BLOCK_CAPTURE_IMPORTS, BLOCK_SOURCES, BLOCK_WITNESS, CARRIER_METHOD_DIAGNOSTIC,
+    MANAGED_LAYOUT_IMPORTS, MANAGED_LAYOUT_SOURCES, MANAGED_LAYOUT_WITNESS,
     NATIVE, PORTABLE_HEADERS, PORTABLE_SERVICES, RUNTIME, RUNTIME_HEADER,
     TYPED_METHOD_IMPORTS, TYPED_METHOD_SOURCES, TYPED_METHOD_WITNESS,
     file_digest, load_profile, verify_fixed_layout_dwarf, verify_int_method_ir,
@@ -207,6 +208,39 @@ def managed_layout(path: Path, report: dict, labels: dict) -> None:
             raise ValueError(f'Darwin managed layout omitted ARC compilation: {source}')
 
 
+def block_lifetimes(path: Path, report: dict, labels: dict) -> None:
+    proof = report['blocks']
+    names = {f'blocks-{opt}{route}' for opt in ('o0', 'o2') for route in ('', '-static', '-dynamic')}
+    artifacts = proof['artifacts']
+    if proof['status'] != 'PASS' or set(artifacts) != names:
+        raise ValueError('Darwin Blocks omitted an optimization or linkage route')
+    for optimization in ('o0', 'o2'):
+        name = 'blocks-' + optimization
+        obj = artifacts[name]
+        require_macho(path, 'build/' + name + '.o', obj, 'object')
+        rows = labels.get(name + '-object', [])
+        imports = labels.get(name + '-object-imports', [])
+        if (len(rows) != 1 or rows[0]['argv'][-1] != obj['path'] or
+                not {'-c', '-fobjc-arc', '-fblocks', '-' + optimization.upper()} <= set(rows[0]['argv']) or
+                not any(arg.endswith('/darwin_registration/' + BLOCK_SOURCES[0]) for arg in rows[0]['argv']) or
+                len(imports) != 1 or imports[0]['argv'] != ['/usr/bin/nm', '-u', '-j', obj['path']]):
+            raise ValueError(f'Darwin Blocks omitted the exact native compile or its imports: {name}')
+        log = retained(path, imports[0]['log']).read_text()
+        symbols = {symbol.removeprefix('_') for symbol in log.splitlines()}
+        if not BLOCK_CAPTURE_IMPORTS <= symbols or sorted(symbols) != obj['imports']:
+            raise ValueError(f'Darwin Blocks did not use the native and owned capture ABI: {name}')
+        for linkage in ('static', 'dynamic'):
+            binary = name + '-' + linkage
+            artifact = artifacts[binary]
+            paths = {SYSTEM}
+            if linkage == 'dynamic':
+                paths.add('@rpath/' + LIBRARY + '.dylib')
+            if set(artifact['load_paths']) != paths:
+                raise ValueError(f'Darwin Blocks linked unexpected libraries: {binary}')
+            executable_witness(path, 'Relocated install/bin/' + binary, artifact,
+                               labels.get(binary + '-native', []), BLOCK_WITNESS)
+
+
 def bootstrap(root: Path, revision: str) -> dict:
     report = info(root, 'result/report.json')
     host = report['platform_identity']
@@ -330,6 +364,7 @@ def registration(root: Path, first: dict, revision: str, *, require_arc: bool) -
     typed_dispatch(path, report, labels, arity=2)
     general_typed_dispatch(path, report, labels)
     managed_layout(path, report, labels)
+    block_lifetimes(path, report, labels)
     portable = report['portable_services']
     inputs = {NATIVE / name for name in PORTABLE_HEADERS}
     for service, fixture in PORTABLE_SERVICES.values():
@@ -520,14 +555,15 @@ def package(root: Path, runtime: dict, revision: str, *, require_sanitizers: boo
                    row['exit_status'] == 0 and row['stdout'].strip() == WITNESS
                    for row in qualified['commands']):
             raise ValueError(f'Darwin SDK omitted cold native execution: {name}')
-    for family, sources, witness in (
-            ('typed-method', TYPED_METHOD_SOURCES, TYPED_METHOD_WITNESS),
-            ('managed-layout', MANAGED_LAYOUT_SOURCES, MANAGED_LAYOUT_WITNESS)):
-        installed_owned_fixture(path, runtime, installed, payload, qualified, consumer, family, sources, witness)
+    for family, sources, witness, flags in (
+            ('typed-method', TYPED_METHOD_SOURCES, TYPED_METHOD_WITNESS, set()),
+            ('managed-layout', MANAGED_LAYOUT_SOURCES, MANAGED_LAYOUT_WITNESS, set()),
+            ('block-lifetime', BLOCK_SOURCES, BLOCK_WITNESS, {'-fblocks'})):
+        installed_owned_fixture(path, runtime, installed, payload, qualified, consumer, family, sources, witness, flags)
     return packed
 
 
-def installed_owned_fixture(path, runtime, installed, payload, qualified, directory, family, sources, witness):
+def installed_owned_fixture(path, runtime, installed, payload, qualified, directory, family, sources, witness, flags):
     for source in sources:
         if payload[f'{DEMO}/{source}']['sha256'] != runtime['fixtures'][source]:
             raise ValueError(f'Darwin package substituted an owned runtime fixture: {source}')
@@ -536,7 +572,7 @@ def installed_owned_fixture(path, runtime, installed, payload, qualified, direct
         name = source.removesuffix('.m') + '.o'
         artifact = qualified['artifacts'][name]
         require_macho(path, directory + name, artifact, 'object')
-        if not any(row['exit_status'] == 0 and {'-c', '-fobjc-arc', name} <= set(row['argv']) and
+        if not any(row['exit_status'] == 0 and {'-c', '-fobjc-arc', name, *flags} <= set(row['argv']) and
                    any(arg.endswith(f'/{DEMO}/{source}') for arg in row['argv']) and
                    row['argv'][0] == f"{installed['prefix']}/bin/clang" for row in qualified['commands']):
             raise ValueError(f'Darwin SDK omitted installed fixture compilation: {source}')

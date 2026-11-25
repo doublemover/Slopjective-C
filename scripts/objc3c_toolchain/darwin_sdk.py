@@ -19,7 +19,8 @@ import unicodedata
 
 from .darwin_bootstrap import DEPLOYMENT_TARGET, ROOT, require_apple_silicon, verify_macho
 from .darwin_registration import (
-    MANAGED_LAYOUT_SOURCES, MANAGED_LAYOUT_WITNESS, RUNTIME_HEADER, TYPED_METHOD_SOURCES, TYPED_METHOD_WITNESS,
+    BLOCK_SOURCES, BLOCK_WITNESS, MANAGED_LAYOUT_SOURCES, MANAGED_LAYOUT_WITNESS,
+    RUNTIME_HEADER, TYPED_METHOD_SOURCES, TYPED_METHOD_WITNESS,
 )
 from . import darwin_sdk_arc as arc_consumer
 from . import darwin_sdk_portable_services as portable_services
@@ -40,7 +41,7 @@ LIBRARY = 'libobjc3darwin'
 SYSTEM = '/usr/lib/libSystem.B.dylib'
 DEMO = 'share/objc3c/examples/registration'
 DEMO_FILES = ('api.h', 'provider.m', 'main.m', 'late.m', *arc_consumer.SOURCES,
-              *TYPED_METHOD_SOURCES, *MANAGED_LAYOUT_SOURCES)
+              *TYPED_METHOD_SOURCES, *MANAGED_LAYOUT_SOURCES, *BLOCK_SOURCES)
 API_HEADER = 'include/objc3_darwin.h'
 WITNESS = 'owned Objective-C 3 Darwin registration: PASS\nowned Objective-C 3 Darwin instances: PASS'
 MAX_ENTRIES = 10000
@@ -621,13 +622,14 @@ def qualify(archive: Path, expected_sha256: str, output: Path) -> dict:
         reports['debug'] = verify_macho(debug_file, 'debug_info')
         if native(project / 'static') != WITNESS or native(project / 'dynamic', project / 'liblate.dylib') != WITNESS:
             raise ValueError('cold relocated compiler/runtime witness failed')
-        for family, sources, witness in (
-                ('typed-method', TYPED_METHOD_SOURCES, TYPED_METHOD_WITNESS),
-                ('managed-layout', MANAGED_LAYOUT_SOURCES, MANAGED_LAYOUT_WITNESS)):
+        for family, sources, witness, flags in (
+                ('typed-method', TYPED_METHOD_SOURCES, TYPED_METHOD_WITNESS, []),
+                ('managed-layout', MANAGED_LAYOUT_SOURCES, MANAGED_LAYOUT_WITNESS, []),
+                ('block-lifetime', BLOCK_SOURCES, BLOCK_WITNESS, ['-fblocks'])):
             objects = []
             for source in (name for name in sources if name.endswith('.m')):
                 name = source.removesuffix('.m') + '.o'
-                native(*objc, '-fobjc-arc', '-I', prefix / 'include', '-c', prefix / DEMO / source, '-o', name)
+                native(*objc, '-fobjc-arc', *flags, '-I', prefix / 'include', '-c', prefix / DEMO / source, '-o', name)
                 reports[name] = verify_macho(project / name, 'object')
                 objects.append(name)
             binary = project / family

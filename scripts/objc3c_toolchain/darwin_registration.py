@@ -45,6 +45,16 @@ MANAGED_LAYOUT_IMPORTS = {
                                    'objc3_darwin_instance_size_v1'},
     'bin/managed-layout-static': set(),
 }
+BLOCK_SOURCES = ('block_lifetime.m',)
+BLOCK_WITNESS = 'owned Objective-C 3 Darwin block lifetime: PASS'
+BLOCK_RUNTIME_IMPORTS = {
+    '_Block_copy', '_Block_release', '_Block_object_assign', '_Block_object_dispose',
+    '_NSConcreteStackBlock', '_NSConcreteGlobalBlock', '_NSConcreteMallocBlock',
+}
+BLOCK_CAPTURE_IMPORTS = {
+    'objc3_darwin_arc_retain_block_v1', 'objc3_darwin_arc_copy_weak_v1',
+    'objc3_darwin_arc_destroy_weak_v1', '_Block_object_assign', '_Block_object_dispose',
+}
 CARRIER_METHOD_DIAGNOSTIC = "ObjC3 carrier operation 'by-value call ABI' for type 'Optional(int)' has no qualified lowering"
 TYPED_METHOD_IMPORTS = {
     'lib/libtyped-method-child.dylib': 'objc3_darwin_lookup_super_typed_v1',
@@ -512,6 +522,7 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
     report.update(artifacts=artifacts, installation_root=str(layout))
     report['arc'] = _exercise_arc(run, defaults, profile['compiler_runtime_flag'],
                                   link, stages, layout, dwarf)
+    report['blocks'] = _exercise_blocks(run, defaults, profile['compiler_runtime_flag'], link, stages, layout)
     report['portable_services'] = _exercise_portable_services(
         run, defaults, linker, stages, layout, cxx_flags=report['cxx_toolchain']['flags'])
 
@@ -559,7 +570,8 @@ def verify_int_method_ir(ir: str, lookup: str, *, arity: int = 1) -> None:
 def _owned_objc_imports(run, path: Path, label: str) -> list[str]:
     result = run('/usr/bin/nm', '-u', '-j', path, label=label)
     names = sorted({name.removeprefix('_') for name in result.splitlines()})
-    if any(name.startswith(('objc_', '__objc_', '_Block_', '_NSConcrete')) for name in names):
+    if any(name.startswith(('objc_', '__objc_', '_Block_', '_NSConcrete')) and name not in BLOCK_RUNTIME_IMPORTS
+           for name in names):
         raise ValueError(f'Darwin artifact has a foreign Objective-C runtime import: {path}')
     return names
 
@@ -571,7 +583,7 @@ def _exercise_arc(run, defaults, runtime_flag: str, link, stages: Path,
     threads = stages / 'arc-threads.o'
     run(*defaults, '-std=c17', '-Wall', '-Wextra', '-Werror', '-O2', '-g',
         '-c', FIXTURES / 'arc_threads.c', '-o', threads, label='arc-threads-object')
-    for option in ('-fblocks', '-fobjc-exceptions', '-fexceptions', '-fobjc-link-runtime'):
+    for option in ('-fobjc-exceptions', '-fexceptions', '-fobjc-link-runtime'):
         diagnostic = runtime_flag if option == '-fobjc-link-runtime' else 'experimental Darwin ARC'
         run(*objective_c, option, '-c', source, '-o', stages / 'unsupported-arc.o',
             rejects=(diagnostic, option), label='unsupported-arc' + option)
@@ -628,6 +640,36 @@ def _exercise_arc(run, defaults, runtime_flag: str, link, stages: Path,
                                             'load_paths': dependencies, 'imports': undefined}
     return {'status': 'PASS', 'scope': 'Stateless ARC objects and thread-local autorelease pools.',
             'threads_object': verify_macho(threads, 'object'), 'routes': routes}
+
+
+def _exercise_blocks(run, defaults, runtime_flag: str, link, stages: Path, layout: Path) -> dict:
+    flags = [*defaults, '-std=c17', '-fobjc-version=3', runtime_flag, '-fobjc-arc', '-fblocks',
+             '-I', RUNTIME_HEADER.parent, '-Wall', '-Wextra', '-Werror']
+    artifacts = {}
+    for optimization in ('O0', 'O2'):
+        label = f'blocks-{optimization.lower()}'
+        obj = stages / (label + '.o')
+        run(*flags, '-' + optimization, '-c', FIXTURES / BLOCK_SOURCES[0], '-o', obj, label=label + '-object')
+        imports = _owned_objc_imports(run, obj, label + '-object-imports')
+        if not BLOCK_CAPTURE_IMPORTS <= set(imports):
+            raise ValueError(f'{label} omitted the native Block or owned ARC capture ABI')
+        artifacts[label] = {**verify_macho(obj, 'object'), 'imports': imports}
+        for linkage, suffix in (('static', '.a'), ('dynamic', '.dylib')):
+            route = label + '-' + linkage
+            binary = layout / 'bin' / route
+            library = layout / 'lib' / ('libobjc3darwin' + suffix)
+            rpaths = ['-Wl,-rpath,@loader_path/../lib'] if linkage == 'dynamic' else []
+            run(*link, obj, library, *rpaths, '-o', binary, label=route + '-link')
+            imports = _owned_objc_imports(run, binary, route + '-imports')
+            paths = [line.strip().split(' (', 1)[0] for line in
+                     run('/usr/bin/otool', '-L', binary, label=route + '-load-paths').splitlines()[1:]]
+            expected = ['/usr/lib/libSystem.B.dylib']
+            if linkage == 'dynamic':
+                expected.append('@rpath/' + library.name)
+            if sorted(paths) != sorted(expected) or run(binary, label=route + '-native') != BLOCK_WITNESS:
+                raise ValueError(f'{route} failed the native Block lifetime witness')
+            artifacts[route] = {**verify_macho(binary, 'executable'), 'imports': imports, 'load_paths': paths}
+    return {'status': 'PASS', 'artifacts': artifacts}
 
 
 def _exercise_portable_services(run, defaults, linker: str, stages: Path, layout: Path, *, cxx_flags: list[str]) -> dict:

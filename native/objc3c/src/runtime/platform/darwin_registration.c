@@ -122,6 +122,36 @@ static _Noreturn void registration_error(const char *message) {
   abort();
 }
 
+#if defined(__APPLE__) || defined(OBJC3_DARWIN_TEST_SYSTEM_BLOCKS)
+/* libSystem owns the C Blocks ABI. Clang's ARC capture helpers call this
+ * runtime for object and weak lifetimes, so no Apple ObjC hooks are needed. */
+extern void *_NSConcreteStackBlock[];
+extern void *_NSConcreteGlobalBlock[];
+extern void *_NSConcreteMallocBlock[];
+extern void *_Block_copy(const void *block);
+extern void _Block_release(const void *block);
+
+static int is_block(const void *object) {
+  if (!object)
+    return 0;
+  const void *isa;
+  memcpy(&isa, object, sizeof(isa));
+  return isa == _NSConcreteStackBlock || isa == _NSConcreteGlobalBlock ||
+         isa == _NSConcreteMallocBlock;
+}
+
+void *objc3_darwin_arc_retain_block_v1(void *block) {
+  if (!block)
+    return NULL;
+  if (!is_block(block))
+    registration_error("block copy requires a native block");
+  void *copy = _Block_copy(block);
+  if (!copy)
+    registration_error("block copy allocation failed");
+  return copy;
+}
+#endif
+
 static const struct class_record *find_class(const char *name) {
   for (size_t i = 0; i < class_count; ++i)
     if (strcmp(registry[i].metadata->name, name) == 0)
@@ -436,20 +466,29 @@ void objc3_darwin_deallocate_v1(void *receiver) {
   finish_release(*link);
 }
 
-static void retain_locked(void *object) {
+static int retain_locked(void *object) {
   if (!object || class_is_registered(object))
-    return;
+    return 1;
   struct instance_record *instance = *find_instance(object);
-  if (!instance || !instance->references || instance->references == SIZE_MAX)
+  if (!instance)
+    return 0;
+  if (!instance->references || instance->references == SIZE_MAX)
     registration_error("invalid ARC retain");
   ++instance->references;
+  return 1;
 }
 
 void *objc3_darwin_arc_retain_v1(void *object) {
   pthread_mutex_lock(&registry_lock);
-  retain_locked(object);
+  int retained = retain_locked(object);
   pthread_mutex_unlock(&registry_lock);
-  return object;
+  if (retained)
+    return object;
+#if defined(__APPLE__) || defined(OBJC3_DARWIN_TEST_SYSTEM_BLOCKS)
+  if (is_block(object))
+    return objc3_darwin_arc_retain_block_v1(object);
+#endif
+  registration_error("invalid ARC retain");
 }
 
 void objc3_darwin_arc_release_v1(void *object) {
@@ -458,7 +497,17 @@ void objc3_darwin_arc_release_v1(void *object) {
   pthread_mutex_lock(&registry_lock);
   if (!class_is_registered(object)) {
     struct instance_record **link = find_instance(object);
-    if (!*link || !(*link)->references)
+    if (!*link) {
+      pthread_mutex_unlock(&registry_lock);
+#if defined(__APPLE__) || defined(OBJC3_DARWIN_TEST_SYSTEM_BLOCKS)
+      if (is_block(object)) {
+        _Block_release(object);
+        return;
+      }
+#endif
+      registration_error("ARC release requires a live object");
+    }
+    if (!(*link)->references)
       registration_error("ARC release requires a live object");
     if (--(*link)->references == 0) {
       finish_release(*link);
@@ -541,7 +590,8 @@ void *objc3_darwin_arc_load_weak_retained_v1(void **address) {
   check_weak_slot(address);
   pthread_mutex_lock(&registry_lock);
   void *value = *address;
-  retain_locked(value);
+  if (!retain_locked(value))
+    registration_error("ARC weak load requires a registered object");
   pthread_mutex_unlock(&registry_lock);
   return value;
 }
@@ -604,7 +654,13 @@ void *objc3_darwin_arc_autorelease_v1(void *object) {
   int immortal = class_is_registered(object);
   if (!immortal) {
     const struct instance_record *instance = *find_instance(object);
-    if (!instance || !instance->references)
+    if (instance && !instance->references)
+      registration_error("ARC autorelease requires a live object");
+#if defined(__APPLE__) || defined(OBJC3_DARWIN_TEST_SYSTEM_BLOCKS)
+    if (!instance && !is_block(object))
+#else
+    if (!instance)
+#endif
       registration_error("ARC autorelease requires a live object");
   }
   pthread_mutex_unlock(&registry_lock);

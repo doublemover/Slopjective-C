@@ -40,7 +40,7 @@ index d8775093c6809a4dd1abb602e74372d4308c6262..65c53120a76d5c7f8a96c1983520145f
        // non-fragile ABI.  For bitfields, use the bit offset into the first
        // byte of storage of the bitfield.  For other fields, use zero.
 diff --git a/clang/lib/CodeGen/CGObjC.cpp b/clang/lib/CodeGen/CGObjC.cpp
-index d8b879729aacf951beb26d48bdde4536da87da8a..e2792da0b262513ab374c8ab5606f055c2cfe9c7 100644
+index d8b879729aacf951beb26d48bdde4536da87da8a..ace845a382a2fee178c96b77549916231a2903c8 100644
 --- a/clang/lib/CodeGen/CGObjC.cpp
 +++ b/clang/lib/CodeGen/CGObjC.cpp
 @@ -11,6 +11,7 @@
@@ -118,7 +118,20 @@ index d8b879729aacf951beb26d48bdde4536da87da8a..e2792da0b262513ab374c8ab5606f055
    if (isa<llvm::ConstantPointerNull>(value))
      return value;
  
-@@ -2626,6 +2667,10 @@ static void emitAutoreleasedReturnValueMarker(CodeGenFunction &CGF) {
+@@ -2550,6 +2591,12 @@ llvm::Value *CodeGenFunction::EmitARCRetainNonBlock(llvm::Value *value) {
+ /// if it can prove that the block never escapes except down the stack.
+ llvm::Value *CodeGenFunction::EmitARCRetainBlock(llvm::Value *value,
+                                                  bool mandatory) {
++  if (isObjC3DarwinARC(CGM)) {
++    ASTContext &Context = getContext();
++    auto Copy = CGM.CreateRuntimeFunction(Context.VoidPtrTy, {Context.VoidPtrTy},
++                                          "objc3_darwin_arc_retain_block_v1");
++    return EmitNounwindRuntimeCall(Copy, {value});
++  }
+   const auto &Runtime = getLangOpts().ObjCRuntime;
+   if (getLangOpts().ObjC3 && CGM.getTarget().getTriple().isOSLinux() &&
+       Runtime.getKind() == ObjCRuntime::GNUstep &&
+@@ -2626,6 +2673,10 @@ static void emitAutoreleasedReturnValueMarker(CodeGenFunction &CGF) {
  static llvm::Value *emitOptimizedARCReturnCall(llvm::Value *value,
                                                 bool IsRetainRV,
                                                 CodeGenFunction &CGF) {
@@ -129,7 +142,7 @@ index d8b879729aacf951beb26d48bdde4536da87da8a..e2792da0b262513ab374c8ab5606f055
    emitAutoreleasedReturnValueMarker(CGF);
  
    // Add operand bundle "clang.arc.attachedcall" to the call instead of emitting
-@@ -2963,7 +3008,7 @@ llvm::Value *CodeGenFunction::EmitObjCAutoreleasePoolPush() {
+@@ -2963,7 +3014,7 @@ llvm::Value *CodeGenFunction::EmitObjCAutoreleasePoolPush() {
  void CodeGenFunction::EmitObjCAutoreleasePoolPop(llvm::Value *value) {
    assert(value->getType() == Int8PtrTy);
  
@@ -138,7 +151,7 @@ index d8b879729aacf951beb26d48bdde4536da87da8a..e2792da0b262513ab374c8ab5606f055
      // Call the runtime method not the intrinsic if we are handling exceptions
      llvm::FunctionCallee &fn =
          CGM.getObjCEntrypoints().objc_autoreleasePoolPopInvoke;
-@@ -3076,6 +3121,8 @@ void CodeGenFunction::emitARCIntrinsicUse(CodeGenFunction &CGF, Address addr,
+@@ -3076,6 +3127,8 @@ void CodeGenFunction::emitARCIntrinsicUse(CodeGenFunction &CGF, Address addr,
  ///   call i8* \@objc_autorelease(i8* %value)
  llvm::Value *CodeGenFunction::EmitObjCAutorelease(llvm::Value *value,
                                                    llvm::Type *returnType) {
@@ -147,7 +160,7 @@ index d8b879729aacf951beb26d48bdde4536da87da8a..e2792da0b262513ab374c8ab5606f055
    return emitObjCValueOperation(
        *this, value, returnType,
        CGM.getObjCEntrypoints().objc_autoreleaseRuntimeFunction,
-@@ -3086,6 +3133,8 @@ llvm::Value *CodeGenFunction::EmitObjCAutorelease(llvm::Value *value,
+@@ -3086,6 +3139,8 @@ llvm::Value *CodeGenFunction::EmitObjCAutorelease(llvm::Value *value,
  ///   call i8* \@objc_retain(i8* %value)
  llvm::Value *CodeGenFunction::EmitObjCRetainNonBlock(llvm::Value *value,
                                                       llvm::Type *returnType) {
@@ -156,7 +169,7 @@ index d8b879729aacf951beb26d48bdde4536da87da8a..e2792da0b262513ab374c8ab5606f055
    return emitObjCValueOperation(
        *this, value, returnType,
        CGM.getObjCEntrypoints().objc_retainRuntimeFunction, "objc_retain");
-@@ -3095,6 +3144,8 @@ llvm::Value *CodeGenFunction::EmitObjCRetainNonBlock(llvm::Value *value,
+@@ -3095,6 +3150,8 @@ llvm::Value *CodeGenFunction::EmitObjCRetainNonBlock(llvm::Value *value,
  ///   call void \@objc_release(i8* %value)
  void CodeGenFunction::EmitObjCRelease(llvm::Value *value,
                                        ARCPreciseLifetime_t precise) {
@@ -235,7 +248,7 @@ index 0000000000000000000000000000000000000000..12c87d74ef619087ed29f8e948317047
 +
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjCGNU.cpp b/clang/lib/CodeGen/CGObjCGNU.cpp
-index dc61dffcea5cd6375f4f253487a006f97c791a50..08d0f89103379df6d8730c77110d4410b82b5dc8 100644
+index dc61dffcea5cd6375f4f253487a006f97c791a50..784e57db6c6cf6f51f2e4be003f7baa0aab4e388 100644
 --- a/clang/lib/CodeGen/CGObjCGNU.cpp
 +++ b/clang/lib/CodeGen/CGObjCGNU.cpp
 @@ -19,6 +19,7 @@
@@ -366,7 +379,7 @@ index dc61dffcea5cd6375f4f253487a006f97c791a50..08d0f89103379df6d8730c77110d4410
      return GV;
    }
    llvm::StructType *emptyStruct = nullptr;
-@@ -1565,7 +1632,78 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -1565,7 +1632,80 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
    CatchTypeInfo getCatchAllTypeInfo() override {
      return CGM.getCXXABI().getCatchAllTypeInfo();
    }
@@ -418,10 +431,9 @@ index dc61dffcea5cd6375f4f253487a006f97c791a50..08d0f89103379df6d8730c77110d4410
 +      }
 +      if (isObjC3DarwinARC(CGM)) {
 +        const auto &Lang = CGM.getLangOpts();
-+        if (Lang.CPlusPlus || Lang.Blocks || Lang.ObjCExceptions ||
-+            Lang.Exceptions) {
++        if (Lang.CPlusPlus || Lang.ObjCExceptions || Lang.Exceptions) {
 +          CGM.Error(SourceLocation(),
-+                    "experimental Darwin ARC requires Objective-C without blocks or exceptions");
++                    "experimental Darwin ARC requires Objective-C without exceptions");
 +          return nullptr;
 +        }
 +        // Every lifetime call must already name an owned entry point. LLVM's
@@ -432,8 +444,11 @@ index dc61dffcea5cd6375f4f253487a006f97c791a50..08d0f89103379df6d8730c77110d4410
 +          if (F.use_empty() || Name == "llvm.objc.clang.arc.use" ||
 +              Name == "llvm.objc.clang.arc.noop.use")
 +            continue;
++          const bool NativeBlockHelper =
++              Lang.Blocks && (Name == "_Block_object_assign" ||
++                              Name == "_Block_object_dispose");
 +          if (Name.starts_with("llvm.objc.") || Name.starts_with("objc_") ||
-+              Name.starts_with("_Block_")) {
++              (Name.starts_with("_Block_") && !NativeBlockHelper)) {
 +            CGM.Error(SourceLocation(),
 +                      "experimental Darwin ARC encountered an unowned runtime entry point");
 +            return nullptr;
@@ -445,7 +460,7 @@ index dc61dffcea5cd6375f4f253487a006f97c791a50..08d0f89103379df6d8730c77110d4410
      // A COFF translation unit with no Objective-C metadata needs no runtime
      // registration. Emitting only zero-sized section sentinels creates an
      // entirely empty .objcrt section, which COFF linkers may discard even
-@@ -1749,6 +1887,17 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -1749,6 +1889,17 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
                                const ObjCIvarDecl *Ivar) override {
      const ObjCInterfaceDecl *ContainingInterface =
          Ivar->getContainingInterface();
@@ -463,7 +478,7 @@ index dc61dffcea5cd6375f4f253487a006f97c791a50..08d0f89103379df6d8730c77110d4410
      const std::string Name =
          GetIVarOffsetVariableName(ContainingInterface, Ivar);
      llvm::GlobalVariable *IvarOffsetPointer = TheModule.getNamedGlobal(Name);
-@@ -1773,6 +1922,72 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -1773,6 +1924,72 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
      // Get the class name
      ObjCInterfaceDecl *classDecl =
          const_cast<ObjCInterfaceDecl *>(OID->getClassInterface());
@@ -536,7 +551,7 @@ index dc61dffcea5cd6375f4f253487a006f97c791a50..08d0f89103379df6d8730c77110d4410
      std::string className = classDecl->getObjCRuntimeNameAsString().str();
      auto *classNameConstant = MakeConstantString(className);
  
-@@ -1865,22 +2080,24 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -1865,22 +2082,24 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
      // const char *name;
      classFields.add(classNameConstant);
      // long version;
@@ -571,7 +586,7 @@ index dc61dffcea5cd6375f4f253487a006f97c791a50..08d0f89103379df6d8730c77110d4410
  
      if (classDecl->all_declared_ivar_begin() == nullptr)
        classFields.addNullPointer(PtrTy);
-@@ -1920,8 +2137,11 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -1920,8 +2139,11 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
          uint64_t BaseOffset = ComputeIvarBaseOffset(CGM, OID, IVD);
          // A subclass may reuse superclass tail padding. The nonfragile
          // displacement is signed even when the absolute layout offsets are not.
@@ -585,7 +600,7 @@ index dc61dffcea5cd6375f4f253487a006f97c791a50..08d0f89103379df6d8730c77110d4410
          if (!llvm::isIntN(IntTy->getBitWidth(), Offset)) {
            CGM.Error(IVD->getLocation(), "GNUstep ivar offset exceeds the signed runtime ABI range");
            Offset = 0;
-@@ -1935,15 +2155,21 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -1935,15 +2157,21 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
            OffsetVar = new llvm::GlobalVariable(TheModule, IntTy,
              false, llvm::GlobalValue::ExternalLinkage,
              OffsetValue, OffsetName);
@@ -610,7 +625,7 @@ index dc61dffcea5cd6375f4f253487a006f97c791a50..08d0f89103379df6d8730c77110d4410
          ivarBuilder.add(OffsetVar);
          // Ivar size
          ivarBuilder.addInt(Int32Ty,
-@@ -2023,7 +2249,8 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -2023,7 +2251,8 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
          CGM.getPointerAlign(), false, llvm::GlobalValue::ExternalLinkage);
  
      auto *classRefSymbol = GetClassVar(className);
@@ -620,7 +635,7 @@ index dc61dffcea5cd6375f4f253487a006f97c791a50..08d0f89103379df6d8730c77110d4410
      classRefSymbol->setInitializer(classStruct);
  
      if (IsCOFF) {
-@@ -2063,6 +2290,11 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -2063,6 +2292,11 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
      }
      assert(classStruct->getName() == SymbolForClass(className));
  
@@ -632,7 +647,7 @@ index dc61dffcea5cd6375f4f253487a006f97c791a50..08d0f89103379df6d8730c77110d4410
      auto classInitRef = new llvm::GlobalVariable(TheModule,
          classStruct->getType(), false, llvm::GlobalValue::ExternalLinkage,
          classStruct, ManglePublicSymbol("OBJC_INIT_CLASS_") + className);
-@@ -2829,6 +3061,16 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
+@@ -2829,6 +3063,16 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
                                      const CallArgList &CallArgs,
                                      const ObjCMethodDecl *Method) {
    CGBuilderTy &Builder = CGF.Builder;
@@ -649,7 +664,7 @@ index dc61dffcea5cd6375f4f253487a006f97c791a50..08d0f89103379df6d8730c77110d4410
    if (CGM.getLangOpts().getGC() == LangOptions::GCOnly) {
      if (Sel == RetainSel || Sel == AutoreleaseSel) {
        return RValue::get(EnforceType(Builder, Receiver,
-@@ -2839,7 +3081,7 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
+@@ -2839,7 +3083,7 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
      }
    }
  
@@ -658,7 +673,7 @@ index dc61dffcea5cd6375f4f253487a006f97c791a50..08d0f89103379df6d8730c77110d4410
    CallArgList ActualArgs;
  
    ActualArgs.add(RValue::get(EnforceType(Builder, Receiver, IdTy)), ASTIdTy);
-@@ -2860,6 +3102,12 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
+@@ -2860,6 +3104,12 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
          Builder.CreateAlignedLoad(IdTy, ReceiverClass, CGF.getPointerAlign());
      }
      ReceiverClass = EnforceType(Builder, ReceiverClass, IdTy);
@@ -671,7 +686,7 @@ index dc61dffcea5cd6375f4f253487a006f97c791a50..08d0f89103379df6d8730c77110d4410
    } else {
      if (isCategoryImpl) {
        llvm::FunctionCallee classLookupFunction = nullptr;
-@@ -2947,6 +3195,13 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
+@@ -2947,6 +3197,13 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
                                 const ObjCInterfaceDecl *Class,
                                 const ObjCMethodDecl *Method) {
    CGBuilderTy &Builder = CGF.Builder;
@@ -685,7 +700,7 @@ index dc61dffcea5cd6375f4f253487a006f97c791a50..08d0f89103379df6d8730c77110d4410
  
    // Strip out message sends to retain / release in GC mode
    if (CGM.getLangOpts().getGC() == LangOptions::GCOnly) {
-@@ -3029,6 +3284,15 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
+@@ -3029,6 +3286,15 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
        }
      }
  
@@ -701,7 +716,7 @@ index dc61dffcea5cd6375f4f253487a006f97c791a50..08d0f89103379df6d8730c77110d4410
      // If the return value isn't flagged as unused, and the result
      // type isn't in our narrow set where we assume compatibility,
      // we need a nil check to ensure a nil value.
-@@ -3097,6 +3361,8 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
+@@ -3097,6 +3363,8 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
    // If this is a direct method, just emit it here.
    if (isDirect)
      imp = GenerateMethod(Method, Method->getClassInterface());
@@ -711,7 +726,7 @@ index dc61dffcea5cd6375f4f253487a006f97c791a50..08d0f89103379df6d8730c77110d4410
      // If we have non-legacy dispatch specified, we try using the
      // objc_msgSend() functions.  These are not supported on all platforms
 diff --git a/clang/lib/Driver/ToolChains/Clang.cpp b/clang/lib/Driver/ToolChains/Clang.cpp
-index 230fd92b304414ccca79dd85d46cbc9a7c58b4c7..127beb6477937929c6b63eb6b45434b5bd69b5f1 100644
+index 230fd92b304414ccca79dd85d46cbc9a7c58b4c7..e3c062f42ad0a7984e1d7bfee377e05fed7e5e64 100644
 --- a/clang/lib/Driver/ToolChains/Clang.cpp
 +++ b/clang/lib/Driver/ToolChains/Clang.cpp
 @@ -131,6 +131,19 @@ shouldUseExceptionTablesForObjCExceptions(const ObjCRuntime &runtime,
@@ -752,7 +767,7 @@ index 230fd92b304414ccca79dd85d46cbc9a7c58b4c7..127beb6477937929c6b63eb6b45434b5
        (Args.hasArg(options::OPT_fgnu_runtime) &&
         Args.hasArg(options::OPT_fobjc_nonfragile_abi) &&
         !Args.hasArg(options::OPT_fno_blocks))) {
-@@ -8631,14 +8644,44 @@ ObjCRuntime Clang::AddObjCRuntimeArgs(const ArgList &args,
+@@ -8631,14 +8644,42 @@ ObjCRuntime Clang::AddObjCRuntimeArgs(const ArgList &args,
        getToolChain().getDriver().Diag(diag::err_drv_unknown_objc_runtime)
            << value;
      }
@@ -777,8 +792,6 @@ index 230fd92b304414ccca79dd85d46cbc9a7c58b4c7..127beb6477937929c6b63eb6b45434b5
 +                return types::isCXX(Input.getType());
 +              }))
 +            Unsupported = "Objective-C++ ARC";
-+          else if (args.hasFlag(options::OPT_fblocks, options::OPT_fno_blocks, false))
-+            Unsupported = "-fblocks";
 +          else if (args.hasFlag(options::OPT_fobjc_exceptions,
 +                                options::OPT_fno_objc_exceptions, false))
 +            Unsupported = "-fobjc-exceptions";
