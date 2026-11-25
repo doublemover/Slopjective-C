@@ -18,6 +18,7 @@ import tempfile
 import unicodedata
 
 from .darwin_bootstrap import DEPLOYMENT_TARGET, ROOT, require_apple_silicon, verify_macho
+from .darwin_registration import TYPED_METHOD_SOURCES, TYPED_METHOD_WITNESS
 from . import darwin_sdk_arc as arc_consumer
 from . import darwin_sdk_portable_services as portable_services
 from . import darwin_sdk_sanitizers as sanitizers
@@ -36,7 +37,7 @@ SDK_VERSION = '15.5'
 LIBRARY = 'libobjc3darwin'
 SYSTEM = '/usr/lib/libSystem.B.dylib'
 DEMO = 'share/objc3c/examples/registration'
-DEMO_FILES = ('api.h', 'provider.m', 'main.m', 'late.m', *arc_consumer.SOURCES)
+DEMO_FILES = ('api.h', 'provider.m', 'main.m', 'late.m', *arc_consumer.SOURCES, *TYPED_METHOD_SOURCES)
 WITNESS = 'owned Objective-C 3 Darwin registration: PASS\nowned Objective-C 3 Darwin instances: PASS'
 MAX_ENTRIES = 10000
 MAX_PAYLOAD_BYTES = 1024 ** 3
@@ -615,6 +616,20 @@ def qualify(archive: Path, expected_sha256: str, output: Path) -> dict:
         reports['debug'] = verify_macho(debug_file, 'debug_info')
         if native(project / 'static') != WITNESS or native(project / 'dynamic', project / 'liblate.dylib') != WITNESS:
             raise ValueError('cold relocated compiler/runtime witness failed')
+        typed_objects = [name.removesuffix('.m') + '.o' for name in TYPED_METHOD_SOURCES if name.endswith('.m')]
+        for name in typed_objects:
+            native(*objc, '-fobjc-arc', '-c', prefix / DEMO / (name.removesuffix('.o') + '.m'), '-o', name)
+            reports[name] = verify_macho(project / name, 'object')
+        typed = project / 'typed-method'
+        native(*link, *typed_objects, runtime, '-Wl,-rpath,' + rpath, '-o', typed)
+        reports[typed.name] = verify_macho(typed, 'executable')
+        reports[typed.name].update(
+            load_paths=_load_paths(host['tools']['otool']['path'], typed, [SYSTEM, '@rpath/' + runtime.name], commands),
+            rpaths=_rpaths(host['tools']['otool']['path'], typed, [rpath], commands),
+            deployment=_deployment(host['tools']['otool']['path'], typed, commands))
+        if native(typed, trace_libraries=True) != TYPED_METHOD_WITNESS:
+            raise ValueError('installed Darwin typed dispatch witness failed')
+        reports[typed.name]['loaded_runtime'] = arc_consumer.loaded_runtime(commands[-1]['stderr'], runtime)
         report['arc'] = arc_consumer.qualify_consumer(prefix, manifest, host, output / arc_consumer.DIRECTORY, commands)
         if portable_services.KEY in manifest:
             report[portable_services.KEY] = portable_services.qualify_consumer(

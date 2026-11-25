@@ -61,8 +61,9 @@ patch on top of the locked LLVM source. It emits one Mach-O initializer per
 translation unit that defines a class. The initializer hands that unit's
 class table to the owned runtime. Class sends use the metaclass method table,
 and instance sends use the class method table through the live object's ISA.
-Both lookups match the selector and exact signature for an `int` result with
-up to two signed `int` arguments. The compiler
+Both lookups match the selector name and type encoding. The compiler emits
+the indirect call with the declared ABI for scalar and plain C structure
+arguments and results, including object pointers. The compiler
 driver reserves `-fobjc-runtime=gnustep-2.99` for Objective-C 3 on macOS arm64
 and rejects Apple runtime linking for this profile.
 
@@ -93,8 +94,9 @@ class and instance selectors, the most-derived override, and explicit
 `super` sends. Its static link places child metadata before base metadata.
 Its relocated dynamic link puts the strong base reference in a separate
 dylib. The controls check a missing runtime at link and load, the prior
-GNUstep driver guard, a subclass with an added ivar, a root bit-field, a
-`double` method argument, Apple runtime linking, and a wrong architecture.
+GNUstep driver guard, a subclass with an added ivar, a root bit-field,
+variadic methods, carrier arguments, Apple runtime linking, and a wrong
+architecture.
 
 The one- and two-argument fixtures use separate parent and child dylibs. Class
 and instance overrides pass signed arguments through `super`. The two-argument
@@ -102,8 +104,11 @@ fixture distinguishes the argument positions, and nil sends evaluate each
 argument once and return zero. Static, relocated dynamic, and ARC consumers
 qualify the typed runtime lookups. The O0/O2 IR checks bind each lookup result
 to an indirect call with the expected `i32` arguments. Runtime controls reject
-the wrong selector encoding. Compiler controls reject mixed parameter types
-and three-argument method definitions and sends.
+the wrong selector encoding. A separate typed-method witness uses an object
+return and a by-value 24-byte structure, a pointer, and an integer in one
+send. The witness checks inherited dispatch, a `super` send, nil results,
+and argument evaluation. The installed SDK recompiles and runs it with ARC
+and records which installed runtime the executable loaded.
 
 The `fixed-root-int-v1` fixture has one naturally aligned plain `int` in a
 root class. Its child lives in a separate dylib and inherits the same field.
@@ -231,9 +236,9 @@ finalization, and exception-aware cleanup across images and threads.
   gates. The released driver rejects GNUstep 2.2 for Mach-O. Its GNUstep
   registration emits ELF section boundaries, COMDAT groups and an ELF
   constructor section. The separate experimental compiler handles root
-  classes, subclasses, and instances with ordinary `int` methods taking zero or one `int` argument,
-  including a fixed-root scalar layout. General instance storage, properties,
-  protocols, categories, broader ARC, exceptions and cross-image runtime
+  classes, subclasses, fixed-root scalar layout, and typed dispatch for
+  scalar and plain C structure parameters and results. General instance
+  storage, properties, protocols, categories, broader ARC, exceptions and cross-image runtime
   lifecycle still need a design and native workloads. Inspect the linked
   dependency closure for accidental Apple ObjC2 use. [Driver guard](https://github.com/llvm/llvm-project/blob/392dfff97d29b59d77e5cac6d4b6ef2585fe7117/clang/lib/Driver/ToolChains/Clang.cpp#L8628)
   · [Registration lowering](https://github.com/llvm/llvm-project/blob/392dfff97d29b59d77e5cac6d4b6ef2585fe7117/clang/lib/CodeGen/CGObjCGNU.cpp#L1518)

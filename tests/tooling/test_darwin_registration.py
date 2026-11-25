@@ -192,18 +192,33 @@ static int int_argument(const void *receiver, const struct selector_record *sele
   return receiver && selector ? input + 17 : -1;
 }
 
+struct triple { long first, second, third; };
+typedef struct triple (*mixed_implementation)(const void *, const struct selector_record *,
+                                             struct triple, const int *, int);
+
+static struct triple mixed_argument(const void *receiver, const struct selector_record *selector,
+                                    struct triple value, const int *offset, int bias) {
+  if (receiver && selector) {
+    value.first += *offset;
+    value.second += bias;
+  }
+  return value;
+}
+
 static const struct selector_record selector = {"answer", "i16@0:8"};
 static const struct selector_record same_signature = {"answer", "i16@0:8"};
 static const struct selector_record typed = {"argument:", "i20@0:8i16"};
 static const struct selector_record wrong_type = {"answer", "i20@0:8i16"};
-static const struct selector_record wrong_signature = {"answer:", "i24@0:8d16"};
+static const struct selector_record wrong_signature = {"answer:", ""};
+static const struct selector_record mixed = {"combine:offset:bias:", "{triple=qqq}52@0:8{triple=qqq}16r^i40i48"};
 static const struct method_list class_methods = {
   NULL, 1, sizeof(struct method_record), {{(method_address)class_answer, &selector, "i16@0:8"}}
 };
 static const struct method_list instance_methods = {
-  NULL, 2, sizeof(struct method_record), {
+  NULL, 3, sizeof(struct method_record), {
     {(method_address)instance_answer, &selector, "i16@0:8"},
     {(method_address)int_argument, &typed, "i20@0:8i16"},
+    {(method_address)mixed_argument, &mixed, "{triple=qqq}52@0:8{triple=qqq}16r^i40i48"},
   }
 };
 static const struct method_list child_methods = {
@@ -319,6 +334,17 @@ int main(int argc, char **argv) {
       objc3_darwin_lookup_super_int_arg_v1(&instance_super, &typed)(derived, &typed, -12) != 5 ||
       objc3_darwin_lookup_int_arg_v1(NULL, &typed)(NULL, &typed, -12) != 0)
     return 13;
+  if (strcmp(control, "wrong-general-signature") == 0) {
+    const struct selector_record wrong_mixed = {mixed.name, typed.type};
+    objc3_darwin_lookup_typed_v1(derived, &wrong_mixed);
+  }
+  mixed_implementation inherit = (mixed_implementation)objc3_darwin_lookup_typed_v1(derived, &mixed);
+  mixed_implementation super_mixed = (mixed_implementation)objc3_darwin_lookup_super_typed_v1(&instance_super, &mixed);
+  const int offset = 9;
+  const struct triple result = inherit(derived, &mixed, (struct triple){2, 4, 6}, &offset, 3);
+  if (super_mixed != inherit || result.first != 11 || result.second != 7 || result.third != 6 ||
+      objc3_darwin_lookup_typed_v1(NULL, &mixed))
+    return 14;
   objc3_darwin_deallocate_v1(derived);
   if (!objc3_darwin_check_arc_threads(&root) || instances)
     return 11;
@@ -339,11 +365,12 @@ int main(int argc, char **argv) {
         ('fixed-offset', 'invalid fixed root ivar layout'),
         ('fixed-stride', 'invalid fixed root class layout'),
         ('fixed-extent', 'invalid fixed root class layout'),
-        ('wrong-method-table', 'invalid Darwin int method encoding'),
+        ('wrong-method-table', 'invalid Darwin method metadata'),
         ('wrong-selector-type', 'selector encoding does not match the Darwin lookup ABI'),
         ('wrong-int-selector-type', 'selector encoding does not match the Darwin lookup ABI'),
         ('wrong-int-super-selector-type', 'selector encoding does not match the Darwin lookup ABI'),
         ('wrong-signature-at-same-name', 'method selector is missing'),
+        ('wrong-general-signature', 'method selector is missing'),
         ('missing-superclass', 'class has an unregistered superclass'),
         ('cyclic-superclass', 'class hierarchy has a cycle'),
         ('wrong-super-start', 'super dispatch start is not an ancestor of the receiver'),

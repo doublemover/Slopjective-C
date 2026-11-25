@@ -14,8 +14,9 @@ from . import darwin_sdk_arc as sdk_arc
 from . import darwin_sdk_portable_services as services
 from .darwin_bootstrap import DEPLOYMENT_TARGET, ROOT, verify_macho
 from .darwin_registration import (
-    NATIVE, PORTABLE_HEADERS, PORTABLE_SERVICES, RUNTIME, file_digest, load_profile, verify_fixed_layout_dwarf,
-    verify_int_method_ir,
+    CARRIER_METHOD_DIAGNOSTIC, NATIVE, PORTABLE_HEADERS, PORTABLE_SERVICES, RUNTIME,
+    TYPED_METHOD_IMPORTS, TYPED_METHOD_SOURCES, TYPED_METHOD_WITNESS,
+    file_digest, load_profile, verify_fixed_layout_dwarf, verify_int_method_ir,
 )
 from .darwin_sdk import (
     ARCHIVE_NAME, ARCHIVE_ROOT, DEMO, LIBRARY, PAYLOAD_SCHEMA, PROFILE, RECEIPT_SCHEMA, SDK_VERSION,
@@ -120,6 +121,7 @@ def typed_dispatch(path: Path, report: dict, labels: dict, *, arity: int) -> Non
                 raise ValueError(f'Darwin two-int method omitted its exact object compilation: {unit}')
         base = 'lib/libtwo-int-method-base.dylib'
         require_macho(path, 'Relocated install/' + base, report['artifacts'][base], 'dynamic_library')
+    if arity == 2 and 'typed_methods' not in report:
         for label in ('unsupported-two-int-method-type', 'unsupported-two-int-method-arity',
                       'unsupported-two-int-method-send-type', 'unsupported-two-int-method-send-arity'):
             rows = labels.get(label, [])
@@ -134,6 +136,41 @@ def typed_dispatch(path: Path, report: dict, labels: dict, *, arity: int) -> Non
                     argv[-2] != '-o' or Path(argv[-1]).name != label + '.o' or '-c' not in argv or not any(
                         arg.endswith('/darwin_registration/unsupported_two_int_method.m') for arg in argv)):
                 raise ValueError(f'Darwin two-int method omitted an exact rejection control: {label}')
+
+
+def general_typed_dispatch(path: Path, report: dict, labels: dict) -> None:
+    proof = report.get('typed_methods', {})
+    if proof.get('status') != 'PASS' or set(proof.get('imports', {})) != set(TYPED_METHOD_IMPORTS):
+        raise ValueError('Darwin general typed dispatch omitted its native evidence')
+    for relative, lookup in TYPED_METHOD_IMPORTS.items():
+        artifact = report['artifacts'][relative]
+        name = Path(relative).name
+        rows = labels.get(name + '-imports', [])
+        if len(rows) != 1 or rows[0]['argv'] != ['/usr/bin/nm', '-u', '-j', artifact['path']]:
+            raise ValueError(f'Darwin typed method omitted native imports: {relative}')
+        log = retained(path, rows[0]['log'], allow_empty=True).read_text()
+        names = sorted({symbol.removeprefix('_') for symbol in log.splitlines()})
+        if (names != proof['imports'][relative] or (lookup is not None and lookup not in names) or
+                (lookup is None and any(symbol.startswith('objc3_darwin_') for symbol in names))):
+            raise ValueError(f'Darwin typed method native imports differ: {relative}')
+        if relative.startswith('bin/'):
+            executable_witness(path, 'Relocated install/' + relative, artifact,
+                               labels.get(name + '-native', []), TYPED_METHOD_WITNESS)
+        else:
+            require_macho(path, 'Relocated install/' + relative, artifact, 'dynamic_library')
+            if not {'@rpath/libtyped-method-base.dylib', '@rpath/libobjc3darwin.dylib'} <= set(artifact['load_paths']):
+                raise ValueError('Darwin typed method omitted its base and owned runtime dependencies')
+    for label, define in (
+        ('unsupported-carrier-method', False),
+        ('unsupported-carrier-send', True),
+    ):
+        rows = labels.get(label, [])
+        argv = rows[0]['argv'] if len(rows) == 1 else []
+        if (len(argv) < 4 or rows[0].get('expected_diagnostic') != [CARRIER_METHOD_DIAGNOSTIC] or
+                ('-DDARWIN_UNSUPPORTED_SEND=1' in argv) != define or
+                argv[-2] != '-o' or Path(argv[-1]).name != label + '.o' or '-c' not in argv or not any(
+                    arg.endswith('/darwin_registration/unsupported_carrier_method.m') for arg in argv)):
+            raise ValueError(f'Darwin typed method omitted an exact rejection control: {label}')
 
 
 def bootstrap(root: Path, revision: str) -> dict:
@@ -256,6 +293,7 @@ def registration(root: Path, first: dict, revision: str, *, require_arc: bool) -
                                    labels.get(binary + '-native', []), sdk_arc.WITNESS)
     typed_dispatch(path, report, labels, arity=1)
     typed_dispatch(path, report, labels, arity=2)
+    general_typed_dispatch(path, report, labels)
     portable = report['portable_services']
     inputs = {NATIVE / name for name in PORTABLE_HEADERS}
     for service, fixture in PORTABLE_SERVICES.values():
@@ -445,6 +483,30 @@ def package(root: Path, runtime: dict, revision: str, *, require_sanitizers: boo
                    row['exit_status'] == 0 and row['stdout'].strip() == WITNESS
                    for row in qualified['commands']):
             raise ValueError(f'Darwin SDK omitted cold native execution: {name}')
+    for source in TYPED_METHOD_SOURCES:
+        if payload[f'{DEMO}/{source}']['sha256'] != runtime['fixtures'][source]:
+            raise ValueError(f'Darwin package substituted a typed method fixture: {source}')
+        if source.endswith('.m'):
+            name = source.removesuffix('.m') + '.o'
+            artifact = qualified['artifacts'][name]
+            require_macho(path, consumer + name, artifact, 'object')
+            if not any(row['exit_status'] == 0 and {'-c', '-fobjc-arc', name} <= set(row['argv']) and
+                       any(arg.endswith(f'/{DEMO}/{source}') for arg in row['argv'])
+                       for row in qualified['commands']):
+                raise ValueError(f'Darwin SDK omitted installed typed fixture compilation: {source}')
+    typed = qualified['artifacts']['typed-method']
+    require_macho(path, consumer + 'typed-method', typed, 'executable')
+    runtime_path = f"{installed['prefix']}/lib/{LIBRARY}.dylib"
+    traced_paths = {runtime_path}
+    if runtime_path.startswith(('/private/var/', '/private/tmp/')):
+        traced_paths.add(runtime_path.removeprefix('/private'))
+    if (set(typed['load_paths']) != {SYSTEM, f'@rpath/{LIBRARY}.dylib'} or typed['loaded_runtime'] != runtime_path or
+            not any(row['argv'][0] == typed['path'] and row['exit_status'] == 0 and
+                    row.get('dyld_print_libraries') is True and row['stdout'].strip() == TYPED_METHOD_WITNESS and
+                    any(line.endswith(' ' + candidate) for line in row['stderr'].splitlines()
+                        for candidate in traced_paths)
+                    for row in qualified['commands'])):
+        raise ValueError('Darwin SDK omitted cold native typed dispatch against the installed runtime')
     return packed
 
 

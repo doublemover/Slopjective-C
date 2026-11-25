@@ -34,6 +34,15 @@ PORTABLE_HEADERS = (
     'src/runtime/stdlib/stdlib_service_contract.h', 'src/runtime/stdlib/text_utf8_decode.h',
     'tests/test_assertion_policy.h',
 )
+TYPED_METHOD_WITNESS = 'owned Objective-C 3 Darwin typed methods: PASS'
+TYPED_METHOD_SOURCES = ('typed_method_api.h', 'typed_method_base.m', 'typed_method_child.m', 'typed_method_main.m')
+CARRIER_METHOD_DIAGNOSTIC = "ObjC3 carrier operation 'by-value call ABI' for type 'Optional(int)' has no qualified lowering"
+TYPED_METHOD_IMPORTS = {
+    'lib/libtyped-method-child.dylib': 'objc3_darwin_lookup_super_typed_v1',
+    'bin/typed-method-dynamic': 'objc3_darwin_lookup_typed_v1',
+    'bin/typed-method-arc': 'objc3_darwin_lookup_typed_v1',
+    'bin/typed-method-static': None,
+}
 PROFILE_NAME = 'macos-arm64-registration-experimental'
 # The ARC thread witness must complete its condition-variable handshake and join.
 ARC_THREAD_WITNESS_TIMEOUT_SECONDS = 60
@@ -283,6 +292,7 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
         'fixed-layout': 'owned Objective-C 3 Darwin fixed root layout: PASS',
         'int-method': 'owned Objective-C 3 Darwin int-argument methods: PASS',
         'two-int-method': 'owned Objective-C 3 Darwin two-int-argument methods: PASS',
+        'typed-method': TYPED_METHOD_WITNESS,
     }
     method_families = (
         ('int-method', 1, 'int_arg', 'int_argument_methods'),
@@ -339,7 +349,8 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
     run(*link, layout_arc, fixed_child, runtime_dylib,
         '-Wl,-rpath,@loader_path/../lib', '-o', layout / 'bin/fixed-layout-arc')
     required_libraries['bin/fixed-layout-arc'] = ['@rpath/' + fixed_child.name, runtime_id]
-    for family, _, _, _ in method_families:
+    arc_families = [family for family, _, _, _ in method_families] + ['typed-method']
+    for family in arc_families:
         prefix = family.replace('-', '_') + '_main'
         main_arc = stages / (prefix + '_arc.o')
         child = layout / f'lib/lib{family}-child.dylib'
@@ -356,7 +367,7 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
         ('unsupported.m', 'unsupported-subclass-layout', 'a single plain int root ivar'),
         ('unsupported_instance_layout.m', 'unsupported-instance-layout', 'a single plain int root ivar'),
         ('unsupported_instance_signature.m', 'unsupported-instance-signature',
-         'ordinary int methods with at most two int arguments'),
+         'supported typed methods'),
     ):
         artifact = stages / (label + '.o')
         run(*objective_c, '-c', FIXTURES / fixture, '-o', artifact,
@@ -366,19 +377,17 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
     run(*objective_c, '-DDARWIN_UNSUPPORTED_SEND=1',
         '-c', FIXTURES / 'unsupported_instance_signature.m',
         '-o', stages / 'unsupported-instance-send.o', label='unsupported-instance-send',
-        rejects=('experimental Darwin registration requires an ordinary int message with at most two int arguments',))
-    for kind, flags in (('type', []), ('arity', ['-DDARWIN_UNSUPPORTED_ARITY=1'])):
-        for form, options, diagnostic in (
-            ('', [], 'ordinary int methods'),
-            ('send-', ['-DDARWIN_UNSUPPORTED_SEND=1'], 'an ordinary int message'),
-        ):
-            label = 'unsupported-two-int-method-' + form + kind
-            artifact = stages / (label + '.o')
-            run(*objective_c, *flags, *options, '-c', FIXTURES / 'unsupported_two_int_method.m',
-                '-o', artifact, label=label,
-                rejects=(f'experimental Darwin registration requires {diagnostic} with at most two int arguments',))
-            if artifact.exists():
-                raise ValueError(f'rejected Darwin int method emitted an object: {label}')
+        rejects=('experimental Darwin registration requires a supported typed message',))
+    for label, options in (
+        ('unsupported-carrier-method', []),
+        ('unsupported-carrier-send', ['-DDARWIN_UNSUPPORTED_SEND=1']),
+    ):
+        artifact = stages / (label + '.o')
+        run(*objective_c, *options, '-c', FIXTURES / 'unsupported_carrier_method.m',
+            '-o', artifact, label=label,
+            rejects=(CARRIER_METHOD_DIAGNOSTIC,))
+        if artifact.exists():
+            raise ValueError(f'rejected Darwin carrier method emitted an object: {label}')
     run(*objective_c, '-fobjc-link-runtime', '-c', FIXTURES / 'provider.m', '-o', stages / 'apple-runtime.o',
         rejects=(profile['compiler_runtime_flag'], '-fobjc-link-runtime'), label='unsupported-apple-runtime')
     run(*objective_c, '--target=x86_64-apple-macos15.0', '-c', FIXTURES / 'provider.m', '-o', stages / 'x86.o',
@@ -457,6 +466,16 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
                 raise ValueError(f'{relative} has inconsistent int-argument method linkage')
             method_imports[relative] = names
         report[receipt] = {'status': 'PASS', 'ir': methods[family], 'imports': method_imports}
+    if run(layout / 'bin/typed-method-arc', label='typed-method-arc-native') != hierarchy_witnesses['typed-method']:
+        raise ValueError('the native typed method ARC consumer failed')
+    typed_imports = {}
+    for relative, required in TYPED_METHOD_IMPORTS.items():
+        names = _owned_objc_imports(run, layout / relative, Path(relative).name + '-imports')
+        if (required is not None and required not in names) or (required is None and any(
+                name.startswith('objc3_darwin_') for name in names)):
+            raise ValueError(f'{relative} has inconsistent typed method linkage')
+        typed_imports[relative] = names
+    report['typed_methods'] = {'status': 'PASS', 'imports': typed_imports}
     for binary, filename, label in (
         ('dynamic', 'libobjc3darwin.dylib', 'missing-runtime-at-load'),
         ('inheritance-dynamic', 'libinheritance-base.dylib', 'missing-superclass-at-load'),
