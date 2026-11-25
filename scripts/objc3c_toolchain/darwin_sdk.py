@@ -634,8 +634,8 @@ def qualify(archive: Path, expected_sha256: str, output: Path) -> dict:
     return report
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+def main(argv=None, *, prog=None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__, prog=prog)
     commands = parser.add_subparsers(dest='action', required=True)
     pack = commands.add_parser('pack', help='assemble from a verified registration producer and its live compiler')
     for name in ('stage-compiler', 'llvm-source', 'bootstrap-report', 'registration-report', 'output-dir'):
@@ -654,7 +654,7 @@ def main() -> int:
     uninstall = commands.add_parser('uninstall', help='remove an exact admitted managed SDK')
     uninstall.add_argument('--root', type=Path, required=True)
     uninstall.add_argument('--seal-sha256', required=True)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     try:
         if args.action == 'pack':
             result = package_registration(args.stage_compiler, args.llvm_source, args.bootstrap_report,

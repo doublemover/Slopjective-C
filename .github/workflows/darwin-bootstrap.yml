@@ -21,12 +21,15 @@ on:
   pull_request:
     paths:
       - ".github/workflows/darwin-bootstrap.yml"
+      - ".github/workflows/darwin-managed-replay.yml"
+      - "scripts/objc3c_toolchain/cli.py"
       - "scripts/objc3c_toolchain/darwin_bootstrap.py"
       - "scripts/objc3c_toolchain/darwin_evidence.py"
       - "scripts/objc3c_toolchain/darwin_registration.py"
       - "scripts/objc3c_toolchain/darwin_sdk.py"
       - "scripts/objc3c_toolchain/darwin_sdk_arc.py"
       - "scripts/objc3c_toolchain/darwin_sdk_portable_services.py"
+      - "scripts/objc3c_toolchain/darwin_sdk_replay.py"
       - "scripts/objc3c_toolchain/darwin_sdk_sanitizers.py"
       - "scripts/objc3c_toolchain_runtime/runtime-profile.json"
       - "scripts/objc3c_toolchain_runtime/verify_runtime_profile.py"
@@ -108,6 +111,7 @@ jobs:
           fi
           if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
             changes=$(git diff --name-only HEAD^1 HEAD -- toolchains/llvm/experimental \
+              scripts/objc3c_toolchain/cli.py \
               scripts/objc3c_toolchain/darwin_registration.py \
               scripts/objc3c_toolchain/darwin_sdk.py scripts/objc3c_toolchain/darwin_sdk_arc.py \
               scripts/objc3c_toolchain/darwin_sdk_portable_services.py \
@@ -174,7 +178,7 @@ jobs:
         run: |
           evidence="$RUNNER_TEMP/darwin-bootstrap-evidence"
           unlink "$RUNNER_TEMP/$LLVM_ARCHIVE"
-          python -B -m scripts.objc3c_toolchain.darwin_bootstrap \
+          python -B -m scripts.objc3c_toolchain darwin bootstrap \
             --llvm-root "$RUNNER_TEMP/darwin-llvm" \
             --output-dir "$evidence/result" 2>&1 | tee "$evidence/probe.log"
       - name: Build and qualify experimental Objective-C 3 registration
@@ -184,12 +188,11 @@ jobs:
           RUN_SANITIZERS: ${{ steps.runtime.outputs.sanitizers }}
         run: |
           evidence="$RUNNER_TEMP/darwin-bootstrap-evidence"
-          options=(--package-sdk)
+          options=()
           if [[ "$RUN_SANITIZERS" == true ]]; then
             options+=(--sdk-sanitizers)
           fi
-          python -B -m scripts.objc3c_toolchain.darwin_registration \
-            --profile macos-arm64-registration-experimental --fetch "${options[@]}" \
+          python -B -m scripts.objc3c_toolchain darwin build-sdk --fetch "${options[@]}" \
             --bootstrap-report "$evidence/result/report.json" \
             --output-dir "$evidence/runtime" 2>&1 | tee "$evidence/runtime.log"
       - name: Preserve the probe result and diagnostics

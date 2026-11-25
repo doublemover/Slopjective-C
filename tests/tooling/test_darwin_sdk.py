@@ -11,7 +11,7 @@ from zipfile import ZipFile
 
 import pytest
 
-from scripts.objc3c_toolchain import darwin_sdk as sdk, darwin_sdk_arc as arc
+from scripts.objc3c_toolchain import cli, darwin_registration, darwin_sdk as sdk, darwin_sdk_arc as arc
 from scripts.objc3c_toolchain import darwin_sdk_activation as activation
 from scripts.objc3c_toolchain import darwin_sdk_replay as replay
 from scripts.objc3c_toolchain.package import MANIFEST, SCHEMA, _digest, _file_hash, inventory, normalize_permissions, verify_sdk
@@ -182,12 +182,25 @@ def test_install_command_rejects_the_actual_non_apple_silicon_host(tmp_path):
     if platform.system() == 'Darwin' and platform.machine() == 'arm64':
         pytest.skip('requires a non-Apple-Silicon host for this command-level rejection')
     prefix = tmp_path / 'Never activated'
-    result = subprocess.run([sys.executable, '-B', '-m', 'scripts.objc3c_toolchain.darwin_sdk',
-        'install', '--archive', str(tmp_path / 'unavailable.tar.gz'), '--archive-sha256', 'a' * 64,
+    result = subprocess.run([sys.executable, '-B', '-m', 'scripts.objc3c_toolchain',
+        'darwin', 'install', '--archive', str(tmp_path / 'unavailable.tar.gz'), '--archive-sha256', 'a' * 64,
         '--prefix', str(prefix)], cwd=sdk.ROOT, capture_output=True, text=True, check=False)
     assert result.returncode == 2
     assert 'requires an Apple Silicon Mac running native arm64 Python' in result.stderr
     assert not result.stdout and not prefix.exists()
+
+
+def test_public_build_command_always_packs_and_selects_optional_native_sanitizers(tmp_path, monkeypatch, capsys):
+    bootstrap, output = tmp_path / 'bootstrap.json', tmp_path / 'SDK output'
+
+    def qualify(report, destination, *, fetch, package_sdk, sdk_sanitizers):
+        assert (report, destination) == (bootstrap, output)
+        assert fetch and package_sdk and sdk_sanitizers
+
+    monkeypatch.setattr(darwin_registration, 'qualify', qualify)
+    assert cli.main(['darwin', 'build-sdk', '--bootstrap-report', str(bootstrap),
+                     '--output-dir', str(output), '--fetch', '--sdk-sanitizers']) == 0
+    assert capsys.readouterr().out.strip() == str(output / 'report.json')
 
 
 def test_installed_arc_load_trace_resolves_native_root_aliases(tmp_path):
@@ -563,7 +576,7 @@ def test_managed_replay_admits_only_the_exact_run_attempt_and_artifact_pins(tmp_
 
 
 @pytest.mark.parametrize('update', [False, True])
-def test_managed_replay_runs_exact_admitted_generation_then_reclaims_it(tmp_path, structural_host, monkeypatch, update):
+def test_managed_replay_runs_exact_admitted_generation_then_reclaims_it(tmp_path, structural_host, monkeypatch, capsys, update):
     monkeypatch.setattr(sdk, 'require_apple_silicon', lambda: None)
     primary, replacement = managed_packages(tmp_path, structural_host)
     incoming = tmp_path / 'pinned inputs'
@@ -585,6 +598,20 @@ def test_managed_replay_runs_exact_admitted_generation_then_reclaims_it(tmp_path
 
     monkeypatch.setattr(replay, '_admit', admit)
     monkeypatch.setattr(replay.darwin_sdk_arc, 'qualify_consumer', execute)
+
+    run_tools = sdk._run
+
+    def run_public_cli(*args, cwd=None, commands=None):
+        if args[0] != sys.executable:
+            return run_tools(*args, cwd=cwd, commands=commands)
+        assert cwd == sdk.ROOT and args[:5] == (sys.executable, '-B', '-m', 'scripts.objc3c_toolchain', 'darwin')
+        argv = list(map(str, args))
+        assert cli.main(argv[4:]) == 0
+        captured = capsys.readouterr()
+        commands.append({'argv': argv, 'exit_status': 0, 'stdout': captured.out, 'stderr': captured.err})
+        return captured.out
+
+    monkeypatch.setattr(sdk, '_run', run_public_cli)
     output = tmp_path / 'managed replay evidence'
     report = replay.qualify(incoming, output, receiver_revision='a' * 40)
     assert report['status'] == 'PASS' and not report['support_truth']
@@ -593,6 +620,7 @@ def test_managed_replay_runs_exact_admitted_generation_then_reclaims_it(tmp_path
     assert report['operations']['uninstall']['seal_sha256'] == attempted[-1]
     assert set(report['operations']) == {'install', 'install_arc', 'reuse', 'uninstall'} | (
         {'update', 'update_arc'} if update else set())
+    assert [row['argv'][5] for row in report['commands']] == ['install'] * (3 if update else 2) + ['uninstall']
     assert not list((output / 'Managed Apple Silicon SDK').glob('sdk-*'))
 
 

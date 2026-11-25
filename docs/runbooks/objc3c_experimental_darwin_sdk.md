@@ -19,13 +19,14 @@ and SDK identities. [Bootstrap instructions](objc3c_darwin_arm64_bootstrap.md)
 
 ## Build and package
 
-Pass `--package-sdk` to the experimental registration producer. Output must be
-fresh. The producer assembles the SDK while its verified native compiler is
-available, then qualifies the archive from an isolated, relocated installation.
+The `darwin build-sdk` command builds the experimental registration profile and
+packages the SDK. Output must be fresh. The producer assembles the SDK while its
+verified native compiler is available, then qualifies the archive from an
+isolated, relocated installation.
 
 ```sh
-python3 -B -m scripts.objc3c_toolchain.darwin_registration \
-  --profile macos-arm64-registration-experimental --fetch --package-sdk \
+python3 -B -m scripts.objc3c_toolchain darwin build-sdk \
+  --fetch \
   --bootstrap-report "$PWD/darwin-bootstrap-result/report.json" \
   --output-dir "$PWD/darwin-registration-result"
 ```
@@ -53,11 +54,11 @@ package="$PWD/darwin-registration-result/sdk/package"
 archive="$package/objc3-darwin-sdk.tar.gz"
 archive_sha=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["archive_sha256"])' "$package/package.json")
 
-python3 -B -m scripts.objc3c_toolchain.darwin_sdk install \
+python3 -B -m scripts.objc3c_toolchain darwin install \
   --archive "$archive" --archive-sha256 "$archive_sha" \
   --prefix "$PWD/Objective-C 3 Experimental SDK"
 
-python3 -B -m scripts.objc3c_toolchain.darwin_sdk qualify \
+python3 -B -m scripts.objc3c_toolchain darwin qualify \
   --archive "$archive" --archive-sha256 "$archive_sha" \
   --output-dir "$PWD/darwin-sdk-replay"
 ```
@@ -88,7 +89,7 @@ writable parent.
 
 ```sh
 root="$PWD/Managed Objective-C 3 SDK"
-python3 -B -m scripts.objc3c_toolchain.darwin_sdk install \
+python3 -B -m scripts.objc3c_toolchain darwin install \
   --archive "$archive" --archive-sha256 "$archive_sha" --root "$root"
 "$root/current/bin/clang" --version
 ```
@@ -98,7 +99,7 @@ removing the managed SDK. Uninstall verifies the payload and leaves unrelated
 root files in place. Edited or additional payload files cause rejection.
 
 ```sh
-python3 -B -m scripts.objc3c_toolchain.darwin_sdk uninstall \
+python3 -B -m scripts.objc3c_toolchain darwin uninstall \
   --root "$root" --seal-sha256 "$installed_seal"
 ```
 
@@ -161,13 +162,12 @@ gh workflow run darwin-bootstrap.yml \
   -f runtime_registration=true -f runtime_sanitizers=true
 ```
 
-On the same native Apple Silicon setup described above, add `--sdk-sanitizers`
-to `--package-sdk` and use a fresh output directory.
+On the same native Apple Silicon setup, pass `--sdk-sanitizers` to
+`darwin build-sdk` and use a fresh output directory.
 
 ```sh
-python3 -B -m scripts.objc3c_toolchain.darwin_registration \
-  --profile macos-arm64-registration-experimental --fetch \
-  --package-sdk --sdk-sanitizers \
+python3 -B -m scripts.objc3c_toolchain darwin build-sdk \
+  --fetch --sdk-sanitizers \
   --bootstrap-report "$PWD/darwin-bootstrap-result/report.json" \
   --output-dir "$PWD/darwin-registration-sanitizers"
 ```
@@ -180,11 +180,11 @@ package="$PWD/darwin-registration-sanitizers/sdk/package"
 archive="$package/objc3-darwin-sdk.tar.gz"
 archive_sha=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["archive_sha256"])' "$package/package.json")
 
-python3 -B -m scripts.objc3c_toolchain.darwin_sdk install \
+python3 -B -m scripts.objc3c_toolchain darwin install \
   --archive "$archive" --archive-sha256 "$archive_sha" \
   --prefix "$PWD/Objective-C 3 Experimental Sanitizer SDK"
 
-python3 -B -m scripts.objc3c_toolchain.darwin_sdk qualify \
+python3 -B -m scripts.objc3c_toolchain darwin qualify \
   --archive "$archive" --archive-sha256 "$archive_sha" \
   --output-dir "$PWD/darwin-sdk-sanitizer-replay"
 ```

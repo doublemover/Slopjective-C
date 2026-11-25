@@ -157,11 +157,11 @@ def probe(llvm_root: Path, output: Path) -> dict:
     return report
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+def main(argv=None, *, prog=None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__, prog=prog)
     parser.add_argument('--llvm-root', required=True, type=Path)
     parser.add_argument('--output-dir', required=True, type=Path, help='new directory for fixtures, artifacts and receipt')
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     try:
         probe(args.llvm_root, args.output_dir)
     except (OSError, ValueError, subprocess.SubprocessError) as error:

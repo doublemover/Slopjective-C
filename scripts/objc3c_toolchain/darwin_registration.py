@@ -596,15 +596,18 @@ def _exercise_portable_services(run, defaults, linker: str, stages: Path, layout
             'inputs': inputs, 'suites': portable}
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--profile', choices=(PROFILE_NAME,), required=True)
+def main(argv=None, *, prog=None, package=False) -> int:
+    parser = argparse.ArgumentParser(description=__doc__, prog=prog)
+    if package:
+        parser.set_defaults(package_sdk=True)
+    else:
+        parser.add_argument('--profile', choices=(PROFILE_NAME,), required=True)
+        parser.add_argument('--package-sdk', action='store_true', help='package the admitted build and qualify a relocated SDK')
     parser.add_argument('--bootstrap-report', type=Path, required=True)
     parser.add_argument('--output-dir', type=Path, required=True)
     parser.add_argument('--fetch', action='store_true', help='fetch the pinned upstream LLVM Git source')
-    parser.add_argument('--package-sdk', action='store_true', help='package the admitted build and qualify a relocated SDK')
     parser.add_argument('--sdk-sanitizers', action='store_true', help='qualify the optional SDK ASan and UBSan consumers')
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     try:
         qualify(args.bootstrap_report, args.output_dir, fetch=args.fetch, package_sdk=args.package_sdk,
                 sdk_sanitizers=args.sdk_sanitizers)

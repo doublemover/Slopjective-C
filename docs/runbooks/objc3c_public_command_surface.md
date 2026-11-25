@@ -22,6 +22,7 @@ python -B -m scripts.objc3c_toolchain compile --help
 | `facade-identity` | Identify frontend source and CMake inputs. |
 | `check-host-tools` | Check pinned tool references; optionally probe installed versions. |
 | `build-sdk` | Build, qualify, package and install the native Linux SDK. |
+| `darwin` | Build and manage the [experimental Apple Silicon SDK](objc3c_experimental_darwin_sdk.md). |
 | `package-sdk` | Seal and cache an installed SDK using its validation report. |
 | `compile` | Invoke the public compiler from the selected installed SDK. |
 | `build-packages` | Build a locked source-package workspace. |

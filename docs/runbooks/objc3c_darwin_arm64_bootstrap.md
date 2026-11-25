@@ -41,7 +41,7 @@ printf '%s  %s\n' \
   LLVM-23.1.5-macOS-ARM64.tar.zst | shasum -a 256 -c
 mkdir llvm-darwin-bootstrap
 zstd --long=30 -dc LLVM-23.1.5-macOS-ARM64.tar.zst | tar -xf - -C llvm-darwin-bootstrap --strip-components=1
-python3 -B -m scripts.objc3c_toolchain.darwin_bootstrap \
+python3 -B -m scripts.objc3c_toolchain darwin bootstrap \
   --llvm-root "$PWD/llvm-darwin-bootstrap" --output-dir "$PWD/darwin-bootstrap-result"
 ```
 
@@ -70,8 +70,8 @@ From the same checkout and Xcode configuration as the bootstrap probe, put
 CMake and Ninja on `PATH` and run the explicit experimental qualification.
 
 ```sh
-python3 -B -m scripts.objc3c_toolchain.darwin_registration \
-  --profile macos-arm64-registration-experimental --fetch --package-sdk \
+python3 -B -m scripts.objc3c_toolchain darwin build-sdk \
+  --fetch \
   --bootstrap-report "$PWD/darwin-bootstrap-result/report.json" \
   --output-dir "$PWD/darwin-registration-result"
 ```
@@ -129,7 +129,7 @@ executables and system C++ library dependencies.
 
 Pull requests that change the experimental sources select the same workflow
 step automatically. Manual dispatch selects it with `runtime_registration`.
-The workflow passes `--package-sdk` to seal that same compiler and runtime,
+The workflow uses `darwin build-sdk` to seal that same compiler and runtime,
 then installs the archive into a fresh relocated root after removing the build
 tree. The installed compiler recompiles the packaged consumers before the
 runner checks their native execution and debug information.
@@ -173,10 +173,10 @@ package_dir="$PWD/darwin-registration-result/sdk/package"
 archive="$package_dir/objc3-darwin-sdk.tar.gz"
 checksum=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["archive_sha256"])' \
   "$package_dir/package.json")
-python3 -B -m scripts.objc3c_toolchain.darwin_sdk install \
+python3 -B -m scripts.objc3c_toolchain darwin install \
   --archive "$archive" --archive-sha256 "$checksum" \
   --prefix "$PWD/Installed experimental SDK"
-python3 -B -m scripts.objc3c_toolchain.darwin_sdk qualify \
+python3 -B -m scripts.objc3c_toolchain darwin qualify \
   --archive "$archive" --archive-sha256 "$checksum" \
   --output-dir "$PWD/Experimental SDK replay"
 ```

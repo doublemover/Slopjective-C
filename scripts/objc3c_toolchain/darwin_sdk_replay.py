@@ -14,7 +14,7 @@ import tarfile
 import unicodedata
 from zipfile import ZipFile
 
-from . import darwin_evidence, darwin_sdk, darwin_sdk_activation, darwin_sdk_arc
+from . import darwin_evidence, darwin_sdk, darwin_sdk_arc
 from .darwin_bootstrap import ROOT
 from .darwin_registration import NATIVE, PORTABLE_HEADERS, PORTABLE_SERVICES
 from .package import _file_hash, verify_sdk
@@ -167,9 +167,13 @@ def qualify(directory: Path, output: Path, *, receiver_revision: str) -> dict:
               'candidates': [{'pin': pin, 'admission': admission} for _, admission, pin in candidates],
               'commands': [], 'operations': {}}
 
+    def managed(*arguments):
+        return json.loads(darwin_sdk._run(sys.executable, '-B', '-m', 'scripts.objc3c_toolchain',
+            'darwin', *arguments, '--root', root, cwd=ROOT, commands=report['commands']))
+
     def activate(candidate, phase, expected_action):
         archive, admission, _ = candidate
-        row = darwin_sdk_activation.install(archive, admission['archive_sha256'], root)
+        row = managed('install', '--archive', archive, '--archive-sha256', admission['archive_sha256'])
         report['operations'][phase] = row
         if row['action'] != expected_action or row['seal_sha256'] != admission['seal_sha256'] or 'cleanup_error' in row:
             raise ValueError(f'Darwin managed replay failed during {phase}')
@@ -182,7 +186,7 @@ def qualify(directory: Path, output: Path, *, receiver_revision: str) -> dict:
     try:
         prefix = activate(primary, 'install', 'installed')
         before = (prefix / 'bin/clang').stat()
-        reused = darwin_sdk_activation.install(primary[0], primary[1]['archive_sha256'], root)
+        reused = managed('install', '--archive', primary[0], '--archive-sha256', primary[1]['archive_sha256'])
         report['operations']['reuse'] = reused
         if (reused['action'] != 'reused' or reused['seal_sha256'] != primary[1]['seal_sha256'] or
                 (root / 'current').resolve(strict=True) != prefix or
@@ -195,7 +199,7 @@ def qualify(directory: Path, output: Path, *, receiver_revision: str) -> dict:
                 raise ValueError('Darwin managed update retained the earlier SDK')
             final = replacement
         seal = final[1]['seal_sha256']
-        removed = darwin_sdk_activation.uninstall(root, seal)
+        removed = managed('uninstall', '--seal-sha256', seal)
         report['operations']['uninstall'] = removed
         if (removed['action'] != 'uninstalled' or removed['seal_sha256'] != seal or
                 (root / 'current').is_symlink() or list(root.glob('sdk-*'))):
