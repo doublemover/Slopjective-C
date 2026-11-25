@@ -20,7 +20,7 @@ int RunCompiler(int argc, char **argv) {
            "path] "
            "[--emit-llvm path] [--arc] [--profile name] [--strict-concurrency] "
            "[--emit-interface path.objc3i --module name --package identity] "
-           "[--project-ownership arc|mrc] "
+           "[--project-ownership arc|mrc] [--project-objcxx arc|mrc] "
            "[--export-declaration name] [--module-owned-names] "
            "[--export-c-async name|Namespace::name|Actor::selector --emit-c-async-header file.h] "
            "[--export-c-throws name|Namespace::name --emit-c-header file.h] "
@@ -126,13 +126,14 @@ int RunCompiler(int argc, char **argv) {
       request.language = BaseLanguage::ObjectiveCxx;
     else if (argument == "--export-declaration" && has_values(1))
       request.interface_exports.emplace_back(argv[++i]);
-    else if (argument == "--project-ownership" && has_values(1)) {
+    else if ((argument == "--project-ownership" || argument == "--project-objcxx") && has_values(1)) {
       std::string mode = argv[++i];
       if (mode != "arc" && mode != "mrc") {
         std::cerr << "projection ownership must be arc or mrc\n";
         return 2;
       }
       request.projected_arc = mode == "arc";
+      request.project_cxx_to_objcxx = argument == "--project-objcxx";
     } else if (argument == "--arc")
       request.arc = true;
     else if (argument == "--strict-concurrency")
@@ -186,7 +187,8 @@ int RunCompiler(int argc, char **argv) {
   if ((!request.interface_exports.empty() &&
        !request.emit_semantic_interface) ||
       (request.projected_arc.has_value() &&
-       (!request.emit_semantic_interface || !request.objc3)) ||
+       (!request.emit_semantic_interface ||
+        !(request.project_cxx_to_objcxx ? request.language == BaseLanguage::Cxx : request.objc3))) ||
       ((request.objc3 || request.arc || !request.objc_runtime.empty()) &&
        !objc) ||
       (!request.objc3 && request.profile != SemanticProfile::Compatibility) ||

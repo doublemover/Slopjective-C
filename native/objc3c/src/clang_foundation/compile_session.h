@@ -39,6 +39,7 @@ struct CompileRequest {
   bool module_owned_names = false;
   std::string module_source_root;
   std::optional<bool> projected_arc;
+  bool project_cxx_to_objcxx = false;
   std::vector<std::string> interface_exports;
   std::vector<std::string> async_c_exports;
   std::vector<std::string> throws_c_exports;

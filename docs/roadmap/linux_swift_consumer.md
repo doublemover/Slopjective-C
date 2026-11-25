@@ -114,8 +114,8 @@ An exported checked or async entry returning a nonnull Objective-C pointer can
 select `annotate("objc3.swift-owned-result:objc3_c_object_release")`. The
 generated Swift owner retains the opaque object before the native pool or
 completion returns, and releases it in `deinit`. Use
-`withBorrowedNativeObject` for temporary native calls. The C entry's existing
-result and error ABI stays the same. The Swift witness tests successful
+`withBorrowedNativeObject` for temporary native calls. The wrapper calls the
+existing C result and error entry points. The Swift witness tests successful
 retention and release, checked failure and cancellation. The emitter rejects
 an unmanaged pointer given the same annotation.
 

@@ -24,6 +24,20 @@ the ownership mode changes. A projection must select the opposite mode and have
 no interface dependencies. Consumers import its new fingerprint with their
 ordinary eager or source-level module locks.
 
+Plain C++20/23 providers can also publish a closed C ABI to Objective-C++ in
+the same standard. Compile the original `.cpp` with
+`--project-objcxx arc` or `--project-objcxx mrc` and select the exported
+`extern "C"` functions. Workspace providers set `provider_language` to
+`"c++"` and `provider_ownership` to `"none"`. The package's `language` and
+`ownership` select the Objective-C++ consumer mode.
+
+The cross-language boundary admits real scalar and one-level scalar or void
+pointer types. It keeps one C++ implementation object. The
+`objc3.cxx-abi-projection.v1` capability binds the independently reconstructed
+C++ proof, exact target layout and consumer ABI. Package qualification runs
+both language standards and both consumer ownership modes with the producer
+sources removed. A C++ reference must fail publication.
+
 ## Native ownership contract
 
 The public API contains only prototyped, nonvariadic C ABI functions. Supported

@@ -1094,7 +1094,8 @@ CompileResult Compile(const CompileRequest &request) {
       (request.emit_semantic_interface &&
        (request.module_name.empty() || request.package_identity.empty())) ||
       (request.projected_arc.has_value() &&
-       (!objc || !request.objc3 || !request.emit_semantic_interface)) ||
+       (!request.emit_semantic_interface ||
+        !(request.project_cxx_to_objcxx ? request.language == BaseLanguage::Cxx : objc && request.objc3))) ||
       (!request.interface_exports.empty() &&
        !request.emit_semantic_interface) ||
       (!request.interface_output_path.empty() &&

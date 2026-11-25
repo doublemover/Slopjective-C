@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 import json
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -134,6 +135,61 @@ def qualify_case(sdk: Path, output: Path, language: str, standard: str,
                 'relocated': True, 'reexported': True, 'rejections': rejected}
 
 
+def qualify_cxx_projection(sdk: Path, output: Path, standard: str, ownership: str) -> dict:
+    label = f'cxx-abi-{standard}-{ownership}'
+    with tempfile.TemporaryDirectory(prefix="objc3 C ABI 'projection ") as temporary:
+        root = Path(temporary)
+        workspace = root / 'workspace/workspace.json'
+        provider = workspace.parent / 'provider'
+        app = workspace.parent / 'app'
+        provider.mkdir(parents=True)
+        app.mkdir()
+        mode = {'language': 'objective-c++', 'standard': standard, 'ownership': ownership}
+        dependencies = [{'name': 'fixture.CxxABI', 'package': 'cxx-abi-v1', 'visibility': 'private'}]
+        application = {'root': 'app', 'source': 'main.mm', **mode, 'dependencies': dependencies}
+        packages.write_json(workspace, {'schema': 'objc3c.source-workspace.v4',
+                            'packages': ['provider/package.json'], 'application': application})
+        packages.write_json(provider / 'package.json', {'schema': 'objc3c.source-package.v4',
+                            'name': 'fixture.CxxABI', 'package': 'cxx-abi-v1', 'source': 'provider.cpp',
+                            **mode, 'provider_language': 'c++', 'provider_ownership': 'none',
+                            'exports': ['next'], 'dependencies': []})
+        source = provider / 'provider.cpp'
+        source.write_text('extern "C" int next(const int *value) { return *value + 1; }\n')
+        (app / 'main.mm').write_text('@import fixture.CxxABI;\nint main() {\n'
+                                     '  int value = 41; return @fixture.CxxABI.next(&value) != 42;\n}\n')
+        build = root / 'build'
+        initial = build_graph(sdk, workspace, build, 'O2')
+        if '--project-objcxx' not in initial['nodes']['fixture.CxxABI']['argv']:
+            raise ValueError('the C++ provider was not compiled in its explicit physical mode')
+        published = packages.publish(sdk, build, root / 'publication')
+        identity = published['content_sha256']
+        installed = packages.install(Path(published['package']), identity, root / 'installed')
+        inventory = packages.verify_package(Path(installed['package']), identity)
+        if inventory['packages'][0]['provider_language'] != 'c++':
+            raise ValueError('the C++ producer mode did not survive immutable publication')
+        source.write_text('extern "C" int next(const int &value) { return value + 1; }\n')
+        try:
+            build_graph(sdk, workspace, root / 'rejected', 'O2')
+        except subprocess.CalledProcessError as error:
+            diagnostic = root / 'rejected/modules/fixture.CxxABI/compile.log'
+            if 'only prototyped C ABI functions' not in diagnostic.read_text():
+                raise ValueError('projection rejected a reference for an unexpected reason') from error
+        else:
+            raise ValueError('a C++ reference escaped closed C ABI projection')
+        client = root / 'client'
+        shutil.copytree(app, client)
+        manifest = client / 'application.json'
+        packages.write_json(manifest, {'schema': packages.CONSUMER, 'source': 'main.mm',
+                                       **mode, 'dependencies': dependencies})
+        shutil.rmtree(workspace.parent)
+        shutil.rmtree(build)
+        shutil.rmtree(root / 'publication')
+        consumption = packages.consume(sdk, Path(installed['package']), identity, manifest, root / 'consumer')
+        packages.write_json(output / (label + '-consumer.json'), consumption)
+        return {**mode, 'status': 'PASS', 'native_provider': 'c++', 'package_content_sha256': identity,
+                'provider_compilations': consumption['provider_compilations'], 'reference_rejected': True}
+
+
 def qualify(sdk: Path, output: Path, jobs: int = 1) -> dict:
     sdk, output = sdk.resolve(strict=True), output.resolve()
     packages.disjoint(output, sdk)
@@ -145,14 +201,22 @@ def qualify(sdk: Path, output: Path, jobs: int = 1) -> dict:
     modes = [('objective-c', 'c17'), ('objective-c++', 'c++20'), ('objective-c++', 'c++23')]
     configurations = [(language, standard, ownership, opt) for language, standard in modes
                       for ownership in ('arc', 'mrc') for opt in ('O0', 'O2')]
-    cases, failures = [], []
+    cross_modes = [(standard, ownership) for standard in ('c++20', 'c++23') for ownership in ('arc', 'mrc')]
+    cases, cxx_projections, failures = [], [], []
     with ThreadPoolExecutor(max_workers=jobs) as executor:
         futures = [executor.submit(copy_context().run, qualify_case, sdk, output, *mode) for mode in configurations]
+        cross_futures = [executor.submit(copy_context().run, qualify_cxx_projection, sdk, output, *mode)
+                         for mode in cross_modes]
         for mode, future in zip(configurations, futures):
             try:
                 cases.append(future.result())
             except Exception as error:
                 failures.append({'configuration': mode, 'error': str(error)})
+        for mode, future in zip(cross_modes, cross_futures):
+            try:
+                cxx_projections.append(future.result())
+            except Exception as error:
+                failures.append({'configuration': ('c++ to objective-c++', *mode), 'error': str(error)})
     fingerprints = {}
     for row in cases:
         mode = (row['language'], row['standard'], row['ownership'])
@@ -164,7 +228,8 @@ def qualify(sdk: Path, output: Path, jobs: int = 1) -> dict:
               'executions': sum(row['source_executions'] + row['binary_executions'] for row in cases),
               'source_executions': sum(row['source_executions'] for row in cases),
               'binary_executions': sum(row['binary_executions'] for row in cases),
-              'rejections': sum(len(row['rejections']) for row in cases), 'cases': cases}
+              'rejections': sum(len(row['rejections']) for row in cases), 'cases': cases,
+              'cxx_projections': cxx_projections}
     if failures:
         report['failures'] = failures
     packages.write_json(receipt, report)

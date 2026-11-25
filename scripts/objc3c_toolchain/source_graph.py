@@ -104,7 +104,10 @@ def metaprogramming_inputs(config: dict, root: Path) -> list[Path]:
 
 def validate_provider(config: dict) -> None:
     mode = config['provider_ownership']
-    if mode not in (('none',) if config['language'] == 'c++' else ('arc', 'mrc')):
+    language = config.get('provider_language', config['language'])
+    if 'provider_language' in config and (language, config['language']) != ('c++', 'objective-c++'):
+        raise ValueError('language projection requires a C++ provider and an Objective-C++ consumer')
+    if mode not in (('none',) if language == 'c++' else ('arc', 'mrc')):
         raise ValueError('provider ownership must be explicit and match the language')
     if mode != config['ownership'] and config['dependencies']:
         raise ValueError('ownership lock projection requires a closed provider without dependencies')
@@ -132,7 +135,8 @@ def load_graph(workspace: Path) -> dict:
     for name in data['packages']:
         path = within(root, name, 'package manifest')
         config = json.loads(path.read_text())
-        fields(config, {'schema', 'name', 'package', 'source', 'ownership', 'provider_ownership', 'exports', 'language', 'standard', 'dependencies'} | ({'metaprogramming'} if isinstance(config, dict) and 'metaprogramming' in config else set()), str(path))
+        optional = {'metaprogramming', 'provider_language'} & config.keys() if isinstance(config, dict) else set()
+        fields(config, {'schema', 'name', 'package', 'source', 'ownership', 'provider_ownership', 'exports', 'language', 'standard', 'dependencies'} | optional, str(path))
         config['exports'] = validate_exports(config['exports'])
         module = config['name']
         if (config['schema'] != PACKAGE or not isinstance(module, str) or not NAME.fullmatch(module) or
@@ -144,7 +148,14 @@ def load_graph(workspace: Path) -> dict:
             raise ValueError('package source roots must be separate')
         source_roots.append(directory)
         source = within(directory, config['source'], 'package source')
-        validate_mode(config, source)
+        if 'provider_language' in config:
+            validate_mode(config, Path('consumer.mm'))
+            validate_mode({**config, 'language': config['provider_language'],
+                           'ownership': config['provider_ownership']}, source)
+            if 'metaprogramming' in config:
+                raise ValueError('a plain C++ ABI projection cannot invoke Objective-C metaprogramming')
+        else:
+            validate_mode(config, source)
         config['dependencies'] = locks(config['dependencies'], module)
         validate_provider(config)
         metaprogramming_inputs(config, directory)
@@ -251,6 +262,8 @@ def workspace_plan(workspace: Path) -> dict:
     packages = {}
     for name, config in sorted(configs.items()):
         packages[name] = {key: config[key] for key in (*keys, 'package', 'provider_ownership', 'exports')}
+        if 'provider_language' in config:
+            packages[name]['provider_language'] = config['provider_language']
         packages[name]['manifest'] = config['manifest'].relative_to(root).as_posix()
         packages[name]['source'] = config['input'].relative_to(root).as_posix()
     return {'schema': 'objc3c.source-workspace-plan.v1', 'status': 'PASS',
@@ -314,14 +327,17 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str, jobs: int) -
         obj, depfile = directory / 'module.o', directory / 'module.d'
         command = [str(sdk / 'bin/objc3c'), str(config['input']),
                    '--target', target, '--emit-object', str(obj)]
-        if config['language'] != 'c++':
+        provider_language = config.get('provider_language', config['language'])
+        if provider_language != 'c++':
             command += ['--objc3', '--runtime', 'gnustep-2.2']
-        if config['language'] == 'objective-c++':
+        if provider_language == 'objective-c++':
             command.append('--objcxx')
         provider_mode = config.get('provider_ownership', config['ownership'])
         if provider_mode == 'arc':
             command.append('--arc')
-        if provider_mode != config['ownership']:
+        if provider_language != config['language']:
+            command += ['--project-objcxx', config['ownership']]
+        elif provider_mode != config['ownership']:
             command += ['--project-ownership', config['ownership']]
         meta_inputs = metaprogramming_inputs(config, config['root'])
         if meta_inputs:
@@ -371,7 +387,7 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str, jobs: int) -
             for declaration in config['exports']:
                 command += ['--export-declaration', declaration]
         command += ['--', '--no-default-config', '-std=' + config['standard'], *coroutine_compile_flags(config['language']),
-                    *native_module_compile_flags(config['language'], output), '-fblocks', '-' + optimization,
+                    *native_module_compile_flags(provider_language, output), '-fblocks', '-' + optimization,
                     '-isystem', str(sdk / 'include'),
                     '-MD', '-MF', str(depfile), '-MT', 'dependencies']
         flags = command[command.index('--') + 1:]
@@ -448,6 +464,7 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str, jobs: int) -
                      {'module': identities[name], 'language': packages[name]['language'],
                       'standard': packages[name]['standard'], 'ownership': packages[name]['ownership'],
                       'provider_ownership': packages[name]['provider_ownership'], 'exports': packages[name]['exports'],
+                      **({'provider_language': packages[name]['provider_language']} if 'provider_language' in packages[name] else {}),
                       'dependencies': packages[name]['dependencies'],
                       'artifacts': {str(path.relative_to(output)): digest(path) for path in
                                     (directories[name] / 'module.o', paths[name], paths[name].with_suffix('.objc3i.json'))}}

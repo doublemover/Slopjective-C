@@ -170,6 +170,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     "objc3.cxx-async-definitions.v1",
     "objc3.sdk-runtime-declarations.v1",
     "objc3.ownership-projection.v1",
+    "objc3.cxx-abi-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",
     "objc3.module-owned-names.v1",
@@ -447,7 +448,8 @@ llvm::Error ValidateForEncoding(
                                    sidecar.required_semantics.end(),
                                    "objc3.ownership-projection.v1") !=
                          sidecar.required_semantics.end();
-  if (projected != !sidecar.ownership_projection.empty())
+  if (projected != !sidecar.ownership_projection.empty() ||
+      (!projected && llvm::is_contained(sidecar.required_semantics, "objc3.cxx-abi-projection.v1")))
     return Invalid("ownership projection provenance and capability must agree");
   const bool has_availability =
       std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(),

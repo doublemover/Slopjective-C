@@ -117,7 +117,8 @@ def package_rows(manifest: dict) -> dict:
         raise ValueError('binary package must contain modules')
     rows = {}
     for row in manifest['packages']:
-        fields(row, {*MODE, 'provider_ownership', 'exports', 'module', 'dependencies', 'artifacts'}, 'binary module')
+        optional = {'provider_language'} & row.keys() if isinstance(row, dict) else set()
+        fields(row, {*MODE, 'provider_ownership', 'exports', 'module', 'dependencies', 'artifacts'} | optional, 'binary module')
         module = row['module']
         fields(module, IDENTITY, 'module identity')
         if any(not isinstance(value, str) or not value for value in module.values()):
@@ -213,6 +214,7 @@ def verify_sidecars(manifest: dict, read):
                     for root in roots):
                 raise ValueError('binary exports differ from the native public root declarations')
         projection = sidecar.get('ownership_projection')
+        cross_language = row.get('provider_language') == 'c++'
         projected = row['provider_ownership'] != row['ownership']
         if (not isinstance(projection, str) or bool(projection) != projected or
                 sidecar.get('schema_id') != 'objc3c.semantic-interface.v2' or
@@ -225,17 +227,23 @@ def verify_sidecars(manifest: dict, read):
             identity = producer['module']
             producer_identity = dict(row['module'])
             producer_identity['canonical_name'] += '.__ownership_producer'
-            producer_identity['runtime_abi'] = 'gnustep-2.2;' + ('arc' if row['provider_ownership'] == 'arc' else 'manual-reference-counting')
+            producer_runtime = 'no-objc-runtime' if cross_language else 'gnustep-2.2'
+            producer_identity['runtime_abi'] = producer_runtime + ';' + ('arc' if row['provider_ownership'] == 'arc' else 'manual-reference-counting')
             producer_identity['language_profile'] = producer_identity['language_profile'].replace(
                 ';arc=' + str(row['ownership'] == 'arc').lower() + ';',
                 ';arc=' + str(row['provider_ownership'] == 'arc').lower() + ';')
+            if cross_language:
+                producer_identity['language_revision'] = 'objc3-disabled'
+                producer_identity['language_profile'] = producer_identity['language_profile'].replace(
+                    'objc3=enabled;', 'objc3=disabled;', 1).replace(';language=objective-c++;', ';language=c++;', 1)
             producer_identity['semantic_fingerprint'] = identity.get('semantic_fingerprint')
             if (identity != producer_identity or producer.get('schema_id') != 'objc3c.semantic-interface.v2' or producer.get('schema_major') != 2 or producer.get('dependencies') != [] or
                     producer.get('ownership_projection') != '' or
                     producer.get('source_binding_sha256') != sidecar.get('source_binding_sha256') or
                     producer.get('source_binding_sha256') != row['artifacts'][interface] or
                     not isinstance(sidecar.get('required_semantics'), list) or
-                    'objc3.ownership-projection.v1' not in sidecar['required_semantics']):
+                    'objc3.ownership-projection.v1' not in sidecar['required_semantics'] or
+                    ('objc3.cxx-abi-projection.v1' in sidecar['required_semantics']) != cross_language):
                 raise ValueError('binary projection producer proof differs from its ownership lock')
             check_hash(identity['semantic_fingerprint'])
         expected_dependencies = [

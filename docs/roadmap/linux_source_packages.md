@@ -47,6 +47,9 @@ Every dependency contains `name`, `package`, and `visibility` (`public` or
 the same language, standard and ownership mode. Cross-language imports require explicit adaptation. A closed C ABI provider can
 select a different `provider_ownership` through the explicit
 [ownership projection contract](linux_ownership_projections.md).
+A plain C++ provider can specify `"provider_language": "c++"` and
+`"provider_ownership": "none"` to export a checked C ABI to Objective-C++.
+Its dependency-free provider source uses the same C++ standard as the application.
 Unknown fields, duplicate modules/edges, unresolved locks and cycles are errors.
 Unused declarations are validated, but only the application's dependency closure
 is built.
