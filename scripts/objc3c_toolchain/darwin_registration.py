@@ -16,7 +16,8 @@ import sys
 import tarfile
 import tempfile
 
-from .core import ToolchainError, prepare
+from .core import ToolchainError, planned_development_identity, prepare
+from . import darwin_compiler_cache
 from .darwin_bootstrap import DEPLOYMENT_TARGET, ROOT, require_apple_silicon, verify_macho
 
 
@@ -161,7 +162,7 @@ int main(int argc, char **argv) {
 
 
 def qualify(bootstrap_report: Path, output: Path, *, fetch: bool, package_sdk: bool = False,
-            sdk_sanitizers: bool = False) -> dict:
+            sdk_sanitizers: bool = False, compiler_cache: Path | None = None) -> dict:
     if sdk_sanitizers and not package_sdk:
         raise ValueError('--sdk-sanitizers requires --package-sdk')
     require_apple_silicon()
@@ -239,10 +240,7 @@ def qualify(bootstrap_report: Path, output: Path, *, fetch: bool, package_sdk: b
         with tempfile.TemporaryDirectory(prefix='darwin-registration-', dir=build_root) as scratch:
             source = Path(scratch) / 'src'
             build = Path(scratch) / 'build'
-            print('Preparing the pinned Darwin LLVM source', flush=True)
-            base = prepare(ROOT, source_dir=source, fetch=fetch)
-            run('/usr/bin/git', '-C', source, 'apply', '--check', patch, label='check-patch')
-            run('/usr/bin/git', '-C', source, 'apply', patch, label='apply-patch')
+            base = planned_development_identity(ROOT)
             patch_digest = hashlib.sha256(bytes.fromhex(base['patch_digest']) +
                                          bytes.fromhex(profile['patch_sha256'])).hexdigest()
             cxx_flags = shlex.join(report['cxx_toolchain']['flags'])
@@ -264,17 +262,40 @@ def qualify(bootstrap_report: Path, output: Path, *, fetch: bool, package_sdk: b
             config_digest = hashlib.sha256(json.dumps(configure).encode()).hexdigest()
             report['compiler_build'] = {'base_build_id': base['build_id'], 'patch_digest': patch_digest,
                                         'configuration_sha256': config_digest}
-            run(cmake, '-S', source / 'llvm', '-B', build, *configure,
-                f'-DCLANG_OBJC3_CONFIG_DIGEST={config_digest}', label='configure')
-            print(f'Building a native arm64 Clang with {jobs} compile job(s)', flush=True)
-            run(cmake, '--build', build, '--parallel', jobs, '--target', 'clang', 'clang-resource-headers',
-                label='build')
-            clang = build / 'bin/clang'
+            inputs = {
+                **report['compiler_build'], 'configure': configure,
+                'upstream': pin['commit'], 'xcode': host['apple_toolchain']['developer_tools_version'],
+                'sdk_settings_sha256': file_digest(Path(sdk) / 'SDKSettings.json'),
+                'tool_files': {str(tool): file_digest(Path(tool))
+                               for tool in (cmake, ninja, stage0_c, stage0_cxx, linker, sys.executable)},
+                'libcxx': {key: report['cxx_toolchain'][key] for key in
+                           ('header_config_sha256', 'library_stub_sha256', 'reported_version')},
+            }
+            cached = darwin_compiler_cache.restore(compiler_cache, inputs)
+            report['compiler_build']['cache_hit'] = cached is not None
+            if cached:
+                print('Reusing the verified native Darwin compiler products', flush=True)
+                clang, source = cached / 'bin/clang', cached
+            else:
+                print('Preparing the pinned Darwin LLVM source', flush=True)
+                actual = prepare(ROOT, source_dir=source, fetch=fetch)
+                if actual['build_id'] != base['build_id'] or actual['patch_digest'] != base['patch_digest']:
+                    raise ValueError('prepared Darwin compiler inputs differ from the build plan')
+                run('/usr/bin/git', '-C', source, 'apply', '--check', patch, label='check-patch')
+                run('/usr/bin/git', '-C', source, 'apply', patch, label='apply-patch')
+                run(cmake, '-S', source / 'llvm', '-B', build, *configure,
+                    f'-DCLANG_OBJC3_CONFIG_DIGEST={config_digest}', label='configure')
+                print(f'Building a native arm64 Clang with {jobs} compile job(s)', flush=True)
+                run(cmake, '--build', build, '--parallel', jobs, '--target', 'clang', 'clang-resource-headers',
+                    label='build')
+                clang = build / 'bin/clang'
             report['compiler_build']['artifact'] = verify_macho(clang, 'executable')
             version = run(clang, '--version', label='patched-clang')
             if (f'ObjC3-patches={patch_digest}' not in version or f'ObjC3-config={config_digest}' not in version or
                     pin['commit'] not in version):
                 raise ValueError('native patched Clang did not report the Darwin compiler source/configuration identity')
+            if compiler_cache is not None and cached is None:
+                darwin_compiler_cache.save(compiler_cache, inputs, clang, source)
             _exercise(run, clang, llvm_root, sdk, linker, output, report)
             if package_sdk:
                 from . import darwin_sdk
@@ -330,13 +351,14 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
         ('int-method', 1, 'int_arg', 'int_argument_methods'),
         ('two-int-method', 2, 'two_int_args', 'two_int_argument_methods'),
     )
-    names = ['provider', 'main', 'late']
+    names = ['provider', 'main', 'late', 'late_parent']
     for family in hierarchy_witnesses:
         prefix = family.replace('-', '_')
         names.extend(prefix + '_' + unit for unit in ('base', 'child', 'main'))
     fixture_objects = {name: stages / (name + '.o') for name in names}
     fixture_archive = layout / 'lib/libprovider.a'
     late_dylib = layout / 'lib/liblate.dylib'
+    late_parent = layout / 'lib/liblate-parent.dylib'
     static = layout / 'bin/static'
     dynamic = layout / 'bin/dynamic'
     run(*defaults, '-std=c17', '-Wall', '-Wextra', '-Werror', '-O2', '-g', '-c', RUNTIME, '-o', runtime_object)
@@ -353,14 +375,17 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
     run(ar, '--format=darwin', 'rcs', fixture_archive, fixture_objects['provider'])
     run(ar, '--format=darwin', 'rcs', runtime_archive, runtime_object)
     run(*link, '-dynamiclib', runtime_object, '-Wl,-install_name,@rpath/libobjc3darwin.dylib', '-o', runtime_dylib)
-    run(*link, '-dynamiclib', fixture_objects['late'], runtime_dylib,
+    run(*link, '-dynamiclib', fixture_objects['late_parent'], runtime_dylib,
+        '-Wl,-install_name,@rpath/liblate-parent.dylib', '-Wl,-rpath,@loader_path', '-o', late_parent)
+    run(*link, '-dynamiclib', fixture_objects['late'], late_parent, runtime_dylib,
         '-Wl,-install_name,@rpath/liblate.dylib', '-Wl,-rpath,@loader_path', '-o', late_dylib)
     run(*link, fixture_objects['main'], fixture_archive, runtime_archive, '-o', static)
     run(*link, fixture_objects['main'], fixture_archive, runtime_dylib, '-Wl,-rpath,@loader_path/../lib', '-o', dynamic)
     runtime_id = '@rpath/libobjc3darwin.dylib'
     required_libraries = {'bin/static': [], 'bin/dynamic': [runtime_id],
                           'lib/libobjc3darwin.dylib': [runtime_id],
-                          'lib/liblate.dylib': ['@rpath/liblate.dylib', runtime_id]}
+                          'lib/liblate-parent.dylib': ['@rpath/liblate-parent.dylib', runtime_id],
+                          'lib/liblate.dylib': ['@rpath/liblate.dylib', '@rpath/liblate-parent.dylib', runtime_id]}
     for family in hierarchy_witnesses:
         prefix = family.replace('-', '_')
         base = layout / f'lib/lib{family}-base.dylib'
@@ -738,10 +763,12 @@ def main(argv=None, *, prog=None, package=False) -> int:
     parser.add_argument('--output-dir', type=Path, required=True)
     parser.add_argument('--fetch', action='store_true', help='fetch the pinned upstream LLVM Git source')
     parser.add_argument('--sdk-sanitizers', action='store_true', help='qualify the optional SDK ASan and UBSan consumers')
+    parser.add_argument('--compiler-cache', type=Path, help='reuse exact verified patched Clang products')
     args = parser.parse_args(argv)
     try:
         qualify(args.bootstrap_report, args.output_dir, fetch=args.fetch, package_sdk=args.package_sdk,
-                sdk_sanitizers=args.sdk_sanitizers)
+                sdk_sanitizers=args.sdk_sanitizers,
+                **({'compiler_cache': args.compiler_cache} if args.compiler_cache is not None else {}))
     except (OSError, ValueError, KeyError, ToolchainError, subprocess.SubprocessError, tarfile.TarError) as error:
         parser.exit(2, f'objc3c Darwin registration: {error}\n')
     print(args.output_dir.resolve() / 'report.json')

@@ -23,10 +23,11 @@ from .darwin_registration import (
     file_digest, load_profile, verify_fixed_layout_dwarf, verify_int_method_ir,
 )
 from .darwin_sdk import (
-    API_HEADER, ARCHIVE_NAME, ARCHIVE_ROOT, DEMO, LIBRARY, PAYLOAD_SCHEMA, PROFILE, RECEIPT_SCHEMA, SDK_VERSION,
+    API_HEADER, ARCHIVE_NAME, ARCHIVE_ROOT, DEMO, HOST_PAIRS, LIBRARY, PAYLOAD_SCHEMA, PROFILE, RECEIPT_SCHEMA, SDK_VERSION,
     SYSTEM, WITNESS, XCODE,
 )
 from .package import MANIFEST, _digest
+from . import darwin_sdk_task_services as task_services
 
 RECEIPT_BYTES = 16 * 1024**2
 PRODUCT_BYTES = 1024**3
@@ -252,8 +253,7 @@ def bootstrap(root: Path, revision: str) -> dict:
             report['checkout_revision'] != revision or 'revision=' + revision not in host_log or
             report['probe_sha256'] != file_digest(Path(__file__).with_name('darwin_bootstrap.py')) or
             host['os'] != 'macOS' or host['arch'] != 'arm64' or 'arm64' not in host_log or
-            host['sdk_version'] != SDK_VERSION or
-            report['apple_toolchain']['developer_tools_version'] != XCODE or
+            (report['apple_toolchain']['developer_tools_version'], host['sdk_version']) not in HOST_PAIRS or
             report['deployment_target'] != DEPLOYMENT_TARGET or
             report['llvm_identity']['revision'] != pin['commit'] or
             report['llvm_identity']['version'] != pin['tag'].removeprefix('llvmorg-')):
@@ -541,6 +541,7 @@ def package(root: Path, runtime: dict, revision: str, *, require_sanitizers: boo
             manifest['compiler_build'] != {key: compiler[key] for key in
                                            ('base_build_id', 'patch_digest', 'configuration_sha256')} or
             payload['bin/clang']['sha256'] != compiler['artifact']['sha256'] or
+            payload['bin/objc3c']['sha256'] != file_digest(Path(__file__).with_name('darwin_sdk_driver.py')) or
             payload[API_HEADER]['sha256'] != runtime['runtime_header_sha256'] or
             any(payload['lib/' + name]['sha256'] != runtime['artifacts'][key]['sha256']
                 for name, key in (('libobjc3darwin.a', 'libobjc3darwin.a'),
@@ -548,11 +549,28 @@ def package(root: Path, runtime: dict, revision: str, *, require_sanitizers: boo
         raise ValueError('Darwin SDK seal does not represent the executed compiler and runtime')
     installed_arc(path, manifest, qualified)
     installed_services(path, manifest, runtime, packed, qualified)
+    tasks, executed = manifest[task_services.KEY], qualified[task_services.KEY]
+    task_services.manifest_files(manifest)
+    if (tasks != installed[task_services.KEY] or tasks != packed[task_services.KEY] or
+            tasks['files'] != executed['inputs'] or executed['abi'] != task_services.ABI or
+            executed['schema'] != task_services.SCHEMA or executed['status'] != 'PASS' or
+            set(executed['load_paths']) != {SYSTEM, '/usr/lib/libc++.1.dylib'} or
+            any(not Path(name).is_relative_to('native/objc3c/src') and
+                name != task_services.SOURCE.relative_to(ROOT).as_posix() for name in tasks['inputs']) or
+            any(file_digest(ROOT / name) != signature for name, signature in tasks['inputs'].items())):
+        raise ValueError('Darwin task service evidence differs from the installed C runtime')
+    task_directory = 'qualification/' + task_services.DIRECTORY + '/'
+    require_macho(path, task_directory + 'example.o', executed['object'], 'object')
+    require_macho(path, task_directory + 'example', executed['executable'], 'executable')
+    if not any(row['argv'] == [executed['executable']['path']] and row['exit_status'] == 0 and
+               row['stdout'].strip() == task_services.WITNESS for row in qualified['commands']):
+        raise ValueError('Darwin task services omitted the installed C execution')
     sanitizer_consumers(path, manifest, packed, qualified, selected=require_sanitizers)
     consumer = 'qualification/Fresh native consumer/'
     for name, relative, kind in (
         ('provider.o', 'provider.o', 'object'), ('static', 'static', 'executable'),
         ('dynamic', 'dynamic', 'executable'), ('liblate.dylib', 'liblate.dylib', 'dynamic_library'),
+        ('liblate-parent.dylib', 'liblate-parent.dylib', 'dynamic_library'),
         ('debug', 'static.dSYM/Contents/Resources/DWARF/static', 'debug_info'),
     ):
         require_macho(path, consumer + relative, qualified['artifacts'][name], kind)

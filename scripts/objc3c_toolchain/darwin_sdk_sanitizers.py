@@ -149,7 +149,7 @@ def qualify_consumers(prefix: Path, data: dict, host: dict, output: Path, comman
         executable = verify_macho(binary, 'executable')
         executable.update(load_paths=_load_paths(otool, binary, dependencies, commands),
                           rpaths=_rpaths(otool, binary, rpaths, commands),
-                          deployment=_deployment(otool, binary, commands))
+                          deployment=_deployment(otool, binary, commands, sdk_version=host['sdk_version']))
         options = RUNTIME_OPTIONS[mode]
         result = subprocess.run([str(binary)], cwd=output, env={**_environment(), **options}, capture_output=True,
                                 text=True, errors='replace')

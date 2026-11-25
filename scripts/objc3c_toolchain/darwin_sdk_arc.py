@@ -77,7 +77,8 @@ def qualify_consumer(prefix: Path, manifest: dict, host: dict, output: Path, com
     executable = verify_macho(binary, 'executable')
     executable.update(imports=imports,
         load_paths=_load_paths(otool, binary, [SYSTEM, '@rpath/' + runtime.name], commands),
-        rpaths=_rpaths(otool, binary, [rpath], commands), deployment=_deployment(otool, binary, commands))
+        rpaths=_rpaths(otool, binary, [rpath], commands),
+        deployment=_deployment(otool, binary, commands, sdk_version=host['sdk_version']))
     artifacts[binary.name] = executable
     if native(binary, trace_libraries=True) != WITNESS:
         raise ValueError('installed Darwin ARC lifetime witness failed')

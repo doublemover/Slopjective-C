@@ -1,7 +1,6 @@
-#include "api.h"
+#include "late_api.h"
 
-__attribute__((objc_root_class))
-@interface DarwinRegistrationLate
+@interface DarwinRegistrationLate : DarwinRegistrationLateParent
 + (int)answer;
 - (int)answer;
 @end
@@ -12,7 +11,9 @@ __attribute__((objc_root_class))
 }
 
 - (int)answer {
-  return 23;
+  if ([self store:19] != 19)
+    return -1;
+  return [super storedValue] + 4;
 }
 @end
 

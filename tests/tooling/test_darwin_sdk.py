@@ -12,6 +12,7 @@ from zipfile import ZipFile
 import pytest
 
 from scripts.objc3c_toolchain import cli, darwin_registration, darwin_sdk as sdk, darwin_sdk_arc as arc
+from scripts.objc3c_toolchain import darwin_compiler_cache as compiler_cache
 from scripts.objc3c_toolchain import darwin_sdk_activation as activation
 from scripts.objc3c_toolchain import darwin_sdk_replay as replay
 from scripts.objc3c_toolchain.package import MANIFEST, SCHEMA, _digest, _file_hash, inventory, normalize_permissions, verify_sdk
@@ -49,7 +50,8 @@ def thin_archive(name, data):
 
 @pytest.fixture
 def structural_host(monkeypatch):
-    host = {'xcode': sdk.XCODE, 'sdk_version': sdk.SDK_VERSION, 'tools': {
+    host = {'xcode': sdk.XCODE, 'sdk_version': sdk.SDK_VERSION, 'sdk_settings_sha256': '1' * 64,
+            'libcxx': {'config_relative': 'config', 'config_sha256': '2' * 64, 'stub_sha256': '3' * 64}, 'tools': {
         name: {'path': '/Xcode/bin/' + name, 'sha256': '0' * 64}
         for name in ('ld', 'lipo', 'otool', 'dsymutil')}}
     monkeypatch.setattr(sdk, '_host', lambda commands=None: host)
@@ -70,6 +72,7 @@ def structural_host(monkeypatch):
 def staged_product(path, host, *, wrong_arch=False, wrong_sdk=False, extra=None):
     for name in ('clang', 'llvm-ar', 'llvm-dwarfdump'):
         put(path, 'bin/' + name, macho(2, cpu=0x01000007 if wrong_arch else 0x0100000c), True)
+    put(path, sdk.DRIVER, Path(sdk.installed_driver.__file__).read_bytes(), True)
     put(path, 'lib/libobjc3darwin.a', thin_archive('runtime.o', macho(1)))
     put(path, 'lib/libobjc3darwin.dylib', macho(6))
     put(path, 'lib/clang/23/include/stddef.h', b'/* checked resource */\n')
@@ -105,6 +108,36 @@ def test_archive_replays_in_a_fresh_relocated_prefix(tmp_path, structural_host):
     assert not (prefix / 'bin/clang').is_symlink()
     with pytest.raises(ValueError, match='fresh prefix'):
         sdk.install(archive, _file_hash(archive), prefix)
+
+
+def test_compiler_cache_binds_native_products_to_exact_inputs(tmp_path):
+    products = tmp_path / 'source'
+    put(products, 'bin/clang', macho(2), True)
+    for name in compiler_cache.LICENSES:
+        put(products, name, b'license')
+    cache = tmp_path / 'cache'
+    inputs = {'xcode': sdk.XCODE, 'configuration_sha256': 'a' * 64, 'patch_digest': 'b' * 64}
+    assert compiler_cache.restore(cache, inputs) is None
+    saved = compiler_cache.save(cache, inputs, products / 'bin/clang', products)
+    assert compiler_cache.restore(cache, inputs) == saved
+    assert compiler_cache.restore(cache, {**inputs, 'patch_digest': 'c' * 64}) is None
+    (saved / 'bin/clang').write_bytes(b'different compiler')
+    with pytest.raises(ValueError, match='product seal'):
+        compiler_cache.restore(cache, inputs)
+
+
+def test_installed_driver_builds_and_links_using_the_sealed_profile(tmp_path, structural_host):
+    prefix = tmp_path / 'Relocated Objective-C 3 SDK'
+    manifest = staged_product(prefix, structural_host)
+    driver = sdk.installed_driver.driver_command
+    selected, linker = Path('/Apple SDK'), Path('/Xcode/bin/ld')
+    compile_args = driver(prefix, manifest, selected, linker, ['-c', 'unit.m', '-o', 'unit.o'], 'dynamic')
+    assert '-fobjc-runtime=gnustep-2.99' in compile_args and str(selected) in compile_args
+    assert '--ld-path=' + str(linker) not in compile_args
+    assert driver(prefix, manifest, selected, linker, ['unit.o'], 'static')[-1] == str(prefix / 'lib/libobjc3darwin.a')
+    assert str(prefix / 'lib/libobjc3darwin.dylib') in driver(prefix, manifest, selected, linker, ['unit.o'], 'dynamic')
+    with pytest.raises(ValueError, match='overrides the installed'):
+        driver(prefix, manifest, selected, linker, ['-fobjc-runtime=macosx-15.0', 'unit.m'], 'dynamic')
 
 
 def test_package_manifest_admits_only_its_sealed_portable_files(tmp_path, structural_host):
@@ -671,5 +704,5 @@ def test_host_probe_rejects_wrong_xcode(monkeypatch):
     monkeypatch.setattr(sdk, 'require_apple_silicon', lambda: None)
     expected = {'/usr/bin/sw_vers': '15.5', '/usr/bin/xcodebuild': 'Xcode 16.3', '/usr/bin/xcrun': '15.5'}
     monkeypatch.setattr(sdk, '_run', lambda tool, *_args, **_kwargs: expected[tool])
-    with pytest.raises(ValueError, match='Xcode 16.4'):
+    with pytest.raises(ValueError, match='pinned Xcode and macOS SDK pair'):
         sdk._host()

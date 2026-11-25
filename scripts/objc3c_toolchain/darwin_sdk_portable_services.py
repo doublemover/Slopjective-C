@@ -182,7 +182,7 @@ def qualify_consumer(prefix: Path, data: dict, host: dict, output: Path, command
     executable = {**verify_macho(binary, 'executable'),
                   'load_paths': _load_paths(otool, binary, [SYSTEM, SYSTEM_CXX], commands),
                   'rpaths': _rpaths(otool, binary, [], commands),
-                  'deployment': _deployment(otool, binary, commands)}
+                  'deployment': _deployment(otool, binary, commands, sdk_version=host['sdk_version'])}
     if _run(binary, cwd=output, commands=commands) != WITNESS or commands[-1]['stderr']:
         raise ValueError('the installed Darwin collections/text example did not complete cleanly')
     if _file_hash(source) != data[KEY]['files'][EXAMPLE]:

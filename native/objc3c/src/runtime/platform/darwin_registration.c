@@ -1,4 +1,7 @@
 /* The experimental Apple Silicon class registration ABI. */
+#if defined(__APPLE__) && defined(__MACH__) && !defined(_DARWIN_C_SOURCE)
+#define _DARWIN_C_SOURCE 1
+#endif
 #include "../public/objc3_darwin.h"
 #include <pthread.h>
 #include <stddef.h>
@@ -6,6 +9,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#if defined(__APPLE__) && defined(__MACH__)
+#include <dlfcn.h>
+#include <mach-o/loader.h>
+#endif
 
 struct class_record;
 
@@ -67,6 +74,7 @@ struct class_record {
 
 struct registered_class {
   const struct class_record *metadata;
+  const void *image;
   size_t own_alignment;
   size_t instance_size;
 };
@@ -322,11 +330,44 @@ static const struct method_record *find_method(const struct method_list *list,
   return NULL;
 }
 
-/* A Mach-O image must remain loaded while its registered records are in use. */
+/* A registered image remains resident for the process lifetime. Class, ivar
+ * and method references can escape the runtime without a release operation.
+ * Acquire the loader reference before taking the registry lock, because
+ * registration itself runs inside dyld initializers. */
 void objc3_darwin_register_v1(const struct class_record *const *classes, size_t count) {
-  pthread_mutex_lock(&registry_lock);
-  if (!classes || !count || count > (SIZE_MAX / sizeof(*registry)) - class_count)
+  if (!classes || !count)
     registration_error("invalid class registration batch");
+  const void *image = NULL;
+#if defined(__APPLE__) && defined(__MACH__)
+  Dl_info owner;
+  if (!dladdr(classes, &owner) || !owner.dli_fbase || !owner.dli_fname)
+    registration_error("class registration has no owning Mach-O image");
+  image = owner.dli_fbase;
+  for (size_t i = 0; i < count; ++i) {
+    Dl_info record;
+    if (!dladdr(classes[i], &record) || record.dli_fbase != image)
+      registration_error("class registration crosses Mach-O images");
+  }
+  const struct mach_header *header = image;
+  void *hold = NULL;
+  if (header->filetype != MH_EXECUTE) {
+    hold = dlopen(owner.dli_fname, RTLD_LAZY | RTLD_LOCAL | RTLD_NOLOAD);
+    if (!hold)
+      registration_error("could not retain registered Mach-O image");
+  }
+#endif
+  pthread_mutex_lock(&registry_lock);
+  if (count > (SIZE_MAX / sizeof(*registry)) - class_count)
+    registration_error("invalid class registration batch");
+#if defined(__APPLE__) && defined(__MACH__)
+  // The first batch owns the image's process-lifetime reference.
+  int already_retained = 0;
+  for (size_t i = 0; hold && i < class_count; ++i)
+    if (registry[i].image == image) {
+      already_retained = 1;
+      break;
+    }
+#endif
   struct registered_class *updated = realloc(registry, (class_count + count) * sizeof(*registry));
   if (!updated)
     registration_error("class registry allocation failed");
@@ -336,9 +377,13 @@ void objc3_darwin_register_v1(const struct class_record *const *classes, size_t 
     if (find_class(classes[i]->name))
       registration_error("duplicate class name");
     registry[class_count++] =
-        (struct registered_class){.metadata = classes[i], .own_alignment = alignment};
+        (struct registered_class){.metadata = classes[i], .image = image, .own_alignment = alignment};
   }
   pthread_mutex_unlock(&registry_lock);
+#if defined(__APPLE__) && defined(__MACH__)
+  if (already_retained)
+    dlclose(hold);
+#endif
 }
 
 const struct class_record *objc3_darwin_class_v1(const char *name) {
