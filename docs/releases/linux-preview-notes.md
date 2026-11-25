@@ -21,6 +21,18 @@ Public async/await and actors remain reserved. Preview qualification covers the
 distributed products and the tested features and does not assert whole-profile
 conformance.
 
+## Preview 2 changes
+
+- Automatic ARC `Optional` and `Result` locals can initialize their active
+  payload by assignment on each control-flow path. The compiler diagnoses
+  reads that may precede initialization during syntax checking.
+- The SDK includes the matching `llvm-symbolizer` on both Linux architectures
+  and checks source-line resolution after installation and relocation.
+- A single compiler invocation can combine Objective-C 3, C, and C++ source
+  files. Each input receives the language options appropriate to that file.
+- Linux libobjc2 initializes association locks before publishing the storage
+  to concurrent callers.
+
 The candidate extension ABI is 24. Rebuild Objective-C 3 objects, PCH files,
 semantic interfaces, and source packages produced by earlier SDKs, including
 the ABI 21 checkpoint. Recompile all dependencies against the selected SDK
