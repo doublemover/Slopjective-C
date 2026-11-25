@@ -84,12 +84,20 @@ extern "C" int objc3_async_c_error_is_cancellation(objc3_async_c_error error) {
   return error == cancellation_error();
 }
 
+extern "C" void *objc3_c_object_retain(void *object) {
+  return object ? objc_retain(object) : nullptr;
+}
+
+extern "C" void objc3_c_object_release(void *object) {
+  if (object) objc_release(object);
+}
+
 extern "C" void *objc3_async_c_error_retain(void *error) {
-  return error ? objc_retain(error) : nullptr;
+  return objc3_c_object_retain(error);
 }
 
 extern "C" void objc3_async_c_error_release(void *error) {
-  if (error) objc_release(error);
+  objc3_c_object_release(error);
 }
 
 extern "C" void *objc3_c_autorelease_pool_push(void) {

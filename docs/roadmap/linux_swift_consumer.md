@@ -110,6 +110,15 @@ Optional arm, and C checked record returns preserve their indirect result ABI
 when a field has vector type. x86-64 and AArch64 IR checks cover the typed
 loads, lane extraction and checked error branch in ARC and MRC.
 
+An exported checked or async entry returning a nonnull Objective-C pointer can
+select `annotate("objc3.swift-owned-result:objc3_c_object_release")`. The
+generated Swift owner retains the opaque object before the native pool or
+completion returns, and releases it in `deinit`. Use
+`withBorrowedNativeObject` for temporary native calls. The C entry's existing
+result and error ABI stays the same. The Swift witness tests successful
+retention and release, checked failure and cancellation. The emitter rejects
+an unmanaged pointer given the same annotation.
+
 Reports retain compiler versions, targets, resources, loader graphs, input and
 artifact hashes, commands, environments, diagnostics and exact results. The
 gate rechecks native and Swift installations and the loaded dependencies.

@@ -37,6 +37,11 @@ int objc3_async_c_error_is_cancellation(objc3_async_c_error _Nullable error);
 void * _Nullable objc3_async_c_error_retain(void * _Nullable error);
 void objc3_async_c_error_release(void * _Nullable error);
 
+/* Own an opaque Objective-C result after its callback or pool exits. These
+ * functions accept only a live native object or null. */
+void * _Nullable objc3_c_object_retain(void * _Nullable object);
+void objc3_c_object_release(void * _Nullable object);
+
 /* Pair these calls on one thread around a synchronous foreign entry. */
 void * _Nullable objc3_c_autorelease_pool_push(void);
 void objc3_c_autorelease_pool_pop(void * _Nullable token);
