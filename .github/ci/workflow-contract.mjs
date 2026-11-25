@@ -346,10 +346,10 @@ export function validateNativeGate(text) {
     transport?.if !== "inputs.diagnostic_core_only && inputs.diagnostic_transport_run != ''" ||
     events.workflow_call?.inputs?.diagnostic_transport_run ||
     events.workflow_call?.inputs?.diagnostic_transport_artifact ||
-    transport?.["timeout-minutes"] !== 15
+    !usesHostedDeadline(transport)
   )
     throw new Error(
-      "Artifact transport must be bounded, explicit and separate from compiler execution",
+      "Artifact transport must be explicit, separate from compiler execution and use the hosted deadline",
     );
 
   const productGroups = (consumers?.strategy?.matrix?.include ?? []).map((entry) => entry.group);
@@ -853,16 +853,7 @@ export function validateOptionalLLVM(text) {
         required.every((command) => step.run?.includes(command)),
     );
   if (
-    [
-      [job, 360],
-      [installed, 35],
-    ].some(
-      ([owner, bound]) =>
-        !Number.isInteger(owner?.["timeout-minutes"]) ||
-        owner["timeout-minutes"] > bound ||
-        owner["timeout-minutes"] <= 0 ||
-        owner["continue-on-error"],
-    ) ||
+    [job, installed].some((owner) => !usesHostedDeadline(owner) || owner["continue-on-error"]) ||
     !scopedStep(job, ["scripts.objc3c_toolchain.llvm_campaign"], "development") ||
     !scopedStep(job, ["scripts.objc3c_toolchain.semantic_oracles"], "development") ||
     !scopedStep(
@@ -892,7 +883,11 @@ export function validateOptionalLLVM(text) {
       "--seal-sha256",
     ])
   )
-    throw new Error("Optional LLVM campaigns must retain their bounded real owners");
+    throw new Error("Optional LLVM campaigns must retain their real owners and hosted deadline");
+}
+
+function usesHostedDeadline(job) {
+  return Boolean(job) && (!Object.hasOwn(job, "timeout-minutes") || job["timeout-minutes"] === 360);
 }
 
 export function validateQuickChecks(toolingText, documentationText) {
@@ -910,9 +905,7 @@ export function validateQuickChecks(toolingText, documentationText) {
       events.pull_request?.["paths-ignore"] ||
       workflow.permissions?.contents !== "read" ||
       workflow.concurrency?.["cancel-in-progress"] !== true ||
-      !Number.isInteger(job?.["timeout-minutes"]) ||
-      job["timeout-minutes"] <= 0 ||
-      job["timeout-minutes"] > 15 ||
+      !usesHostedDeadline(job) ||
       job.if ||
       job["continue-on-error"] ||
       (job.steps ?? []).some(
@@ -924,7 +917,7 @@ export function validateQuickChecks(toolingText, documentationText) {
       )
     )
       throw new Error(
-        "Quick PR checks must be automatic, bounded and independent of extended compiler builds",
+        "Quick PR checks must be automatic and independent of extended compiler builds, with the hosted deadline",
       );
   }
 }
@@ -992,11 +985,11 @@ export async function validateWorkflowContracts(config, readWorkflow) {
     }
     const localJobs = [source, gate];
     if (Object.keys(workflow.jobs).length !== 3 || localJobs.some((job) =>
-      job["continue-on-error"] || job["timeout-minutes"] <= 0 || job["timeout-minutes"] > 5 ||
+      job["continue-on-error"] || !usesHostedDeadline(job) ||
       job.steps.length !== 1 || job.steps.some((step) => !step.run || step.if || step["continue-on-error"])
     ) || JSON.stringify(localJobs.map(({ name }) => name).toSorted()) !==
          JSON.stringify(suite.expectedJobs.map(({ name }) => name).toSorted())) {
-      throw new Error("Periodic workflow must preserve its bounded required job inventory");
+      throw new Error("Periodic workflow must preserve its required job inventory and hosted deadlines");
     }
     for (const expected of suite.expectedJobs) {
       const job = localJobs.find(({ name }) => name === expected.name);

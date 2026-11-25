@@ -111,8 +111,11 @@ runs six trials per strategy and reports actual wall and CPU time. It uses the
 hosted job's limit. Each case pools its own binary profiles before indexing.
 A native LLVM 23.1.5 replay reduced three raw profiles to one and
 preserved the exact entry points, branch counts, and regions. The new
-release-sized comparison awaits hosted verification.
-[Retained source-feedback timings](https://github.com/doublemover/Slopjective-C/actions/runs/45289388519)
+hosted comparison passed all 36 paired trials across three seeds, three
+unprofiled anchors, and five intentional diagnostic controls. The median
+covered-point ratio was 1.0000 and the median program-rate ratio was 0.9987.
+Uniform generation remains the default.
+[Retained source-feedback comparison](https://github.com/doublemover/Slopjective-C/actions/runs/45304458817)
 
 The refreshed AArch64 producer measured 268 patch-owned Clang files.
 The retained report lists 234 executed files, five mapped files with zero hits,
@@ -122,6 +125,12 @@ the disjoint union of 74 suites at `af41a499e`. A subsequent x86-64 coverage
 run of the standalone text test linked the production runtime archive and
 measured both arms of the text bounds check. The updated coverage catalogue
 contains 75 suites. [AArch64 release run](https://github.com/doublemover/Slopjective-C/actions/runs/45289389357) · [Source coverage policy](linux_source_coverage.md)
+
+The AArch64 release passed its terminal gate. The x86-64 run passed its
+producer and warm replay, then CTest stopped ongoing deduction-guide
+compilation at its 300-second suite limit. The follow-up removes compiler
+suite deadlines and retains runtime liveness checks for the named fixtures.
+[x86-64 release run](https://github.com/doublemover/Slopjective-C/actions/runs/45299864647) · [Corrected x86-64 run](https://github.com/doublemover/Slopjective-C/actions/runs/45642019348)
 
 The repaired Apple Silicon registrar passed at
 `ebb30539dd68d63f18e1a0f41e9f724d674028ea`. The native report records
@@ -144,9 +153,19 @@ consumer, reused the verified generation, and uninstalled it on native macOS
 15.8.2 arm64. A second native package passed qualification without the
 optional sanitizer payload. Its retained terminal matched independent verifier
 output and records a distinct seal with the same Apple toolchain requirements.
-Both packages are pinned in the managed hard-cutover replay.
+The managed hard-cutover replay re-admitted both packages, checked 20 native
+commands, executed the ARC client against each exact runtime, and verified
+that the update and uninstall removed the retired generations.
 [Expanded native SDK qualification](https://github.com/doublemover/Slopjective-C/actions/runs/45299864475) · [Managed lifecycle replay](https://github.com/doublemover/Slopjective-C/actions/runs/45305498679)
 [Plain package qualification](https://github.com/doublemover/Slopjective-C/actions/runs/45305603658) · [Managed cutover replay](https://github.com/doublemover/Slopjective-C/actions/runs/45312431420)
+
+The separate two-argument dispatch change passed native Apple Silicon package
+and terminal qualification. The retained verifier checked optimized and
+unoptimized typed IR, Mach-O products, static, shared and ARC execution, and
+the mixed-type and excessive-arity diagnostics. The shipping platform
+capability still requires public build and install support for the language
+surface advertised on Linux.
+[Native dispatch qualification](https://github.com/doublemover/Slopjective-C/actions/runs/45314209566) · [Two-argument dispatch](https://github.com/doublemover/Slopjective-C/pull/8333)
 
 ## Release CI cost
 

@@ -266,7 +266,7 @@ for (const [command, fault] of [
 
 for (const fault of [
   "missing PR",
-  "unbounded time",
+  "shortened job deadline",
   "hidden failure",
   "cold compiler build",
   "obsolete feedback",
@@ -274,7 +274,7 @@ for (const fault of [
   test(`quick PR checks reject ${fault}`, () => {
     const workflow = yaml.load(toolingQuick);
     if (fault === "missing PR") delete workflow.on.pull_request;
-    if (fault === "unbounded time") workflow.jobs.tooling["timeout-minutes"] = 360;
+    if (fault === "shortened job deadline") workflow.jobs.tooling["timeout-minutes"] = 15;
     if (fault === "hidden failure") workflow.jobs.tooling["continue-on-error"] = true;
     if (fault === "cold compiler build")
       workflow.jobs.tooling.steps.push({ run: "python -m scripts.objc3c_assurance run" });
@@ -446,14 +446,14 @@ for (const fault of [
     assert.throws(() => validateNativeRelease(yaml.dump(owner), yaml.dump(caller)));
   });
 }
-for (const fault of ["compiler overlaps transport", "implicit transport", "unbounded transport"]) {
+for (const fault of ["compiler overlaps transport", "implicit transport", "shortened transport deadline"]) {
   test(`artifact transport rejects ${fault}`, () => {
     const owner = yaml.load(native);
     if (fault === "compiler overlaps transport")
       owner.jobs["product-producer"].if = "needs.plan.outputs.native == 'true'";
     if (fault === "implicit transport") owner.jobs["diagnostic-transport"].if = "always()";
-    if (fault === "unbounded transport")
-      owner.jobs["diagnostic-transport"]["timeout-minutes"] = 360;
+    if (fault === "shortened transport deadline")
+      owner.jobs["diagnostic-transport"]["timeout-minutes"] = 15;
     assert.throws(() => validateNativeGate(yaml.dump(owner)));
   });
 }
