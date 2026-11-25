@@ -76,6 +76,104 @@ def test_command_evidence_can_be_empty_but_never_linked(tmp_path):
         evidence.retained(tmp_path, alias.name, allow_empty=True)
 
 
+@pytest.mark.parametrize('arity,fault', [
+    (arity, fault) for arity in (1, 2)
+    for fault in (None, 'missing-ir', 'wrong-optimization', 'changed-imports', 'missing-run')
+] + [(2, 'missing-rejection'), (2, 'wrong-rejection-mode')])
+def test_terminal_rechecks_typed_message_ir_imports_and_execution(tmp_path, arity, fault):
+    family = 'int-method' if arity == 1 else 'two-int-method'
+    prefix = family.replace('-', '_')
+    field = 'int_argument_methods' if arity == 1 else 'two_int_argument_methods'
+    suffix = 'int_arg_v1' if arity == 1 else 'two_int_args_v1'
+    encoding = 'i20@0:8i16' if arity == 1 else 'i24@0:8i16i20'
+    witness = f'owned Objective-C 3 Darwin {family.removesuffix("-method")}-argument methods: PASS\n'
+    instance, super_lookup = 'objc3_darwin_lookup_' + suffix, 'objc3_darwin_lookup_super_' + suffix
+    report = {'artifacts': {}, field: {'status': 'PASS', 'ir': {}, 'imports': {}}}
+    proof, labels = report[field], {}
+
+    def put(relative, content):
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+        return path
+
+    def log(label, argv, content):
+        return {'argv': argv, 'exit_status': 0, 'log': put(label + '.log', content).name}
+
+    def macho(relative, kind):
+        path = put(relative, struct.pack('<10I', 0xfeedfacf, 0x0100000c, 0, MACHO_TYPES[kind], 1, 8, 0, 0, 0, 8))
+        return path, evidence.verify_macho(path, kind)
+
+    arguments = ', i32 7' if arity == 2 else ''
+    for unit, lookup in (('child', super_lookup), ('main', instance)):
+        text = (f'@signature = private constant [{len(encoding)+1} x i8] c"{encoding}\\00"\n'
+                f'define i32 @send(ptr %self, ptr %selector) {{\n'
+                f'  %first = call ptr @{lookup}(ptr %self, ptr %selector)\n'
+                f'  %one = call i32 %first(ptr %self, ptr %selector, i32 -2{arguments})\n'
+                f'  %second = call ptr @{lookup}(ptr %self, ptr %selector)\n'
+                f'  %two = call i32 %second(ptr %self, ptr %selector, i32 5{arguments})\n'
+                '  ret i32 %two\n}\n')
+        for level in ('o0', 'o2'):
+            label = f'{family}-{unit}-{level}-ir'
+            path = put('build/' + label + '.ll', text.encode())
+            proof['ir'][label] = {'path': str(path), 'sha256': evidence.file_digest(path)}
+            labels[label] = [{'exit_status': 0, 'argv': [
+                '/toolchain/clang', '-' + level.upper(), '-S', '-emit-llvm',
+                f'/source/tests/clang_foundation/darwin_registration/{prefix}_{unit}.m', '-o', str(path)]}]
+    for name, kind, symbol in (
+        (f'lib/lib{family}-child.dylib', 'dynamic_library', super_lookup),
+        (f'bin/{family}-dynamic', 'executable', instance),
+        (f'bin/{family}-arc', 'executable', instance),
+        (f'bin/{family}-static', 'executable', 'puts'),
+    ):
+        path, record = macho('Relocated install/' + name, kind)
+        record['load_paths'] = [f'@rpath/lib{family}-base.dylib', '@rpath/libobjc3darwin.dylib']
+        report['artifacts'][name] = record
+        proof['imports'][name] = [symbol]
+        labels[path.name + '-imports'] = [log(path.name + '-imports', ['/usr/bin/nm', '-u', '-j', str(path)],
+                                               ('_' + symbol + '\n').encode())]
+        if kind == 'executable':
+            labels[path.name + '-native'] = [log(path.name + '-native', [str(path)], witness.encode())]
+    if arity == 2:
+        for unit in ('base', 'child', 'main', 'arc'):
+            name = prefix + '_' + ('main_arc' if unit == 'arc' else unit)
+            path, report['artifacts'][name] = macho('build/' + name + '.o', 'object')
+            fixture_unit = 'main' if unit == 'arc' else unit
+            labels[f'{family}-{unit}-object'] = [{'argv': ['/toolchain/clang',
+                *(['-fobjc-arc'] if unit == 'arc' else []), '-c',
+                f'/source/darwin_registration/two_int_method_{fixture_unit}.m', '-o', str(path)]}]
+        base = f'lib/lib{family}-base.dylib'
+        _, report['artifacts'][base] = macho('Relocated install/' + base, 'dynamic_library')
+        for control in ('type', 'arity', 'send-type', 'send-arity'):
+            send = control.startswith('send-')
+            subject = 'an ordinary int message' if send else 'ordinary int methods'
+            label = 'unsupported-' + family + '-' + control
+            labels[label] = [{
+                'argv': ['/toolchain/clang', *(['-DDARWIN_UNSUPPORTED_SEND=1'] if send else []),
+                         *(['-DDARWIN_UNSUPPORTED_ARITY=1'] if control.endswith('arity') else []),
+                         '-c', '/source/tests/clang_foundation/darwin_registration/unsupported_two_int_method.m',
+                         '-o', str(tmp_path / 'build' / (label + '.o'))],
+                'expected_diagnostic': [f'experimental Darwin registration requires {subject} with at most two int arguments']}]
+
+    if fault == 'missing-ir':
+        del proof['ir'][family + '-main-o2-ir']
+    elif fault == 'wrong-optimization':
+        labels[family + '-main-o2-ir'][0]['argv'][1] = '-O0'
+    elif fault == 'changed-imports':
+        proof['imports'][f'bin/{family}-dynamic'] = ['different_symbol']
+    elif fault == 'missing-run':
+        del labels[family + '-dynamic-native']
+    elif fault == 'missing-rejection':
+        del labels['unsupported-two-int-method-send-arity']
+    elif fault == 'wrong-rejection-mode':
+        labels['unsupported-two-int-method-send-arity'][0]['argv'].remove('-DDARWIN_UNSUPPORTED_ARITY=1')
+    if fault is None:
+        evidence.typed_dispatch(tmp_path, report, labels, arity=arity)
+    else:
+        with pytest.raises(ValueError, match='Darwin'):
+            evidence.typed_dispatch(tmp_path, report, labels, arity=arity)
+
+
 def test_candidate_admission_requires_matching_pinned_terminal_bytes(tmp_path):
     result = {'status': 'PASS', 'mode': 'package-sanitizers', 'revision': 'a' * 40, 'support_truth': False,
               'bootstrap_sha256': 'a' * 64, 'registration_sha256': 'b' * 64,

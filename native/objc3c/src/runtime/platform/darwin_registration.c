@@ -37,6 +37,7 @@ struct selector_record {
 typedef void (*method_address)(void);
 typedef int (*method_implementation)(const void *, const struct selector_record *);
 typedef int (*int_arg_implementation)(const void *, const struct selector_record *, int);
+typedef int (*two_int_args_implementation)(const void *, const struct selector_record *, int, int);
 
 struct method_record {
   method_address implementation;
@@ -98,6 +99,7 @@ struct super_record {
 _Static_assert(offsetof(struct class_record, methods) == 56, "arm64 class ABI");
 _Static_assert(offsetof(struct method_list, methods) == 24, "arm64 method list ABI");
 _Static_assert(sizeof(struct method_record) == 24, "arm64 method ABI");
+_Static_assert(sizeof(int) == 4, "arm64 signed int dispatch ABI");
 _Static_assert(offsetof(struct fixed_root_object, value) == 8, "arm64 fixed ivar ABI");
 _Static_assert(sizeof(struct fixed_root_object) == 16, "arm64 fixed instance ABI");
 _Static_assert(offsetof(struct ivar_list, ivars) == 16, "arm64 ivar list ABI");
@@ -127,6 +129,7 @@ static const struct class_record *find_class(const char *name) {
 
 static const char int_method_encoding[] = "i16@0:8";
 static const char int_arg_method_encoding[] = "i20@0:8i16";
+static const char two_int_args_method_encoding[] = "i24@0:8i16i20";
 
 static void check_method_list(const struct method_list *list) {
   if (!list)
@@ -138,7 +141,8 @@ static void check_method_list(const struct method_list *list) {
     if (!method->implementation || !method->selector || !method->selector->name ||
         !method->selector->type ||
         (strcmp(method->selector->type, int_method_encoding) != 0 &&
-         strcmp(method->selector->type, int_arg_method_encoding) != 0))
+         strcmp(method->selector->type, int_arg_method_encoding) != 0 &&
+         strcmp(method->selector->type, two_int_args_method_encoding) != 0))
       registration_error("invalid Darwin int method encoding");
   }
 }
@@ -474,6 +478,15 @@ static int nil_int_arg_method(const void *receiver, const struct selector_record
   return 0;
 }
 
+static int nil_two_int_args_method(const void *receiver, const struct selector_record *sel,
+                                   int first, int second) {
+  (void)receiver;
+  (void)sel;
+  (void)first;
+  (void)second;
+  return 0;
+}
+
 static method_address lookup(const void *receiver, const struct selector_record *selector,
                              const struct super_record *super, const char *encoding) {
   if (!receiver)
@@ -546,4 +559,18 @@ int_arg_implementation objc3_darwin_lookup_super_int_arg_v1(
     registration_error("super dispatch record is missing");
   method_address imp = lookup(super->receiver, selector, super, int_arg_method_encoding);
   return imp ? (int_arg_implementation)imp : nil_int_arg_method;
+}
+
+two_int_args_implementation objc3_darwin_lookup_two_int_args_v1(
+    const void *receiver, const struct selector_record *selector) {
+  method_address imp = lookup(receiver, selector, NULL, two_int_args_method_encoding);
+  return imp ? (two_int_args_implementation)imp : nil_two_int_args_method;
+}
+
+two_int_args_implementation objc3_darwin_lookup_super_two_int_args_v1(
+    const struct super_record *super, const struct selector_record *selector) {
+  if (!super)
+    registration_error("super dispatch record is missing");
+  method_address imp = lookup(super->receiver, selector, super, two_int_args_method_encoding);
+  return imp ? (two_int_args_implementation)imp : nil_two_int_args_method;
 }

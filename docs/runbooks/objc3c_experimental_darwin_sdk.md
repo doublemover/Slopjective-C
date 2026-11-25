@@ -2,7 +2,7 @@
 
 The experimental SDK packages the patched Apple Silicon Clang driver and the
 private Objective-C 3 registration runtime. The profile covers class, instance,
-and `super` dispatch for `int` methods with zero or one signed `int` argument.
+and `super` dispatch for `int` methods with up to two signed `int` arguments.
 A root class can declare one fixed `int` field. The lifetime checks exercise
 manual allocation and deallocation as well as ARC strong references, zeroing
 weak references, and thread-local autorelease pools. The package receipt carries
