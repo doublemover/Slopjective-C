@@ -69,7 +69,42 @@ def selected_tools(repo: Path) -> tuple[dict, dict, dict]:
 def require_binary_ids(observed: set[str], *, required: set[str], allowed: set[str], kind: str) -> None:
     """Require all executed mains while admitting only covered loaded modules."""
     if not required <= observed <= allowed:
-        raise ValueError(f'compiler {kind} differ from the executed binary identities')
+        raise ValueError(f'compiler {kind} differ from the executed binary identities '
+                         f'(missing {sorted(required - observed)}, unexpected {sorted(observed - allowed)})')
+
+
+def coverage_product_files(build: Path, stage: Path) -> list[Path]:
+    """Find the actual ELF support tools and DSOs owned by the coverage build."""
+    products = set()
+    for owner in (build, stage):
+        for directory in (owner / 'bin', owner / 'lib', owner / 'libexec'):
+            for path in directory.rglob('*'):
+                file = path.resolve()
+                if file in products or not file.is_relative_to(owner) or not file.is_file():
+                    continue
+                with file.open('rb') as stream:
+                    if stream.read(4) == b'\x7fELF':
+                        products.add(file)
+    return sorted(products)
+
+
+def coverage_product_ids(notes: str, products: list[Path]) -> dict[str, str]:
+    """Associate GNU build notes with their owned product paths."""
+    known = {str(path) for path in products}
+    identities = {}
+    current = None
+    for line in notes.splitlines():
+        if line.startswith('File: '):
+            current = line.removeprefix('File: ')
+            if current not in known:
+                raise ValueError('coverage ELF note inventory escaped its owned product paths')
+        elif current and (matched := re.fullmatch(r'\s*Build ID: ([0-9a-f]{40})', line)):
+            if current in identities:
+                raise ValueError('coverage product contains duplicate native build identities: ' + current)
+            identities[current] = matched[1]
+    if products and not identities:
+        raise ValueError('coverage ELF product inventory omitted its build notes')
+    return identities
 
 
 def unique_binary_paths(paths: list[Path], identities: dict[str, str]) -> list[Path]:
@@ -443,7 +478,7 @@ def qualify(repo: Path, output: Path, *, jobs=2, baseline: Path | None = None) -
            ('ASAN_OPTIONS', 'LSAN_OPTIONS', 'UBSAN_OPTIONS', 'TSAN_OPTIONS', 'LLVM_PROFILE_FILE') and
            not key.startswith(('LIT_', 'GTEST_'))}
     env['LD_LIBRARY_PATH'] = str(stage / 'lib')
-    env['PATH'] = str(stage / 'bin') + os.pathsep + env.get('PATH', '')
+    env['PATH'] = os.pathsep.join((str(build / 'bin'), str(stage / 'bin'), env.get('PATH', '')))
     env['LLVM_PROFILE_FILE'] = os.devnull
     env['PYTHONDONTWRITEBYTECODE'] = '1'
     def run(name, argv, *, profile=True, stdout=None):
@@ -475,19 +510,10 @@ def qualify(repo: Path, output: Path, *, jobs=2, baseline: Path | None = None) -
             binary_identity[str(binary)] = values[0]
         expected_ids = set(binary_identity.values())
         expected_profile_ids = {binary_identity[str(binary)] for binary in [binaries[0], *test_binaries]}
-        execution_binary_identity = dict(binary_identity)
-        targets = [target for group in plan['instrumentation']['build_target_groups']
-                   for target in group['targets']]
-        execution_candidates = sorted({(build / 'bin' / target).resolve()
-                                       for target in targets
-                                       if (build / 'bin' / target).is_file()})
-        for index, binary in enumerate(execution_candidates):
-            if str(binary) in execution_binary_identity: continue
-            notes = run('execution-binary-notes-'+str(index),
-                        [tools['llvm-readobj'], '--notes', binary], profile=False).read_text()
-            values = re.findall(r'Build ID: ([0-9a-f]{40})', notes)
-            if len(values) != 1: raise ValueError('instrumented support binary lacks one build identity')
-            execution_binary_identity[str(binary)] = values[0]
+        execution_candidates = coverage_product_files(build, stage)
+        notes = run('execution-binary-notes', [tools['llvm-readobj'], '--notes', *execution_candidates],
+                    profile=False).read_text()
+        execution_binary_identity = {**coverage_product_ids(notes, execution_candidates), **binary_identity}
         allowed_profile_ids = set(execution_binary_identity.values())
         # The patch-owned Clang implementation objects live in the shared
         # clang-cpp DSO. Combining its mappings with the driver, LLVM, or
@@ -527,7 +553,12 @@ def qualify(repo: Path, output: Path, *, jobs=2, baseline: Path | None = None) -
             matched = re.fullmatch(r'([0-9a-f]{40})-.+\.profraw', profile.name)
             if not matched: raise ValueError('compiler raw profile omitted its executable build identity')
             filename_ids.add(matched[1]);profile_ids[profile] = matched[1]
-        report['raw_profile_binary_ids'] = sorted(filename_ids);save()
+        report['raw_profile_binary_ids'] = sorted(filename_ids)
+        report['raw_profile_suites'] = {
+            suite: sorted({identity for path, identity in profile_ids.items() if path.parent.name == suite})
+            for suite in sorted({path.parent.name for path in profile_ids})}
+        report['admitted_binary_ids'] = execution_binary_identity
+        save()
         require_binary_ids(filename_ids, required=expected_profile_ids, allowed=allowed_profile_ids,
                            kind='raw profiles')
         selected_profiles, excluded_profiles = select_coverage_profiles(
