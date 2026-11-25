@@ -10,7 +10,7 @@ import pytest
 from scripts.objc3c_toolchain.compiler_source_coverage import (
     EXPORT_FLAGS, FLAGS, PROFILE, SCHEMA, changed_branches, compare_coverage, compile_inventory, coverage_baseline,
     inspect_objects, lit_inventory, merged_ranges, patched_inventory, read_export,
-    require_binary_ids, select_coverage_profiles, unique_binary_paths,
+    coverage_product_files, coverage_product_ids, require_binary_ids, select_coverage_profiles, unique_binary_paths,
 )
 from scripts.objc3c_toolchain.source_coverage import COVERAGE_SECTIONS, coverage_section_command
 from scripts.objc3c_toolchain.binary_packages import digest
@@ -220,6 +220,30 @@ def test_profile_ids_require_mains_and_reject_foreign_modules():
         with pytest.raises(ValueError, match='binary identities'):
             require_binary_ids(observed, required={'clang'},
                                allowed={'clang', 'llvm', 'clang-cpp'}, kind='profile')
+
+
+def test_profile_admission_uses_actual_built_and_installed_elf_products(tmp_path):
+    build, stage = tmp_path / 'build', tmp_path / 'stage'
+    for root in (build, stage):
+        for directory in ('bin', 'lib'):
+            (root / directory).mkdir(parents=True)
+    built = build / 'bin/clang'
+    helper = stage / 'bin/llvm-helper'
+    library = stage / 'lib/libcoverage-helper.so.1'
+    foreign = tmp_path / 'not-in-the-build'
+    for binary in (built, helper, library, foreign):
+        binary.write_bytes(b'\x7fELF')
+    (stage / 'lib/libcoverage-helper.so').symlink_to(library.name)
+    (stage / 'bin/foreign').symlink_to(foreign)
+    (build / 'bin/llvm-lit').write_text('#!/usr/bin/env python3')
+    products = coverage_product_files(build, stage)
+    assert set(products) == {built, helper, library}
+    notes = '\n'.join(f'File: {path}\n  Build ID: {char * 40}'
+                      for path, char in ((built, 'a'), (helper, 'b'), (library, 'c')))
+    assert coverage_product_ids(notes, products) == {str(built): 'a' * 40,
+                                                     str(helper): 'b' * 40, str(library): 'c' * 40}
+    with pytest.raises(ValueError, match='escaped its owned product paths'):
+        coverage_product_ids(notes + f'\nFile: {foreign}\n  Build ID: ' + 'd' * 40, products)
 
 
 def test_export_uses_one_object_per_admitted_build_identity(tmp_path):
