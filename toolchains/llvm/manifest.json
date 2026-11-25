@@ -98,7 +98,11 @@
       "sha256": "a616a321bd9dcc792447a6697508076e5ce84bcd603e117211d0719d0797d5ec"
     },
     {
-      "file": "0009-objc3-deferred-arc-carrier-init.patch",
+      "file": "0009-objc3-per-input-sdk-defaults.patch",
+      "sha256": "4416521c962b41f536f1142a161b414813ddbdd4b7a91219c3a78bd7030db499"
+    },
+    {
+      "file": "0010-objc3-deferred-arc-carrier-init.patch",
       "sha256": "a9bd748f435a2491911b66033e395a1f48761a433bd68d28f38d64d686d76393"
     }
   ],

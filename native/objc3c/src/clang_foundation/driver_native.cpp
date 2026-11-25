@@ -139,6 +139,8 @@ int RunNativeDriver(int argc, char **raw_argv) {
       } else if ((force_objc || force_objcxx) &&
                  type != types::TY_INVALID && type != types::TY_Object) {
         type = default_objc;
+      } else if (type == types::TY_C || type == types::TY_PP_C) {
+        default_languages.emplace_back(input->getIndex(), type);
       }
     }
     if (type == types::TY_INVALID)
@@ -158,10 +160,14 @@ int RunNativeDriver(int argc, char **raw_argv) {
       return 2;
     }
   }
-  // Apply SDK extension and language aliases only to their inferred inputs.
+  // Preserve C inputs when the SDK selects clang++ to link C++ sources.
+  // An explicit Clang driver mode retains its normal language inference.
+  const bool preserve_c_inputs = cxx && !parsed.hasArg(OPT_driver_mode);
   const unsigned last_input_index = last_input ? last_input->getIndex() : 0;
   for (auto input = default_languages.rbegin(); input != default_languages.rend(); ++input) {
     const auto [index, type] = *input;
+    if (!types::isObjC(type) && !preserve_c_inputs)
+      continue;
     if (index < last_input_index)
       forwarded.insert(forwarded.begin() + index + 1, {"-x", "none"});
     forwarded.insert(forwarded.begin() + index, {"-x", types::getTypeName(type)});
@@ -175,9 +181,7 @@ int RunNativeDriver(int argc, char **raw_argv) {
   // Linking object-only invocations must also resolve C++ runtime references.
   std::string program = cxx || (!source && !query) ? (root / "bin/clang++").string() : clang;
   std::vector<std::string> args{program, "-resource-dir", resources};
-  if (objc) args.insert(args.end(), {"-fobjc-version=3", "-fobjc-runtime=gnustep-2.2",
-                                    "-fblocks", "-fobjc-arc"});
-  // Defaults precede user arguments so explicit ARC/MRC/runtime choices win.
+  if (objc) args.push_back("--objc3-sdk-defaults");
   args.insert(args.end(), forwarded.begin(), forwarded.end());
   // Leave a missing compiler operand at the end for Clang to diagnose.
   if (!query && !missing_count) {
