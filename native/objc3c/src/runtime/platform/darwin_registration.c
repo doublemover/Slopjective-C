@@ -1,4 +1,5 @@
 /* The experimental Apple Silicon class registration ABI. */
+#include "../public/objc3_darwin.h"
 #include <pthread.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -11,7 +12,7 @@ struct class_record;
 struct ivar_record {
   const char *name;
   const char *type;
-  const int *offset;
+  int *offset;
   uint32_t size;
   uint32_t flags;
 };
@@ -66,7 +67,8 @@ struct class_record {
 
 struct registered_class {
   const struct class_record *metadata;
-  size_t own_instance_size;
+  size_t own_alignment;
+  size_t instance_size;
 };
 
 struct weak_slot {
@@ -160,21 +162,63 @@ static void check_fixed_root(const struct class_record *cls) {
     registration_error("invalid fixed root ivar layout");
 }
 
+/* Version 2 describes only the current class's region. Each writable offset
+ * starts relative to that region and is resolved once under registry_lock. */
+static size_t check_managed_layout(const struct class_record *cls) {
+  const struct ivar_list *ivars = cls->ivars;
+  if (cls->instance_size < 0 || cls->instance_size > INT32_MAX)
+    registration_error("invalid managed class extent");
+  if (!ivars) {
+    if (!cls->superclass || cls->instance_size)
+      registration_error("managed root must declare its ISA storage");
+    return 1;
+  }
+  if (ivars->count <= 0 || ivars->stride != sizeof(struct ivar_record))
+    registration_error("invalid managed ivar table");
+  size_t alignment = 1;
+  size_t end = 0;
+  for (int i = 0; i < ivars->count; ++i) {
+    const struct ivar_record *ivar = &ivars->ivars[i];
+    unsigned log_alignment = ivar->flags >> 3;
+    if (!ivar->name || !*ivar->name || !ivar->type || !*ivar->type ||
+        !ivar->offset || *ivar->offset < 0 || !ivar->size ||
+        !(ivar->flags & 4) || log_alignment > 3)
+      registration_error("invalid managed ivar metadata");
+    size_t field_alignment = (size_t)1 << log_alignment;
+    size_t start = (size_t)*ivar->offset;
+    if (start < end || start % field_alignment ||
+        start + ivar->size > (size_t)cls->instance_size)
+      registration_error("invalid managed ivar extent");
+    if (!cls->superclass && i == 0 &&
+        (start || strcmp(ivar->name, "isa") || strcmp(ivar->type, "#") ||
+         ivar->size != sizeof(void *) || field_alignment != _Alignof(void *) ||
+         (ivar->flags & 3) == 1 || (ivar->flags & 3) == 2))
+      registration_error("invalid managed ISA layout");
+    if (field_alignment > alignment)
+      alignment = field_alignment;
+    end = start + ivar->size;
+  }
+  return alignment;
+}
+
 static size_t check_class(const struct class_record *cls) {
   if (!cls || !cls->name || !*cls->name || !cls->isa || cls->flags ||
       cls->isa->flags != 1 || cls->isa->superclass || cls->isa->instance_size ||
       cls->isa->ivars || cls->isa->version)
     registration_error("invalid class metadata");
+  size_t alignment = 1;
   if (cls->version == 1)
     check_fixed_root(cls);
+  else if (cls->version == 2)
+    alignment = check_managed_layout(cls);
   else if (cls->version || cls->instance_size || cls->ivars)
     registration_error("invalid stateless class metadata");
   check_method_list(cls->methods);
   check_method_list(cls->isa->methods);
-  return cls->version == 1 ? sizeof(struct fixed_root_object) : 0;
+  return alignment;
 }
 
-static const struct registered_class *find_registration(const void *cls) {
+static struct registered_class *find_registration(const void *cls) {
   for (size_t i = 0; i < class_count; ++i)
     if (registry[i].metadata == cls)
       return &registry[i];
@@ -185,22 +229,48 @@ static int class_is_registered(const void *cls) {
   return find_registration(cls) != NULL;
 }
 
-/* Constructors may run child-first. Resolve the complete chain before making
- * the class visible or allocating storage. The sole nonzero extent is owned
- * by the fixed root, and every descendant carries zero additional bytes. */
+/* Constructors may run child-first. Resolve offsets root-first on first use
+ * so a separately compiled child includes all of its parent's private fields. */
 static size_t check_class_lineage(const struct class_record *cls) {
-  size_t remaining = class_count;
   size_t instance_size = sizeof(const struct class_record *);
-  for (; cls; cls = cls->superclass) {
-    const struct registered_class *entry = find_registration(cls);
+  size_t depth = 0;
+  for (const struct class_record *cursor = cls; cursor; cursor = cursor->superclass) {
+    struct registered_class *entry = find_registration(cursor);
     if (!entry)
       registration_error("class has an unregistered superclass");
-    if (!remaining)
+    if (entry->instance_size) {
+      instance_size = entry->instance_size;
+      break;
+    }
+    if (depth == class_count)
       registration_error("class hierarchy has a cycle");
-    --remaining;
-    if (entry->own_instance_size)
-      instance_size = entry->own_instance_size;
+    ++depth;
   }
+  if (!depth)
+    return instance_size;
+  struct registered_class **chain = malloc(depth * sizeof(*chain));
+  if (!chain)
+    registration_error("class layout allocation failed");
+  for (size_t i = 0; i < depth; ++i, cls = cls->superclass)
+    chain[i] = find_registration(cls);
+  while (depth) {
+    struct registered_class *entry = chain[--depth];
+    const struct class_record *metadata = entry->metadata;
+    if (metadata->version == 1) {
+      instance_size = sizeof(struct fixed_root_object);
+    } else if (metadata->version == 2 && metadata->ivars) {
+      size_t alignment = entry->own_alignment;
+      size_t origin = metadata->superclass ? (instance_size + alignment - 1) & ~(alignment - 1) : 0;
+      if (origin + (size_t)metadata->instance_size > INT32_MAX)
+        registration_error("resolved instance extent exceeds the ivar ABI");
+      const struct ivar_list *ivars = metadata->ivars;
+      for (int i = 0; i < ivars->count; ++i)
+        *ivars->ivars[i].offset += (int)origin;
+      instance_size = origin + (size_t)metadata->instance_size;
+    }
+    entry->instance_size = instance_size;
+  }
+  free(chain);
   return instance_size;
 }
 
@@ -209,6 +279,17 @@ static struct instance_record **find_instance(const void *receiver) {
   while (*link && &(*link)->isa != receiver)
     link = &(*link)->next;
   return link;
+}
+
+static const struct method_record *find_method(const struct method_list *list,
+                                               const struct selector_record *selector) {
+  for (int i = 0; list && i < list->count; ++i) {
+    const struct method_record *method = &list->methods[i];
+    if (strcmp(method->selector->name, selector->name) == 0 &&
+        strcmp(method->selector->type, selector->type) == 0)
+      return method;
+  }
+  return NULL;
 }
 
 /* A Mach-O image must remain loaded while its registered records are in use. */
@@ -221,10 +302,11 @@ void objc3_darwin_register_v1(const struct class_record *const *classes, size_t 
     registration_error("class registry allocation failed");
   registry = updated;
   for (size_t i = 0; i < count; ++i) {
-    size_t own_instance_size = check_class(classes[i]);
+    size_t alignment = check_class(classes[i]);
     if (find_class(classes[i]->name))
       registration_error("duplicate class name");
-    registry[class_count++] = (struct registered_class){classes[i], own_instance_size};
+    registry[class_count++] =
+        (struct registered_class){.metadata = classes[i], .own_alignment = alignment};
   }
   pthread_mutex_unlock(&registry_lock);
 }
@@ -235,6 +317,35 @@ const struct class_record *objc3_darwin_class_v1(const char *name) {
   check_class_lineage(cls);
   pthread_mutex_unlock(&registry_lock);
   return cls;
+}
+
+const struct class_record *objc3_darwin_object_class_v1(const void *object) {
+  pthread_mutex_lock(&registry_lock);
+  const struct instance_record *instance = *find_instance(object);
+  const struct class_record *cls = instance ? instance->isa : NULL;
+  pthread_mutex_unlock(&registry_lock);
+  return cls;
+}
+
+const struct class_record *objc3_darwin_superclass_v1(const struct class_record *cls) {
+  pthread_mutex_lock(&registry_lock);
+  const struct class_record *parent = class_is_registered(cls) ? cls->superclass : NULL;
+  pthread_mutex_unlock(&registry_lock);
+  return parent;
+}
+
+const char *objc3_darwin_class_name_v1(const struct class_record *cls) {
+  pthread_mutex_lock(&registry_lock);
+  const char *name = class_is_registered(cls) ? cls->name : NULL;
+  pthread_mutex_unlock(&registry_lock);
+  return name;
+}
+
+size_t objc3_darwin_instance_size_v1(const struct class_record *cls) {
+  pthread_mutex_lock(&registry_lock);
+  size_t size = class_is_registered(cls) ? check_class_lineage(cls) : 0;
+  pthread_mutex_unlock(&registry_lock);
+  return size;
 }
 
 void *objc3_darwin_allocate_v1(const struct class_record *cls) {
@@ -255,15 +366,60 @@ void *objc3_darwin_allocate_v1(const struct class_record *cls) {
   return instance ? &instance->isa : NULL;
 }
 
-static void destroy_instance(struct instance_record **link) {
-  struct instance_record *instance = *link;
-  *link = instance->next;
+static void clear_weak_references(struct instance_record *instance) {
   while (instance->weak) {
     struct weak_slot *slot = instance->weak;
     *slot->address = NULL;
     instance->weak = slot->next;
     free(slot);
   }
+}
+
+typedef void (*finalizer)(void *, const struct selector_record *);
+
+static void invoke_dealloc(void *object, const struct class_record *cls) {
+  static const struct selector_record dealloc = {"dealloc", "v16@0:8"};
+  for (; cls; cls = cls->superclass) {
+    const struct method_record *method = find_method(cls->methods, &dealloc);
+    if (method) {
+      ((finalizer)method->implementation)(object, method->selector);
+      return;
+    }
+  }
+}
+
+void objc3_darwin_super_dealloc_v1(void *object, const struct class_record *start) {
+  pthread_mutex_lock(&registry_lock);
+  struct instance_record *instance = *find_instance(object);
+  if (!instance || instance->references || !start)
+    registration_error("super dealloc requires an instance in finalization");
+  const struct class_record *ancestor = instance->isa->superclass;
+  while (ancestor && ancestor != start)
+    ancestor = ancestor->superclass;
+  if (!ancestor)
+    registration_error("super dealloc start is not an ancestor of the receiver");
+  pthread_mutex_unlock(&registry_lock);
+  invoke_dealloc(object, ancestor);
+}
+
+/* The last release owns finalization. Keep self available for method dispatch
+ * while the callbacks run, and zero weak slots before calling user code. */
+static void finish_release(struct instance_record *instance) {
+  clear_weak_references(instance);
+  void *object = &instance->isa;
+  const struct class_record *cls = instance->isa;
+  pthread_mutex_unlock(&registry_lock);
+  invoke_dealloc(object, cls);
+  static const struct selector_record destroy = {".cxx_destruct", "v16@0:8"};
+  for (; cls; cls = cls->superclass) {
+    const struct method_record *method = find_method(cls->methods, &destroy);
+    if (method)
+      ((finalizer)method->implementation)(object, method->selector);
+  }
+  pthread_mutex_lock(&registry_lock);
+  struct instance_record **link = find_instance(object);
+  *link = instance->next;
+  pthread_mutex_unlock(&registry_lock);
   free(instance);
 }
 
@@ -276,15 +432,15 @@ void objc3_darwin_deallocate_v1(void *receiver) {
     registration_error("deallocation requires a live instance");
   if ((*link)->references != 1)
     registration_error("deallocation requires an exclusively owned instance");
-  destroy_instance(link);
-  pthread_mutex_unlock(&registry_lock);
+  (*link)->references = 0;
+  finish_release(*link);
 }
 
 static void retain_locked(void *object) {
   if (!object || class_is_registered(object))
     return;
   struct instance_record *instance = *find_instance(object);
-  if (!instance || instance->references == SIZE_MAX)
+  if (!instance || !instance->references || instance->references == SIZE_MAX)
     registration_error("invalid ARC retain");
   ++instance->references;
 }
@@ -302,10 +458,12 @@ void objc3_darwin_arc_release_v1(void *object) {
   pthread_mutex_lock(&registry_lock);
   if (!class_is_registered(object)) {
     struct instance_record **link = find_instance(object);
-    if (!*link)
+    if (!*link || !(*link)->references)
       registration_error("ARC release requires a live object");
-    if (--(*link)->references == 0)
-      destroy_instance(link);
+    if (--(*link)->references == 0) {
+      finish_release(*link);
+      return;
+    }
   }
   pthread_mutex_unlock(&registry_lock);
 }
@@ -330,6 +488,10 @@ static void register_weak_locked(void **address, void *object) {
     struct instance_record *instance = *find_instance(object);
     if (!instance)
       registration_error("ARC weak initialization requires a live object");
+    if (!instance->references) {
+      *address = NULL;
+      return;
+    }
     struct weak_slot *slot = malloc(sizeof(*slot));
     if (!slot)
       registration_error("ARC weak registration allocation failed");
@@ -360,8 +522,9 @@ void *objc3_darwin_arc_init_weak_v1(void **address, void *value) {
   check_weak_slot(address);
   pthread_mutex_lock(&registry_lock);
   register_weak_locked(address, value);
+  void *registered = *address;
   pthread_mutex_unlock(&registry_lock);
-  return value;
+  return registered;
 }
 
 void *objc3_darwin_arc_store_weak_v1(void **address, void *value) {
@@ -369,8 +532,9 @@ void *objc3_darwin_arc_store_weak_v1(void **address, void *value) {
   pthread_mutex_lock(&registry_lock);
   unregister_weak_locked(address);
   register_weak_locked(address, value);
+  void *registered = *address;
   pthread_mutex_unlock(&registry_lock);
-  return value;
+  return registered;
 }
 
 void *objc3_darwin_arc_load_weak_retained_v1(void **address) {
@@ -438,8 +602,11 @@ void *objc3_darwin_arc_autorelease_v1(void *object) {
     return NULL;
   pthread_mutex_lock(&registry_lock);
   int immortal = class_is_registered(object);
-  if (!immortal && !*find_instance(object))
-    registration_error("ARC autorelease requires a live object");
+  if (!immortal) {
+    const struct instance_record *instance = *find_instance(object);
+    if (!instance || !instance->references)
+      registration_error("ARC autorelease requires a live object");
+  }
   pthread_mutex_unlock(&registry_lock);
   if (immortal)
     return object;
@@ -519,14 +686,10 @@ static method_address lookup(const void *receiver, const struct selector_record 
 
   for (; dispatch_class; dispatch_class = dispatch_class->superclass) {
     const struct method_list *list = class_send ? dispatch_class->isa->methods : dispatch_class->methods;
-    for (int i = 0; list && i < list->count; ++i) {
-      const struct method_record *method = &list->methods[i];
-      if (strcmp(method->selector->name, selector->name) == 0 &&
-          strcmp(method->selector->type, selector->type) == 0) {
-        method_address implementation = method->implementation;
-        pthread_mutex_unlock(&registry_lock);
-        return implementation;
-      }
+    const struct method_record *method = find_method(list, selector);
+    if (method) {
+      pthread_mutex_unlock(&registry_lock);
+      return method->implementation;
     }
   }
   registration_error("method selector is missing");

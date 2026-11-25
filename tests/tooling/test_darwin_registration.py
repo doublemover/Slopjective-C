@@ -284,6 +284,31 @@ int main(int argc, char **argv) {
     objc3_darwin_register_v1(bad, 1);
     return 12;
   }
+  if (strncmp(control, "managed-", 8) == 0) {
+    int isa_offset = 0;
+    int field_offset = 8;
+    struct {
+      int count;
+      size_t stride;
+      struct ivar_record ivars[2];
+    } ivars = {2, sizeof(struct ivar_record), {
+      {"isa", "#", &isa_offset, 8, 28},
+      {"field", "@", &field_offset, 8, 29},
+    }};
+    struct class_record managed = {.isa = &meta, .name = "Managed", .version = 2,
+                                   .instance_size = 16, .ivars = (const void *)&ivars};
+    if (strcmp(control, "managed-isa") == 0)
+      ivars.ivars[0].flags |= 1;
+    if (strcmp(control, "managed-overlap") == 0)
+      field_offset = 0;
+    if (strcmp(control, "managed-alignment") == 0)
+      ivars.ivars[1].flags = 36;
+    if (strcmp(control, "managed-extent") == 0)
+      managed.instance_size = 12;
+    const struct class_record *bad[] = {&managed};
+    objc3_darwin_register_v1(bad, 1);
+    return 15;
+  }
   if (strcmp(control, "wrong-method-table") == 0) {
     const struct class_record *bad[] = {&wrong_methods_class};
     objc3_darwin_register_v1(bad, 1);
@@ -365,6 +390,10 @@ int main(int argc, char **argv) {
         ('fixed-offset', 'invalid fixed root ivar layout'),
         ('fixed-stride', 'invalid fixed root class layout'),
         ('fixed-extent', 'invalid fixed root class layout'),
+        ('managed-isa', 'invalid managed ISA layout'),
+        ('managed-overlap', 'invalid managed ivar extent'),
+        ('managed-alignment', 'invalid managed ivar metadata'),
+        ('managed-extent', 'invalid managed ivar extent'),
         ('wrong-method-table', 'invalid Darwin method metadata'),
         ('wrong-selector-type', 'selector encoding does not match the Darwin lookup ABI'),
         ('wrong-int-selector-type', 'selector encoding does not match the Darwin lookup ABI'),

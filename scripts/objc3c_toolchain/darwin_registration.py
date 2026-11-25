@@ -24,6 +24,7 @@ PROFILE_DIR = ROOT / 'toolchains/llvm/experimental'
 FIXTURES = ROOT / 'tests/clang_foundation/darwin_registration'
 RUNTIME = ROOT / 'native/objc3c/src/runtime/platform/darwin_registration.c'
 NATIVE = ROOT / 'native/objc3c'
+RUNTIME_HEADER = NATIVE / 'src/runtime/public/objc3_darwin.h'
 PORTABLE_SERVICES = {
     'stdlib-map-count': ('collections_service', 'stdlib_map_count_test'),
     'text-scalar-boundary': ('text_service', 'text_scalar_boundary_test'),
@@ -36,6 +37,14 @@ PORTABLE_HEADERS = (
 )
 TYPED_METHOD_WITNESS = 'owned Objective-C 3 Darwin typed methods: PASS'
 TYPED_METHOD_SOURCES = ('typed_method_api.h', 'typed_method_base.m', 'typed_method_child.m', 'typed_method_main.m')
+MANAGED_LAYOUT_WITNESS = 'owned Objective-C 3 Darwin managed layout: PASS'
+MANAGED_LAYOUT_SOURCES = ('managed_layout_api.h', 'managed_layout_base.m', 'managed_layout_child.m', 'managed_layout_main.m')
+MANAGED_LAYOUT_IMPORTS = {
+    'lib/libmanaged-layout-child.dylib': {'objc3_darwin_super_dealloc_v1', 'objc3_darwin_arc_store_strong_v1'},
+    'bin/managed-layout-dynamic': {'objc3_darwin_allocate_v1', 'objc3_darwin_object_class_v1',
+                                   'objc3_darwin_instance_size_v1'},
+    'bin/managed-layout-static': set(),
+}
 CARRIER_METHOD_DIAGNOSTIC = "ObjC3 carrier operation 'by-value call ABI' for type 'Optional(int)' has no qualified lowering"
 TYPED_METHOD_IMPORTS = {
     'lib/libtyped-method-child.dylib': 'objc3_darwin_lookup_super_typed_v1',
@@ -190,7 +199,7 @@ def qualify(bootstrap_report: Path, output: Path, *, fetch: bool, package_sdk: b
                 raise ValueError(f'Darwin bootstrap compiler differs from the pinned revision: {driver}')
         report.update(revision=revision, bootstrap_sha256=file_digest(bootstrap_report),
                       platform_identity=host['platform_identity'], llvm_identity=host['llvm_identity'],
-                      runtime_source_sha256=file_digest(RUNTIME),
+                      runtime_source_sha256=file_digest(RUNTIME), runtime_header_sha256=file_digest(RUNTIME_HEADER),
                       fixtures={path.name: file_digest(path) for path in sorted(FIXTURES.iterdir())})
         report['cxx_toolchain'] = _qualify_xcode_cxx(run, host, stage0_cxx, profile['target'], output)
         memory = int(run('/usr/sbin/sysctl', '-n', 'hw.memsize'))
@@ -293,6 +302,7 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
         'int-method': 'owned Objective-C 3 Darwin int-argument methods: PASS',
         'two-int-method': 'owned Objective-C 3 Darwin two-int-argument methods: PASS',
         'typed-method': TYPED_METHOD_WITNESS,
+        'managed-layout': MANAGED_LAYOUT_WITNESS,
     }
     method_families = (
         ('int-method', 1, 'int_arg', 'int_argument_methods'),
@@ -309,9 +319,11 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
     dynamic = layout / 'bin/dynamic'
     run(*defaults, '-std=c17', '-Wall', '-Wextra', '-Werror', '-O2', '-g', '-c', RUNTIME, '-o', runtime_object)
     for name, obj in fixture_objects.items():
-        label = {'label': name.replace('_', '-') + '-object'} if name.startswith('two_int_method_') else {}
-        run(*objective_c, '-Wall', '-Wextra', '-Werror', '-O2', '-g', '-c', FIXTURES / (name + '.m'), '-o', obj,
-            **label)
+        managed = name.startswith('managed_layout_')
+        flags = ['-fobjc-arc', '-I', RUNTIME_HEADER.parent] if managed else []
+        label = {'label': name.replace('_', '-') + '-object'} if managed or name.startswith('two_int_method_') else {}
+        run(*objective_c, *flags, '-Wall', '-Wextra', '-Werror', '-O2', '-g',
+            '-c', FIXTURES / (name + '.m'), '-o', obj, **label)
     layout_arc = stages / 'fixed_layout_arc.o'
     run(*objective_c, '-fobjc-arc', '-Wall', '-Wextra', '-Werror', '-O2', '-g',
         '-c', FIXTURES / 'fixed_layout_arc.m', '-o', layout_arc, label='fixed-layout-arc-object')
@@ -340,11 +352,13 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
         # Static links admit the child's constructor before the base's.
         run(*link, fixture_objects[prefix + '_main'], fixture_objects[prefix + '_child'],
             fixture_objects[prefix + '_base'], runtime_archive, '-o', layout / f'bin/{family}-static')
-        run(*link, fixture_objects[prefix + '_main'], child, runtime_dylib,
+        extra_link = [base] if family == 'managed-layout' else []
+        run(*link, fixture_objects[prefix + '_main'], child, *extra_link, runtime_dylib,
             '-Wl,-rpath,@loader_path/../lib', '-o', layout / f'bin/{family}-dynamic')
+        executable_dependencies = [child_id, *([base_id] if extra_link else []), runtime_id]
         required_libraries.update({f'lib/{base.name}': [base_id, runtime_id],
                                    f'lib/{child.name}': [child_id, base_id, runtime_id],
-                                   f'bin/{family}-static': [], f'bin/{family}-dynamic': [child_id, runtime_id]})
+                                   f'bin/{family}-static': [], f'bin/{family}-dynamic': executable_dependencies})
     fixed_child = layout / 'lib/libfixed-layout-child.dylib'
     run(*link, layout_arc, fixed_child, runtime_dylib,
         '-Wl,-rpath,@loader_path/../lib', '-o', layout / 'bin/fixed-layout-arc')
@@ -476,6 +490,13 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
             raise ValueError(f'{relative} has inconsistent typed method linkage')
         typed_imports[relative] = names
     report['typed_methods'] = {'status': 'PASS', 'imports': typed_imports}
+    managed_imports = {}
+    for relative, required in MANAGED_LAYOUT_IMPORTS.items():
+        names = _owned_objc_imports(run, layout / relative, Path(relative).name + '-imports')
+        if not required <= set(names) or (not required and any(name.startswith('objc3_darwin_') for name in names)):
+            raise ValueError(f'{relative} has inconsistent managed-layout runtime imports')
+        managed_imports[relative] = names
+    report['managed_layout'] = {'status': 'PASS', 'imports': managed_imports}
     for binary, filename, label in (
         ('dynamic', 'libobjc3darwin.dylib', 'missing-runtime-at-load'),
         ('inheritance-dynamic', 'libinheritance-base.dylib', 'missing-superclass-at-load'),

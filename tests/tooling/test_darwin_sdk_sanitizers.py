@@ -69,7 +69,7 @@ def test_base_package_inventory_requires_opt_in_and_the_live_witness():
     data.update(payload_schema=sdk.PAYLOAD_SCHEMA, profile=sdk.PROFILE, target=sdk.TARGET,
                 runtime_abi=sdk.RUNTIME_ABI, compiler_runtime_flag=sdk.RUNTIME_FLAG, support_truth=False,
                 host_requirements=sdk._host_requirements(host), resource_dir=RESOURCE)
-    for path in ('bin/clang', 'bin/llvm-ar', 'bin/llvm-dwarfdump', f'lib/{sdk.LIBRARY}.a',
+    for path in ('bin/clang', 'bin/llvm-ar', 'bin/llvm-dwarfdump', f'lib/{sdk.LIBRARY}.a', sdk.API_HEADER,
                  f'lib/{sdk.LIBRARY}.dylib', RESOURCE + '/include/stddef.h',
                  RESOURCE + '/lib/darwin/libclang_rt.osx.a', 'share/licenses/slopjective-c/LICENSE',
                  *(sdk.DEMO + '/' + name for name in sdk.DEMO_FILES),

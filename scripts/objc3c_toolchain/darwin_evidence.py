@@ -14,12 +14,13 @@ from . import darwin_sdk_arc as sdk_arc
 from . import darwin_sdk_portable_services as services
 from .darwin_bootstrap import DEPLOYMENT_TARGET, ROOT, verify_macho
 from .darwin_registration import (
-    CARRIER_METHOD_DIAGNOSTIC, NATIVE, PORTABLE_HEADERS, PORTABLE_SERVICES, RUNTIME,
+    CARRIER_METHOD_DIAGNOSTIC, MANAGED_LAYOUT_IMPORTS, MANAGED_LAYOUT_SOURCES, MANAGED_LAYOUT_WITNESS,
+    NATIVE, PORTABLE_HEADERS, PORTABLE_SERVICES, RUNTIME, RUNTIME_HEADER,
     TYPED_METHOD_IMPORTS, TYPED_METHOD_SOURCES, TYPED_METHOD_WITNESS,
     file_digest, load_profile, verify_fixed_layout_dwarf, verify_int_method_ir,
 )
 from .darwin_sdk import (
-    ARCHIVE_NAME, ARCHIVE_ROOT, DEMO, LIBRARY, PAYLOAD_SCHEMA, PROFILE, RECEIPT_SCHEMA, SDK_VERSION,
+    API_HEADER, ARCHIVE_NAME, ARCHIVE_ROOT, DEMO, LIBRARY, PAYLOAD_SCHEMA, PROFILE, RECEIPT_SCHEMA, SDK_VERSION,
     SYSTEM, WITNESS, XCODE,
 )
 from .package import MANIFEST, _digest
@@ -173,6 +174,39 @@ def general_typed_dispatch(path: Path, report: dict, labels: dict) -> None:
             raise ValueError(f'Darwin typed method omitted an exact rejection control: {label}')
 
 
+def managed_layout(path: Path, report: dict, labels: dict) -> None:
+    proof = report['managed_layout']
+    if proof['status'] != 'PASS' or set(proof['imports']) != set(MANAGED_LAYOUT_IMPORTS):
+        raise ValueError('Darwin managed layout omitted native evidence')
+    for relative, required in MANAGED_LAYOUT_IMPORTS.items():
+        artifact = report['artifacts'][relative]
+        name = Path(relative).name
+        rows = labels.get(name + '-imports', [])
+        if len(rows) != 1 or rows[0]['argv'] != ['/usr/bin/nm', '-u', '-j', artifact['path']]:
+            raise ValueError(f'Darwin managed layout omitted native imports: {relative}')
+        names = {symbol.removeprefix('_') for symbol in retained(path, rows[0]['log'],
+                                                                allow_empty=True).read_text().splitlines()}
+        if (sorted(names) != proof['imports'][relative] or not required <= names or
+                (not required and any(name.startswith('objc3_darwin_') for name in names))):
+            raise ValueError(f'Darwin managed layout imported inconsistent runtime functions: {relative}')
+        if relative.startswith('bin/'):
+            executable_witness(path, 'Relocated install/' + relative, artifact,
+                               labels.get(name + '-native', []), MANAGED_LAYOUT_WITNESS)
+        else:
+            require_macho(path, 'Relocated install/' + relative, artifact, 'dynamic_library')
+            if not {'@rpath/libmanaged-layout-base.dylib', '@rpath/libobjc3darwin.dylib'} <= set(artifact['load_paths']):
+                raise ValueError('Darwin managed layout omitted its base and owned runtime dependencies')
+    for source in (name for name in MANAGED_LAYOUT_SOURCES if name.endswith('.m')):
+        name = source.removesuffix('.m')
+        artifact = report['artifacts'][name]
+        require_macho(path, 'build/' + name + '.o', artifact, 'object')
+        rows = labels.get(name.replace('_', '-') + '-object', [])
+        if (len(rows) != 1 or not {'-c', '-fobjc-arc'} <= set(rows[0]['argv']) or
+                rows[0]['argv'][-1] != artifact['path'] or
+                not any(arg.endswith('/darwin_registration/' + source) for arg in rows[0]['argv'])):
+            raise ValueError(f'Darwin managed layout omitted ARC compilation: {source}')
+
+
 def bootstrap(root: Path, revision: str) -> dict:
     report = info(root, 'result/report.json')
     host = report['platform_identity']
@@ -221,6 +255,7 @@ def registration(root: Path, first: dict, revision: str, *, require_arc: bool) -
             report['platform_identity'] != first['platform_identity'] or
             report['llvm_identity'] != first['llvm_identity'] or
             report['runtime_source_sha256'] != file_digest(RUNTIME) or
+            report['runtime_header_sha256'] != file_digest(RUNTIME_HEADER) or
             report['fixtures'] != {file.name: file_digest(file) for file in fixtures.iterdir()}):
         raise ValueError('Darwin registration differs from the current native compiler or fixture inputs')
     labels = {}
@@ -294,6 +329,7 @@ def registration(root: Path, first: dict, revision: str, *, require_arc: bool) -
     typed_dispatch(path, report, labels, arity=1)
     typed_dispatch(path, report, labels, arity=2)
     general_typed_dispatch(path, report, labels)
+    managed_layout(path, report, labels)
     portable = report['portable_services']
     inputs = {NATIVE / name for name in PORTABLE_HEADERS}
     for service, fixture in PORTABLE_SERVICES.values():
@@ -464,6 +500,7 @@ def package(root: Path, runtime: dict, revision: str, *, require_sanitizers: boo
             manifest['compiler_build'] != {key: compiler[key] for key in
                                            ('base_build_id', 'patch_digest', 'configuration_sha256')} or
             payload['bin/clang']['sha256'] != compiler['artifact']['sha256'] or
+            payload[API_HEADER]['sha256'] != runtime['runtime_header_sha256'] or
             any(payload['lib/' + name]['sha256'] != runtime['artifacts'][key]['sha256']
                 for name, key in (('libobjc3darwin.a', 'libobjc3darwin.a'),
                                   ('libobjc3darwin.dylib', 'lib/libobjc3darwin.dylib')))):
@@ -483,31 +520,40 @@ def package(root: Path, runtime: dict, revision: str, *, require_sanitizers: boo
                    row['exit_status'] == 0 and row['stdout'].strip() == WITNESS
                    for row in qualified['commands']):
             raise ValueError(f'Darwin SDK omitted cold native execution: {name}')
-    for source in TYPED_METHOD_SOURCES:
+    for family, sources, witness in (
+            ('typed-method', TYPED_METHOD_SOURCES, TYPED_METHOD_WITNESS),
+            ('managed-layout', MANAGED_LAYOUT_SOURCES, MANAGED_LAYOUT_WITNESS)):
+        installed_owned_fixture(path, runtime, installed, payload, qualified, consumer, family, sources, witness)
+    return packed
+
+
+def installed_owned_fixture(path, runtime, installed, payload, qualified, directory, family, sources, witness):
+    for source in sources:
         if payload[f'{DEMO}/{source}']['sha256'] != runtime['fixtures'][source]:
-            raise ValueError(f'Darwin package substituted a typed method fixture: {source}')
-        if source.endswith('.m'):
-            name = source.removesuffix('.m') + '.o'
-            artifact = qualified['artifacts'][name]
-            require_macho(path, consumer + name, artifact, 'object')
-            if not any(row['exit_status'] == 0 and {'-c', '-fobjc-arc', name} <= set(row['argv']) and
-                       any(arg.endswith(f'/{DEMO}/{source}') for arg in row['argv'])
-                       for row in qualified['commands']):
-                raise ValueError(f'Darwin SDK omitted installed typed fixture compilation: {source}')
-    typed = qualified['artifacts']['typed-method']
-    require_macho(path, consumer + 'typed-method', typed, 'executable')
+            raise ValueError(f'Darwin package substituted an owned runtime fixture: {source}')
+        if not source.endswith('.m'):
+            continue
+        name = source.removesuffix('.m') + '.o'
+        artifact = qualified['artifacts'][name]
+        require_macho(path, directory + name, artifact, 'object')
+        if not any(row['exit_status'] == 0 and {'-c', '-fobjc-arc', name} <= set(row['argv']) and
+                   any(arg.endswith(f'/{DEMO}/{source}') for arg in row['argv']) and
+                   row['argv'][0] == f"{installed['prefix']}/bin/clang" for row in qualified['commands']):
+            raise ValueError(f'Darwin SDK omitted installed fixture compilation: {source}')
+    artifact = qualified['artifacts'][family]
+    require_macho(path, directory + family, artifact, 'executable')
     runtime_path = f"{installed['prefix']}/lib/{LIBRARY}.dylib"
     traced_paths = {runtime_path}
     if runtime_path.startswith(('/private/var/', '/private/tmp/')):
         traced_paths.add(runtime_path.removeprefix('/private'))
-    if (set(typed['load_paths']) != {SYSTEM, f'@rpath/{LIBRARY}.dylib'} or typed['loaded_runtime'] != runtime_path or
-            not any(row['argv'][0] == typed['path'] and row['exit_status'] == 0 and
-                    row.get('dyld_print_libraries') is True and row['stdout'].strip() == TYPED_METHOD_WITNESS and
+    if (set(artifact['load_paths']) != {SYSTEM, f'@rpath/{LIBRARY}.dylib'} or
+            artifact['loaded_runtime'] != runtime_path or
+            not any(row['argv'] == [artifact['path']] and row['exit_status'] == 0 and
+                    row.get('dyld_print_libraries') is True and row['stdout'].strip() == witness and
                     any(line.endswith(' ' + candidate) for line in row['stderr'].splitlines()
                         for candidate in traced_paths)
                     for row in qualified['commands'])):
-        raise ValueError('Darwin SDK omitted cold native typed dispatch against the installed runtime')
-    return packed
+        raise ValueError(f'Darwin SDK omitted cold native {family} execution against the installed runtime')
 
 
 def verify(root: Path, revision: str, *, outcome: str, mode: str) -> dict:

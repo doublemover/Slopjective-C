@@ -18,7 +18,9 @@ import tempfile
 import unicodedata
 
 from .darwin_bootstrap import DEPLOYMENT_TARGET, ROOT, require_apple_silicon, verify_macho
-from .darwin_registration import TYPED_METHOD_SOURCES, TYPED_METHOD_WITNESS
+from .darwin_registration import (
+    MANAGED_LAYOUT_SOURCES, MANAGED_LAYOUT_WITNESS, RUNTIME_HEADER, TYPED_METHOD_SOURCES, TYPED_METHOD_WITNESS,
+)
 from . import darwin_sdk_arc as arc_consumer
 from . import darwin_sdk_portable_services as portable_services
 from . import darwin_sdk_sanitizers as sanitizers
@@ -37,7 +39,9 @@ SDK_VERSION = '15.5'
 LIBRARY = 'libobjc3darwin'
 SYSTEM = '/usr/lib/libSystem.B.dylib'
 DEMO = 'share/objc3c/examples/registration'
-DEMO_FILES = ('api.h', 'provider.m', 'main.m', 'late.m', *arc_consumer.SOURCES, *TYPED_METHOD_SOURCES)
+DEMO_FILES = ('api.h', 'provider.m', 'main.m', 'late.m', *arc_consumer.SOURCES,
+              *TYPED_METHOD_SOURCES, *MANAGED_LAYOUT_SOURCES)
+API_HEADER = 'include/objc3_darwin.h'
 WITNESS = 'owned Objective-C 3 Darwin registration: PASS\nowned Objective-C 3 Darwin instances: PASS'
 MAX_ENTRIES = 10000
 MAX_PAYLOAD_BYTES = 1024 ** 3
@@ -221,7 +225,7 @@ def _validate_manifest(data, host):
     resource = data.get('resource_dir')
     if not isinstance(resource, str) or not re.fullmatch(r'lib/clang/[1-9][0-9]*', resource):
         raise ValueError('the package has an invalid Clang resource path')
-    required = {'bin/clang', 'bin/llvm-ar', 'bin/llvm-dwarfdump', f'lib/{LIBRARY}.a', f'lib/{LIBRARY}.dylib',
+    required = {'bin/clang', 'bin/llvm-ar', 'bin/llvm-dwarfdump', f'lib/{LIBRARY}.a', f'lib/{LIBRARY}.dylib', API_HEADER,
                 resource + '/include/stddef.h', resource + '/lib/darwin/libclang_rt.osx.a',
                 *(DEMO + '/' + name for name in DEMO_FILES), 'share/licenses/slopjective-c/LICENSE',
                 *(f'share/licenses/{name}/LICENSE.TXT' for name in ('llvm', 'clang', 'compiler-rt'))}
@@ -347,6 +351,7 @@ def package_registration(clang: Path, llvm_source: Path, bootstrap_report: Path,
             fixture = ROOT / 'tests/clang_foundation/darwin_registration' / name
             _copied_file(_checked_file(fixture, registration['fixtures'][name]), prefix / DEMO / name)
             _checked_file(prefix / DEMO / name, registration['fixtures'][name])
+        _copied_file(_checked_file(RUNTIME_HEADER, registration['runtime_header_sha256']), prefix / API_HEADER)
         for project in ('llvm', 'clang', 'compiler-rt'):
             _copied_file(llvm_source / project / 'LICENSE.TXT', prefix / 'share/licenses' / project / 'LICENSE.TXT')
         _copied_file(ROOT / 'LICENSE', prefix / 'share/licenses/slopjective-c/LICENSE')
@@ -616,20 +621,25 @@ def qualify(archive: Path, expected_sha256: str, output: Path) -> dict:
         reports['debug'] = verify_macho(debug_file, 'debug_info')
         if native(project / 'static') != WITNESS or native(project / 'dynamic', project / 'liblate.dylib') != WITNESS:
             raise ValueError('cold relocated compiler/runtime witness failed')
-        typed_objects = [name.removesuffix('.m') + '.o' for name in TYPED_METHOD_SOURCES if name.endswith('.m')]
-        for name in typed_objects:
-            native(*objc, '-fobjc-arc', '-c', prefix / DEMO / (name.removesuffix('.o') + '.m'), '-o', name)
-            reports[name] = verify_macho(project / name, 'object')
-        typed = project / 'typed-method'
-        native(*link, *typed_objects, runtime, '-Wl,-rpath,' + rpath, '-o', typed)
-        reports[typed.name] = verify_macho(typed, 'executable')
-        reports[typed.name].update(
-            load_paths=_load_paths(host['tools']['otool']['path'], typed, [SYSTEM, '@rpath/' + runtime.name], commands),
-            rpaths=_rpaths(host['tools']['otool']['path'], typed, [rpath], commands),
-            deployment=_deployment(host['tools']['otool']['path'], typed, commands))
-        if native(typed, trace_libraries=True) != TYPED_METHOD_WITNESS:
-            raise ValueError('installed Darwin typed dispatch witness failed')
-        reports[typed.name]['loaded_runtime'] = arc_consumer.loaded_runtime(commands[-1]['stderr'], runtime)
+        for family, sources, witness in (
+                ('typed-method', TYPED_METHOD_SOURCES, TYPED_METHOD_WITNESS),
+                ('managed-layout', MANAGED_LAYOUT_SOURCES, MANAGED_LAYOUT_WITNESS)):
+            objects = []
+            for source in (name for name in sources if name.endswith('.m')):
+                name = source.removesuffix('.m') + '.o'
+                native(*objc, '-fobjc-arc', '-I', prefix / 'include', '-c', prefix / DEMO / source, '-o', name)
+                reports[name] = verify_macho(project / name, 'object')
+                objects.append(name)
+            binary = project / family
+            native(*link, *objects, runtime, '-Wl,-rpath,' + rpath, '-o', binary)
+            reports[family] = verify_macho(binary, 'executable')
+            otool = host['tools']['otool']['path']
+            reports[family].update(load_paths=_load_paths(otool, binary, [SYSTEM, '@rpath/' + runtime.name], commands),
+                                   rpaths=_rpaths(otool, binary, [rpath], commands),
+                                   deployment=_deployment(otool, binary, commands))
+            if native(binary, trace_libraries=True) != witness:
+                raise ValueError(f'installed Darwin {family} witness failed')
+            reports[family]['loaded_runtime'] = arc_consumer.loaded_runtime(commands[-1]['stderr'], runtime)
         report['arc'] = arc_consumer.qualify_consumer(prefix, manifest, host, output / arc_consumer.DIRECTORY, commands)
         if portable_services.KEY in manifest:
             report[portable_services.KEY] = portable_services.qualify_consumer(

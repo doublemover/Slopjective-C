@@ -118,6 +118,14 @@ consumer checks that release zeros a weak reference while another instance
 keeps its own value. DWARF checks a 16-byte class extent, the field at byte
 8, and the child's base at byte 0.
 
+For classes with ARC-owned ivars, declare `Class isa` as the first root
+field. The runtime resolves each class's fields relative to the actual
+superclass extent before allocation. A child built in a separate translation
+unit therefore preserves its parent's private storage. The managed-layout
+consumer checks inherited strong and weak fields, an added strong field, custom `dealloc` and
+compiler-generated field destruction, and the allocation and metadata
+functions declared in the installed `include/objc3_darwin.h`.
+
 The ARC exercise compiles Objective-C C17 stateless classes with `-fobjc-arc`
 at O0 and O2. It checks owned allocation, strong references, weak zeroing,
 ordinary autoreleased returns, and nested pools. A second thread holds a weak
@@ -236,9 +244,9 @@ finalization, and exception-aware cleanup across images and threads.
   gates. The released driver rejects GNUstep 2.2 for Mach-O. Its GNUstep
   registration emits ELF section boundaries, COMDAT groups and an ELF
   constructor section. The separate experimental compiler handles root
-  classes, subclasses, fixed-root scalar layout, and typed dispatch for
-  scalar and plain C structure parameters and results. General instance
-  storage, properties, protocols, categories, broader ARC, exceptions and cross-image runtime
+  classes, subclasses, ARC-owned ivars, and typed dispatch for scalar and
+  plain C structure parameters and results. Properties, protocols, categories,
+  Blocks, typed errors and cross-image runtime
   lifecycle still need a design and native workloads. Inspect the linked
   dependency closure for accidental Apple ObjC2 use. [Driver guard](https://github.com/llvm/llvm-project/blob/392dfff97d29b59d77e5cac6d4b6ef2585fe7117/clang/lib/Driver/ToolChains/Clang.cpp#L8628)
   · [Registration lowering](https://github.com/llvm/llvm-project/blob/392dfff97d29b59d77e5cac6d4b6ef2585fe7117/clang/lib/CodeGen/CGObjCGNU.cpp#L1518)

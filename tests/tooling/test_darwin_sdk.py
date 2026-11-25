@@ -73,6 +73,7 @@ def staged_product(path, host, *, wrong_arch=False, wrong_sdk=False, extra=None)
     put(path, 'lib/libobjc3darwin.a', thin_archive('runtime.o', macho(1)))
     put(path, 'lib/libobjc3darwin.dylib', macho(6))
     put(path, 'lib/clang/23/include/stddef.h', b'/* checked resource */\n')
+    put(path, sdk.API_HEADER, b'/* runtime API */\n')
     put(path, 'lib/clang/23/lib/darwin/libclang_rt.osx.a', thin_archive('builtins.o', macho(1)))
     for name in sdk.DEMO_FILES:
         put(path, sdk.DEMO + '/' + name, b'/* packaged witness */\n')
