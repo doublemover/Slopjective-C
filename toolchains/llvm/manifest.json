@@ -103,7 +103,7 @@
     },
     {
       "file": "0010-objc3-deferred-arc-carrier-init.patch",
-      "sha256": "bdba07a323a9a3a0c0d176b4eb9a581ed869c6afce93e06f5ae908a553f4aa7d"
+      "sha256": "059b1e6cdbca4e47c9d434d048e33ab682e91d416c94521b4346a19b356309ff"
     },
     {
       "file": "0011-swift-erased-result-object-size.patch",

@@ -16,6 +16,20 @@ index e98defc57cffb2bce4bc43cee65de29622c0a275..ed09f5fc397c68c7c361801812e89e60
  /// Native plain carrier fields captured by value do not need Objective-C
  /// callable encodings. Bound the complete leaf graph and reject ownership,
  /// volatile/atomic/resource storage; moves additionally require mutable leaves.
+diff --git a/clang/include/clang/Analysis/CFG.h b/clang/include/clang/Analysis/CFG.h
+index dfd29756a6197a02660aa9700e15d64598f41e12..f13877c00381bbf35f32d1317289073a0ffc8805 100644
+--- a/clang/include/clang/Analysis/CFG.h
++++ b/clang/include/clang/Analysis/CFG.h
+@@ -1468,6 +1468,9 @@ public:
+     bool AddVirtualBaseBranches = false;
+     bool OmitImplicitValueInitializers = false;
+     bool AssumeReachableDefaultInSwitchStatements = false;
++    // Admit ARC carrier storage boundaries for definite initialization. This
++    // projection does not model individual payload destruction operations.
++    bool AnalyzeObjC3CarrierInitialization = false;
+ 
+     BuildOptions() = default;
+ 
 diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
 index c6bc3fb1a11aefe8a29c3d55aa9a0388f45d75c3..d65c94927684ed9683c0c52c0d9a72870db599a7 100644
 --- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
@@ -134,10 +148,10 @@ index 3bebb08c524f29b98544ccee3933540bcc4db257..bebcfe47150fc8504d5edbbfa596d4e5
                                             QualType Type, bool IsMove) {
    if (Type.isNull() || !isa<ObjC3OptionalType, ObjC3ResultType>(
 diff --git a/clang/lib/Analysis/CFG.cpp b/clang/lib/Analysis/CFG.cpp
-index 1475e327042a68bc97541697d5d08720cfcc6755..e923c56662899e9c8679ab309a1892ad2b312b7e 100644
+index 1475e327042a68bc97541697d5d08720cfcc6755..0e0c72defd41fec68f5060498793bb557955621c 100644
 --- a/clang/lib/Analysis/CFG.cpp
 +++ b/clang/lib/Analysis/CFG.cpp
-@@ -1749,12 +1749,15 @@ private:
+@@ -1749,12 +1749,16 @@ private:
      QualType Type = VD->getType();
      if (Type->isObjCObjectPointerType() || Type->isBlockPointerType())
        return Type.getObjCLifetime() == Qualifiers::OCL_Strong || Type.getObjCLifetime() == Qualifiers::OCL_Weak;
@@ -151,7 +165,8 @@ index 1475e327042a68bc97541697d5d08720cfcc6755..e923c56662899e9c8679ab309a1892ad
 +    return Context->getLangOpts().ObjCAutoRefCount &&
 +           Type.isDestructedType() != QualType::DK_none &&
 +           (hasPrimitiveARCStorage(Type) ||
-+            (!Type.isVolatileQualified() &&
++            (BuildOpts.AnalyzeObjC3CarrierInitialization &&
++             !Type.isVolatileQualified() &&
 +             isObjC3ARCCarrierStorage(*Context, Type)));
    }
  
@@ -562,7 +577,7 @@ index 1dff8bafb91cf30e54e7dc9c43be6403f29146a1..56792f64854dd5c44691878c6d07a565
    // ObjC3 nontrivial payload construction is admitted only while initializing
    // the exact direct carrier local that owns the destination storage.
 diff --git a/clang/lib/Sema/AnalysisBasedWarnings.cpp b/clang/lib/Sema/AnalysisBasedWarnings.cpp
-index e361098ee440a25c04b77626c2e99c114d6af380..b6e92a070dd9b8e3c36a1558e05674c060a92af2 100644
+index e361098ee440a25c04b77626c2e99c114d6af380..f092894e23c5a79d227124d5ac19ec36bd9d839b 100644
 --- a/clang/lib/Sema/AnalysisBasedWarnings.cpp
 +++ b/clang/lib/Sema/AnalysisBasedWarnings.cpp
 @@ -15,6 +15,7 @@
@@ -573,97 +588,107 @@ index e361098ee440a25c04b77626c2e99c114d6af380..b6e92a070dd9b8e3c36a1558e05674c0
  #include "clang/AST/Decl.h"
  #include "clang/AST/DeclCXX.h"
  #include "clang/AST/DeclObjC.h"
-@@ -1755,6 +1756,15 @@ private:
+@@ -1755,6 +1756,8 @@ private:
    // diagnostic is printed, further diagnostics for this variable are skipped.
    void diagnoseUnitializedVar(const VarDecl *vd, bool hasSelfInit,
                                UsesVec *vec) {
-+    if (isObjC3DeferredCarrierLocal(*vd)) {
-+      if (!vec->empty()) {
-+        const Expr *Use = vec->front().getUser();
-+        S.Diag(Use->getBeginLoc(),
-+               diag::err_objc3_carrier_use_before_initialization)
-+            << vd->getDeclName() << Use->getSourceRange();
-+      }
++    if (isObjC3DeferredCarrierLocal(*vd))
 +      return;
-+    }
      // Specially handle the case where we have uses of an uninitialized
      // variable, but the root cause is an idiomatic self-init.  We want
      // to report the diagnostic at the self-init since that is the root cause.
-@@ -3084,7 +3094,19 @@ void clang::sema::AnalysisBasedWarnings::IssueWarnings(
+@@ -3072,6 +3075,65 @@ void clang::sema::AnalysisBasedWarnings::IssueWarningsForImplicitFunction(
+                                          LSStats, S.CollectStats);
+ }
+ 
++namespace {
++
++class ObjC3CarrierInitReporter : public UninitVariablesHandler {
++  Sema &S;
++  llvm::SmallPtrSet<const VarDecl *, 4> Reported;
++
++public:
++  explicit ObjC3CarrierInitReporter(Sema &S) : S(S) {}
++
++  void handleUseOfUninitVariable(const VarDecl *VD,
++                                 const UninitUse &Use) override {
++    if (!isObjC3DeferredCarrierLocal(*VD) || !Reported.insert(VD).second)
++      return;
++    const Expr *Read = Use.getUser();
++    S.Diag(Read->getBeginLoc(), diag::err_objc3_carrier_use_before_initialization)
++        << VD->getDeclName() << Read->getSourceRange();
++  }
++};
++
++void checkObjC3CarrierInitialization(Sema &S, const Decl *D) {
++  if (!S.getLangOpts().ObjC3 || !S.getLangOpts().ObjCAutoRefCount)
++    return;
++
++  const VarDecl *FirstCarrier = nullptr;
++  for (const Decl *Local : cast<DeclContext>(D)->decls())
++    if (const auto *Var = dyn_cast<VarDecl>(Local);
++        Var && isObjC3DeferredCarrierLocal(*Var)) {
++      FirstCarrier = Var;
++      break;
++    }
++  if (!FirstCarrier)
++    return;
++
++  // This graph represents branches, exceptional successors, and deferred
++  // statements. Other analyses use the regular graph and its cleanup contract.
++  AnalysisDeclContext AC(nullptr, D);
++  auto &Options = AC.getCFGBuildOptions();
++  Options.AddEHEdges = true;
++  Options.AddInitializers = true;
++  Options.AddImplicitDtors = true;
++  Options.AddParameterLifetimes = true;
++  Options.AddTemporaryDtors = true;
++  Options.AddCXXDefaultInitExprInCtors = true;
++  Options.AddLifetime = true;
++  Options.AnalyzeObjC3CarrierInitialization = true;
++  Options.setAllAlwaysAdd();
++  if (CFG *Graph = AC.getCFG()) {
++    ObjC3CarrierInitReporter Reporter(S);
++    UninitVariablesAnalysisStats Stats{};
++    runUninitializedVariablesAnalysis(*cast<DeclContext>(D), *Graph, AC,
++                                      Reporter, Stats);
++  } else {
++    S.Diag(FirstCarrier->getLocation(), diag::err_objc3_carrier_requires_initializer)
++        << FirstCarrier->getDeclName();
++  }
++}
++
++} // namespace
++
+ void clang::sema::AnalysisBasedWarnings::IssueWarnings(
+     sema::AnalysisBasedWarnings::Policy P, sema::FunctionScopeInfo *fscope,
+     const Decl *D, QualType BlockType) {
+@@ -3084,7 +3146,7 @@ void clang::sema::AnalysisBasedWarnings::IssueWarnings(
    //     time.
    DiagnosticsEngine &Diags = S.getDiagnostics();
  
 -  if (shouldSkipAnalysisForDecl(S, D))
-+  const VarDecl *DeferredCarrier = nullptr;
-+  const auto *Context = cast<DeclContext>(D);
-+  if (Context->isDependentContext())
-+    return;
-+  if (S.getLangOpts().ObjC3 && S.getLangOpts().ObjCAutoRefCount)
-+    for (const Decl *Local : Context->decls())
-+      if (const auto *Var = dyn_cast<VarDecl>(Local);
-+          Var && isObjC3DeferredCarrierLocal(*Var)) {
-+        DeferredCarrier = Var;
-+        break;
-+      }
-+
-+  if (!DeferredCarrier && shouldSkipAnalysisForDecl(S, D))
++  if (cast<DeclContext>(D)->isDependentContext())
      return;
  
    if (S.hasUncompilableErrorOccurred()) {
-@@ -3099,10 +3121,10 @@ void clang::sema::AnalysisBasedWarnings::IssueWarnings(
+@@ -3096,11 +3158,14 @@ void clang::sema::AnalysisBasedWarnings::IssueWarnings(
+   const Stmt *Body = D->getBody();
+   assert(Body);
+ 
++  checkObjC3CarrierInitialization(S, D);
++  if (shouldSkipAnalysisForDecl(S, D))
++    return;
++
    // Construct the analysis context with the specified CFG build options.
    AnalysisDeclContext AC(/* AnalysisDeclContextManager */ nullptr, D);
  
 -  // Don't generate EH edges for CallExprs as we'd like to avoid the n^2
 -  // explosion for destructors that can result and the compile time hit.
-+  // Include exceptional paths when they can skip an assignment to a
-+  // managed carrier. The ordinary warning path keeps the cheaper CFG.
++  // Ordinary warnings do not require native exceptional cleanup paths.
    AC.getCFGBuildOptions().PruneTriviallyFalseEdges = true;
--  AC.getCFGBuildOptions().AddEHEdges = false;
-+  AC.getCFGBuildOptions().AddEHEdges = DeferredCarrier != nullptr;
+   AC.getCFGBuildOptions().AddEHEdges = false;
    AC.getCFGBuildOptions().AddInitializers = true;
-   AC.getCFGBuildOptions().AddImplicitDtors = true;
-   AC.getCFGBuildOptions().AddParameterLifetimes = true;
-@@ -3119,7 +3141,8 @@ void clang::sema::AnalysisBasedWarnings::IssueWarnings(
-   // expect to always be CFGElements and then fill in the BuildOptions
-   // appropriately.  This is essentially a layering violation.
-   if (P.enableCheckUnreachable || P.enableThreadSafetyAnalysis ||
--      P.enableConsumedAnalysis || EnableLifetimeSafetyAnalysis) {
-+      P.enableConsumedAnalysis || EnableLifetimeSafetyAnalysis ||
-+      DeferredCarrier) {
-     // Unreachable code analysis and thread safety require a linearized CFG.
-     AC.getCFGBuildOptions().setAllAlwaysAdd();
-   } else {
-@@ -3132,7 +3155,7 @@ void clang::sema::AnalysisBasedWarnings::IssueWarnings(
-       .setAlwaysAdd(Stmt::ImplicitCastExprClass)
-       .setAlwaysAdd(Stmt::UnaryOperatorClass);
-   }
--  if (EnableLifetimeSafetyAnalysis)
-+  if (EnableLifetimeSafetyAnalysis || DeferredCarrier)
-     AC.getCFGBuildOptions().AddLifetime = true;
- 
-   // Install the logical handler.
-@@ -3195,7 +3218,8 @@ void clang::sema::AnalysisBasedWarnings::IssueWarnings(
-     Analyzer.run(AC);
-   }
- 
--  if (!Diags.isIgnored(diag::warn_uninit_var, D->getBeginLoc()) ||
-+  if (DeferredCarrier ||
-+      !Diags.isIgnored(diag::warn_uninit_var, D->getBeginLoc()) ||
-       !Diags.isIgnored(diag::warn_sometimes_uninit_var, D->getBeginLoc()) ||
-       !Diags.isIgnored(diag::warn_maybe_uninit_var, D->getBeginLoc()) ||
-       !Diags.isIgnored(diag::warn_uninit_const_reference, D->getBeginLoc()) ||
-@@ -3218,6 +3242,10 @@ void clang::sema::AnalysisBasedWarnings::IssueWarnings(
-             std::max(MaxUninitAnalysisBlockVisitsPerFunction,
-                      stats.NumBlockVisits);
-       }
-+    } else if (DeferredCarrier) {
-+      S.Diag(DeferredCarrier->getLocation(),
-+             diag::err_objc3_carrier_requires_initializer)
-+          << DeferredCarrier->getDeclName();
-     }
-   }
- 
 diff --git a/clang/lib/Sema/SemaDecl.cpp b/clang/lib/Sema/SemaDecl.cpp
 index c2eeae9d8b6a86bec70fc1dd264b694c431b8330..6d44955cfbd1ece64f9eab3ae596a7d35206f9cf 100644
 --- a/clang/lib/Sema/SemaDecl.cpp
@@ -691,17 +716,31 @@ index c2eeae9d8b6a86bec70fc1dd264b694c431b8330..6d44955cfbd1ece64f9eab3ae596a7d3
             diag::err_amdgcn_predicate_type_is_not_constructible)
 diff --git a/clang/test/ObjC3/Sema/deferred-arc-carrier-init.m b/clang/test/ObjC3/Sema/deferred-arc-carrier-init.m
 new file mode 100644
-index 0000000000000000000000000000000000000000..6fe78ea9276521fd9d14451d1cf8a13ab6b2f519
+index 0000000000000000000000000000000000000000..cc36364068ce82b9b74d7277ce3508796bd8b285
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/deferred-arc-carrier-init.m
-@@ -0,0 +1,77 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fobjc-exceptions -Wno-uninitialized -fsyntax-only -verify %s
-+// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -Wno-uninitialized -fsyntax-only -verify %s
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fobjc-exceptions -Wno-uninitialized -emit-obj -o %t.o -verify %s
+@@ -0,0 +1,88 @@
++// RUN: %clang_cc1 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fobjc-exceptions -Wno-uninitialized -triple x86_64-unknown-linux-gnu -DCASE=1 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fobjc-exceptions -Wno-uninitialized -triple aarch64-unknown-linux-gnu -x objective-c++ -fcxx-exceptions -DCASE=1 -emit-obj -o %t.o -verify %s
++// RUN: %clang_cc1 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fobjc-exceptions -Wno-uninitialized -triple x86_64-unknown-linux-gnu -DCASE=2 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fobjc-exceptions -Wno-uninitialized -triple aarch64-unknown-linux-gnu -x objective-c++ -fcxx-exceptions -DCASE=2 -emit-obj -o %t.o -verify %s
++// RUN: %clang_cc1 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fobjc-exceptions -Wno-uninitialized -triple x86_64-unknown-linux-gnu -DCASE=3 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fobjc-exceptions -Wno-uninitialized -triple x86_64-unknown-linux-gnu -DCASE=4 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fobjc-exceptions -Wno-uninitialized -triple x86_64-unknown-linux-gnu -DCASE=5 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fobjc-exceptions -Wno-uninitialized -triple x86_64-unknown-linux-gnu -DCASE=6 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fobjc-exceptions -Wno-uninitialized -triple x86_64-unknown-linux-gnu -DCASE=7 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fobjc-exceptions -Wno-uninitialized -triple aarch64-unknown-linux-gnu -x objective-c++ -fcxx-exceptions -DCASE=8 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fobjc-exceptions -Wno-uninitialized -triple x86_64-unknown-linux-gnu -DCASE=9 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fobjc-exceptions -Wno-uninitialized -triple x86_64-unknown-linux-gnu -DCASE=10 -fsyntax-only -verify %s
 +
++// Run each error in its own translation unit. Clang skips flow analysis
++// after an earlier uncompilable diagnostic.
 +typedef __objc3_optional(id) Maybe;
 +typedef __objc3_result(id, id) Outcome;
++Maybe make_result(void);
 +
++#if CASE == 1
++// expected-no-diagnostics
 +Outcome branch(int success, id value, id error) {
 +  Outcome result;
 +  if (success)
@@ -710,31 +749,31 @@ index 0000000000000000000000000000000000000000..6fe78ea9276521fd9d14451d1cf8a13a
 +    result = __objc3_err(id, id, error);
 +  return result;
 +}
-+
++#elif CASE == 2
 +void missing_branch(int success, id value) {
 +  Outcome result;
 +  if (success)
 +    result = __objc3_ok(id, id, value);
 +  (void)__objc3_is_ok(result); // expected-error {{is used before definite initialization}}
 +}
-+
++#elif CASE == 3
 +void missing_loop(int count, id value) {
 +  Maybe result;
 +  for (int i = 0; i < count; ++i)
 +    result = __objc3_some(id, value);
 +  (void)__objc3_has_value(result); // expected-error {{is used before definite initialization}}
 +}
-+
++#elif CASE == 4
 +void escape_before_assignment(void) {
 +  Maybe result;
 +  (void)&result; // expected-error {{is used before definite initialization}}
 +}
-+
++#elif CASE == 5
 +void read_own_assignment(void) {
 +  Maybe result;
 +  result = result; // expected-error {{is used before definite initialization}}
 +}
-+
++#elif CASE == 6
 +int resume_execution(void) __attribute__((returns_twice));
 +
 +void call_without_assignment(void) {
@@ -742,9 +781,7 @@ index 0000000000000000000000000000000000000000..6fe78ea9276521fd9d14451d1cf8a13a
 +  (void)resume_execution();
 +  (void)__objc3_has_value(result); // expected-error {{is used before definite initialization}}
 +}
-+
-+Maybe make_result(void);
-+
++#elif CASE == 7
 +void objc_throw_skips_assignment(void) {
 +  Maybe result;
 +  @try {
@@ -753,8 +790,7 @@ index 0000000000000000000000000000000000000000..6fe78ea9276521fd9d14451d1cf8a13a
 +    (void)__objc3_has_value(result); // expected-error {{is used before definite initialization}}
 +  }
 +}
-+
-+#ifdef __cplusplus
++#elif CASE == 8
 +void cxx_throw_skips_assignment(void) {
 +  Maybe result;
 +  try {
@@ -763,12 +799,12 @@ index 0000000000000000000000000000000000000000..6fe78ea9276521fd9d14451d1cf8a13a
 +    (void)__objc3_has_value(result); // expected-error {{is used before definite initialization}}
 +  }
 +}
-+#endif
-+
++#elif CASE == 9
 +void constant_requires_initializer(void) {
 +  const Maybe result; // expected-error {{requires an initializer at its declaration}}
 +}
-+
++#elif CASE == 10
 +void byref_requires_initializer(void) {
 +  __block Maybe result; // expected-error {{requires an initializer at its declaration}}
 +}
++#endif
