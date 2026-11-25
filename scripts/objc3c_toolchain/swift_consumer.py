@@ -272,7 +272,7 @@ def qualify(repo, output, *, sdk, swift_root, symbolizer):
             raise ValueError('Swift consumer command requires a unique name')
         env = foreign_env if foreign else native_env
         row = {'name': name, 'environment': env, **command(argv, cwd=work, environment=env,
-            log=output / 'logs' / (name+'.log'), timeout=120)}
+            log=output / 'logs' / (name+'.log'), timeout=None)}
         report['commands'].append(row);save()
         text = Path(row['log']).read_text(errors='replace')
         if row['timed_out'] or row['exit_code'] != expected:

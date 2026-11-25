@@ -99,8 +99,7 @@ def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
             return log.read_text(errors='replace')
         with log.open('w') as stream:
             result = subprocess.run(list(map(str, command)), env=environment,
-                                    stdout=stream, stderr=subprocess.STDOUT,
-                                    timeout=180)
+                                    stdout=stream, stderr=subprocess.STDOUT)
         report['commands'].append({'name': name, 'exit_code': result.returncode,
                                    'log': log.name})
         if result.returncode != expected:

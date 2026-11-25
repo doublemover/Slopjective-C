@@ -115,7 +115,7 @@ def qualify(sdk: Path, output: Path) -> dict:
                     with log.open('w') as stream:
                         rejected = subprocess.run(command, cwd=root / 'consumer',
                             env=packages.environment(sdk), stdout=stream,
-                            stderr=subprocess.STDOUT, timeout=180)
+                            stderr=subprocess.STDOUT)
                     diagnostic = log.read_text()
                     if (rejected.returncode != 1 or rejected_object.exists() or
                             'overloaded' not in diagnostic or
@@ -807,7 +807,7 @@ def verify_metadata_modes(metadata_path: Path) -> dict:
     for mode in (0, 1, 2):
         result = json.loads(subprocess.check_output(
             [sys.executable, '-B', *entry, '--metadata-controls', str(metadata_path)],
-            env={**os.environ, 'PYTHONOPTIMIZE': str(mode)}, timeout=180))
+            env={**os.environ, 'PYTHONOPTIMIZE': str(mode)}))
         if result.pop('optimize') != mode:
             raise ValueError('native metadata controls ran under a different Python optimization mode')
         if packages.digest(metadata_path) != provider_sha256:

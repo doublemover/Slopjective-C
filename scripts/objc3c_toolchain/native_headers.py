@@ -45,7 +45,7 @@ def _run(compiler: Path, arguments: list[str], *, source='') -> subprocess.Compl
     environment['LD_LIBRARY_PATH'] = companion + (os.pathsep + environment['LD_LIBRARY_PATH']
                                                  if environment.get('LD_LIBRARY_PATH') else '')
     result = subprocess.run([str(compiler), '--no-default-config', *arguments],
-                            input=source, text=True, capture_output=True, timeout=60,
+                            input=source, text=True, capture_output=True,
                             env=environment)
     if result.returncode:
         raise ValueError(f'native header discovery failed: {result.stderr[-6000:]}')

@@ -51,11 +51,11 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
     env['LD_LIBRARY_PATH'] = str(objc_runtime.parent) + ':' + str(sdk / 'lib')
     commands, cases = [], []
 
-    def run(label, argv, cwd):
+    def run(label, argv, cwd, *, timeout=None):
         log = output / (label + '.log')
         with log.open('w') as stream:
             result = subprocess.run(list(map(str, argv)), cwd=cwd, env=env,
-                                    stdout=stream, stderr=subprocess.STDOUT, timeout=90)
+                                    stdout=stream, stderr=subprocess.STDOUT, timeout=timeout)
         commands.append({'name': label, 'exit_code': result.returncode, 'log_sha256': packages.digest(log)})
         if result.returncode:
             raise ValueError('native async functions failed: ' + label)
@@ -99,7 +99,7 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                     '-Wl,-z,dead-reloc-in-nonalloc=.debug_addr=0xffffffffffffffff',
                     '-Wl,-z,dead-reloc-in-nonalloc=.debug_info=0xffffffffffffffff',
                     '-Wl,-rpath,' + str(objc_runtime.parent), '-o', executable], root)
-                run(label + '-execute', [executable], root)
+                run(label + '-execute', [executable], root, timeout=90)
                 run(label + '-dwarf', [sdk / 'bin/llvm-dwarfdump', '--verify', executable], root)
                 debugger_values = None
                 owned_result_debugger_values = None

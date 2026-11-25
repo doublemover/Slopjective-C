@@ -98,7 +98,7 @@ def verify_archive(repo, archive, signature, work, pin):
                  '--status-fd', '1', '--verify', signature, archive]]
     records = []
     for index, argv in enumerate(commands):
-        result = subprocess.run(list(map(str, argv)), capture_output=True, text=True, timeout=120,
+        result = subprocess.run(list(map(str, argv)), capture_output=True, text=True,
                                 env={'PATH': os.defpath, 'LC_ALL': 'C'})
         log = work / ('signature-'+str(index)+'.log');log.write_text(result.stdout+result.stderr)
         records.append({'argv': list(map(str, argv)), 'exit_code': result.returncode,

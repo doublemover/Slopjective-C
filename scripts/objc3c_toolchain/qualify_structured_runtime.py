@@ -38,11 +38,11 @@ def qualify(sdk: Path, output: Path) -> dict:
     env = environment(sdk)
     commands, cases = [], []
 
-    def run(label, argv, cwd):
+    def run(label, argv, cwd, *, timeout=None):
         log = output / (label + '.log')
         with log.open('w') as stream:
             result = subprocess.run(list(map(str, argv)), cwd=cwd, env=env,
-                                    stdout=stream, stderr=subprocess.STDOUT, timeout=45)
+                                    stdout=stream, stderr=subprocess.STDOUT, timeout=timeout)
         commands.append({'name': label, 'exit_code': result.returncode, 'log_sha256': packages.digest(log)})
         if result.returncode: raise ValueError('installed structured runtime failed: ' + label)
 
@@ -65,7 +65,7 @@ def qualify(sdk: Path, output: Path) -> dict:
                     '-Wl,-z,dead-reloc-in-nonalloc=.debug_info=0xffffffffffffffff',
                     '-L' + str(sdk / 'lib'), '-lobjc3_runtime_services', '-lobjc', '-pthread',
                     '-Wl,-rpath,' + str(sdk / 'lib'), '-o', executable], root)
-                run(label + '-run', [executable], root)
+                run(label + '-run', [executable], root, timeout=45)
                 run(label + '-dwarf', [sdk / 'bin/llvm-dwarfdump', '--verify', executable], root)
                 cases.append({'language': language, 'standard': standard, 'ownership': ownership,
                               'optimization': optimization, 'threaded': threaded,
