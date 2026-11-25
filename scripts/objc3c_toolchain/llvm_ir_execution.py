@@ -118,7 +118,7 @@ def command(argv, *, cwd: Path, environment: dict, log: Path, timeout: float | N
 
 
 class Execution:
-    def __init__(self, output: Path, environment: dict, report: dict, *, timeout=180):
+    def __init__(self, output: Path, environment: dict, report: dict, *, timeout: float | None = None):
         self.output, self.environment, self.report, self.timeout = output, environment, report, timeout
         (output / 'logs').mkdir(parents=True)
         report['commands'] = []
@@ -134,7 +134,7 @@ class Execution:
         if any(path.exists() for path in paths):
             raise StageFailure(name, 'infrastructure', 'output already exists; stale output cannot pass')
         row = command(argv, cwd=cwd or self.output, environment=self.environment,
-            log=self.output / 'logs' / (name+'.log'), timeout=timeout or self.timeout)
+            log=self.output / 'logs' / (name+'.log'), timeout=self.timeout if timeout is None else timeout)
         text = Path(row['log']).read_text(errors='replace')
         row.update(name=name, stage=stage, expected_exit_code=expected,
                    outputs={str(path): digest(path) for path in paths if path.is_file()})

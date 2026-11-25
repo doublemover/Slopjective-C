@@ -24,7 +24,6 @@ jobs:
     name: Published preview examples (${{ matrix.arch }})
     runs-on: ${{ matrix.arch == 'aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container: debian:13
-    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:

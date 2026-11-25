@@ -16,10 +16,10 @@ defect before project results can qualify.
 The runner preserves compilation variants and response-file bytes. It checks
 the real Ninja graph against each compilation database, retains actual header
 closures, and selects all affected translation units for a header edit. Missing
-commands, changed flags, parse errors, timeouts, crashes and findings fail.
-There is no diagnostic suppression baseline. Per-check timing is enabled on
-every action so a bounded failure identifies the expensive checker instead of
-leaving another opaque translation-unit timeout. Full selection includes native
+commands, changed flags, parse errors, crashes and findings fail.
+The diagnostic suppression baseline is empty. Per-check timing is enabled on
+every action. The host supervises analysis completion, and partition estimates
+balance work. Full selection includes native
 frontend/runtime variants, standalone runtime variants and all maintained
 patch-touched Clang implementation TUs; test/vendor/generated-only exclusions
 are reported explicitly.
@@ -104,8 +104,7 @@ units remain in the default compilation graph and analyzer inventory. Small
 identity probes use Clang's shared dynamic visitor; the three visitors with
 custom traversal queues or walk-up behavior retain their specialized traversal.
 This addresses repeated CRTP instantiation and the oversized TU without removing
-checks or raising its ten-minute limit. Full regression/analysis acceptance is
-required after the split.
+checks. Full regression and analysis acceptance is required after the split.
 
 ```sh
 python3 -B -m scripts.objc3c_toolchain.implementation_analysis \
@@ -116,7 +115,7 @@ python3 -B -m scripts.objc3c_toolchain.implementation_analysis \
 
 The `Extended Linux implementation analysis` workflow owns the durable gate.
 It runs on manual dispatch, the existing weekly schedule and exact-SHA SDK release
-calls. The native PR gate runs the [bounded executor analysis](#required-executor-analysis-pilot)
+calls. The native PR gate runs the [executor analysis pilot](#required-executor-analysis-pilot)
 using its existing compiler and CMake graph. Manual/local dependency selection scopes
 native edits independently to the frontend and standalone runtime. Shared
 fork/tool/checker changes select maintained Clang units as well. Complete extended
@@ -124,8 +123,7 @@ runs use one immutable SHA. Repeated requests for the same source revision queue
 work. A repaired release can progress alongside an older revision's analysis once
 its native build has completed. The workflow restores the admitted shared
 `compiler-asan-ubsan` foundation and builds separate integrated-frontend and
-standalone-runtime databases and the matched analysis tool in each bounded
-six-hour partition job. Native qualification has its own execution budget.
+standalone-runtime databases and the matched analysis tool in each partition job under GitHub’s six-hour limit.
 Completed analysis actions also report progress in the
 job log. A second job admits only the exact
 revision, canonical plan, complete per-TU inventory, paired detector controls,
@@ -150,7 +148,7 @@ check through analysis and cleanup. Existing development trees are preserved;
 only roots created by that attempt are reclaimed. Source revision and tracked
 inputs are checked at both execution boundaries. Its frontend explicitly selects
 the same instrumentation profile and shared Clang library as the foundation.
-Configuration/build timeouts kill and reap the complete subprocess session.
+Cancellation kills and reaps the complete subprocess session.
 
 Terminal verification recomputes the selected variants from the retained header
 closures, requires an exact result for every selected identity, and checks each

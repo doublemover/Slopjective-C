@@ -108,8 +108,6 @@ def passing_bundle(tmp_path, *, periodic=False, partition=None):
             'directory': '/producer/build/'+owner, 'output': '/producer/build/'+owner+'/source.o',
             'analysis_arguments': ['clang++', '-DREAL_FLAG=1', '-c', str(source)],
             'dependencies': [str(source)], 'selected': periodic or index < 2,
-            'analysis_timeout_seconds': (policy['maintained_translation_unit_timeout_seconds']
-                                         if owner=='maintained-clang' else policy['translation_unit_timeout_seconds']),
             'dependency_origin': 'actual-ninja-compilation'})
     if partition is not None:
         selected = {row['identity'] for owner in {row['owner'] for row in inventory}
@@ -118,7 +116,7 @@ def passing_bundle(tmp_path, *, periodic=False, partition=None):
         for row in inventory:
             row['selected'] = row['identity'] in selected
     results = [{'identity': row['identity'], 'status': 'PASS', 'diagnostics': [],
-                'execution_reused': False, 'timeout_seconds': row['analysis_timeout_seconds']}
+                'execution_reused': False}
                for row in inventory if row['selected']]
     controls = [
         {'name': 'control-corrected', 'status': 'PASS', 'exit_code': 0,
@@ -155,7 +153,7 @@ def passing_bundle(tmp_path, *, periodic=False, partition=None):
                         '[clang-analyzer-core.NullDereference,-warnings-as-errors]\n'
                         if name == 'control-defective' else '')
         command.update(log=str(producer / 'logs' / path.name), log_sha256=evidence.digest(path))
-    inner = {'schema': 'objc3c.implementation-analysis.v1', 'status': 'PASS',
+    inner = {'schema': 'objc3c.implementation-analysis.v2', 'status': 'PASS',
         'subject': 'native-and-maintained-clang-implementation', 'policy': policy,
         'source_build_id': 'fork-build', 'build_config_digest': 'config',
         'tool': {'path': tool, 'sha256': 'a'*64}, 'tool_graph': {'libraries': {'libclang.so': 'b'*64}},

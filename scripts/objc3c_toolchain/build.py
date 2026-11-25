@@ -177,7 +177,7 @@ def verify_build_targets(configure_plan: dict, build_plan: dict) -> dict:
         inventory = subprocess.check_output([
             configure_plan['host_environment']['ninja_path'], '-C',
             configure_plan['paths']['build'], '-t', 'targets', 'all'],
-            text=True, stderr=subprocess.STDOUT, timeout=30)
+            text=True, stderr=subprocess.STDOUT)
     except (OSError, subprocess.SubprocessError) as error:
         raise ToolchainError(f'foundation target inventory failed: {error}') from error
     available = {line.rsplit(': ', 1)[0] for line in inventory.splitlines() if ': ' in line}

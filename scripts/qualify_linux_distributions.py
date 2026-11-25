@@ -66,7 +66,7 @@ def qualify(release_file: Path, output: Path, *, distributions=None,
                    if k not in ('DOCKER_HOST', 'DOCKER_CONTEXT', 'DOCKER_TLS',
                                 'DOCKER_TLS_VERIFY', 'DOCKER_CERT_PATH')}
 
-    def run(arguments, log, timeout):
+    def run(arguments, log, timeout=None):
         with log.open('w') as stream:
             return subprocess.run(arguments, env=environment, stdout=stream,
                                   stderr=subprocess.STDOUT, timeout=timeout).returncode
@@ -111,7 +111,7 @@ def qualify(release_file: Path, output: Path, *, distributions=None,
                             '--env', 'PIP_CERT=/run/proxy-ca.pem']
             command += [image, 'sleep', 'infinity']
             try:
-                code = run(command, create_log, 180)
+                code = run(command, create_log)
                 if code:
                     raise ValueError(distribution + ': container creation failed')
                 setup = ('if test -f /run/proxy-ca.pem; then '
@@ -121,7 +121,7 @@ def qualify(release_file: Path, output: Path, *, distributions=None,
                          'chmod +x /tmp/exec-probe; /tmp/exec-probe; '
                          'exec sh /qualify.sh /release.tar.zst "$1" /opt/objc3 "$2"')
                 code = run([*docker, 'exec', name, 'sh', '-ec', setup, 'qualify',
-                            archive_hash, scope], run_log, 1800)
+                            archive_hash, scope], run_log)
                 update_record(record, exit_code=code, log_sha256=digest(run_log))
                 text = run_log.read_text(errors='replace')
                 markers = ('Unprivileged Linux ' + SCOPES[scope] + ' consumer: PASS',

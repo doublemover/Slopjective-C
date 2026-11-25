@@ -35,6 +35,8 @@ PORTABLE_HEADERS = (
     'tests/test_assertion_policy.h',
 )
 PROFILE_NAME = 'macos-arm64-registration-experimental'
+# The ARC thread witness must complete its condition-variable handshake and join.
+ARC_THREAD_WITNESS_TIMEOUT_SECONDS = 60
 
 
 def file_digest(path: Path) -> str:
@@ -135,7 +137,7 @@ def qualify(bootstrap_report: Path, output: Path, *, fetch: bool, package_sdk: b
            if not key.startswith('DYLD_') and key not in compiler_overrides}
     env['LC_ALL'] = 'C'
 
-    def run(*argv, label=None, rejects=None, rejection_status=(1, 2), timeout=60) -> str:
+    def run(*argv, label=None, rejects=None, rejection_status=(1, 2), timeout=None) -> str:
         command = list(map(str, argv))
         index = len(report['commands'])
         log = output / f'{index:03d}-{label or Path(command[0]).name}.log'
@@ -223,10 +225,10 @@ def qualify(bootstrap_report: Path, output: Path, *, fetch: bool, package_sdk: b
             report['compiler_build'] = {'base_build_id': base['build_id'], 'patch_digest': patch_digest,
                                         'configuration_sha256': config_digest}
             run(cmake, '-S', source / 'llvm', '-B', build, *configure,
-                f'-DCLANG_OBJC3_CONFIG_DIGEST={config_digest}', label='configure', timeout=None)
+                f'-DCLANG_OBJC3_CONFIG_DIGEST={config_digest}', label='configure')
             print(f'Building a native arm64 Clang with {jobs} compile job(s)', flush=True)
             run(cmake, '--build', build, '--parallel', jobs, '--target', 'clang', 'clang-resource-headers',
-                label='build', timeout=None)
+                label='build')
             clang = build / 'bin/clang'
             report['compiler_build']['artifact'] = verify_macho(clang, 'executable')
             version = run(clang, '--version', label='patched-clang')
@@ -551,7 +553,8 @@ def _exercise_arc(run, defaults, runtime_flag: str, link, stages: Path,
             if ((linkage == 'dynamic' and not required <= owned_imports) or
                     (linkage == 'static' and owned_imports)):
                 raise ValueError(f'{label_route} has inconsistent owned runtime linkage')
-            if run(executable, label=label_route+'-native') != 'owned Objective-C 3 Darwin ARC: PASS':
+            if run(executable, label=label_route+'-native',
+                   timeout=ARC_THREAD_WITNESS_TIMEOUT_SECONDS) != 'owned Objective-C 3 Darwin ARC: PASS':
                 raise ValueError(f'{label_route} failed the ARC lifetime witness')
             routes[optimization][linkage] = {**verify_macho(executable, 'executable'),
                                             'load_paths': dependencies, 'imports': undefined}

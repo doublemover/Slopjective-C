@@ -20,17 +20,13 @@ from .llvm_ir_execution import Execution, StageFailure
 from .llvm_tools import foundation, identity, verify_installation
 from .sanitizer_policy import strict_environment
 from .sdk_example import dependencies as header_dependencies
-from .analysis_checkpoint import analysis_argv, load_checkpoints, reusable_action, run_unit
+from .analysis_checkpoint import ANALYSIS_SCHEMA, analysis_argv, load_checkpoints, reusable_action, run_unit
 from .analysis_scheduling import execute_jobs
 from .analysis_partition import partition_spec, partition_rows
 
 SUFFIXES = {'.cpp', '.cc', '.c', '.mm', '.m'}
 HEADER_SUFFIXES = {'.h', '.hh', '.hpp', '.inc', '.def', '.tcc'}
 TIDY_SUPPRESSION = re.compile(r'\bNOLINT(?:NEXTLINE|BEGIN|END)?\b')
-NATIVE_TIMEOUT_UNITS = {
-    'native/objc3c/src/clang_foundation/interface_emission_features.cpp',
-    'native/objc3c/src/clang_foundation/interface_emission_identity.cpp',
-}
 
 
 def checker_configuration(repo, source, policy):
@@ -66,33 +62,6 @@ def check_owned_suppressions(repo: Path) -> dict:
             elif implementation and line.startswith('+') and TIDY_SUPPRESSION.search(line):
                 raise ValueError(f'{path.relative_to(repo)}:{index}: unreviewed clang-tidy suppression')
     return {'status': 'PASS', 'native_sources': len(native), 'patches': len(patches)}
-
-
-def validate_timeout_overrides(policy, maintained_units):
-    overrides = policy.get('translation_unit_timeout_overrides_seconds', {})
-    if (not isinstance(overrides, dict) or len(overrides) > 48 or
-            any(path not in maintained_units | NATIVE_TIMEOUT_UNITS or type(seconds) is not int or
-                not policy['translation_unit_timeout_seconds'] < seconds <= 3600
-                for path, seconds in overrides.items())):
-        raise ValueError('analysis timeout overrides require reviewed maintained Clang units and finite bounds')
-
-
-def translation_unit_timeout(policy, row, source):
-    default = policy['translation_unit_timeout_seconds']
-    owner = row['owner']
-    if owner not in ('maintained-clang', 'frontend'):
-        return default
-    root = Path(source).resolve()
-    if owner == 'frontend':root = root.parents[3]
-    try:
-        relative = Path(row['file']).resolve().relative_to(root).as_posix()
-    except ValueError as error:
-        raise ValueError('maintained analysis timeout source escaped its admitted owner') from error
-    if owner == 'frontend' and relative not in NATIVE_TIMEOUT_UNITS:
-        return default
-    owner_default = (policy.get('maintained_translation_unit_timeout_seconds', default)
-                     if owner == 'maintained-clang' else default)
-    return policy.get('translation_unit_timeout_overrides_seconds', {}).get(relative, owner_default)
 
 
 def arguments(row):
@@ -402,19 +371,17 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
         raise ValueError('analysis tool build requires its own owned repository output')
     policy_path = repo / 'toolchains/llvm/implementation-analysis.json'
     policy = json.loads(policy_path.read_text())
-    if (policy.get('schema') != 'objc3c.implementation-analysis-policy.v2' or
+    if (policy.get('schema') != 'objc3c.implementation-analysis-policy.v3' or
             policy.get('hosts') != list(HOSTS) or policy.get('tool') != 'objc3-clang-tidy' or
             policy.get('warnings_as_errors') != '*' or policy.get('baseline') != [] or
             policy.get('profile_checks') is not True or
-            policy.get('translation_unit_timeout_seconds') != 600 or
-            policy.get('maintained_translation_unit_timeout_seconds') != 3600 or
+            policy.get('deadline_owner') != 'host-job' or
             not policy.get('checks') or len(set(policy['checks'])) != len(policy['checks']) or
             any(not re.fullmatch(r'[a-zA-Z0-9_.-]+', check) for check in policy['checks'])):
         raise ValueError('unreviewed implementation analysis policy/baseline')
-    validate_timeout_overrides(policy, patch_units(repo))
     output.mkdir(parents=True)
     tool_arguments, environment = tool_configuration(repo, tool_build, plan)
-    report = {'schema': 'objc3c.implementation-analysis.v1', 'status': 'running',
+    report = {'schema': ANALYSIS_SCHEMA, 'status': 'running',
         'subject': 'native-and-maintained-clang-implementation', 'policy': policy,
         'source_build_id': plan['source_build_id'], 'build_config_digest': plan['build_config_digest'],
         'environment': environment, 'inventory': [], 'results': [], 'exclusions': [], 'matched_pches': [],
@@ -428,7 +395,7 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
             repo / 'native/analysis/CMakeLists.txt', repo / 'native/analysis/SelectedChecks.cpp',
             repo / 'tests/tooling/fixtures/implementation_analysis/control.cpp')}}
     report['inputs'].update({str(path): signature for path, _, signature in checkpoints})
-    executor = Execution(output, environment, report, timeout=600)
+    executor = Execution(output, environment, report, timeout=None)
     run = executor.run
     try:
         report['source_suppressions'] = check_owned_suppressions(repo)
@@ -605,7 +572,6 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
             report['inputs'][str(database)] = digest(database)
             for row in rows:
                 row['owner'] = label
-                row['analysis_timeout_seconds'] = translation_unit_timeout(policy, row, source)
                 row.update(identity=identity(row), dependencies=deps[row['output']])
                 report['inputs'].update({path: digest(Path(path)) for path in row['dependencies']})
                 report['inputs'].update(row['response_files'])
@@ -620,7 +586,6 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
                 'reason': ('Owned implementation TUs and every maintained Clang patch TU; '
                            'vendor/test/generated-only TUs excluded. Unaffected owners and variants '
                            'are omitted only by source ownership plus explicit dependency closure.')})
-            executor.timeout = policy['translation_unit_timeout_seconds']
             with ProcessPoolExecutor(max_workers=jobs, mp_context=multiprocessing.get_context('spawn')) as workers:
                 def prepared_jobs():
                     for row in chosen:
@@ -634,8 +599,7 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
                         else:
                             executor.save()
                             yield {'name': name, 'identity': row['identity'],
-                                'directory': str(output / name), 'environment': environment, 'argv': argv,
-                                'timeout': row['analysis_timeout_seconds']}
+                                'directory': str(output / name), 'environment': environment, 'argv': argv}
 
                 def completed(value):
                     result, commands = value

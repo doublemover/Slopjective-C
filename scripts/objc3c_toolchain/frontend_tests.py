@@ -85,7 +85,7 @@ def qualify(build: Path, output: Path, run, *, jobs: int,
                 try:
                     run('frontend-' + name + '-ctest',
                         ['ctest', '--test-dir', build, '--no-tests=error', '--output-on-failure',
-                         '-R', '^' + re.escape(name) + '$'])
+                         '--timeout', '0', '-R', '^' + re.escape(name) + '$'])
                 except Exception as error:
                     failure = str(error)
                 if executable.is_symlink() or not executable.is_file():

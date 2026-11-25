@@ -50,7 +50,7 @@ def probe(llvm_root: Path, output: Path) -> dict:
 
     def run(*argv) -> str:
         command = list(map(str, argv))
-        result = subprocess.run(command, env=env, capture_output=True, text=True, timeout=30)
+        result = subprocess.run(command, env=env, capture_output=True, text=True)
         stdout, stderr = result.stdout.strip(), result.stderr.strip()
         commands.append({'argv': command, 'exit_status': result.returncode, 'stdout': stdout, 'stderr': stderr})
         if result.returncode:

@@ -6,9 +6,8 @@ import json
 from pathlib import Path
 import re
 
-from scripts.objc3c_toolchain.analysis_checkpoint import analysis_argv, tidy_diagnostics
-from scripts.objc3c_toolchain.implementation_analysis import (
-    checker_configuration, select_owner_variants, translation_unit_timeout)
+from scripts.objc3c_toolchain.analysis_checkpoint import ANALYSIS_SCHEMA, analysis_argv, tidy_diagnostics
+from scripts.objc3c_toolchain.implementation_analysis import checker_configuration, select_owner_variants
 from scripts.objc3c_toolchain.llvm_tools import identity
 from scripts.objc3c_toolchain.sanitizer_policy import require_clean_diagnostic
 from scripts.objc3c_assurance.evidence import junit, lit
@@ -52,7 +51,7 @@ def analysis_results(root: Path) -> list[dict]:
     inventory_ids = [row.get('identity') for row in inventory]
     result_ids = [row.get('identity') for row in results]
     exclusions = receipt.get('exclusions', [])
-    if (receipt.get('schema') != 'objc3c.implementation-analysis.v1' or
+    if (receipt.get('schema') != ANALYSIS_SCHEMA or
             receipt.get('status') != 'PASS' or receipt.get('policy') != policy or
             receipt.get('subject') != 'native-and-maintained-clang-implementation' or
             not receipt.get('source_build_id') or not receipt.get('build_config_digest') or
@@ -77,7 +76,7 @@ def analysis_results(root: Path) -> list[dict]:
             controls['control-corrected'].get('expected_exit_code') != 0 or
             controls['control-defective'].get('exit_code') != 1 or
             controls['control-defective'].get('expected_exit_code') != 1 or
-            any(row.get('status') != 'PASS' or row.get('timed_out') or
+            any(row.get('status') != 'PASS' or row.get('timed_out') is not False or
                 row.get('exit_code') != row.get('expected_exit_code') for row in commands)):
         raise ValueError('implementation analysis inventory, controls or clean result is incomplete')
     verify_analysis_proof(root / 'analysis', receipt)
@@ -161,16 +160,13 @@ def verify_analysis_proof(root: Path, receipt: dict) -> None:
             receipt.get('fresh_native_executions') != len(expected_ids) or
             any(row.get('execution_reused') is not False for row in receipt['results'])):
         raise ValueError('implementation CI requires fresh native analysis actions')
+    if (any('analysis_timeout_seconds' in row for row in receipt['inventory']) or
+            any('timeout_seconds' in row for row in receipt['results'])):
+        raise ValueError('implementation evidence contains retired translation-unit deadlines')
     for row in receipt['inventory']:
         if not row['selected']:
             continue
         name = row['owner']+'-'+row['identity'][:16]
-        timeout = translation_unit_timeout(receipt['policy'], row,
-            repo / 'out/toolchains/objc3-development/src')
-        result = next(value for value in receipt['results'] if value['identity'] == row['identity'])
-        if (row.get('analysis_timeout_seconds') != timeout or
-                result.get('timeout_seconds') != timeout):
-            raise ValueError('implementation action differs from its reviewed resource bound')
         command = by_name.get(name)
         expected = analysis_argv(receipt['tool']['path'], original_root / name,
                                   row['file'], configuration, receipt['resource_directory'])

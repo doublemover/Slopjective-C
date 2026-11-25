@@ -38,7 +38,7 @@ def plan(repo: Path) -> dict:
     tablegen_library = (build / 'lib/libLLVMTableGen.a').resolve(strict=True)
     sanitizer_library = (bootstrap / 'lib/clang/23/lib' / native_target() / 'libclang_rt.asan.so').resolve(strict=True)
     link_flags = ('-shared-libasan -L'+str(build / 'lib')+' -Wl,-rpath,'+
-                  str(sanitizer_library.parent)+' -Wl,--disable-new-dtags')
+                  str(sanitizer_library.parent)+' -Wl,--disable-new-dtags -Wl,--build-id=sha1')
     argv = [foundation['host_environment']['cmake_path'], '-S', str(source / 'lldb'), '-B', str(root), '-G', 'Ninja',
         '-DCMAKE_C_COMPILER='+str(bootstrap / 'bin/clang'), '-DCMAKE_CXX_COMPILER='+str(bootstrap / 'bin/clang++'),
         '-DCMAKE_MAKE_PROGRAM='+foundation['host_environment']['ninja_path'],
@@ -142,7 +142,7 @@ def qualify(repo: Path, output: Path, *, jobs=3, tools_receipt: Path | None = No
     _, _, environment = selected(repo)
     report = {'schema': 'objc3c.llvm-development-debugger-receipt.v1', 'status': 'running',
               'identity': configuration['identity'], 'configuration': configuration}
-    executor = Execution(output, environment, report, timeout=1800)
+    executor = Execution(output, environment, report)
     run = executor.run
     try:
         foundation_tools, _, _ = qualify_tools(repo, run=run, receipt=tools_receipt)

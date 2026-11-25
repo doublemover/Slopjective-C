@@ -33,7 +33,6 @@ jobs:
           || format('["{0}"]', inputs.linux_host)) }}
     runs-on: ${{ matrix.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container: debian:13
-    timeout-minutes: 35
     steps:
       - name: Install distribution prerequisites
         run: |

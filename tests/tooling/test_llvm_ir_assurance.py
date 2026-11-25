@@ -120,6 +120,15 @@ def execution(tmp_path):
     return Execution(tmp_path, {'PATH': os.defpath, 'LC_ALL': 'C'}, report, timeout=2), report
 
 
+def test_default_execution_uses_host_deadline_and_measures_command_resources(tmp_path):
+    report = {}
+    runner = Execution(tmp_path, dict(os.environ), report)
+    runner.run('normal', [sys.executable, '-c', 'print("complete")'])
+    row, = report['commands']
+    assert row['exit_code'] == 0 and not row['timed_out']
+    assert row['cpu_seconds'] >= 0 and row['peak_process_rss_kib'] > 0
+
+
 def test_missing_outputs_and_stale_outputs_fail_closed(tmp_path):
     runner, report = execution(tmp_path)
     with pytest.raises(StageFailure, match='missing or empty'):
@@ -192,7 +201,8 @@ def test_interruption_kills_and_reaps_the_detached_command_session(tmp_path, mon
         def __exit__(self, *args): return False
         def wait(self, timeout=None):
             self.calls += 1
-            if self.calls == 1: raise KeyboardInterrupt
+            if self.calls == 1:
+                raise KeyboardInterrupt
             return -9
     process, killed = Process(), []
     monkeypatch.setattr(execution_owner.subprocess, 'Popen', lambda *args, **kwargs: process)

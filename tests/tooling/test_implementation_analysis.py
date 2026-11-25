@@ -49,7 +49,7 @@ def test_pending_window_publishes_native_results_before_preparing_more(tmp_path)
                 assert len(completed) >= index - 1
             yield {'name': 'native-'+str(index), 'identity': str(index),
                 'directory': str(tmp_path / str(index)), 'environment': dict(os.environ),
-                'argv': [sys.executable, '-c', 'print("native action completed")'], 'timeout': 10}
+                'argv': [sys.executable, '-c', 'print("native action completed")']}
 
     with ProcessPoolExecutor(max_workers=2, mp_context=multiprocessing.get_context('spawn')) as workers:
         execute_jobs(jobs(), submit=lambda job: workers.submit(run_unit, job),
@@ -60,6 +60,9 @@ def test_pending_window_publishes_native_results_before_preparing_more(tmp_path)
         receipt = json.loads((tmp_path / str(index) / 'qualification.json').read_text())
         assert receipt['result']['identity'] == str(index)
         assert receipt['result']['status'] == receipt['status'] == 'PASS'
+        assert 'timeout_seconds' not in receipt['result']
+        assert receipt['commands'][0]['timed_out'] is False
+        assert receipt['commands'][0]['cpu_seconds'] >= 0
 
 
 def test_preparation_failure_drains_running_native_proof_and_remains_failed(tmp_path):
@@ -81,7 +84,7 @@ def test_preparation_failure_drains_running_native_proof_and_remains_failed(tmp_
     def jobs():
         yield {'name': 'running-native', 'identity': 'running',
             'directory': str(tmp_path / 'unit'), 'environment': dict(os.environ),
-            'argv': [sys.executable, '-c', code], 'timeout': 10}
+            'argv': [sys.executable, '-c', code]}
         deadline = time.monotonic()+5
         while not started.exists():
             if time.monotonic() > deadline:
@@ -108,7 +111,7 @@ def test_native_finding_is_durable_and_does_not_discard_clean_sibling(tmp_path):
         'print("fixture.cpp:8:2: error: null access [clang-analyzer-core.NullDereference]")']
     jobs = [{'name': 'unit-'+str(index), 'identity': str(index),
         'directory': str(tmp_path / str(index)), 'environment': dict(os.environ),
-        'argv': [sys.executable, '-c', code], 'timeout': 10} for index, code in enumerate(scripts)]
+        'argv': [sys.executable, '-c', code]} for index, code in enumerate(scripts)]
     completed = []
     with ThreadPoolExecutor(max_workers=2) as workers:
         execute_jobs(jobs, submit=lambda job: workers.submit(run_unit, job),
@@ -118,31 +121,6 @@ def test_native_finding_is_durable_and_does_not_discard_clean_sibling(tmp_path):
     assert failure['status'] == failure['result']['status'] == 'FAIL'
     assert failure['result']['classification'] == 'finding'
     assert failure['result']['diagnostics'][0]['check'] == 'clang-analyzer-core.NullDereference'
-
-
-def test_reviewed_large_clang_unit_timeout_never_widens_native_actions(tmp_path):
-    from scripts.objc3c_toolchain.implementation_analysis import (
-        translation_unit_timeout, validate_timeout_overrides)
-    unit = 'clang/lib/AST/ASTContext.cpp'
-    policy = {'translation_unit_timeout_seconds': 600,
-        'translation_unit_timeout_overrides_seconds': {unit: 1800}}
-    validate_timeout_overrides(policy, {unit})
-    row = {'owner': 'maintained-clang', 'file': str(tmp_path / unit)}
-    assert translation_unit_timeout(policy, row, tmp_path) == 1800
-    assert translation_unit_timeout(policy, {**row, 'owner': 'frontend'}, tmp_path) == 600
-    assert translation_unit_timeout(policy, {**row, 'file': str(tmp_path / 'clang/lib/AST/Other.cpp')},
-                                    tmp_path) == 600
-    with pytest.raises(ValueError, match='escaped'):
-        translation_unit_timeout(policy, {**row, 'file': str(tmp_path.parent / 'outside.cpp')}, tmp_path)
-
-
-@pytest.mark.parametrize('overrides', [None, [], {'native/objc3c/large.cpp': 1800}] + [
-    {'clang/lib/AST/ASTContext.cpp': value} for value in (True, 0, 600, 3601, float('inf'), '1800')])
-def test_unreviewed_or_unbounded_timeout_override_is_rejected(overrides):
-    from scripts.objc3c_toolchain.implementation_analysis import validate_timeout_overrides
-    with pytest.raises(ValueError, match='finite bounds'):
-        validate_timeout_overrides({'translation_unit_timeout_seconds': 600,
-            'translation_unit_timeout_overrides_seconds': overrides}, {'clang/lib/AST/ASTContext.cpp'})
 
 
 @pytest.fixture

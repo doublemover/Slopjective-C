@@ -79,7 +79,7 @@ def plan(repo: Path) -> dict:
             'boundary': document['boundary'], 'qualified': False}
 
 
-def pilot(repo: Path, output: Path, *, timeout=1800) -> dict:
+def pilot(repo: Path, output: Path, *, timeout: float | None = None) -> dict:
     if output.exists() or not output.resolve().is_relative_to(repo / 'out'):
         raise ValueError('expensive-check pilot needs a fresh repository out evidence directory')
     started = time.monotonic()
@@ -107,8 +107,8 @@ def pilot(repo: Path, output: Path, *, timeout=1800) -> dict:
         # build tool while planning a separate compiler ABI configuration.
         commands[0].append('-DCMAKE_MAKE_PROGRAM='+host['ninja_path'])
         for index, argv in enumerate(commands):
-            remaining = timeout-(time.monotonic()-started)
-            if remaining <= 0:
+            remaining = None if timeout is None else timeout-(time.monotonic()-started)
+            if remaining is not None and remaining <= 0:
                 report['status'] = 'incomplete-timeout'
                 return report
             row = command(argv, cwd=repo, environment=env, log=output / (str(index)+'.log'), timeout=remaining)
@@ -127,10 +127,10 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--repo', type=Path, default=Path.cwd())
     parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--timeout', type=float, default=1800)
+    parser.add_argument('--timeout', type=float, help='Optional total pilot deadline in seconds')
     args = parser.parse_args(argv)
-    if args.timeout <= 0:
-        parser.error('timeout must be positive')
+    if args.timeout is not None and not 0 < args.timeout < float('inf'):
+        parser.error('timeout must be positive and finite')
     report = pilot(args.repo.resolve(strict=True), args.output, timeout=args.timeout)
     print(json.dumps({'status': report['status'], 'qualified': report['qualified'],
                       'resource_admission': report['resource_admission']}))

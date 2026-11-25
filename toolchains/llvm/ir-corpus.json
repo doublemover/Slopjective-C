@@ -210,7 +210,6 @@
         "O2"
       ],
       "thinlto": true,
-      "optimizer_timeout_seconds": 900,
       "oracle": "Original native_leaf/native_parent: lazy frame abandonment, suspend/resume/destroy/cancel, exact defer/guard counts, live C++ string/Block and exception propagation"
     },
     {

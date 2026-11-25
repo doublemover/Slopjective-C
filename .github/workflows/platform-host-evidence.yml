@@ -28,7 +28,6 @@ jobs:
     name: Require complete native SDK release evidence
     needs: build
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
-    timeout-minutes: 5
     if: always()
     steps:
       - name: Require archive, clean installs and implementation analysis

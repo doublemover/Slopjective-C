@@ -155,8 +155,8 @@ jobs:
               echo 'source=cache'
             else
               echo 'source=download'
-              curl --fail --location --silent --show-error --retry 3 --retry-max-time 300 \
-                --connect-timeout 20 --max-time 300 --output "$archive" "$url"
+              curl --fail --location --silent --show-error --retry 3 \
+                --connect-timeout 20 --speed-limit 1 --speed-time 120 --output "$archive" "$url"
             fi
             printf '%s  %s\n' "$LLVM_ARCHIVE_SHA256" "$archive" | shasum -a 256 -c
             mkdir "$toolchain"
@@ -207,7 +207,6 @@ jobs:
     if: ${{ always() && !inputs.candidate && !inputs.replacement }}
     needs: bootstrap
     runs-on: ubuntu-26.04
-    timeout-minutes: 10
     env:
       NATIVE_OUTCOME: ${{ needs.bootstrap.result }}
       RUNTIME_SELECTED: ${{ needs.bootstrap.outputs.runtime_selected }}

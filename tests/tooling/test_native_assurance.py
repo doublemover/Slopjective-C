@@ -15,9 +15,21 @@ import pytest
 from scripts.objc3c_assurance import evidence
 from scripts.objc3c_assurance.execution import checked_command, execute_ctest
 from scripts.objc3c_assurance.plan import from_checkout, select, validate
-from scripts.objc3c_assurance.runner import package_execution
+from scripts.objc3c_assurance.runner import package_execution, retain_foundation
 
 REV = dict(head='a'*40, base='b'*40, tested='c'*40)
+
+
+def test_retained_foundation_keeps_producer_receipt_bytes_for_pr_analysis(tmp_path):
+    producer = tmp_path / 'foundation-build-report.json'
+    log = tmp_path / 'test-0.log'
+    log.write_text('native tests passed\n')
+    producer.write_text(json.dumps({'status': 'passed', 'phases': [{'log': str(log)}]}, indent=2) + '\n')
+    output = tmp_path / 'retained'
+    output.mkdir()
+    retain_foundation(producer, output)
+    assert (output / 'foundation.json').read_bytes() == producer.read_bytes()
+    assert (output / 'phase-0.log').read_bytes() == log.read_bytes()
 
 
 @pytest.mark.parametrize('interrupted', [False, True])

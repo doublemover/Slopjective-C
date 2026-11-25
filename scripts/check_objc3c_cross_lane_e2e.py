@@ -36,6 +36,7 @@ from objc3c_tooling.json_io import load_json_object as load_json, write_json_fil
 from objc3c_tooling.llvm_discovery import find_llvm_tool_path
 from objc3c_tooling.paths import repo_rel as _repo_rel
 from objc3c_cross_lane_selection import PHASES, execution_node_statuses, resolve_execution_plan, safe_run_id, validate_manifest_inventory
+from objc3c_cross_lane_execution import validate_node_timeout
 from objc3c_cross_lane_selection import digest_files
 from objc3c_cross_lane_execution import compute_node_identities, execute_node_plan
 from check_objc3c_public_runtime_reflection_api import validate_public_runtime_reflection_api
@@ -373,7 +374,10 @@ def _terminate_process_tree(process: subprocess.Popen[str]) -> None:
 
 
 def run_checked(command: list[str], *, cwd: Path, log_path: Path, domain: str, check: bool = True, timeout_seconds: float | None = None) -> subprocess.CompletedProcess[str]:
-    timeout = timeout_seconds or float(os.environ.get("OBJC3C_CROSS_LANE_TIMEOUT_SECONDS", "1800"))
+    timeout = timeout_seconds if timeout_seconds is not None else RUN_CONTEXT.get("timeout_seconds")
+    if timeout is None and (configured := os.environ.get("OBJC3C_CROSS_LANE_TIMEOUT_SECONDS")) is not None:
+        timeout = float(configured)
+    validate_node_timeout(timeout)
     requested_log_path = log_path
     run_root = RUN_CONTEXT.get("output_root")
     if run_root is not None:
@@ -404,11 +408,11 @@ def run_checked(command: list[str], *, cwd: Path, log_path: Path, domain: str, c
     captures = {"stdout": [], "stderr": []}
     captured_bytes = logged_bytes = ended = 0
     truncated_capture = truncated_log = timed_out = False
-    deadline = time.monotonic() + timeout
+    deadline = None if timeout is None else time.monotonic() + timeout
     with log_path.open("w", encoding="utf-8", newline="") as log:
         log.write("command: " + " ".join(command) + "\n")
         while ended < 2 or process.poll() is None:
-            if time.monotonic() >= deadline and process.poll() is None:
+            if deadline is not None and time.monotonic() >= deadline and process.poll() is None:
                 timed_out = True
                 _terminate_process_tree(process)
             try:
@@ -3873,29 +3877,27 @@ def _node_worker(node_id: str, run_dir: Path, run_id: str,
 
 def execute_selected_nodes(manifest: dict[str, Any], *, families: list[str], phase: str | None,
                            node_ids: list[str], run_id: str, output_base: Path,
-                           build_identity: str, timeout_seconds: float,
+                           build_identity: str, timeout_seconds: float | None = None,
                            reuse_report: dict[str, Any] | None = None) -> dict[str, Any]:
     from objc3c_cross_lane_execution import compute_node_identities, execute_node_plan
     plan = resolve_execution_plan(manifest, ROOT, families, phase, node_ids)
     engine_inputs = ["scripts/check_objc3c_cross_lane_e2e.py",
                      "scripts/objc3c_cross_lane_execution.py", "scripts/objc3c_cross_lane_selection.py"]
-    package_inputs = [repo_rel(path) for path in (ROOT / "scripts" / "objc3c_package_manager").glob("*.py")]
-    package_inputs.extend(["scripts/build_objc3c_package_lock.py", "scripts/build_objc3c_package_mirror.py",
-                           "scripts/check_objc3c_package_install_distribution_credibility.py",
-                           "scripts/package_ecosystem_contracts.py"])
-    package_inputs.extend(repo_rel(path) for path in (ROOT / "tests/tooling/fixtures/package_ecosystem").glob("*.json"))
-    # Read only checked-in package sources here. Generated locks cannot enter a
-    # producer node identity because production replaces those artifacts.
-    authoring = load_json(ROOT / "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json")
-    source_paths = authoring["package_sources"]
-    package_inputs.extend(str(raw) for raw in source_paths.values())
-    module_inventory = load_json(ROOT / source_paths["stdlib_module_inventory"])
-    portfolio = load_json(ROOT / source_paths["showcase_portfolio"])
-    package_inputs.extend(str(module["manifest"]) for module in module_inventory["canonical_modules"])
-    package_inputs.extend(str(example["workspace_manifest"]) for example in portfolio["examples"])
+    package_phases = {"package-producer", "clean-install-consumer", "distribution"}
+    package_inputs = []
+    if any(node["phase"] in package_phases for node in plan["selected_nodes"]):
+        package_inputs = [repo_rel(path) for path in (ROOT / "scripts" / "objc3c_package_manager").glob("*.py")]
+        package_inputs.extend(["scripts/build_objc3c_package_lock.py", "scripts/build_objc3c_package_mirror.py",
+                               "scripts/check_objc3c_package_install_distribution_credibility.py",
+                               "scripts/package_ecosystem_contracts.py"])
+        package_inputs.extend(repo_rel(path) for path in (ROOT / "tests/tooling/fixtures/package_ecosystem").glob("*.json"))
+        # Product sources can change producer and consumer behavior. Generated
+        # locks are outputs and do not participate in the input identity.
+        package_inputs.extend(repo_rel(path) for directory in (ROOT / "stdlib", ROOT / "showcase")
+                              for path in directory.rglob('*') if path.is_file() and path.suffix != '.md')
     for node in plan["nodes"]:
         node["identity_inputs"] = sorted(set(node["identity_inputs"] + engine_inputs +
-            (package_inputs if node["phase"] in ("package-producer", "clean-install-consumer", "distribution") else [])))
+            (package_inputs if node["phase"] in package_phases else [])))
     # This identity describes the complete inventory/graph shape. Mutable source
     # contents are bound by each node's own declared inputs instead, allowing a
     # clean provider result to survive an isolated consumer edit.
@@ -3968,7 +3970,7 @@ def execute_selected_nodes(manifest: dict[str, Any], *, families: list[str], pha
     execution["node_identities"] = node_identities
     return execution
 
-def validate_manifest(*, family_ids: list[str] | None = None, phase: str | None = None, node_ids: list[str] | None = None, output_root: Path | None = None, run_id: str | None = None, pinned_build_identity: str | None = None, timeout_seconds: float = 1800, reuse_report: dict[str, Any] | None = None) -> dict[str, Any]:
+def validate_manifest(*, family_ids: list[str] | None = None, phase: str | None = None, node_ids: list[str] | None = None, output_root: Path | None = None, run_id: str | None = None, pinned_build_identity: str | None = None, timeout_seconds: float | None = None, reuse_report: dict[str, Any] | None = None) -> dict[str, Any]:
     requested_family_ids = list(family_ids or [])
     requested_node_ids = list(node_ids or [])
     manifest = load_json(MANIFEST_PATH)
@@ -3992,7 +3994,9 @@ def validate_manifest(*, family_ids: list[str] | None = None, phase: str | None 
         selected_run_root = output_root / (run_id or "run")
         ARTIFACT_ROOT = selected_run_root / "artifacts"
         REPORT_PATH = selected_run_root / "summary.json"
-    RUN_CONTEXT.update({"output_root": output_root, "run_id": run_id, "plan": plan})
+    validate_node_timeout(timeout_seconds)
+    RUN_CONTEXT.update({"output_root": output_root, "run_id": run_id, "plan": plan,
+                        "timeout_seconds": timeout_seconds})
     exe = resolve_native_exe()
     runtime = ROOT / ARTIFACT_IDENTITY.runtime_library_relative_path
     build_identity = hashlib.sha256((sha256_file(exe) + sha256_file(runtime)).encode("ascii")).hexdigest()
@@ -4152,7 +4156,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--run-id", help="stable safe identifier for this run")
     parser.add_argument("--pinned-build-identity", help="require this compiler/runtime content identity")
     parser.add_argument("--node", action="append", default=[], help="exact DAG node id; may be repeated")
-    parser.add_argument("--timeout-seconds", type=float, default=1800, help="per-node deadline (1..86400 seconds)")
+    parser.add_argument("--timeout-seconds", type=float, help="optional per-node deadline in seconds")
     parser.add_argument("--reuse-report", type=Path, help="completed full-identity node report to reuse")
     parser.add_argument("--_node-worker", help=argparse.SUPPRESS)
     parser.add_argument("--_worker-run-dir", type=Path, help=argparse.SUPPRESS)
@@ -4180,8 +4184,6 @@ def main(argv: list[str] | None = None) -> int:
     root = (args.output_root or (ROOT / "tmp" / "artifacts" / "cross-lane-e2e" / "runs")) if selected else None
     reuse_report = load_json(args.reuse_report) if args.reuse_report else None
     try:
-        if args.timeout_seconds <= 0 or args.timeout_seconds > 86400:
-            raise RuntimeError("timeout-seconds must be between 1 and 86400")
         payload = validate_manifest(family_ids=families, phase=args.phase, node_ids=args.node,
             output_root=root, run_id=run_id, pinned_build_identity=args.pinned_build_identity,
             timeout_seconds=args.timeout_seconds, reuse_report=reuse_report)

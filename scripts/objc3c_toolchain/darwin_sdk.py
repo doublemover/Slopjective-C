@@ -50,13 +50,13 @@ def _environment():
     return env
 
 
-def _run(*args, cwd=None, commands=None, rejects=(), timeout=60, trace_libraries=False):
+def _run(*args, cwd=None, commands=None, rejects=(), trace_libraries=False):
     argv = list(map(str, args))
     environment = _environment()
     if trace_libraries:
         environment['DYLD_PRINT_LIBRARIES'] = '1'
     result = subprocess.run(argv, env=environment, cwd=cwd, capture_output=True,
-                            text=True, timeout=timeout, errors='replace')
+                            text=True, errors='replace')
     if commands is not None:
         commands.append({'argv': argv, 'exit_status': result.returncode, 'expected_diagnostics': list(rejects),
                          'stdout': result.stdout, 'stderr': result.stderr})

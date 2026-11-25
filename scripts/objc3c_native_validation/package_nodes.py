@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import math
 import os
 from pathlib import Path
 import re
@@ -14,6 +13,7 @@ import time
 from typing import Any
 
 from scripts.objc3c_toolchain.linux_host import host_identity
+from scripts.objc3c_cross_lane_execution import validate_node_timeout
 
 MODULE = "fixture.NativePackage"
 PACKAGE = "native-package-v1"
@@ -118,7 +118,7 @@ def _environment(toolchain: dict[str, Any], *, executable: bool = False) -> dict
 
 
 def _execute(command: list[str], *, phase: str, cwd: Path, output: Path,
-             environment: dict[str, str], timeout: float, data: dict[str, Any],
+             environment: dict[str, str], timeout: float | None, data: dict[str, Any],
              artifacts: dict[str, Path]) -> None:
     stdout = output / f"{phase}.stdout.log"
     stderr = output / f"{phase}.stderr.log"
@@ -216,7 +216,7 @@ def _target_compatible(admitted: str, emitted: str) -> bool:
     ) is not None
 
 
-def _provider(repo: Path, output: Path, toolchain: dict[str, Any], timeout: float,
+def _provider(repo: Path, output: Path, toolchain: dict[str, Any], timeout: float | None,
               data: dict[str, Any], artifacts: dict[str, Path]) -> None:
     source = _fixture(repo, "provider.m")
     bundle = output / "bundle"
@@ -322,7 +322,7 @@ def _dependency_record(path: Path, identity: dict[str, str], toolchain: dict[str
 
 
 def _consumer(repo: Path, node: dict[str, Any], output: Path, toolchain: dict[str, Any],
-              dependencies: dict[str, dict[str, Any]], timeout: float,
+              dependencies: dict[str, dict[str, Any]], timeout: float | None,
               data: dict[str, Any], artifacts: dict[str, Path]) -> None:
     mode = node.get("mode")
     if mode not in ("eager", "source-directed"):
@@ -466,9 +466,8 @@ def run_package_node(repo: Path, node: dict[str, Any], output_dir: Path,
             raise ValueError("sealed sdk_build_id is required")
         if not isinstance(toolchain.get("build_identity"), str) or not toolchain["build_identity"]:
             raise ValueError("sealed build_identity is required")
-        timeout = float(node.get("timeout_seconds", 120))
-        if not math.isfinite(timeout) or timeout <= 0 or timeout > 86400:
-            raise ValueError("package command timeout must be finite, positive and at most 24 hours")
+        timeout = node.get("timeout_seconds")
+        validate_node_timeout(timeout)
         if node.get("operation") == "package-provider":
             _provider(repo, output, toolchain, timeout, data, artifacts)
         elif node.get("operation") == "package-consumer":

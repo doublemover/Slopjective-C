@@ -120,7 +120,7 @@ def execute(repo: Path, plan: dict, output: Path, *, sdk: Path | None, admitted:
               'plan_sha256': plan['sha256'], 'workspace': str(repo), 'compiler': str(compiler),
               'checker': CHECKER, 'scope': SOURCE.as_posix(), 'graph_directory': str(build),
               'compiler_sha256': digest(compiler), 'diagnostics': {}}
-    execution = Execution(output, executor_env, report, timeout=45)
+    execution = Execution(output, executor_env, report, timeout=None)
 
     def analyze(name, original, cwd):
         sarif = output / (name+'.sarif')

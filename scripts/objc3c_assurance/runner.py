@@ -32,6 +32,16 @@ def _consumer_compile_jobs(repo: Path) -> int:
     return resource_limits(manifest['build'])['compile_jobs']
 
 
+def retain_foundation(receipt: Path, output: Path) -> None:
+    if receipt.is_file():
+        raw = receipt.read_bytes()
+        report = json.loads(raw)
+        # The implementation pilot binds this copy to the producer's byte digest.
+        (output / 'foundation.json').write_bytes(raw)
+        for index, phase in enumerate(report['phases']):
+            shutil.copyfile(phase['log'], output / f'phase-{index}.log')
+
+
 def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
         suite_ids: tuple[str, ...] | None = None, product_sdk: Path | None = None,
         package_release: Path | None = None, sanitizer_partition: int | None = None,
@@ -155,11 +165,7 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
             finally:
                 receipt = (repo / 'out/toolchains/objc3-development' /
                     (('build-' + native_linux_host() + '-')+profile) / 'foundation-build-report.json')
-                if receipt.is_file():
-                    saved = json.loads(receipt.read_text())
-                    write_json(evidence / 'foundation.json', saved)
-                    for index, phase in enumerate(saved['phases']):
-                        shutil.copyfile(phase['log'], evidence / ('phase-'+str(index)+'.log'))
+                retain_foundation(receipt, evidence)
         plan = build_plans(repo, host=native_linux_host(), instrumentation_profile=profile)['configure']
         return Path(plan['paths']['stage'])
 
@@ -200,11 +206,7 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
                 # A failing compile must retain the actual compiler diagnostic,
                 # even though the canonical builder raises before returning.
                 receipt = repo / ('out/toolchains/objc3-development/build-' + native_linux_host() + '/foundation-build-report.json')
-                if receipt.is_file():
-                    saved = json.loads(receipt.read_text())
-                    write_json(directory / 'foundation.json', saved)
-                    for index, phase in enumerate(saved['phases']):
-                        shutil.copyfile(phase['log'], directory / ('phase-' + str(index) + '.log'))
+                retain_foundation(receipt, directory)
             executions = []
             for index, phase in enumerate(foundation['phases']):
                 if phase['phase'] == 'test':

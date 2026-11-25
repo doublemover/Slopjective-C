@@ -103,7 +103,7 @@ jobs:
             --archive-cache "$PREVIEW_CACHE" \
             "${witness[@]}" > out/native-pr/preview-install.json
           unlink "$PREVIEW_ARCHIVE"
-      - name: Execute the native source suites and bounded implementation analysis
+      - name: Execute the native source suites and implementation analysis
         id: run
         shell: bash
         run: |
@@ -129,7 +129,6 @@ jobs:
     if: always()
     needs: native-pr-execution
     runs-on: ubuntu-26.04
-    timeout-minutes: 5
     env:
       NATIVE_EXECUTION: ${{ needs.native-pr-execution.result }}
     steps:

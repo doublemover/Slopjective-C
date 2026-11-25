@@ -9,7 +9,6 @@ from .linux_host import native_target
 
 import argparse
 import json
-import os
 from pathlib import Path
 import shutil
 import sys
@@ -17,7 +16,7 @@ import tempfile
 
 from .binary_packages import digest, write_json
 from .llvm_ir_execution import command
-from .sanitizer_policy import OPTIONS, strict_environment
+from .sanitizer_policy import OPTIONS
 
 REJECT = ('unknown pass name', 'Unknown command line argument', 'error while loading shared libraries',
           'No such file or directory', 'error: expected', 'error: use of undefined value',
@@ -138,7 +137,7 @@ def semantic_spec(tools: dict, environment: dict, *, expected_exit: int, inputs=
             'failure': {'stage': 'oracle', 'kind': 'semantic-exit', 'exit_code': expected_exit, 'stdout': ''}}
 
 
-def reduce(spec_path: Path, original: Path, output: Path, reducer: Path, *, timeout=180) -> dict:
+def reduce(spec_path: Path, original: Path, output: Path, reducer: Path, *, timeout: float | None = None) -> dict:
     spec_path, original, reducer = (path.resolve(strict=True) for path in (spec_path, original, reducer))
     output = output.resolve()
     if output.exists() or original.is_relative_to(output) or spec_path.is_relative_to(output):
@@ -225,7 +224,7 @@ def main(argv=None):
     parser.add_argument('--input', type=Path, required=True)
     parser.add_argument('--output', type=Path)
     parser.add_argument('--reducer', type=Path)
-    parser.add_argument('--timeout', type=float, default=180)
+    parser.add_argument('--timeout', type=float, help='Optional LLVM reducer deadline in seconds')
     parser.add_argument('--limit', type=int)
     args = parser.parse_args(argv)
     if args.action == 'interesting':
@@ -238,8 +237,10 @@ def main(argv=None):
             parser.error('bisect requires output and an explicit limit')
         print(json.dumps(bisect(args.spec, args.input, args.output, limit=args.limit)))
         return 0
-    if args.output is None or args.reducer is None or args.timeout <= 0:
-        parser.error('reduce requires output, reducer and a positive timeout')
+    if args.output is None or args.reducer is None:
+        parser.error('reduce requires output and a reducer')
+    if args.timeout is not None and not 0 < args.timeout < float('inf'):
+        parser.error('timeout must be positive and finite')
     result = reduce(args.spec, args.input, args.output, args.reducer, timeout=args.timeout)
     print(json.dumps(result))
     return 0

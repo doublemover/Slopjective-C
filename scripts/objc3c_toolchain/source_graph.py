@@ -334,7 +334,7 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
             outcome.unlink(missing_ok=True)
             with log.open('w') as stream:
                 completed = subprocess.run(command, cwd=output, env=env, stdout=stream,
-                                           stderr=subprocess.STDOUT, check=False, timeout=180)
+                                           stderr=subprocess.STDOUT, check=False)
             outcome.write_text(json.dumps({'argv': command, 'exit_code': completed.returncode}) + '\n')
             completed.check_returncode()
             tracked = dependencies(depfile, output) + list(map(Path, inputs[name])) + imported_inputs
@@ -359,7 +359,7 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
                     '-fuse-ld=lld', *[str(directories[name] / 'module.o') for name in graph['order']],
                     str(directories[APP] / 'module.o'), '-L' + str(sdk / 'lib'), *runtime_link_flags(sdk),
                     '-Wl,-rpath,' + str(sdk / 'lib'), '-o', str(executable)],
-                   env=env, check=True, timeout=180)
+                   env=env, check=True)
     run_env = dict(env)
     run_env.pop('LD_LIBRARY_PATH', None)
     subprocess.run([str(executable)], env=run_env, check=True, timeout=30)

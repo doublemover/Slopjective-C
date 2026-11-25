@@ -152,7 +152,7 @@ def qualify_consumers(prefix: Path, data: dict, host: dict, output: Path, comman
                           deployment=_deployment(otool, binary, commands))
         options = RUNTIME_OPTIONS[mode]
         result = subprocess.run([str(binary)], cwd=output, env={**_environment(), **options}, capture_output=True,
-                                text=True, timeout=30, errors='replace')
+                                text=True, errors='replace')
         commands.append({'argv': [str(binary)], 'exit_status': result.returncode, 'stdout': result.stdout,
                          'stderr': result.stderr, 'expected_diagnostics': [], 'sanitizer_options': options})
         loaded = validate_execution(result.stdout, result.stderr, result.returncode, runtime)

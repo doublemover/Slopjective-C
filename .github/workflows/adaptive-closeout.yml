@@ -16,7 +16,6 @@ jobs:
   source:
     name: Admit immutable periodic source
     runs-on: ubuntu-26.04
-    timeout-minutes: 3
     steps:
       - name: Require the dispatcher revision
         env:
@@ -39,7 +38,6 @@ jobs:
     if: always()
     needs: [source, native]
     runs-on: ubuntu-26.04
-    timeout-minutes: 5
     steps:
       - name: Require exact native terminal evidence
         env:

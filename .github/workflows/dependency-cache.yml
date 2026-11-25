@@ -33,7 +33,6 @@ jobs:
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container:
       image: debian:13
-    timeout-minutes: 30
     env:
       OBJC3C_CLOUD_SETUP_ROOT: /opt/objc3c-host
     steps:

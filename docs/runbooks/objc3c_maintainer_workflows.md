@@ -71,9 +71,11 @@ activation. Manual preview calibration or installed LLVM assurance runs can
 populate the cache after success. Native PR jobs remove the compressed file
 after installation to leave room for compilation.
 
-Hosted compiler builds and coverage measurements use the GitHub Actions job
-deadline. Coverage records elapsed work and preserves separately declared
-test deadlines where a nonterminating fixture would hide its failure.
+Hosted builds, qualification, artifact transfers, and evidence gates use the
+GitHub Actions job deadline. Coverage records elapsed work. Test fixtures can
+declare a liveness deadline when nontermination is a test failure. Network
+provisioning detects stalled transfers. Optional LLVM IR, reduction, and
+expensive-check commands accept a deadline when requested by the caller.
 
 For public delivery use the [Linux release owner checklist](../releases/linux.md#release-owner-checklist).
 The draft workflow accepts two successful native qualification runs for its

@@ -38,7 +38,6 @@ jobs:
   plan:
     name: Select exact implementation revision
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
-    timeout-minutes: 5
     outputs:
       analysis: ${{ steps.plan.outputs.analysis }}
       partitions: ${{ steps.plan.outputs.partitions }}
@@ -220,7 +219,6 @@ jobs:
     if: always()
     needs: [plan, foundation, analysis]
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
-    timeout-minutes: 5
     steps:
       - name: Require analysis outcomes before downloading evidence
         env:

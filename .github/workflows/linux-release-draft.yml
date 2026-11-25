@@ -24,7 +24,6 @@ jobs:
   draft:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-26.04
-    timeout-minutes: 30
     permissions:
       actions: read
       contents: write
@@ -54,7 +53,6 @@ jobs:
     name: Install exact draft downloads (${{ matrix.host }})
     needs: draft
     runs-on: ${{ matrix.host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
-    timeout-minutes: 35
     permissions:
       contents: write
     strategy:
@@ -83,7 +81,6 @@ jobs:
     name: Verify the exact draft source downloads
     needs: draft
     runs-on: ubuntu-26.04
-    timeout-minutes: 15
     permissions:
       contents: write
     steps:

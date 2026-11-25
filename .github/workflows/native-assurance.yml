@@ -59,7 +59,6 @@ jobs:
     name: Reproduce retained source-coverage aggregate (no compiler execution)
     if: inputs.diagnostic_core_only && inputs.diagnostic_coverage_run != '' && inputs.diagnostic_coverage_sha != ''
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
-    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -106,7 +105,6 @@ jobs:
     name: Split existing artifact for bounded download (no compiler execution)
     if: inputs.diagnostic_core_only && inputs.diagnostic_transport_run != ''
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
-    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Inspect retained ZIP without downloading build products
@@ -259,7 +257,6 @@ jobs:
   plan:
     name: Classify exact source revision
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
-    timeout-minutes: 5
     outputs:
       native: ${{ steps.plan.outputs.native }}
       shards: ${{ steps.plan.outputs.shards }}
@@ -869,7 +866,6 @@ jobs:
     needs: [plan, coverage-producer, coverage-partitions]
     if: always() && !inputs.diagnostic_core_only && needs.plan.result == 'success' && needs.coverage-producer.result == 'success' && needs.coverage-partitions.result == 'success'
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
-    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -966,7 +962,6 @@ jobs:
             receipt: debian-13
           - distribution: "ubuntu:26.04"
             receipt: ubuntu-26.04
-    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -1009,7 +1004,6 @@ jobs:
         archive-install-aggregate,
       ]
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
-    timeout-minutes: 25
     steps:
       - name: Require all job outcomes before downloading evidence
         env:

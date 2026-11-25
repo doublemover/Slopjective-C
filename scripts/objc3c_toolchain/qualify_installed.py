@@ -24,7 +24,7 @@ def qualify_installed(repo: Path, prefix: Path, output: Path) -> dict:
             log_path = output / f'{name}.log'
             with log_path.open('w') as log:
                 result = subprocess.run([str(arg) for arg in args], cwd=client, env=env,
-                                        stdout=log, stderr=subprocess.STDOUT, timeout=180)
+                                        stdout=log, stderr=subprocess.STDOUT)
             expected = 1 if diagnostic else 0
             if result.returncode != expected or (diagnostic and diagnostic not in log_path.read_text()):
                 raise ValueError(f'installed SDK {name} failed; see {log_path}')

@@ -44,6 +44,36 @@ def test_experimental_driver_rejects_other_hosts_before_build(monkeypatch, tmp_p
     assert not (tmp_path / 'output').exists()
 
 
+def test_only_threaded_arc_execution_has_a_liveness_limit(monkeypatch, tmp_path):
+    calls = {}
+    imports = {'objc3_darwin_arc_' + name + '_v1' for name in (
+        'retain', 'release', 'init_weak', 'store_weak', 'load_weak_retained', 'copy_weak',
+        'destroy_weak', 'pool_push', 'pool_pop', 'autorelease', 'store_strong')}
+
+    def run(*argv, label, timeout=None, **kwargs):
+        calls[label] = timeout
+        if label.endswith('-ir'):
+            argv[-1].write_text(''.join(f'call void @{name}()\n' for name in sorted(imports)))
+        if label.endswith('-load-paths'):
+            paths = ['/usr/lib/libSystem.B.dylib']
+            if '-dynamic-' in label:
+                paths.append('@rpath/libobjc3darwin.dylib')
+            return 'executable:\n' + '\n'.join(paths)
+        if label.endswith('-native'):
+            return 'owned Objective-C 3 Darwin ARC: PASS'
+        return ''
+
+    monkeypatch.setattr(darwin_registration, '_owned_objc_imports',
+                        lambda run, path, label: sorted(imports) if '-static-' not in label else [])
+    monkeypatch.setattr(darwin_registration, 'verify_macho', lambda path, kind: {'kind': kind})
+    receipt = darwin_registration._exercise_arc(run, ['/llvm/clang'], '-fobjc-runtime=gnustep-2.99',
+                                                ['/llvm/clang'], tmp_path, tmp_path, Path('/llvm/dwarfdump'))
+    assert receipt['status'] == 'PASS'
+    assert {label: timeout for label, timeout in calls.items() if timeout is not None} == {
+        f'arc-{opt}-{linkage}-native': darwin_registration.ARC_THREAD_WITNESS_TIMEOUT_SECONDS
+        for opt in ('o0', 'o2') for linkage in ('static', 'dynamic')}
+
+
 def test_xcode_cxx_preflight_requires_selected_headers_and_sdk_libcxx(monkeypatch, tmp_path):
     developer = tmp_path / 'Xcode Developer'
     headers = developer / 'Toolchains/Selected/usr/include/c++/v1'

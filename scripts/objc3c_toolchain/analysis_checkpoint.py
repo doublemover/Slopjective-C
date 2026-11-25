@@ -10,6 +10,8 @@ from .binary_packages import digest
 from .llvm_ir_execution import Execution, StageFailure
 from .sanitizer_policy import require_clean_diagnostic
 
+ANALYSIS_SCHEMA = 'objc3c.implementation-analysis.v2'
+
 
 def load_checkpoints(repo, paths):
     paths = list(paths)
@@ -28,7 +30,7 @@ def load_checkpoints(repo, paths):
         if len(raw) > 64*1024**2:
             raise ValueError('implementation analysis checkpoint exceeded its byte bound')
         previous = json.loads(raw)
-        if (not isinstance(previous, dict) or previous.get('schema') != 'objc3c.implementation-analysis.v1' or
+        if (not isinstance(previous, dict) or previous.get('schema') != ANALYSIS_SCHEMA or
                 previous.get('status') not in ('PASS', 'FAIL')):
             raise ValueError('analysis checkpoint has no terminal source-owned attempt')
         result.append((path, previous, hashlib.sha256(raw).hexdigest()));seen.add(path)
@@ -74,10 +76,9 @@ def tidy_diagnostics(text):
 def run_unit(job):
     """One spawned process per worker: no pre-exec callback in a threaded fork."""
     root = Path(job['directory'])
-    report = {'schema': 'objc3c.implementation-analysis-unit.v1', 'status': 'running', 'commands': []}
-    executor = Execution(root, job['environment'], report, timeout=job['timeout'])
-    result = {'identity': job['identity'], 'status': 'PASS', 'execution_reused': False,
-              'timeout_seconds': job['timeout']}
+    report = {'schema': 'objc3c.implementation-analysis-unit.v2', 'status': 'running', 'commands': []}
+    executor = Execution(root, job['environment'], report, timeout=None)
+    result = {'identity': job['identity'], 'status': 'PASS', 'execution_reused': False}
     try:
         executor.run(job['name'], job['argv'])
         report['status'] = 'PASS'
@@ -106,9 +107,11 @@ def successful_action(checkpoint, previous, current, row, *, arguments, _depth=0
     Corrupted or unowned proof files are errors, never accepted cache hits.
     """
     root = checkpoint.parent.resolve(strict=True)
-    if previous.get('schema') != 'objc3c.implementation-analysis.v1' or previous.get('status') not in ('PASS', 'FAIL'):
+    if previous.get('schema') != ANALYSIS_SCHEMA or previous.get('status') not in ('PASS', 'FAIL'):
         raise ValueError('analysis checkpoint has no terminal source-owned attempt')
     if (previous.get('policy') != current['policy'] or previous.get('tool') != current['tool'] or
+            previous.get('source_build_id') != current['source_build_id'] or
+            previous.get('build_config_digest') != current['build_config_digest'] or
             previous.get('tool_graph', {}).get('libraries') != current['tool_graph']['libraries']):
         return None
     result = [item for item in previous.get('results', []) if item.get('identity') == row['identity']]
@@ -123,6 +126,8 @@ def successful_action(checkpoint, previous, current, row, *, arguments, _depth=0
     old = [item for item in previous.get('inventory', []) if item.get('identity') == row['identity']]
     if len(old) != 1: raise ValueError('analysis checkpoint has missing/duplicate TU identity')
     old = old[0]
+    if 'analysis_timeout_seconds' in old or 'timeout_seconds' in result[0]:
+        raise ValueError('analysis checkpoint contains retired translation-unit deadlines')
     for key in ('file', 'directory', 'arguments', 'output', 'response_files', 'build_launcher', 'dependencies'):
         if old.get(key) != row.get(key): return None
     if old.get('analysis_arguments') != arguments: return None
@@ -150,7 +155,7 @@ def successful_action(checkpoint, previous, current, row, *, arguments, _depth=0
     expected = analysis_argv(current['tool']['path'], directory, row['file'], config,
                              current['resource_directory'])
     log = Path(command['log'])
-    if (command.get('argv') != expected or command.get('exit_code') != 0 or command.get('timed_out') or
+    if (command.get('argv') != expected or command.get('exit_code') != 0 or command.get('timed_out') is not False or
             command.get('expected_exit_code') != 0 or command.get('status') != 'PASS' or
             log.is_symlink() or not log.resolve(strict=True).is_relative_to(root) or
             digest(log) != command.get('log_sha256')):

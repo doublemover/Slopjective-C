@@ -28,10 +28,17 @@ else:
 
 NODE_REPORT_CONTRACT_ID = "objc3c.cross_lane_e2e.node_report.v1"
 _LOG_LIMIT = 10 * 1024 * 1024
-_MAX_TIMEOUT_SECONDS = 24 * 60 * 60
 _TERMINATE_TIMEOUT_SECONDS = 2.0
 _OUTPUT_DRAIN_TIMEOUT_SECONDS = 1.0
 _READER_JOIN_TIMEOUT_SECONDS = 0.2
+
+
+def validate_node_timeout(timeout_seconds: float | None) -> None:
+    """An omitted deadline delegates cancellation to the invoking job/host."""
+    if timeout_seconds is not None and (
+            isinstance(timeout_seconds, bool) or not isinstance(timeout_seconds, (int, float)) or
+            not math.isfinite(timeout_seconds) or timeout_seconds <= 0):
+        raise ValueError("node timeout must be None or finite and positive")
 
 
 def _canonical_digest(value: Any) -> str:
@@ -212,11 +219,10 @@ def run_node_command(
     *,
     cwd: Path,
     log_path: Path,
-    timeout_seconds: float,
+    timeout_seconds: float | None = None,
 ) -> dict[str, Any]:
-    """Stream merged child output to a node-owned log and bound its deadline."""
-    if not math.isfinite(timeout_seconds) or timeout_seconds <= 0 or timeout_seconds > _MAX_TIMEOUT_SECONDS:
-        raise ValueError("node timeout must be finite, positive and at most 24 hours")
+    """Stream child output, applying a node deadline only when requested."""
+    validate_node_timeout(timeout_seconds)
     if not command or any(not isinstance(token, str) or not token for token in command):
         raise ValueError("node command must be a non-empty string argument list")
     node_id = str(node["node_id"])
@@ -260,7 +266,7 @@ def run_node_command(
 
     reader = threading.Thread(target=pump, daemon=True)
     reader.start()
-    deadline = time.monotonic() + timeout_seconds
+    deadline = None if timeout_seconds is None else time.monotonic() + timeout_seconds
     timed_out = False
     drain_deadline = None
     bytes_written = 0
@@ -269,7 +275,7 @@ def run_node_command(
         log.write("command: " + " ".join(map(str, command)) + "\n")
         log.write("node_id: " + node_id + "\n")
         while not ended or process.poll() is None:
-            if not timed_out and time.monotonic() >= deadline:
+            if deadline is not None and not timed_out and time.monotonic() >= deadline:
                 timed_out = True
                 _terminate_tree(process)
                 drain_deadline = time.monotonic() + _OUTPUT_DRAIN_TIMEOUT_SECONDS
@@ -314,11 +320,12 @@ def execute_node_plan(
     node_identities: dict[str, str],
     command_for_node: Callable[[dict[str, Any]], Sequence[str]],
     cwd: Path,
-    timeout_seconds: float,
+    timeout_seconds: float | None = None,
     reuse_report: Any = None,
     on_reuse: Callable[[str, dict[str, Any], Path], None] | None = None,
 ) -> dict[str, Any]:
     """Execute selected DAG nodes, block dependents, and retain full inventory."""
+    validate_node_timeout(timeout_seconds)
     safe_run_id(run_id)
     reusable = validate_reuse_report(
         reuse_report, plan=plan, node_identities=node_identities,

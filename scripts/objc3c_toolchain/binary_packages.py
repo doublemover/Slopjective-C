@@ -385,7 +385,7 @@ def consume(sdk: Path, package: Path, expected: str, application: Path, output: 
                     '-L' + str(sdk / 'lib'), *runtime_link_flags(sdk), '-Wl,-rpath,' + str(sdk / 'lib'), '-o', str(executable)]]
         for index, argv in enumerate(commands):
             with (output / f'command-{index}.log').open('w') as stream:
-                subprocess.run(argv, cwd=output, env=env, stdout=stream, stderr=subprocess.STDOUT, check=True, timeout=180)
+                subprocess.run(argv, cwd=output, env=env, stdout=stream, stderr=subprocess.STDOUT, check=True)
             if index == 0:
                 tracked = hashes(dependencies(depfile, output))
         run_env = dict(env)
