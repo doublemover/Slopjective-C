@@ -81,6 +81,14 @@ flowchart TD
 
 ## Reuse and retained records
 
+Use `objc3c-build --jobs N` or `npm run objc3c -- build-packages --jobs N`
+with the workspace and output options to compile independent packages in
+parallel. The default is one worker. A provider starts once its direct
+dependencies have produced their interfaces. Shared providers build once, and
+the report and linker use the same dependency order at every worker count.
+A failing provider prevents dependent compilation and linking. Running workers
+finish before the builder releases the output directory lock.
+
 Compilation reuse checks SDK seal, recipe, command, source contents and directory
 membership, dependency locks, native interface contents, Clang depfiles and every
 retained output hash. Preserved timestamps do not preserve a cache hit after a

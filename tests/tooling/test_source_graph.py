@@ -3,10 +3,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import shutil
+from threading import Barrier, Lock
 
 import pytest
 
-from scripts.objc3c_toolchain.source_graph import build_graph, load_graph, source_inputs, validate_exports, locks
+from scripts.objc3c_toolchain.source_graph import APP, _build_nodes, build_graph, load_graph, source_inputs, validate_exports, locks
 
 
 @pytest.mark.parametrize('values', [None, [], [''], ['*', 'answer'], ['x', 'x'],
@@ -48,6 +49,48 @@ def test_resolves_locked_diamond_once_in_dependency_order(workspace):
     assert graph['order'] == ['fixture.Leaf', 'fixture.Left', 'fixture.Right', 'fixture.Top']
     assert graph['packages']['fixture.Left']['dependencies'][0]['visibility'] == 'public'
     assert graph['packages']['fixture.Right']['dependencies'][0]['visibility'] == 'private'
+
+
+@pytest.mark.parametrize('fail', [False, True])
+def test_package_workers_overlap_only_ready_nodes_and_join_on_failure(workspace, fail):
+    graph = load_graph(workspace)
+    configs = {name: graph['packages'][name] for name in graph['order']}
+    configs[APP] = graph['application']
+    siblings = {'fixture.Left', 'fixture.Right'}
+    barrier = Barrier(2, timeout=5)
+    lock = Lock()
+    started, finished = [], set()
+
+    def compile_node(name, config, imports):
+        with lock:
+            started.append(name)
+            expected = {dep['name'] for dep in config['dependencies']}
+            assert expected <= finished
+            assert imports == {dep: f'identity-{dep}' for dep in expected}
+        if name in siblings:
+            barrier.wait()
+        if fail and name == 'fixture.Left':
+            raise ValueError('left provider failed')
+        with lock:
+            finished.add(name)
+        return {}, f'identity-{name}', ()
+
+    if fail:
+        with pytest.raises(ValueError, match='left provider failed'):
+            _build_nodes(configs, compile_node, 2)
+        assert set(started) == {'fixture.Leaf', *siblings}
+        assert finished == {'fixture.Leaf', 'fixture.Right'}
+    else:
+        assert list(_build_nodes(configs, compile_node, 2)) == list(configs)
+        assert started[0] == 'fixture.Leaf'
+        assert set(started[1:3]) == siblings
+        assert started[3:] == ['fixture.Top', APP]
+
+
+@pytest.mark.parametrize('jobs', [0, -1, True, 1.5])
+def test_package_workers_require_a_positive_integer(workspace, tmp_path, jobs):
+    with pytest.raises(ValueError, match='positive integer'):
+        build_graph(tmp_path / 'sdk', workspace, tmp_path / 'build', jobs=jobs)
 
 
 @pytest.mark.parametrize('case,match', [

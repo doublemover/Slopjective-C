@@ -23,6 +23,7 @@ def _parser():
     packages.add_argument("--output-dir", type=Path, required=True)
     packages.add_argument("--sdk-root", type=Path)
     packages.add_argument("--optimization", choices=("O0", "O2"), default="O2")
+    packages.add_argument("--jobs", type=int, default=1, help="maximum concurrent package compile workers")
     sdk = commands.add_parser("build-sdk", help="build, qualify, package and install the native Linux SDK")
     sdk.add_argument("--repo", type=Path, default=Path.cwd())
     sdk.add_argument("--fetch", action="store_true")
@@ -93,7 +94,7 @@ def main(argv: list[str] | None = None) -> int:
             import os
             from .source_graph import build_graph
             sdk = args.sdk_root or Path(os.environ.get('OBJC3C_SDK_ROOT', str(Path.cwd() / 'out/toolchains/linux-sdk/current')))
-            report = build_graph(sdk, args.workspace, args.output_dir, args.optimization)
+            report = build_graph(sdk, args.workspace, args.output_dir, args.optimization, jobs=args.jobs)
             result = {'status': report['status'], 'report': str(args.output_dir / 'build-report.json'),
                       'reused': [name for name, node in report['nodes'].items() if node['reused']]}
         elif args.command == "build-sdk":

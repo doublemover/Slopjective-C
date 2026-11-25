@@ -2,7 +2,10 @@
 from __future__ import annotations
 
 import argparse
+from collections import deque
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 import fcntl
+from graphlib import TopologicalSorter
 import hashlib
 import json
 import os
@@ -201,7 +204,9 @@ def source_inputs(root: Path) -> dict:
     return hashes(selected)
 
 
-def build_graph(sdk: Path, workspace: Path, output: Path, optimization='O2') -> dict:
+def build_graph(sdk: Path, workspace: Path, output: Path, optimization='O2', *, jobs: int = 1) -> dict:
+    if type(jobs) is not int or jobs < 1:
+        raise ValueError('jobs must be a positive integer')
     sdk = sdk.resolve(strict=True)
     graph = load_graph(workspace)
     output = output.resolve()
@@ -217,10 +222,33 @@ def build_graph(sdk: Path, workspace: Path, output: Path, optimization='O2') -> 
     output.mkdir(parents=True, exist_ok=True)
     with (output / '.build.lock').open('a+b') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        return _build(sdk, graph, output, optimization)
+        return _build(sdk, graph, output, optimization, jobs)
 
 
-def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
+def _build_nodes(configs, compile_node, jobs):
+    dependencies = {name: tuple(edge['name'] for edge in config['dependencies'])
+                    for name, config in configs.items()}
+    schedule = TopologicalSorter(dependencies)
+    schedule.prepare()
+    ready = deque(schedule.get_ready())
+    results = {}
+    active = {}
+    with ThreadPoolExecutor(max_workers=min(jobs, len(configs))) as workers:
+        while ready or active:
+            while ready and len(active) < jobs:
+                name = ready.popleft()
+                imports = {module: results[module][1] for module in dependencies[name]}
+                active[workers.submit(compile_node, name, configs[name], imports)] = name
+            finished, _ = wait(active, return_when=FIRST_COMPLETED)
+            for completed in finished:
+                name = active.pop(completed)
+                results[name] = completed.result()
+                schedule.done(name)
+            ready.extend(schedule.get_ready())
+    return {name: results[name] for name in configs}
+
+
+def _build(sdk: Path, graph: dict, output: Path, optimization: str, jobs: int) -> dict:
     started = time.monotonic()
     env = environment(sdk)
     env.pop('LD_AUDIT', None)
@@ -236,10 +264,9 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
     previous = prior.get('nodes', {}) if prior.get('schema') == REPORT else {}
     packages, app = graph['packages'], graph['application']
     configs = {name: packages[name] for name in graph['order']}
+    configs[APP] = app
     inputs = {name: source_inputs(config['root']) for name, config in configs.items()}
-    inputs[APP] = source_inputs(app['root'])
     recipe = hashes([Path(__file__), Path(__file__).with_name('sdk_example.py')])
-    nodes, identities, lookup_inputs, lookup_flags, lookup_modules, lookup_interfaces = {}, {}, {}, {}, {}, {}
     directories = {name: output / 'modules' / name for name in graph['order']}
     paths = {name: directories[name] / (name + '.objc3i') for name in directories}
     for directory in directories.values():
@@ -247,7 +274,7 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
     directories[APP] = output / 'application'
     directories[APP].mkdir(exist_ok=True)
 
-    for name, config in [*configs.items(), (APP, app)]:
+    def compile_node(name, config, imported_identities):
         directory = directories[name]
         obj, depfile = directory / 'module.o', directory / 'module.d'
         command = [str(sdk / 'bin/objc3c'), str(config['input']),
@@ -296,7 +323,7 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
                     imported_inputs += [paths[module], paths[module].with_suffix('.objc3i.json')]
             for dependency in direct:
                 module = dependency['name']
-                identity = identities[module]
+                identity = imported_identities[module]
                 command += ['--import-module', module, identity['semantic_fingerprint'], dependency['package']]
                 command.append('--reexport-import' if dependency['visibility'] == 'public' else '--private-import')
                 for group in dependency.get('spi', []):
@@ -313,22 +340,20 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
                     '-isystem', str(sdk / 'include'),
                     '-MD', '-MF', str(depfile), '-MT', 'dependencies']
         flags = command[command.index('--') + 1:]
-        lookup_flags[name] = flags
-        lookup_modules[name] = sorted(closure)
-        lookup_interfaces[name] = [path for path in imported_inputs if path.suffix == ".objc3i"]
-        lookup_inputs[name] = discover_lookup(sdk, config, flags, target, output, directory, env, lookup_modules[name], lookup_interfaces[name])
+        modules = sorted(closure)
+        interfaces = [path for path in imported_inputs if path.suffix == '.objc3i']
+        lookup_inputs = discover_lookup(sdk, config, flags, target, output, directory, env, modules, interfaces)
         # A source implementation edit rebuilds that package. Importers depend
         # on interface contents rather than the implementation object bytes.
         imported_hashes = hashes(imported_inputs)
         key = hashlib.sha256(json.dumps({'sdk_seal': seal, 'recipe': recipe, 'argv': command,
               'sources': inputs[name], 'imports': imported_hashes, 'locks': direct,
-              'header_lookup': lookup_inputs[name]}, sort_keys=True).encode()).hexdigest()
+              'header_lookup': lookup_inputs}, sort_keys=True).encode()).hexdigest()
         saved = previous.get(name, {})
         tick = time.monotonic()
         if reusable(saved, key):
-            nodes[name] = {**saved, 'reused': True}
+            node = {**saved, 'reused': True}
         else:
-            report_path.unlink(missing_ok=True)
             log = directory / 'compile.log'
             outcome = directory / 'compile-result.json'
             outcome.unlink(missing_ok=True)
@@ -338,10 +363,11 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
             outcome.write_text(json.dumps({'argv': command, 'exit_code': completed.returncode}) + '\n')
             completed.check_returncode()
             tracked = dependencies(depfile, output) + list(map(Path, inputs[name])) + imported_inputs
-            nodes[name] = {'key': key, 'reused': False, 'argv': command,
-                           'header_lookup': lookup_inputs[name],
-                           'outputs': hashes(products), 'dependencies': hashes(tracked)}
-        nodes[name]['elapsed_seconds'] = round(time.monotonic() - tick, 6)
+            node = {'key': key, 'reused': False, 'argv': command,
+                    'header_lookup': lookup_inputs,
+                    'outputs': hashes(products), 'dependencies': hashes(tracked)}
+        node['elapsed_seconds'] = round(time.monotonic() - tick, 6)
+        identity = None
         if name != APP:
             identity = json.loads(sidecar.read_text())['module']
             runtime = ('no-objc-runtime' if config['language'] == 'c++' else 'gnustep-2.2') + ';' + ('arc' if config['ownership'] == 'arc' else 'manual-reference-counting')
@@ -350,11 +376,18 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
                     ';language=' + config['language'] + ';' not in identity['language_profile'] or
                     ';standard=' + config['standard'] + ';' not in identity['language_profile']):
                 raise ValueError(f'compiled interface identity differs from package lock: {name}')
-            identities[name] = identity
+        return node, identity, (flags, modules, interfaces)
 
+    # Preflight has succeeded. Clear previous completion records before any
+    # worker can change a product and join all workers before releasing the lock.
+    inventory_path = output / 'package-installation.json'
+    report_path.unlink(missing_ok=True)
+    inventory_path.unlink(missing_ok=True)
+    built = _build_nodes(configs, compile_node, jobs)
+    nodes = {name: row[0] for name, row in built.items()}
+    identities = {name: built[name][1] for name in graph['order']}
     executable = output / 'application.bin'
     # System CRT/library selection is refreshed on every invocation.
-    report_path.unlink(missing_ok=True)
     subprocess.run([str(sdk / 'bin/clang++'), '--no-default-config', '--target=' + target,
                     '-fuse-ld=lld', *[str(directories[name] / 'module.o') for name in graph['order']],
                     str(directories[APP] / 'module.o'), '-L' + str(sdk / 'lib'), *runtime_link_flags(sdk),
@@ -365,9 +398,11 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
     subprocess.run([str(executable)], env=run_env, check=True, timeout=30)
     if hashes(graph['manifests']) != {str(path): sha for path, sha in graph['manifests'].items()}:
         raise ValueError('workspace/package manifests changed during compilation')
-    for name, config in [*configs.items(), (APP, app)]:
-        if (source_inputs(config['root']) != inputs[name] or not reusable(nodes[name], nodes[name]['key'])
-                or discover_lookup(sdk, config, lookup_flags[name], target, output, directories[name], env, lookup_modules[name], lookup_interfaces[name]) != lookup_inputs[name]):
+    for name, config in configs.items():
+        node, _, (flags, modules, interfaces) = built[name]
+        if (source_inputs(config['root']) != inputs[name] or not reusable(node, node['key'])
+                or discover_lookup(sdk, config, flags, target, output, directories[name], env, modules, interfaces)
+                != node['header_lookup']):
             raise ValueError(f'package inputs or products changed during compilation: {name}')
     verify()
     # Relocatable installation inventory: identities and direct visibility locks
@@ -383,12 +418,12 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
                                     (directories[name] / 'module.o', paths[name], paths[name].with_suffix('.objc3i.json'))}}
                      for name in graph['order']]}
     inventory['content_sha256'] = hashlib.sha256(json.dumps(inventory, sort_keys=True).encode()).hexdigest()
-    write_json(output / 'package-installation.json', inventory)
+    write_json(inventory_path, inventory)
     report = {'schema': REPORT, 'status': 'PASS', 'sdk_seal': seal, 'target': target,
               'workspace_manifests': {str(path): sha for path, sha in graph['manifests'].items()},
               'nodes': nodes, 'order': graph['order'], 'modules': identities,
               'executable': str(executable), 'executable_sha256': digest(executable),
-              'installation': inventory, 'elapsed_seconds': round(time.monotonic() - started, 6)}
+              'installation': inventory, 'jobs': jobs, 'elapsed_seconds': round(time.monotonic() - started, 6)}
     write_json(report_path, report)
     return report
 
@@ -399,11 +434,12 @@ def main():
     parser.add_argument('--workspace', type=Path, required=True)
     parser.add_argument('--output-dir', type=Path, required=True)
     parser.add_argument('--optimization', choices=('O0', 'O2'), default='O2')
+    parser.add_argument('--jobs', type=int, default=1, help='maximum concurrent package compile workers')
     args = parser.parse_args()
     default = (Path.cwd() / 'out/toolchains/linux-sdk/current' if __package__ else Path(__file__).resolve().parents[3])
     sdk = args.sdk_root or Path(os.environ.get('OBJC3C_SDK_ROOT', default))
     try:
-        report = build_graph(sdk, args.workspace, args.output_dir, args.optimization)
+        report = build_graph(sdk, args.workspace, args.output_dir, args.optimization, jobs=args.jobs)
     except (OSError, ValueError, subprocess.SubprocessError) as error:
         parser.exit(1, f'package build failed: {error}\n')
     print(json.dumps({'status': report['status'], 'report': str(args.output_dir / 'build-report.json'),
