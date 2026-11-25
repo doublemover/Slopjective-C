@@ -5,45 +5,13 @@ import json
 from pathlib import Path
 from typing import Any
 
+from objc3c_toolchain.source_graph import load_graph
 from objc3c_tooling.json_io import load_json_object as load_json
 from objc3c_tooling.paths import ROOT
 
 
 STDLIB_MODULE_INVENTORY = ROOT / "stdlib" / "module_inventory.json"
 SHOWCASE_PORTFOLIO = ROOT / "showcase" / "portfolio.json"
-SHOWCASE_DEMO_PACKAGES = ROOT / "showcase" / "demo_packages.json"
-PACKAGE_WORKSPACE_MIRROR_SEMANTICS = (
-    ROOT
-    / "tests"
-    / "tooling"
-    / "fixtures"
-    / "package_ecosystem"
-    / "local_workspace_mirror_semantics.json"
-)
-PACKAGE_DEPENDENCY_LOCK_POLICY = (
-    ROOT
-    / "tests"
-    / "tooling"
-    / "fixtures"
-    / "package_ecosystem"
-    / "dependency_lock_policy.json"
-)
-PACKAGE_REGISTRY_MIRROR_REPRODUCIBILITY = (
-    ROOT
-    / "tests"
-    / "tooling"
-    / "fixtures"
-    / "package_ecosystem"
-    / "registry_mirror_reproducibility_contract.json"
-)
-PACKAGE_MIXED_IMAGE_METADATA = (
-    ROOT
-    / "tests"
-    / "tooling"
-    / "fixtures"
-    / "package_ecosystem"
-    / "mixed_image_interop_loader_metadata.json"
-)
 
 
 def stable_digest(payload: object) -> str:
@@ -167,7 +135,7 @@ def stdlib_package_entries() -> list[dict[str, Any]]:
         if not isinstance(module, dict):
             continue
         module_name = str(module.get("module", ""))
-        source_path = str(module.get("source", ""))
+        source_path = str(module.get("header", ""))
         if not module_name or not source_path:
             continue
         entries.append(
@@ -179,8 +147,8 @@ def stdlib_package_entries() -> list[dict[str, Any]]:
                 "capability_id": str(module.get("capability_id", "")),
                 "required_profile": str(module.get("required_profile", "")),
                 "source_path": source_path,
-                "workspace_root": str(module.get("workspace_root", "")),
-                "manifest_path": str(module.get("manifest", "")),
+                "workspace_root": Path(source_path).parent.as_posix(),
+                "manifest_path": STDLIB_MODULE_INVENTORY.relative_to(ROOT).as_posix(),
                 "source_authority": "stdlib/module_inventory.json",
                 "definition": package_location(source_path, module_name),
             }
@@ -188,67 +156,74 @@ def stdlib_package_entries() -> list[dict[str, Any]]:
     return entries
 
 
-def showcase_package_entries() -> list[dict[str, Any]]:
+def showcase_workspace_entries() -> tuple[list[dict], list[dict], dict]:
     portfolio = load_json(SHOWCASE_PORTFOLIO)
-    entries: list[dict[str, Any]] = []
-    for example in portfolio.get("examples", []):
-        if not isinstance(example, dict):
+    entries, edges, errors = [], [], []
+    manifests = {}
+    for example in portfolio["examples"]:
+        example_id = example["id"]
+        source_path = example["source"]
+        package_id = f"showcase:{example_id}"
+        manifest_path = example.get("workspace_manifest")
+        module_name = example.get("title", example_id)
+        entries.append({
+            "package_id": package_id, "package_kind": "showcase-example",
+            "module_name": module_name, "source_path": source_path,
+            "workspace_manifest": manifest_path or "",
+            "source_authority": SHOWCASE_PORTFOLIO.relative_to(ROOT).as_posix(),
+            "definition": package_location(source_path, module_name) if (ROOT / source_path).is_file() else None,
+        })
+        if manifest_path is None:
             continue
-        example_id = str(example.get("id", ""))
-        source_path = str(example.get("source", ""))
-        if not example_id or not source_path:
+        try:
+            path = (ROOT / manifest_path).resolve(strict=True)
+            if not path.is_relative_to(ROOT):
+                raise ValueError("workspace manifest escaped the repository")
+            graph = load_graph(path)
+        except (OSError, ValueError) as error:
+            errors.append({"manifest": manifest_path, "diagnostic": str(error)})
             continue
-        module_name = str(example.get("title") or example_id)
-        entries.append(
-            {
-                "package_id": f"showcase:{example_id}",
-                "package_kind": "showcase-example",
-                "module_name": module_name,
-                "source_path": source_path,
-                "workspace_manifest": str(example.get("workspace_manifest", "")),
-                "source_authority": "showcase/portfolio.json",
-                "story_capabilities": list(example.get("story_capabilities", [])),
-                "stdlib_followup_modules": list(
-                    example.get("stdlib_followup_modules", [])
-                ),
-                "definition": package_location(source_path, module_name),
-            }
-        )
-    return entries
-
-
-def cross_package_edges(packages: list[dict[str, Any]]) -> list[dict[str, str]]:
-    package_ids = {str(package["package_id"]) for package in packages}
-    edges: list[dict[str, str]] = []
-    for package in packages:
-        if package.get("package_kind") != "showcase-example":
-            continue
-        from_package = str(package["package_id"])
-        for module_name in package.get("stdlib_followup_modules", []):
-            to_package = f"stdlib:{module_name}"
-            if to_package in package_ids:
-                edges.append(
-                    {
-                        "from_package_id": from_package,
-                        "to_package_id": to_package,
-                        "edge_kind": "stdlib-followup-module",
-                        "source_authority": str(package.get("source_authority", "")),
-                    }
-                )
-    return sorted(
-        edges,
-        key=lambda edge: (
-            edge["from_package_id"],
-            edge["to_package_id"],
-            edge["edge_kind"],
-        ),
-    )
+        manifests.update({path.relative_to(ROOT).as_posix(): digest
+                          for path, digest in graph["manifests"].items()})
+        application_source = graph["application"]["input"].relative_to(ROOT).as_posix()
+        entries[-1].update(source_path=application_source, definition=package_location(application_source, module_name))
+        providers = {name: f"workspace:{example_id}:{name}" for name in graph["order"]}
+        consumers = [(package_id, graph["application"])]
+        for name, provider_id in providers.items():
+            provider = graph["packages"][name]
+            location = provider["input"].relative_to(ROOT).as_posix()
+            entries.append({
+                "package_id": provider_id, "package_kind": "workspace-provider",
+                "module_name": name, "source_path": location,
+                "locked_identity": provider["package"],
+                "manifest_path": provider["manifest"].relative_to(ROOT).as_posix(),
+                "source_authority": manifest_path,
+                "definition": package_location(location, name),
+            })
+            consumers.append((provider_id, provider))
+        for consumer_id, consumer in consumers:
+            edges.extend({
+                "from_package_id": consumer_id, "to_package_id": providers[edge["name"]],
+                "edge_kind": f'{edge["visibility"]}-package-import',
+                "locked_identity": edge["package"], "source_authority": manifest_path,
+            } for edge in consumer["dependencies"])
+    guardrails = {
+        "contract_id": "objc3c.developer.tooling.workspace.package.guardrails.v1",
+        "source_contracts": sorted(manifests),
+        "manifest_sha256": manifests,
+        "checks": {"native_workspace_locks_valid": not errors},
+        "errors": errors,
+        "ok": not errors,
+    }
+    return entries, sorted(edges, key=lambda edge: (edge["from_package_id"], edge["to_package_id"])), guardrails
 
 
 def package_symbol_records(packages: list[dict[str, Any]]) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
     for package in packages:
         location = package["definition"]
+        if location is None:
+            continue
         source_path = str(package["source_path"])
         records.append(
             {
@@ -277,52 +252,6 @@ def package_symbol_records(packages: list[dict[str, Any]]) -> list[dict[str, Any
     )
 
 
-def package_guardrails() -> dict[str, Any]:
-    workspace_semantics = load_json(PACKAGE_WORKSPACE_MIRROR_SEMANTICS)
-    dependency_lock = load_json(PACKAGE_DEPENDENCY_LOCK_POLICY)
-    registry_mirror = load_json(PACKAGE_REGISTRY_MIRROR_REPRODUCIBILITY)
-    mixed_image = load_json(PACKAGE_MIXED_IMAGE_METADATA)
-    demo_packages = load_json(SHOWCASE_DEMO_PACKAGES)
-
-    lockfile_semantics = workspace_semantics.get("lockfile_semantics", {})
-    offline_mirror_semantics = workspace_semantics.get("offline_mirror_semantics", {})
-    forbidden_sources = set(dependency_lock.get("forbidden_dependency_sources", []))
-    blocker_conditions = set(registry_mirror.get("blocker_metadata", {}).get("blocking_conditions", []))
-    tamper_diagnostics = [
-        str(package.get("tamper_rejection", {}).get("diagnostic_code", ""))
-        for package in mixed_image.get("packages", [])
-        if isinstance(package, dict)
-    ]
-    demo_repro = demo_packages.get("reproducibility_contract", {})
-
-    checks = {
-        "lockfile_deterministic": lockfile_semantics.get("ordering")
-        == "stable-by-package-id-then-source-path",
-        "offline_mirror_lock_derived": offline_mirror_semantics.get("index_model")
-        == "lock-derived-package-index",
-        "offline_mirror_no_network": offline_mirror_semantics.get("network_policy")
-        == "no-network-during-validation",
-        "tamper_rejection_diagnostic_owned": "O3PKG8054" in tamper_diagnostics
-        and "offline mirror metadata digest mismatch did not fail closed"
-        in blocker_conditions,
-        "mixed_version_policy_owned": demo_repro.get("mixed_version_policy")
-        == "same-package-manifest-version-required",
-        "tmp_not_source_authority": "tmp-only-source-of-truth" in forbidden_sources,
-    }
-    return {
-        "contract_id": "objc3c.developer.tooling.workspace.package.guardrails.v1",
-        "source_contracts": [
-            "tests/tooling/fixtures/package_ecosystem/local_workspace_mirror_semantics.json",
-            "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
-            "tests/tooling/fixtures/package_ecosystem/registry_mirror_reproducibility_contract.json",
-            "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json",
-            "showcase/demo_packages.json",
-        ],
-        "checks": checks,
-        "ok": all(checks.values()),
-    }
-
-
 def build_workspace_index(
     source_path: str,
     module_name: str,
@@ -330,20 +259,20 @@ def build_workspace_index(
     symbols: list[dict[str, Any]],
     source_index: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    showcase, edges, guardrails = showcase_workspace_entries()
     packages = [
         local_source_package(source_path, module_name, manifest_path, symbols),
         *stdlib_package_entries(),
-        *showcase_package_entries(),
+        *showcase,
     ]
     packages = sorted(packages, key=lambda package: str(package["package_id"]))
-    edges = cross_package_edges(packages)
     package_symbols = package_symbol_records(packages)
-    guardrails = package_guardrails()
     digest_inputs = {
         "package_ids": [package["package_id"] for package in packages],
         "source_paths": [package["source_path"] for package in packages],
         "edges": edges,
         "guardrail_checks": guardrails["checks"],
+        "workspace_manifests": guardrails["manifest_sha256"],
         "source_index_digest": source_index.get("source_index_digest", "")
         if isinstance(source_index, dict)
         else "",
@@ -351,7 +280,6 @@ def build_workspace_index(
     evidence_roots = list(dict.fromkeys([
         "stdlib/module_inventory.json",
         "showcase/portfolio.json",
-        "showcase/demo_packages.json",
         *guardrails["source_contracts"],
     ]))
     if manifest_path:

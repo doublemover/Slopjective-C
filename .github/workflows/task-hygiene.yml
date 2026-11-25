@@ -109,6 +109,8 @@ jobs:
           tests/tooling/test_artifact_transport.py
           tests/tooling/test_linux_sdk_publication.py
           tests/tooling/test_source_graph.py
+          tests/tooling/test_developer_tooling_source_graph_surface.py
+          tests/tooling/test_developer_tooling_workspace_index_surface.py
           tests/tooling/test_sdk_source_modules.py
           tests/tooling/test_binary_packages.py
           tests/tooling/test_current_onboarding.py

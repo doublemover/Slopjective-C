@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -10,6 +11,7 @@ if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
 from objc3c_editor_tooling.model import build_debug_payload  # noqa: E402
+from objc3c_editor_tooling import workspace_index as editor_index  # noqa: E402
 from objc3c_editor_tooling.workspace_index import build_workspace_index  # noqa: E402
 
 
@@ -49,6 +51,30 @@ def test_workspace_index_rows_publish_checked_in_evidence_and_fail_closed_bounda
         set(workspace_index["evidence_roots"])
     )
     assert workspace_index["unsupported_surfaces"] == contract["unsupported_surfaces"]
+    assert any(edge["edge_kind"] == "private-package-import" and edge["locked_identity"] == "right-v1"
+               for edge in workspace_index["cross_package_edges"])
+
+
+def test_invalid_native_workspace_locks_do_not_publish_provider_edges(tmp_path, monkeypatch):
+    workspace = tmp_path / "workspace"
+    shutil.copytree(ROOT / "tests/clang_foundation/source_graph", workspace)
+    manifest = workspace / "workspace.json"
+    document = load_json(manifest)
+    document["application"]["dependencies"][0]["package"] = "other-release"
+    manifest.write_text(json.dumps(document))
+    portfolio = tmp_path / "portfolio.json"
+    portfolio.write_text(json.dumps({"examples": [{
+        "id": "broken-package", "source": "workspace/app/main.m",
+        "workspace_manifest": "workspace/workspace.json",
+    }]}))
+    monkeypatch.setattr(editor_index, "ROOT", tmp_path)
+    monkeypatch.setattr(editor_index, "SHOWCASE_PORTFOLIO", portfolio)
+
+    packages, edges, guardrails = editor_index.showcase_workspace_entries()
+    assert [package["package_id"] for package in packages] == ["showcase:broken-package"]
+    assert edges == []
+    assert guardrails["ok"] is False
+    assert "package identity lock" in guardrails["errors"][0]["diagnostic"]
 
 
 def test_workspace_index_without_manifest_fails_closed_for_workspace_symbols() -> None:
