@@ -66,8 +66,11 @@ linkage. Private function and variable template specializations receive owned
 names when instantiated and referenced. Private namespace functions and variables
 also receive owned names. Initialization guards, template-function local statics,
 thread-local initialization/wrapper functions and lifetime-extended temporaries
-derive their companion names from the same native binding. C++ members, RTTI and non-data public types retain their existing C++ ABI and
-remain outside this module naming contract. Explicit conflicting ABI labels,
+derive their companion names from the same native binding. Owned C++ record
+tags distinguish member, vtable and RTTI symbols. The installed collision
+witness exercises two providers with identical private class spellings, virtual
+dispatch and typed exception handling after producer source removal.
+Explicit conflicting ABI labels,
 runtime aliases, exported inline variables and provider entry points are
 diagnosed.
 

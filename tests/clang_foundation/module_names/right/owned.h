@@ -11,6 +11,25 @@ template<class T> T private_template(T value) {
 template<int N> int private_variable = N + private_initializer();
 thread_local int private_tls = private_initializer();
 const int &private_reference = private_initializer();
+// Both providers spell the same private polymorphic type. Their package
+// identities must distinguish the complete native C++ ABI, including EH.
+struct PrivateAbiTwin {
+  virtual ~PrivateAbiTwin();
+  virtual int marker() const;
+};
+PrivateAbiTwin::~PrivateAbiTwin() = default;
+int PrivateAbiTwin::marker() const { return PRIVATE_TEMPLATE_BIAS; }
+__attribute__((noinline)) int private_abi_dispatch(const PrivateAbiTwin &value) {
+  return value.marker();
+}
+__attribute__((noinline)) bool private_abi_catch() {
+  try {
+    throw PrivateAbiTwin{};
+  } catch (const PrivateAbiTwin &value) {
+    return private_abi_dispatch(value) == PRIVATE_TEMPLATE_BIAS;
+  }
+}
+
 namespace PrivateNamespace {
 int private_namespace_global = 0;
 int private_namespace_helper() { return private_namespace_global; }
