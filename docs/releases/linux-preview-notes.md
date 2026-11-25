@@ -32,6 +32,9 @@ conformance.
   files. Each input receives the language options appropriate to that file.
 - Linux libobjc2 publishes association storage only after initializing its
   locks and synchronizes publication of class dispatch tables.
+- Swift calling-convention functions can use erased indirect-result buffers
+  under UBSan. LLVM treats the ABI marker as an unknown buffer size and still
+  checks the bounds of typed results.
 
 The candidate extension ABI is 24. Rebuild Objective-C 3 objects, PCH files,
 semantic interfaces, and source packages produced by earlier SDKs, including
