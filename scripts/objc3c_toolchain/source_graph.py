@@ -436,8 +436,11 @@ def main():
     parser.add_argument('--optimization', choices=('O0', 'O2'), default='O2')
     parser.add_argument('--jobs', type=int, default=1, help='maximum concurrent package compile workers')
     args = parser.parse_args()
-    default = (Path.cwd() / 'out/toolchains/linux-sdk/current' if __package__ else Path(__file__).resolve().parents[3])
-    sdk = args.sdk_root or Path(os.environ.get('OBJC3C_SDK_ROOT', default))
+    sdk = args.sdk_root
+    if sdk is None:
+        default = (Path.cwd() / 'out/toolchains/linux-sdk/current' if __package__
+                   else Path(__file__).resolve().parents[3])
+        sdk = Path(os.environ.get('OBJC3C_SDK_ROOT', default))
     try:
         report = build_graph(sdk, args.workspace, args.output_dir, args.optimization, jobs=args.jobs)
     except (OSError, ValueError, subprocess.SubprocessError) as error:
