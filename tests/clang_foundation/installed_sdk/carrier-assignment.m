@@ -176,6 +176,62 @@ static int blocks(void) {
   return 0;
 }
 
+static Outcome select_outcome(int success, id value, id error) {
+  Outcome selected;
+  if (success)
+    selected = Ok(id, id, value);
+  else
+    selected = Err(id, id, error);
+  return selected;
+}
+
+static int deferred_locals(void) {
+  for (int success = 0; success != 2; ++success) {
+    int key = 19 + success;
+    __weak id observer = nil;
+    int observedByDefer = 0;
+    {
+      id object = [AssignmentProbe newWithKey:key];
+      observer = object;
+      Outcome selected;
+      if (success)
+        selected = select_outcome(1, object, nil);
+      else
+        selected = select_outcome(0, nil, object);
+      object = nil;
+      REQUIRE(isOk(selected) == (success != 0) && observer != nil);
+      Outcome copy = selected;
+      REQUIRE(isOk(copy) == (success != 0));
+      selected = Err(id, id, nil);
+      REQUIRE(observer != nil);
+      defer { observedByDefer = observer != nil; }
+    }
+    REQUIRE(observedByDefer && observer == nil && destroyed[key] == 1);
+  }
+  for (int iteration = 0; iteration != 2; ++iteration) {
+    Strong optional;
+    if (iteration == 0)
+      continue;
+    id object = [AssignmentProbe newWithKey:21];
+    optional = Some(id, object);
+    object = nil;
+    REQUIRE(hasValue(optional) && destroyed[21] == 0);
+  }
+  REQUIRE(destroyed[21] == 1);
+  {
+    id object = [AssignmentProbe newWithKey:22];
+    Weak weak;
+    weak = Some(id __weak, object);
+    object = nil;
+    REQUIRE(hasValue(weak) && destroyed[22] == 1);
+  }
+  {
+    Strong unused;
+    (void)0;
+  }
+  return 0;
+}
+
 #ifdef __cplusplus
 static int sequence, leftCalls, rightCalls;
 static Strong &left(Strong &destination) {
@@ -272,6 +328,7 @@ int main(void) {
   if ((result = result_transitions())) return result;
   if ((result = weak_and_unsafe())) return result;
   if ((result = blocks())) return result;
+  if ((result = deferred_locals())) return result;
 #ifdef __cplusplus
   if ((result = sequencing_and_unwind())) return result;
 #endif

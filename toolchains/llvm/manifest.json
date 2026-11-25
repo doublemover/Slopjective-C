@@ -83,7 +83,7 @@
     },
     {
       "file": "0005-objc3-codegen-tests.patch",
-      "sha256": "c76b176261fffbd0b7522ff95c96306d721e982e639d2c0afa1b4fa896ca0944"
+      "sha256": "f7e7ba68820b60b12d4b3d759a5a908b4c0ea031f9fb958982d50e26ded78553"
     },
     {
       "file": "0006-objc3-native-carrier-expressions.patch",
@@ -96,6 +96,10 @@
     {
       "file": "0008-objc3-linux-aarch64-native-contracts.patch",
       "sha256": "a616a321bd9dcc792447a6697508076e5ce84bcd603e117211d0719d0797d5ec"
+    },
+    {
+      "file": "0009-objc3-deferred-arc-carrier-init.patch",
+      "sha256": "a9bd748f435a2491911b66033e395a1f48761a433bd68d28f38d64d686d76393"
     }
   ],
   "pristine_baseline_build_id": "llvmorg-23.1.5-392dfff97d29-pristine-v1",

@@ -116,6 +116,12 @@ cleanup. Implicit direct ARC carrier copying and assignment are also qualified
 in Objective-C and Objective-C++: the selected RHS is preserved before LHS
 evaluation and old-arm destruction, including self-aliasing, all Result arm
 transitions, weak zeroing, Blocks, C++ sequencing and exception cleanup.
+Automatic ARC carrier locals can establish their first active arm by assignment
+on each path. Semantic analysis requires definite initialization before reading,
+capturing or borrowing the value, even when ordinary uninitialized warnings are
+disabled. An exit before the first assignment performs no payload cleanup.
+Installed witnesses cover branches, scope exit, reassignments and managed
+payload lifetime in Objective-C and Objective-C++.
 Direct managed carriers also cross native function and C++ callable boundaries
 under extension ABI revision 8. Caller-owned argument snapshots preserve source
 values at argument evaluation and clean up at full-expression boundaries;

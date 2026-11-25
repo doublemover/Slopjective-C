@@ -20,3 +20,4 @@
 0006-objc3-native-carrier-expressions.patch
 0007-objc3-linux-debugger-runtime-contracts.patch
 0008-objc3-linux-aarch64-native-contracts.patch
+0009-objc3-deferred-arc-carrier-init.patch

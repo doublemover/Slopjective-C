@@ -4284,8 +4284,8 @@ index 000000000..77ea93898
 +@interface Object @end
 +typedef __objc3_optional(Object *) MaybeObject;
 +void query_after_rejected_lifetime(void) {
-+  MaybeObject value; // expected-error {{ObjC3 carrier operation 'local lifetime'}}
-+  (void)__objc3_has_value(value); // expected-error {{ObjC3 carrier operation 'hasValue query'}}
++  MaybeObject value;
++  (void)__objc3_has_value(value); // expected-error {{is used before definite initialization}}
 +}
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-indirect-call-abi.c b/clang/test/ObjC3/CodeGen/carrier-indirect-call-abi.c
@@ -4701,8 +4701,8 @@ index 000000000..e989707ab
 +@end
 +typedef __objc3_optional(Object *) MaybeObject;
 +void read_after_rejected_lifetime(void) {
-+  MaybeObject value; // expected-error {{ObjC3 carrier operation 'local lifetime'}}
-+  (void)value; // CodeGen must not synthesize an ARC lifetime after rejecting it.
++  MaybeObject value;
++  (void)__objc3_has_value(value); // expected-error {{is used before definite initialization}}
 +}
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-unsupported-operations.cpp b/clang/test/ObjC3/CodeGen/carrier-unsupported-operations.cpp
@@ -4759,7 +4759,7 @@ index 000000000..7cf8f2480
 +}
 +#elif defined(TEST_CARRIER_ARC)
 +void arc_lifetime(void) {
-+  MaybeObject value; // expected-error-re {{ObjC3 carrier operation 'local lifetime' for type {{.*}} has no qualified lowering: {{.*}}}}
++  volatile MaybeObject value; // expected-error {{requires an initializer at its declaration}}
 +}
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-variadic-call-abi.c b/clang/test/ObjC3/CodeGen/carrier-variadic-call-abi.c
@@ -6941,7 +6941,7 @@ index 000000000..120df1f31
 +
 +#ifdef UNINITIALIZED
 +void reject_uninitialized(void) {
-+  Strong copy; // expected-error {{ObjC3 carrier operation 'local lifetime'}}
++  volatile Strong copy; // expected-error {{requires an initializer at its declaration}}
 +}
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-arc-assignment.m b/clang/test/ObjC3/CodeGen/carrier-arc-assignment.m

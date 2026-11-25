@@ -1,0 +1,631 @@
+diff --git a/clang/include/clang/AST/ObjC3TypeContracts.h b/clang/include/clang/AST/ObjC3TypeContracts.h
+index e98defc57cffb2bce4bc43cee65de29622c0a275..ed09f5fc397c68c7c361801812e89e60ab2dc59e 100644
+--- a/clang/include/clang/AST/ObjC3TypeContracts.h
++++ b/clang/include/clang/AST/ObjC3TypeContracts.h
+@@ -22,8 +22,13 @@
+ namespace clang {
+ 
+ class ASTContext;
++class VarDecl;
+ /// Managed leaves in a recursively nested Optional/Result storage graph.
+ bool hasObjC3CarrierManagedPayload(QualType Type);
++/// Direct carrier storage with a complete ARC-only lifetime recipe.
++bool isObjC3ARCCarrierStorage(ASTContext &Context, QualType Type);
++/// An automatic ARC carrier whose first assignment establishes its lifetime.
++bool isObjC3DeferredCarrierLocal(const VarDecl &Var);
+ /// Native plain carrier fields captured by value do not need Objective-C
+ /// callable encodings. Bound the complete leaf graph and reject ownership,
+ /// volatile/atomic/resource storage; moves additionally require mutable leaves.
+diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
+index c6bc3fb1a11aefe8a29c3d55aa9a0388f45d75c3..d65c94927684ed9683c0c52c0d9a72870db599a7 100644
+--- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
++++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
+@@ -2691,6 +2691,11 @@ def warn_uninit_self_reference_in_reference_init : Warning<
+   "reference %0 is not yet bound to a value when used within its own"
+   " initialization">,
+   InGroup<Uninitialized>;
++def err_objc3_carrier_requires_initializer : Error<
++  "managed carrier %0 requires an initializer at its declaration">;
++def err_objc3_carrier_use_before_initialization : Error<
++  "managed carrier %0 is used before definite initialization; "
++  "initialize it on every path or at its declaration">;
+ def warn_uninit_var : Warning<
+   "variable %0 is uninitialized when %select{used here|captured by block}1">,
+   InGroup<Uninitialized>, DefaultIgnore;
+diff --git a/clang/lib/AST/ObjC3TypeContracts.cpp b/clang/lib/AST/ObjC3TypeContracts.cpp
+index 3bebb08c524f29b98544ccee3933540bcc4db257..bebcfe47150fc8504d5edbbfa596d4e54c31ee9f 100644
+--- a/clang/lib/AST/ObjC3TypeContracts.cpp
++++ b/clang/lib/AST/ObjC3TypeContracts.cpp
+@@ -9,6 +9,7 @@
+ #include "clang/AST/ObjC3ResourceTypes.h"
+ 
+ #include "clang/AST/ASTContext.h"
++#include "clang/AST/Attr.h"
+ #include "clang/AST/DeclCXX.h"
+ #include "clang/AST/DeclObjC.h"
+ #include "clang/AST/Type.h"
+@@ -122,6 +123,58 @@ ObjC3PayloadTypeIssue reject(ObjC3ValueTypeFacts &Facts,
+   return Issue;
+ }
+ 
++bool isPlainARCCarrierLeaf(QualType T, unsigned Depth = 0) {
++  if (T.isNull() || Depth > 64)
++    return false;
++  if (T->isVoidType() || T->isIntegerType() || T->isEnumeralType() ||
++      T->isRealFloatingType())
++    return T.getObjCLifetime() == Qualifiers::OCL_None;
++  if (T->isPointerType())
++    return !T->isObjCObjectPointerType() && !T->isBlockPointerType() &&
++           T.getObjCLifetime() == Qualifiers::OCL_None;
++  if (const auto *RT = T->getAs<RecordType>()) {
++    const RecordDecl *RD = RT->getDecl();
++    if (isa<CXXRecordDecl>(RD) || !RD->isCompleteDefinition())
++      return false;
++    for (const FieldDecl *Field : RD->fields())
++      if (!isPlainARCCarrierLeaf(Field->getType(), Depth + 1))
++        return false;
++    return true;
++  }
++  return false;
++}
++
++bool isARCPointerField(QualType T) {
++  if (!T->isObjCObjectPointerType() && !T->isBlockPointerType())
++    return false;
++  switch (T.getObjCLifetime()) {
++  case Qualifiers::OCL_Strong:
++  case Qualifiers::OCL_Weak:
++  case Qualifiers::OCL_ExplicitNone:
++    return true;
++  case Qualifiers::OCL_None:
++  case Qualifiers::OCL_Autoreleasing:
++    return false;
++  }
++  return false;
++}
++
++bool isSupportedARCCarrierField(QualType T, unsigned &Budget,
++                      unsigned Depth = 0) {
++  if (T.isNull())
++    return true;
++  if (Depth > 64 || Budget == 0 || T.isVolatileQualified()) return false;
++  --Budget;
++  if (const auto *O = T->getAs<ObjC3OptionalType>())
++    return isSupportedARCCarrierField(O->getElementType(), Budget, Depth + 1);
++  if (const auto *R = T->getAs<ObjC3ResultType>())
++    return isSupportedARCCarrierField(R->getSuccessType(), Budget, Depth + 1) &&
++           isSupportedARCCarrierField(R->getErrorType(), Budget, Depth + 1);
++  if (T->isObjCObjectPointerType() || T->isBlockPointerType())
++    return isARCPointerField(T);
++  return isPlainARCCarrierLeaf(T);
++}
++
+ } // namespace
+ 
+ bool clang::hasObjC3CarrierManagedPayload(QualType Type) {
+@@ -142,6 +195,29 @@ bool clang::hasObjC3CarrierManagedPayload(QualType Type) {
+       Type.getCanonicalType().getTypePtr()) && Visit(Visit, Type, 0);
+ }
+ 
++bool clang::isObjC3ARCCarrierStorage(ASTContext &Context, QualType Type) {
++  if (!Context.getLangOpts().ObjCAutoRefCount ||
++      !hasObjC3CarrierManagedPayload(Type))
++    return false;
++  auto Info = Context.getObjC3CarrierRepresentationType(Type);
++  if (Info.State != ObjC3CarrierRepresentationInfo::Status::Materialized)
++    return false;
++  unsigned Budget = 256;
++  for (const auto *Field : {Info.ValueField, Info.SuccessField, Info.ErrorField})
++    if (Field && !isSupportedARCCarrierField(Field->getType(), Budget))
++      return false;
++  return true;
++}
++
++bool clang::isObjC3DeferredCarrierLocal(const VarDecl &Var) {
++  QualType Type = Var.getType();
++  return Var.isLocalVarDecl() && !Var.hasGlobalStorage() && !Var.hasInit() &&
++         !Var.isImplicit() && !Var.isExceptionVariable() && !Var.isInitCapture() &&
++         !Var.hasAttr<BlocksAttr>() && !Type.isConstQualified() &&
++         !Type.isVolatileQualified() &&
++         isObjC3ARCCarrierStorage(Var.getASTContext(), Type);
++}
++
+ bool clang::isObjC3PlainCarrierCaptureType(const ASTContext &Context,
+                                            QualType Type, bool IsMove) {
+   if (Type.isNull() || !isa<ObjC3OptionalType, ObjC3ResultType>(
+diff --git a/clang/lib/Analysis/UninitializedValues.cpp b/clang/lib/Analysis/UninitializedValues.cpp
+index 1969afa581a8e2459d5f3ff8cc8a7e7e8b97be79..85911f90848cc05fee3fd89dee634d16b95e6e71 100644
+--- a/clang/lib/Analysis/UninitializedValues.cpp
++++ b/clang/lib/Analysis/UninitializedValues.cpp
+@@ -15,6 +15,7 @@
+ #include "clang/AST/Decl.h"
+ #include "clang/AST/DeclBase.h"
+ #include "clang/AST/Expr.h"
++#include "clang/AST/ObjC3TypeContracts.h"
+ #include "clang/AST/OperationKinds.h"
+ #include "clang/AST/Stmt.h"
+ #include "clang/AST/StmtObjC.h"
+@@ -25,6 +26,7 @@
+ #include "clang/Analysis/DomainSpecific/ObjCNoReturn.h"
+ #include "clang/Analysis/FlowSensitive/DataflowWorklist.h"
+ #include "clang/Basic/LLVM.h"
++#include "llvm/ADT/SmallPtrSet.h"
+ #include "llvm/ADT/BitVector.h"
+ #include "llvm/ADT/DenseMap.h"
+ #include "llvm/ADT/PackedVector.h"
+@@ -59,6 +61,8 @@ static bool isTrackedVar(const VarDecl *vd, const DeclContext *dc) {
+   if (vd->isLocalVarDecl() && !vd->hasGlobalStorage() &&
+       !vd->isExceptionVariable() && !vd->isInitCapture() && !vd->isImplicit() &&
+       vd->getDeclContext() == dc) {
++    if (isObjC3DeferredCarrierLocal(*vd))
++      return true;
+     QualType ty = vd->getType();
+     if (const auto *RD = ty->getAsRecordDecl())
+       return recordIsNotEmpty(RD);
+@@ -281,6 +285,7 @@ public:
+ private:
+   const DeclContext *DC;
+   llvm::DenseMap<const DeclRefExpr *, Class> Classification;
++  llvm::SmallPtrSet<const DeclRefExpr *, 8> ManagedAssignmentTargets;
+ 
+   bool isTrackedVar(const VarDecl *VD) const {
+     return ::isTrackedVar(VD, DC);
+@@ -301,6 +306,12 @@ public:
+   void operator()(const Stmt *S) { Visit(S); }
+ 
+   Class get(const DeclRefExpr *DRE) const {
++    // Escaping storage cannot establish a managed lifetime. Treat all uses
++    // other than direct whole-value assignment as requiring initialization.
++    const auto *Local = dyn_cast<VarDecl>(DRE->getDecl());
++    if (Local && isTrackedVar(Local) && isObjC3DeferredCarrierLocal(*Local))
++      return ManagedAssignmentTargets.contains(DRE) ? Ignore : Use;
++
+     llvm::DenseMap<const DeclRefExpr*, Class>::const_iterator I
+         = Classification.find(DRE);
+     if (I != Classification.end())
+@@ -394,6 +405,13 @@ void ClassifyRefs::VisitBinaryOperator(const BinaryOperator *BO) {
+   // when TransferFunctions visits it. A compound-assignment does not affect
+   // whether a variable is uninitialized, and there's no point counting it as a
+   // use.
++  if (BO->getOpcode() == BO_Assign) {
++    if (const auto *Ref =
++            dyn_cast<DeclRefExpr>(BO->getLHS()->IgnoreParenImpCasts()))
++      if (const auto *Var = dyn_cast<VarDecl>(Ref->getDecl()))
++        if (isTrackedVar(Var) && isObjC3DeferredCarrierLocal(*Var))
++          ManagedAssignmentTargets.insert(Ref);
++  }
+   if (BO->isCompoundAssignmentOp())
+     classify(BO->getLHS(), Use);
+   else if (BO->getOpcode() == BO_Assign || BO->getOpcode() == BO_Comma)
+@@ -773,7 +791,9 @@ void TransferFunctions::VisitBinaryOperator(const BinaryOperator *BO) {
+   if (BO->getOpcode() == BO_Assign) {
+     FindVarResult Var = findVar(BO->getLHS());
+     if (const VarDecl *VD = Var.getDecl())
+-      vals[VD] = Initialized;
++      if (!isObjC3DeferredCarrierLocal(*VD) ||
++          isa<DeclRefExpr>(BO->getLHS()->IgnoreParenImpCasts()))
++        vals[VD] = Initialized;
+   }
+ }
+ 
+diff --git a/clang/lib/CodeGen/CGDecl.cpp b/clang/lib/CodeGen/CGDecl.cpp
+index 0573e2c53d05410d844d704956876bf5651d3e48..6651ab9eeada58cc9348a83f641ee87b3b60718e 100644
+--- a/clang/lib/CodeGen/CGDecl.cpp
++++ b/clang/lib/CodeGen/CGDecl.cpp
+@@ -540,14 +540,27 @@ namespace {
+     QualType CarrierType;
+     bool PreciseLifetime;
+     bool DestroyStrong;
++    Address Initialized;
+     DestroyObjC3ARCCarrierLocal(Address Storage, QualType CarrierType,
+-                               bool PreciseLifetime, bool DestroyStrong)
++                               bool PreciseLifetime, bool DestroyStrong,
++                               Address Initialized = Address::invalid())
+         : Storage(Storage), CarrierType(CarrierType),
+-          PreciseLifetime(PreciseLifetime), DestroyStrong(DestroyStrong) {}
++          PreciseLifetime(PreciseLifetime), DestroyStrong(DestroyStrong),
++          Initialized(Initialized) {}
+     void Emit(CodeGenFunction &CGF, Flags) override {
++      llvm::BasicBlock *Done = nullptr;
++      if (Initialized.isValid()) {
++        auto *Destroy = CGF.createBasicBlock("objc3.carrier.cleanup");
++        Done = CGF.createBasicBlock("objc3.carrier.cleanup.done");
++        CGF.Builder.CreateCondBr(CGF.Builder.CreateLoad(Initialized),
++                                 Destroy, Done);
++        CGF.EmitBlock(Destroy);
++      }
+       CodeGen::emitObjC3CarrierDestroyActiveARCPayload(
+           CGF, CarrierType, Storage, PreciseLifetime, DestroyStrong,
+           !DestroyStrong);
++      if (Done)
++        CGF.EmitBlock(Done);
+     }
+   };
+ 
+@@ -1540,8 +1553,9 @@ CodeGenFunction::EmitAutoVarInitialized(const VarDecl &D,
+       !D.getType().isVolatileQualified() &&
+       isDirectObjC3CarrierConstruction(CGM, D, Canonical) &&
+       supportsObjC3MixedCarrierLocalLifetime(CGM, Canonical);
++  const bool IsDeferredARC = IsCarrier && isObjC3DeferredCarrierLocal(D);
+   if (IsCarrier && !IsPlainCarrier && !IsDirectCppLocal && !IsDirectARCLocal &&
+-      !IsDirectMixedLocal) {
++      !IsDirectMixedLocal && !IsDeferredARC) {
+     CodeGen::diagnoseUnsupportedObjC3CarrierOperation(
+         CGM, D.getLocation(), Canonical, "local lifetime");
+     // Keep LocalDeclMap valid for recovery, without evaluating an initializer
+@@ -1552,6 +1566,12 @@ CodeGenFunction::EmitAutoVarInitialized(const VarDecl &D,
+     return std::nullopt;
+   }
+   AutoVarEmission emission = EmitAutoVarAlloca(D, DeferScopeRegistrations);
++  if (IsDeferredARC && HaveInsertPoint()) {
++    Address Initialized = CreateTempAlloca(Builder.getInt1Ty(), CharUnits::One(),
++                                           "objc3.carrier.initialized");
++    Builder.CreateStore(Builder.getFalse(), Initialized);
++    ObjC3DeferredCarrierFlags.try_emplace(&D, Initialized);
++  }
+   {
+     CleanupDeactivationScope Deactivation(*this);
+     if (D.hasAttr<ObjC3LifetimeBindingAttr>()) {
+@@ -2639,21 +2659,25 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
+       RegisterManaged(getARCCleanupKind(), /*Strong=*/true);
+     if (hasObjC3CarrierWeakPayload(CGM, Canonical))
+       RegisterManaged(NormalAndEHCleanup, /*Strong=*/false);
+-  } else if (IsCarrier && CodeGen::isObjC3CarrierARCLocalInitializer(CGM, D) &&
+-      CodeGen::supportsObjC3CarrierARCLocalLifetime(CGM, Canonical)) {
++  } else if (IsCarrier &&
++             (getObjC3DeferredCarrierFlag(&D).isValid() ||
++              (CodeGen::isObjC3CarrierARCLocalInitializer(CGM, D) &&
++               CodeGen::supportsObjC3CarrierARCLocalLifetime(CGM, Canonical)))) {
++    Address Initialized = getObjC3DeferredCarrierFlag(&D);
+     bool Ordered = hasObjC3DeferredSourceOwner(&D);
+     bool Precise = Ordered || D.hasAttr<ObjCPreciseLifetimeAttr>();
+     if (CodeGen::hasObjC3CarrierStrongPayload(CGM, Canonical)) {
+       DestroyObjC3ARCCarrierLocal Destroy(
+-          emission.getObjectAddress(*this), Canonical, Precise, true);
++          emission.getObjectAddress(*this), Canonical, Precise, true, Initialized);
+       if (Ordered)
+         EHStack.pushCleanup<EmitObjC3OrderedRelease>(
+             getARCCleanupKind(), registerObjC3SourceRelease(
+                 &D, emission.getObjectAddress(*this),
+                 bool(getARCCleanupKind() & EHCleanup),
+-                [Canonical, Precise](CodeGenFunction &CGF, Address Storage,
++                [Canonical, Precise, Initialized](CodeGenFunction &CGF, Address Storage,
+                                      EHScopeStack::Cleanup::Flags F) {
+-                  DestroyObjC3ARCCarrierLocal(Storage, Canonical, Precise, true)
++                  DestroyObjC3ARCCarrierLocal(Storage, Canonical, Precise, true,
++                                            Initialized)
+                       .Emit(CGF, F);
+                 }));
+       else
+@@ -2665,15 +2689,16 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
+         EHStack.pushCleanup<EmitObjC3OrderedRelease>(
+             NormalAndEHCleanup, registerObjC3SourceRelease(
+                 &D, emission.getObjectAddress(*this), true,
+-                [Canonical, Precise](CodeGenFunction &CGF, Address Storage,
++                [Canonical, Precise, Initialized](CodeGenFunction &CGF, Address Storage,
+                                      EHScopeStack::Cleanup::Flags F) {
+-                  DestroyObjC3ARCCarrierLocal(Storage, Canonical, Precise, false)
++                  DestroyObjC3ARCCarrierLocal(Storage, Canonical, Precise, false,
++                                            Initialized)
+                       .Emit(CGF, F);
+                 }));
+       else
+         EHStack.pushCleanup<DestroyObjC3ARCCarrierLocal>(
+             NormalAndEHCleanup, emission.getObjectAddress(*this), Canonical,
+-            Precise, /*DestroyStrong=*/false);
++            Precise, /*DestroyStrong=*/false, Initialized);
+     }
+   } else if (IsCarrier && isDirectObjC3CarrierConstruction(CGM, D, Canonical) &&
+       CodeGen::supportsObjC3CarrierCppLocalLifetime(CGM, Canonical) &&
+diff --git a/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
+index 40a43a09e04dc0c9f1776d26e821a8cf352dde02..317df6b47615ddc0cffccfbb1396be1b8e188888 100644
+--- a/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
++++ b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
+@@ -46,58 +46,6 @@ Qualifiers::ObjCLifetime effectiveARCStorageLifetime(QualType T) {
+   llvm_unreachable("unknown Objective-C lifetime qualifier");
+ }
+ 
+-bool isPlainLeaf(ASTContext &Ctx, QualType T, unsigned Depth = 0) {
+-  if (T.isNull() || Depth > 64)
+-    return false;
+-  if (T->isVoidType() || T->isIntegerType() || T->isEnumeralType() ||
+-      T->isRealFloatingType())
+-    return T.getObjCLifetime() == Qualifiers::OCL_None;
+-  if (T->isPointerType())
+-    return !T->isObjCObjectPointerType() && !T->isBlockPointerType() &&
+-           T.getObjCLifetime() == Qualifiers::OCL_None;
+-  if (const auto *RT = T->getAs<RecordType>()) {
+-    const RecordDecl *RD = RT->getDecl();
+-    if (isa<CXXRecordDecl>(RD) || !RD->isCompleteDefinition())
+-      return false;
+-    for (const FieldDecl *Field : RD->fields())
+-      if (!isPlainLeaf(Ctx, Field->getType(), Depth + 1))
+-        return false;
+-    return true;
+-  }
+-  return false;
+-}
+-
+-bool isARCPointerField(QualType T) {
+-  if (!isRetainablePointer(T))
+-    return false;
+-  switch (effectiveARCStorageLifetime(T)) {
+-  case Qualifiers::OCL_Strong:
+-  case Qualifiers::OCL_Weak:
+-  case Qualifiers::OCL_ExplicitNone:
+-    return true;
+-  case Qualifiers::OCL_None:
+-  case Qualifiers::OCL_Autoreleasing:
+-    return false;
+-  }
+-  return false;
+-}
+-
+-bool isSupportedField(ASTContext &Ctx, QualType T, unsigned &Budget,
+-                      unsigned Depth = 0) {
+-  if (T.isNull())
+-    return true;
+-  if (Depth > 64 || Budget == 0 || T.isVolatileQualified()) return false;
+-  --Budget;
+-  if (const auto *O = T->getAs<ObjC3OptionalType>())
+-    return isSupportedField(Ctx, O->getElementType(), Budget, Depth + 1);
+-  if (const auto *R = T->getAs<ObjC3ResultType>())
+-    return isSupportedField(Ctx, R->getSuccessType(), Budget, Depth + 1) &&
+-           isSupportedField(Ctx, R->getErrorType(), Budget, Depth + 1);
+-  if (isRetainablePointer(T))
+-    return isARCPointerField(T);
+-  return isPlainLeaf(Ctx, T);
+-}
+-
+ FieldDecl *getSelectedField(const ObjC3CarrierRepresentationInfo &Info,
+                             ObjC3CarrierPayloadArm Arm) {
+   switch (Arm) {
+@@ -663,10 +611,25 @@ LValue CodeGen::emitObjC3CarrierARCAssignment(CodeGenFunction &CGF,
+   // cleanup only after the entire selected RHS has initialized successfully.
+   CGF.EHStack.pushCleanup<DestroyARCSnapshot>(NormalAndEHCleanup, Type, Snapshot);
+   LValue LHS = CGF.EmitCheckedLValue(E.getLHS(), CodeGenFunction::TCK_Store);
++  const auto *Ref = dyn_cast<DeclRefExpr>(E.getLHS()->IgnoreParenImpCasts());
++  const auto *Local = Ref ? dyn_cast<VarDecl>(Ref->getDecl()) : nullptr;
++  Address Initialized = CGF.getObjC3DeferredCarrierFlag(Local);
++  llvm::BasicBlock *Store = nullptr;
++  if (Initialized.isValid()) {
++    auto *Destroy = CGF.createBasicBlock("objc3.carrier.replace");
++    Store = CGF.createBasicBlock("objc3.carrier.store");
++    CGF.Builder.CreateCondBr(CGF.Builder.CreateLoad(Initialized), Destroy,
++                             Store);
++    CGF.EmitBlock(Destroy);
++  }
+   emitObjC3CarrierDestroyActiveARCPayload(CGF, Type, LHS.getAddress(), true,
+                                           true, true);
++  if (Store)
++    CGF.EmitBlock(Store);
+   emitARCSelectedInit(CGF, Type, LHS.getAddress(), Snapshot, true,
+                       E.getOperatorLoc());
++  if (Initialized.isValid())
++    CGF.Builder.CreateStore(CGF.Builder.getTrue(), Initialized);
+   return LHS;
+ }
+ 
+@@ -677,20 +640,7 @@ bool CodeGen::containsObjC3CarrierARCPayload(CodeGenModule &CGM,
+ 
+ bool CodeGen::supportsObjC3CarrierARCLocalLifetime(CodeGenModule &CGM,
+                                                    QualType CarrierType) {
+-  if (!CGM.getLangOpts().ObjCAutoRefCount ||
+-      !containsObjC3CarrierARCPayload(CGM, CarrierType))
+-    return false;
+-  ASTContext &Ctx = CGM.getContext();
+-  auto Info = Ctx.getObjC3CarrierRepresentationType(CarrierType);
+-  if (Info.State != ObjC3CarrierRepresentationInfo::Status::Materialized)
+-    return false;
+-  unsigned Budget = 256;
+-  return isSupportedField(Ctx, Info.ValueField ? Info.ValueField->getType()
+-                                               : QualType(), Budget) &&
+-         isSupportedField(Ctx, Info.SuccessField ? Info.SuccessField->getType()
+-                                                 : QualType(), Budget) &&
+-         isSupportedField(Ctx, Info.ErrorField ? Info.ErrorField->getType()
+-                                               : QualType(), Budget);
++  return isObjC3ARCCarrierStorage(CGM.getContext(), CarrierType);
+ }
+ 
+ bool CodeGen::hasObjC3CarrierARCCleanup(CodeGenModule &CGM,
+@@ -819,7 +769,8 @@ llvm::Value *CodeGen::emitObjC3CarrierARCTagQuery(
+             !VD->hasGlobalStorage() &&
+             !CGF.ObjC3BorrowedMatchBindings.contains(VD) &&
+             !Ref->refersToEnclosingVariableOrCapture() &&
+-            !isObjC3CarrierARCLocalInitializer(CGF.CGM, *VD))
++            !isObjC3CarrierARCLocalInitializer(CGF.CGM, *VD) &&
++            !CGF.getObjC3DeferredCarrierFlag(VD).isValid())
+           return Fail();
+     // Borrow initialized storage. By-value parameters are caller-owned slots;
+     // reference and pointer views use the same active-tag read.
+diff --git a/clang/lib/CodeGen/CodeGenFunction.h b/clang/lib/CodeGen/CodeGenFunction.h
+index 1dff8bafb91cf30e54e7dc9c43be6403f29146a1..56792f64854dd5c44691878c6d07a56545f123bd 100644
+--- a/clang/lib/CodeGen/CodeGenFunction.h
++++ b/clang/lib/CodeGen/CodeGenFunction.h
+@@ -317,6 +317,14 @@ public:
+   ObjC3AsyncErrorHandler *ObjC3AsyncError = nullptr;
+   Address ObjC3CarrierReturnInitialized = Address::invalid();
+   llvm::SmallPtrSet<const VarDecl *, 8> ObjC3BorrowedMatchBindings;
++  llvm::DenseMap<const VarDecl *, Address> ObjC3DeferredCarrierFlags;
++
++  Address getObjC3DeferredCarrierFlag(const VarDecl *Var) const {
++    auto Flag = ObjC3DeferredCarrierFlags.find(Var);
++    return Flag == ObjC3DeferredCarrierFlags.end() ? Address::invalid()
++                                                  : Flag->second;
++  }
++
+ 
+   // ObjC3 nontrivial payload construction is admitted only while initializing
+   // the exact direct carrier local that owns the destination storage.
+diff --git a/clang/lib/Sema/AnalysisBasedWarnings.cpp b/clang/lib/Sema/AnalysisBasedWarnings.cpp
+index e361098ee440a25c04b77626c2e99c114d6af380..888373abe82df129196e2d34cad08323f8df5fe7 100644
+--- a/clang/lib/Sema/AnalysisBasedWarnings.cpp
++++ b/clang/lib/Sema/AnalysisBasedWarnings.cpp
+@@ -15,6 +15,7 @@
+ #include "clang/Sema/AnalysisBasedWarnings.h"
+ #include "SemaLifetimeSafety.h"
+ #include "TypeLocBuilder.h"
++#include "clang/AST/ObjC3TypeContracts.h"
+ #include "clang/AST/Decl.h"
+ #include "clang/AST/DeclCXX.h"
+ #include "clang/AST/DeclObjC.h"
+@@ -1755,6 +1756,15 @@ private:
+   // diagnostic is printed, further diagnostics for this variable are skipped.
+   void diagnoseUnitializedVar(const VarDecl *vd, bool hasSelfInit,
+                               UsesVec *vec) {
++    if (isObjC3DeferredCarrierLocal(*vd)) {
++      if (!vec->empty()) {
++        const Expr *Use = vec->front().getUser();
++        S.Diag(Use->getBeginLoc(),
++               diag::err_objc3_carrier_use_before_initialization)
++            << vd->getDeclName() << Use->getSourceRange();
++      }
++      return;
++    }
+     // Specially handle the case where we have uses of an uninitialized
+     // variable, but the root cause is an idiomatic self-init.  We want
+     // to report the diagnostic at the self-init since that is the root cause.
+@@ -3084,7 +3094,19 @@ void clang::sema::AnalysisBasedWarnings::IssueWarnings(
+   //     time.
+   DiagnosticsEngine &Diags = S.getDiagnostics();
+ 
+-  if (shouldSkipAnalysisForDecl(S, D))
++  const VarDecl *DeferredCarrier = nullptr;
++  const auto *Context = cast<DeclContext>(D);
++  if (Context->isDependentContext())
++    return;
++  if (S.getLangOpts().ObjC3 && S.getLangOpts().ObjCAutoRefCount)
++    for (const Decl *Local : Context->decls())
++      if (const auto *Var = dyn_cast<VarDecl>(Local);
++          Var && isObjC3DeferredCarrierLocal(*Var)) {
++        DeferredCarrier = Var;
++        break;
++      }
++
++  if (!DeferredCarrier && shouldSkipAnalysisForDecl(S, D))
+     return;
+ 
+   if (S.hasUncompilableErrorOccurred()) {
+@@ -3099,10 +3121,10 @@ void clang::sema::AnalysisBasedWarnings::IssueWarnings(
+   // Construct the analysis context with the specified CFG build options.
+   AnalysisDeclContext AC(/* AnalysisDeclContextManager */ nullptr, D);
+ 
+-  // Don't generate EH edges for CallExprs as we'd like to avoid the n^2
+-  // explosion for destructors that can result and the compile time hit.
++  // Include exceptional paths when they can skip an assignment to a
++  // managed carrier. The ordinary warning path keeps the cheaper CFG.
+   AC.getCFGBuildOptions().PruneTriviallyFalseEdges = true;
+-  AC.getCFGBuildOptions().AddEHEdges = false;
++  AC.getCFGBuildOptions().AddEHEdges = DeferredCarrier != nullptr;
+   AC.getCFGBuildOptions().AddInitializers = true;
+   AC.getCFGBuildOptions().AddImplicitDtors = true;
+   AC.getCFGBuildOptions().AddParameterLifetimes = true;
+@@ -3119,7 +3141,8 @@ void clang::sema::AnalysisBasedWarnings::IssueWarnings(
+   // expect to always be CFGElements and then fill in the BuildOptions
+   // appropriately.  This is essentially a layering violation.
+   if (P.enableCheckUnreachable || P.enableThreadSafetyAnalysis ||
+-      P.enableConsumedAnalysis || EnableLifetimeSafetyAnalysis) {
++      P.enableConsumedAnalysis || EnableLifetimeSafetyAnalysis ||
++      DeferredCarrier) {
+     // Unreachable code analysis and thread safety require a linearized CFG.
+     AC.getCFGBuildOptions().setAllAlwaysAdd();
+   } else {
+@@ -3195,7 +3218,8 @@ void clang::sema::AnalysisBasedWarnings::IssueWarnings(
+     Analyzer.run(AC);
+   }
+ 
+-  if (!Diags.isIgnored(diag::warn_uninit_var, D->getBeginLoc()) ||
++  if (DeferredCarrier ||
++      !Diags.isIgnored(diag::warn_uninit_var, D->getBeginLoc()) ||
+       !Diags.isIgnored(diag::warn_sometimes_uninit_var, D->getBeginLoc()) ||
+       !Diags.isIgnored(diag::warn_maybe_uninit_var, D->getBeginLoc()) ||
+       !Diags.isIgnored(diag::warn_uninit_const_reference, D->getBeginLoc()) ||
+@@ -3218,6 +3242,10 @@ void clang::sema::AnalysisBasedWarnings::IssueWarnings(
+             std::max(MaxUninitAnalysisBlockVisitsPerFunction,
+                      stats.NumBlockVisits);
+       }
++    } else if (DeferredCarrier) {
++      S.Diag(DeferredCarrier->getLocation(),
++             diag::err_objc3_carrier_requires_initializer)
++          << DeferredCarrier->getDeclName();
+     }
+   }
+ 
+diff --git a/clang/lib/Sema/SemaDecl.cpp b/clang/lib/Sema/SemaDecl.cpp
+index c2eeae9d8b6a86bec70fc1dd264b694c431b8330..6d44955cfbd1ece64f9eab3ae596a7d35206f9cf 100644
+--- a/clang/lib/Sema/SemaDecl.cpp
++++ b/clang/lib/Sema/SemaDecl.cpp
+@@ -14788,6 +14788,20 @@ void Sema::ActOnUninitializedDecl(Decl *RealDecl) {
+   if (VarDecl *Var = dyn_cast<VarDecl>(RealDecl)) {
+     QualType Type = Var->getType();
+ 
++    if (getLangOpts().ObjC3 && getLangOpts().ObjCAutoRefCount &&
++        Var->hasLocalStorage() && !Type->isDependentType() &&
++        hasObjC3CarrierManagedPayload(Type)) {
++      if (!isObjC3DeferredCarrierLocal(*Var)) {
++        Diag(Var->getLocation(), diag::err_objc3_carrier_requires_initializer)
++            << Var->getDeclName();
++        Var->setInvalidDecl();
++        return;
++      }
++      // The compiler must enter the declaration before assigning the carrier
++      // or registering its conditional cleanup.
++      setFunctionHasBranchProtectedScope();
++    }
++
+     if (Type.getDesugaredType(Context) == Context.AMDGPUFeaturePredicateTy) {
+       Diag(Var->getLocation(),
+            diag::err_amdgcn_predicate_type_is_not_constructible)
+diff --git a/clang/test/ObjC3/Sema/deferred-arc-carrier-init.m b/clang/test/ObjC3/Sema/deferred-arc-carrier-init.m
+new file mode 100644
+index 0000000000000000000000000000000000000000..4c501a0e63bc3a5e3f8077dcce52a0e5ea91707b
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/deferred-arc-carrier-init.m
+@@ -0,0 +1,47 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -Wno-uninitialized -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -Wno-uninitialized -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -Wno-uninitialized -emit-obj -o %t.o -verify %s
++
++typedef __objc3_optional(id) Maybe;
++typedef __objc3_result(id, id) Outcome;
++
++Outcome branch(int success, id value, id error) {
++  Outcome result;
++  if (success)
++    result = __objc3_ok(id, id, value);
++  else
++    result = __objc3_err(id, id, error);
++  return result;
++}
++
++void missing_branch(int success, id value) {
++  Outcome result;
++  if (success)
++    result = __objc3_ok(id, id, value);
++  (void)__objc3_is_ok(result); // expected-error {{is used before definite initialization}}
++}
++
++void missing_loop(int count, id value) {
++  Maybe result;
++  for (int i = 0; i < count; ++i)
++    result = __objc3_some(id, value);
++  (void)__objc3_has_value(result); // expected-error {{is used before definite initialization}}
++}
++
++void escape_before_assignment(void) {
++  Maybe result;
++  (void)&result; // expected-error {{is used before definite initialization}}
++}
++
++void read_own_assignment(void) {
++  Maybe result;
++  result = result; // expected-error {{is used before definite initialization}}
++}
++
++void constant_requires_initializer(void) {
++  const Maybe result; // expected-error {{requires an initializer at its declaration}}
++}
++
++void byref_requires_initializer(void) {
++  __block Maybe result; // expected-error {{requires an initializer at its declaration}}
++}

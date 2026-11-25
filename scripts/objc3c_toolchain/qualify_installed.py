@@ -99,6 +99,11 @@ def qualify_installed(repo: Path, prefix: Path, output: Path) -> dict:
                     [compiler, *mode, 'carrier-assignment.m', *flags,
                      '-fexceptions', '-fobjc-arc-exceptions', f'-{optimize}', '-g', '-o', assignment])
                 run(f'carrier-assignment-run-{language}-{optimize}', [assignment])
+        for name, flags in (('syntax', ['-fsyntax-only']),
+                            ('object', ['-c', '-o', 'carrier-definite-init-error.o'])):
+            run(f'carrier-definite-init-{name}', [compiler, '-Wno-uninitialized',
+                'carrier-definite-init-error.m', *flags],
+                diagnostic='is used before definite initialization')
         (client / 'arguments.rsp').write_text('main.objc3 -O2 -o "response app"')
         run('response-file', [compiler, '@arguments.rsp'])
         run('run-response', [client / 'response app'])
