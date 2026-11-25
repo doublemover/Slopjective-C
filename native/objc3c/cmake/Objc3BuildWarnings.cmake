@@ -13,6 +13,7 @@ function(objc3c_configure_build_warnings target)
   if(OBJC3C_SOURCE_COVERAGE)
     target_compile_options(${target} INTERFACE ${OBJC3C_SOURCE_COVERAGE_FLAGS}
       "-fcoverage-prefix-map=${CMAKE_SOURCE_DIR}=${CMAKE_SOURCE_DIR}")
-    target_link_options(${target} INTERFACE -fprofile-instr-generate "LINKER:--build-id=sha1")
+    # Native provider tests pass these options to Clang outside CMake as well.
+    target_link_options(${target} INTERFACE -fprofile-instr-generate -Wl,--build-id=sha1)
   endif()
 endfunction()

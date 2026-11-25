@@ -439,7 +439,10 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None,
         report['commands'].append(row);save()
         text = Path(row['log']).read_text(errors='replace')
         if row['timed_out'] or row['exit_code'] != expected:
-            raise ValueError('coverage command failed: '+name+'; see '+row['log'])
+            # Keep the complete transcript in the evidence and surface the
+            # diagnostic even when the hosted artifact download is unavailable.
+            tail = text[-8192:]
+            raise ValueError(f'coverage command failed: {name}; see {row["log"]}\n{tail}')
         if expected == 0: require_clean_diagnostic(text)
         row['status'] = 'PASS';save()
         return text
