@@ -143,6 +143,12 @@ Block to a worker, checks a forwarded by-reference result, and verifies
 strong and weak capture lifetimes. It runs at O0 and O2 before packaging,
 then recompiles and runs against the installed SDK.
 
+Typed `throws`, `try`, and `handle` use the hidden error-output parameter
+through native calls and message sends. The witness catches a subclass,
+checks each invocation's `defer`, and verifies that draining the pool
+finalizes the error once. The profile admits nonatomic accessors and
+compile-time protocols alongside owned allocation and initialization.
+
 The qualifier also compiles the current concrete collection and text service
 sources with the patched compiler and libc++. The existing map-count and text
 boundary regressions run from the relocated tree with active checks. Their
@@ -252,8 +258,8 @@ finalization, and exception-aware cleanup across images and threads.
   registration emits ELF section boundaries, COMDAT groups and an ELF
   constructor section. The separate experimental compiler handles root
   classes, subclasses, ARC-owned ivars, and typed dispatch for scalar and
-  plain C structure parameters and results. Properties, protocols, categories,
-  typed errors and cross-image runtime
+  plain C structure parameters and results. Runtime protocols, categories
+  and cross-image runtime
   lifecycle still need a design and native workloads. Inspect the linked
   dependency closure for accidental Apple ObjC2 use. [Driver guard](https://github.com/llvm/llvm-project/blob/392dfff97d29b59d77e5cac6d4b6ef2585fe7117/clang/lib/Driver/ToolChains/Clang.cpp#L8628)
   · [Registration lowering](https://github.com/llvm/llvm-project/blob/392dfff97d29b59d77e5cac6d4b6ef2585fe7117/clang/lib/CodeGen/CGObjCGNU.cpp#L1518)

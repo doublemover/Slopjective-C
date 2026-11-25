@@ -17,6 +17,7 @@ from .darwin_registration import (
     BLOCK_CAPTURE_IMPORTS, BLOCK_SOURCES, BLOCK_WITNESS, CARRIER_METHOD_DIAGNOSTIC,
     MANAGED_LAYOUT_IMPORTS, MANAGED_LAYOUT_SOURCES, MANAGED_LAYOUT_WITNESS,
     NATIVE, PORTABLE_HEADERS, PORTABLE_SERVICES, RUNTIME, RUNTIME_HEADER,
+    TYPED_ERROR_IMPORTS, TYPED_ERROR_SOURCES, TYPED_ERROR_WITNESS,
     TYPED_METHOD_IMPORTS, TYPED_METHOD_SOURCES, TYPED_METHOD_WITNESS,
     file_digest, load_profile, verify_fixed_layout_dwarf, verify_int_method_ir,
 )
@@ -208,37 +209,36 @@ def managed_layout(path: Path, report: dict, labels: dict) -> None:
             raise ValueError(f'Darwin managed layout omitted ARC compilation: {source}')
 
 
-def block_lifetimes(path: Path, report: dict, labels: dict) -> None:
-    proof = report['blocks']
-    names = {f'blocks-{opt}{route}' for opt in ('o0', 'o2') for route in ('', '-static', '-dynamic')}
+def native_owned_program(path, proof, labels, name, source, witness, required, *, flags=()):
+    names = {f'{name}-{opt}{route}' for opt in ('o0', 'o2') for route in ('', '-static', '-dynamic')}
     artifacts = proof['artifacts']
     if proof['status'] != 'PASS' or set(artifacts) != names:
-        raise ValueError('Darwin Blocks omitted an optimization or linkage route')
+        raise ValueError(f'Darwin {name} omitted an optimization or linkage route')
     for optimization in ('o0', 'o2'):
-        name = 'blocks-' + optimization
-        obj = artifacts[name]
-        require_macho(path, 'build/' + name + '.o', obj, 'object')
-        rows = labels.get(name + '-object', [])
-        imports = labels.get(name + '-object-imports', [])
+        label = f'{name}-{optimization}'
+        obj = artifacts[label]
+        require_macho(path, 'build/' + label + '.o', obj, 'object')
+        rows = labels.get(label + '-object', [])
+        imports = labels.get(label + '-object-imports', [])
         if (len(rows) != 1 or rows[0]['argv'][-1] != obj['path'] or
-                not {'-c', '-fobjc-arc', '-fblocks', '-' + optimization.upper()} <= set(rows[0]['argv']) or
-                not any(arg.endswith('/darwin_registration/' + BLOCK_SOURCES[0]) for arg in rows[0]['argv']) or
+                not {'-c', '-fobjc-arc', '-' + optimization.upper(), *flags} <= set(rows[0]['argv']) or
+                not any(arg.endswith('/darwin_registration/' + source) for arg in rows[0]['argv']) or
                 len(imports) != 1 or imports[0]['argv'] != ['/usr/bin/nm', '-u', '-j', obj['path']]):
-            raise ValueError(f'Darwin Blocks omitted the exact native compile or its imports: {name}')
+            raise ValueError(f'Darwin {label} omitted the exact native compile or its imports')
         log = retained(path, imports[0]['log']).read_text()
         symbols = {symbol.removeprefix('_') for symbol in log.splitlines()}
-        if not BLOCK_CAPTURE_IMPORTS <= symbols or sorted(symbols) != obj['imports']:
-            raise ValueError(f'Darwin Blocks did not use the native and owned capture ABI: {name}')
+        if not required <= symbols or sorted(symbols) != obj['imports']:
+            raise ValueError(f'Darwin {label} did not use the required runtime ABI')
         for linkage in ('static', 'dynamic'):
-            binary = name + '-' + linkage
+            binary = label + '-' + linkage
             artifact = artifacts[binary]
             paths = {SYSTEM}
             if linkage == 'dynamic':
                 paths.add('@rpath/' + LIBRARY + '.dylib')
             if set(artifact['load_paths']) != paths:
-                raise ValueError(f'Darwin Blocks linked unexpected libraries: {binary}')
+                raise ValueError(f'Darwin {binary} linked unexpected libraries')
             executable_witness(path, 'Relocated install/bin/' + binary, artifact,
-                               labels.get(binary + '-native', []), BLOCK_WITNESS)
+                               labels.get(binary + '-native', []), witness)
 
 
 def bootstrap(root: Path, revision: str) -> dict:
@@ -364,7 +364,10 @@ def registration(root: Path, first: dict, revision: str, *, require_arc: bool) -
     typed_dispatch(path, report, labels, arity=2)
     general_typed_dispatch(path, report, labels)
     managed_layout(path, report, labels)
-    block_lifetimes(path, report, labels)
+    native_owned_program(path, report['blocks'], labels, 'blocks', BLOCK_SOURCES[0],
+                         BLOCK_WITNESS, BLOCK_CAPTURE_IMPORTS, flags=['-fblocks'])
+    native_owned_program(path, report['typed_errors'], labels, 'typed-errors', TYPED_ERROR_SOURCES[0],
+                         TYPED_ERROR_WITNESS, TYPED_ERROR_IMPORTS)
     portable = report['portable_services']
     inputs = {NATIVE / name for name in PORTABLE_HEADERS}
     for service, fixture in PORTABLE_SERVICES.values():
@@ -558,7 +561,8 @@ def package(root: Path, runtime: dict, revision: str, *, require_sanitizers: boo
     for family, sources, witness, flags in (
             ('typed-method', TYPED_METHOD_SOURCES, TYPED_METHOD_WITNESS, set()),
             ('managed-layout', MANAGED_LAYOUT_SOURCES, MANAGED_LAYOUT_WITNESS, set()),
-            ('block-lifetime', BLOCK_SOURCES, BLOCK_WITNESS, {'-fblocks'})):
+            ('block-lifetime', BLOCK_SOURCES, BLOCK_WITNESS, {'-fblocks'}),
+            ('typed-errors', TYPED_ERROR_SOURCES, TYPED_ERROR_WITNESS, set())):
         installed_owned_fixture(path, runtime, installed, payload, qualified, consumer, family, sources, witness, flags)
     return packed
 
