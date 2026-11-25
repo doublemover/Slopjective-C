@@ -251,6 +251,33 @@ static const Strong &throwing_right(const Strong &source) {
   throw 43;
   return source;
 }
+static Outcome throw_before_carrier_assignment(bool fail, id object) {
+  if (fail)
+    throw 45;
+  return Ok(id, id, object);
+}
+
+static int deferred_locals_with_unwind(void) {
+  for (int iteration = 0; iteration != 2; ++iteration) {
+    bool fail = iteration != 0;
+    int key = 23 + iteration;
+    id object = [AssignmentProbe newWithKey:key];
+    __weak id observer = object;
+    try {
+      Outcome selected;
+      selected = throw_before_carrier_assignment(fail, object);
+      REQUIRE(!fail && isOk(selected) && observer != nil);
+      object = nil;
+      REQUIRE(observer != nil);
+    } catch (int error) {
+      REQUIRE(fail && error == 45 && observer != nil);
+      object = nil;
+    }
+    REQUIRE(observer == nil && destroyed[key] == 1);
+  }
+  return 0;
+}
+
 static int sequencing_and_unwind(void) {
   Strong source = Some(id, nil);
   Strong destination = None(id);
@@ -330,6 +357,7 @@ int main(void) {
   if ((result = blocks())) return result;
   if ((result = deferred_locals())) return result;
 #ifdef __cplusplus
+  if ((result = deferred_locals_with_unwind())) return result;
   if ((result = sequencing_and_unwind())) return result;
 #endif
   return 0;

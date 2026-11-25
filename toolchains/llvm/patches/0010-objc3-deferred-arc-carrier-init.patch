@@ -133,6 +133,29 @@ index 3bebb08c524f29b98544ccee3933540bcc4db257..bebcfe47150fc8504d5edbbfa596d4e5
  bool clang::isObjC3PlainCarrierCaptureType(const ASTContext &Context,
                                             QualType Type, bool IsMove) {
    if (Type.isNull() || !isa<ObjC3OptionalType, ObjC3ResultType>(
+diff --git a/clang/lib/Analysis/CFG.cpp b/clang/lib/Analysis/CFG.cpp
+index 1475e327042a68bc97541697d5d08720cfcc6755..e923c56662899e9c8679ab309a1892ad2b312b7e 100644
+--- a/clang/lib/Analysis/CFG.cpp
++++ b/clang/lib/Analysis/CFG.cpp
+@@ -1749,12 +1749,15 @@ private:
+     QualType Type = VD->getType();
+     if (Type->isObjCObjectPointerType() || Type->isBlockPointerType())
+       return Type.getObjCLifetime() == Qualifiers::OCL_Strong || Type.getObjCLifetime() == Qualifiers::OCL_Weak;
+-    // CodeGen queues native managed-record/array destruction with the precise
++    // CodeGen queues native managed storage destruction with the precise
+     // ARC releases. This subset contains only nonthrowing primitive leaves;
+     // user destructors, Block copies, resource callbacks and partial temporary
+     // initialization remain outside this cleanup recipe.
+-    return Context->getLangOpts().ObjCAutoRefCount && Type.isDestructedType() != QualType::DK_none &&
+-           hasPrimitiveARCStorage(Type);
++    return Context->getLangOpts().ObjCAutoRefCount &&
++           Type.isDestructedType() != QualType::DK_none &&
++           (hasPrimitiveARCStorage(Type) ||
++            (!Type.isVolatileQualified() &&
++             isObjC3ARCCarrierStorage(*Context, Type)));
+   }
+ 
+   bool hasTrivialDestructor(const VarDecl *VD) const;
 diff --git a/clang/lib/Analysis/UninitializedValues.cpp b/clang/lib/Analysis/UninitializedValues.cpp
 index 1969afa581a8e2459d5f3ff8cc8a7e7e8b97be79..122ea0c8ad6e74c777e22d9f43418b225f8adf99 100644
 --- a/clang/lib/Analysis/UninitializedValues.cpp
@@ -539,7 +562,7 @@ index 1dff8bafb91cf30e54e7dc9c43be6403f29146a1..56792f64854dd5c44691878c6d07a565
    // ObjC3 nontrivial payload construction is admitted only while initializing
    // the exact direct carrier local that owns the destination storage.
 diff --git a/clang/lib/Sema/AnalysisBasedWarnings.cpp b/clang/lib/Sema/AnalysisBasedWarnings.cpp
-index e361098ee440a25c04b77626c2e99c114d6af380..888373abe82df129196e2d34cad08323f8df5fe7 100644
+index e361098ee440a25c04b77626c2e99c114d6af380..b6e92a070dd9b8e3c36a1558e05674c060a92af2 100644
 --- a/clang/lib/Sema/AnalysisBasedWarnings.cpp
 +++ b/clang/lib/Sema/AnalysisBasedWarnings.cpp
 @@ -15,6 +15,7 @@
@@ -611,6 +634,15 @@ index e361098ee440a25c04b77626c2e99c114d6af380..888373abe82df129196e2d34cad08323
      // Unreachable code analysis and thread safety require a linearized CFG.
      AC.getCFGBuildOptions().setAllAlwaysAdd();
    } else {
+@@ -3132,7 +3155,7 @@ void clang::sema::AnalysisBasedWarnings::IssueWarnings(
+       .setAlwaysAdd(Stmt::ImplicitCastExprClass)
+       .setAlwaysAdd(Stmt::UnaryOperatorClass);
+   }
+-  if (EnableLifetimeSafetyAnalysis)
++  if (EnableLifetimeSafetyAnalysis || DeferredCarrier)
+     AC.getCFGBuildOptions().AddLifetime = true;
+ 
+   // Install the logical handler.
 @@ -3195,7 +3218,8 @@ void clang::sema::AnalysisBasedWarnings::IssueWarnings(
      Analyzer.run(AC);
    }
@@ -659,13 +691,13 @@ index c2eeae9d8b6a86bec70fc1dd264b694c431b8330..6d44955cfbd1ece64f9eab3ae596a7d3
             diag::err_amdgcn_predicate_type_is_not_constructible)
 diff --git a/clang/test/ObjC3/Sema/deferred-arc-carrier-init.m b/clang/test/ObjC3/Sema/deferred-arc-carrier-init.m
 new file mode 100644
-index 0000000000000000000000000000000000000000..e6700165898e20c1d36b14423065235c5d3feaa5
+index 0000000000000000000000000000000000000000..3e226b51bdbd38b6337f81bdfffe17f8ef3f75bb
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/deferred-arc-carrier-init.m
-@@ -0,0 +1,55 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -Wno-uninitialized -fsyntax-only -verify %s
-+// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -Wno-uninitialized -fsyntax-only -verify %s
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -Wno-uninitialized -emit-obj -o %t.o -verify %s
+@@ -0,0 +1,77 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -Wno-uninitialized -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -Wno-uninitialized -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -Wno-uninitialized -emit-obj -o %t.o -verify %s
 +
 +typedef __objc3_optional(id) Maybe;
 +typedef __objc3_result(id, id) Outcome;
@@ -710,6 +742,28 @@ index 0000000000000000000000000000000000000000..e6700165898e20c1d36b14423065235c
 +  (void)resume_execution();
 +  (void)__objc3_has_value(result); // expected-error {{is used before definite initialization}}
 +}
++
++Maybe make_result(void);
++
++void objc_throw_skips_assignment(void) {
++  Maybe result;
++  @try {
++    result = make_result();
++  } @catch (id failure) {
++    (void)__objc3_has_value(result); // expected-error {{is used before definite initialization}}
++  }
++}
++
++#ifdef __cplusplus
++void cxx_throw_skips_assignment(void) {
++  Maybe result;
++  try {
++    result = make_result();
++  } catch (int) {
++    (void)__objc3_has_value(result); // expected-error {{is used before definite initialization}}
++  }
++}
++#endif
 +
 +void constant_requires_initializer(void) {
 +  const Maybe result; // expected-error {{requires an initializer at its declaration}}
