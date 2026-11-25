@@ -691,13 +691,13 @@ index c2eeae9d8b6a86bec70fc1dd264b694c431b8330..6d44955cfbd1ece64f9eab3ae596a7d3
             diag::err_amdgcn_predicate_type_is_not_constructible)
 diff --git a/clang/test/ObjC3/Sema/deferred-arc-carrier-init.m b/clang/test/ObjC3/Sema/deferred-arc-carrier-init.m
 new file mode 100644
-index 0000000000000000000000000000000000000000..3e226b51bdbd38b6337f81bdfffe17f8ef3f75bb
+index 0000000000000000000000000000000000000000..6fe78ea9276521fd9d14451d1cf8a13ab6b2f519
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/deferred-arc-carrier-init.m
 @@ -0,0 +1,77 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -Wno-uninitialized -fsyntax-only -verify %s
-+// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -Wno-uninitialized -fsyntax-only -verify %s
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -Wno-uninitialized -emit-obj -o %t.o -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fobjc-exceptions -Wno-uninitialized -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -Wno-uninitialized -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fobjc-exceptions -Wno-uninitialized -emit-obj -o %t.o -verify %s
 +
 +typedef __objc3_optional(id) Maybe;
 +typedef __objc3_result(id, id) Outcome;
