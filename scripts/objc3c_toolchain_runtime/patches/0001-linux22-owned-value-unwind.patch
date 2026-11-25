@@ -344,7 +344,7 @@ index fbba14c03..323c53932 100644
  		*addr = nil;
  		return nil;
 diff --git a/associate.m b/associate.m
-index 2b987f99d..3d5492fd2 100644
+index 2b987f99d..68709cfdd 100644
 --- a/associate.m
 +++ b/associate.m
 @@ -190,7 +190,7 @@ static void deallocHiddenClass(id obj, SEL _cmd);
@@ -356,18 +356,20 @@ index 2b987f99d..3d5492fd2 100644
  	while (Nil != cls && 
  	       !objc_test_class_flag(cls, objc_class_flag_assoc_class))
  	{
-@@ -228,8 +228,8 @@ static Class allocateHiddenClass(Class superclass)
+@@ -228,17 +228,21 @@ static Class allocateHiddenClass(Class superclass)
  
  static inline Class initHiddenClassForObject(id obj)
  {
 -	Class hiddenClass = allocateHiddenClass(obj->isa); 
 -	assert(!class_isMetaClass(obj->isa));
+-	static SEL cxx_destruct;
+-	if (NULL == cxx_destruct)
+-	{
+-		cxx_destruct = sel_registerName(".cxx_destruct");
+-	}
 +	Class hiddenClass = allocateHiddenClass(classForObject(obj));
 +	assert(!class_isMetaClass(classForObject(obj)));
- 	static SEL cxx_destruct;
- 	if (NULL == cxx_destruct)
- 	{
-@@ -238,7 +238,11 @@ static inline Class initHiddenClassForObject(id obj)
++	SEL cxx_destruct = sel_registerName(".cxx_destruct");
  	const char *types = sizeof(void*) == 4 ? "v8@0:4" : "v16@0:8";
  	class_addMethod(hiddenClass, cxx_destruct,
  		(IMP)deallocHiddenClass, types);
@@ -376,6 +378,10 @@ index 2b987f99d..3d5492fd2 100644
 +	// The first retain/release consults this bit before installing its dtable;
 +	// otherwise a native ARC root is incorrectly sent an MRC retain message.
 +	checkARCAccessorsSlow(hiddenClass);
++	// A reader can observe this class without acquiring the object spin lock.
++	// Finish constructing its association mutex before publishing the class.
++	struct reference_list *list = object_getIndexedIvars(hiddenClass);
++	INIT_LOCK(list->lock);
 +	publishObjectClass(obj, hiddenClass);
  	return hiddenClass;
  }
@@ -389,7 +395,7 @@ index 2b987f99d..3d5492fd2 100644
  	// Free the introspection structures:
  	freeMethodLists(hiddenClass);
  	freeIvarLists(hiddenClass);
-@@ -284,7 +288,7 @@ static void deallocHiddenClass(id obj, SEL _cmd)
+@@ -284,27 +288,24 @@ static void deallocHiddenClass(id obj, SEL _cmd)
  
  static struct reference_list* referenceListForObject(id object, BOOL create)
  {
@@ -397,8 +403,45 @@ index 2b987f99d..3d5492fd2 100644
 +	if (class_isMetaClass(classForObject(object)))
  	{
  		Class cls = (Class)object;
- 		if ((NULL == cls->extra_data) && create)
-@@ -349,11 +353,11 @@ id objc_getAssociatedObject(id object, const void *key)
+-		if ((NULL == cls->extra_data) && create)
++		struct reference_list *list = __atomic_load_n(&cls->extra_data, __ATOMIC_ACQUIRE);
++		if (NULL == list && create)
+ 		{
+ 			volatile int *lock = lock_for_pointer(cls);
+-			struct reference_list *list = gc->malloc(sizeof(struct reference_list));
+ 			lock_spinlock(lock);
+-			if (NULL == cls->extra_data)
++			list = __atomic_load_n(&cls->extra_data, __ATOMIC_RELAXED);
++			if (NULL == list)
+ 			{
++				list = gc->malloc(sizeof(struct reference_list));
+ 				INIT_LOCK(list->lock);
+-				cls->extra_data = list;
+-				unlock_spinlock(lock);
+-			}
+-			else
+-			{
+-				unlock_spinlock(lock);
+-				gc->free(list);
++				__atomic_store_n(&cls->extra_data, list, __ATOMIC_RELEASE);
+ 			}
++			unlock_spinlock(lock);
+ 		}
+-		return cls->extra_data;
++		return list;
+ 	}
+ 	Class hiddenClass = findHiddenClass(object);
+ 	if ((NULL == hiddenClass) && create)
+@@ -315,8 +316,6 @@ static struct reference_list* referenceListForObject(id object, BOOL create)
+ 		if (NULL == hiddenClass)
+ 		{
+ 			hiddenClass = initHiddenClassForObject(object);
+-			struct reference_list *list = object_getIndexedIvars(hiddenClass);
+-			INIT_LOCK(list->lock);
+ 		}
+ 		unlock_spinlock(lock);
+ 	}
+@@ -349,11 +348,11 @@ id objc_getAssociatedObject(id object, const void *key)
  		}
  		return r->object;
  	}
@@ -412,7 +455,7 @@ index 2b987f99d..3d5492fd2 100644
  	while (Nil != cls)
  	{
  		while (Nil != cls && 
-@@ -426,9 +430,9 @@ int objc_sync_exit(id object)
+@@ -426,9 +425,9 @@ int objc_sync_exit(id object)
  static Class hiddenClassForObject(id object)
  {
  	if (isSmallObject(object)) { return nil; }
@@ -424,15 +467,28 @@ index 2b987f99d..3d5492fd2 100644
  	}
  	Class hiddenClass = findHiddenClass(object);
  	if (NULL == hiddenClass)
-@@ -464,7 +468,7 @@ id object_clone_np(id object)
+@@ -439,8 +438,6 @@ static Class hiddenClassForObject(id object)
+ 		if (NULL == hiddenClass)
+ 		{
+ 			hiddenClass = initHiddenClassForObject(object);
+-			struct reference_list *list = object_getIndexedIvars(hiddenClass);
+-			INIT_LOCK(list->lock);
+ 		}
+ 		unlock_spinlock(lock);
+ 	}
+@@ -464,10 +461,8 @@ id object_clone_np(id object)
  	// Make sure that the prototype has a hidden class, so that methods added
  	// to it will appear in the clone.
  	referenceListForObject(object, YES);
 -	id new = class_createInstance(object->isa, 0);
+-	Class hiddenClass = initHiddenClassForObject(new);
+-	struct reference_list *list = object_getIndexedIvars(hiddenClass);
+-	INIT_LOCK(list->lock);
 +	id new = class_createInstance(classForObject(object), 0);
- 	Class hiddenClass = initHiddenClassForObject(new);
- 	struct reference_list *list = object_getIndexedIvars(hiddenClass);
- 	INIT_LOCK(list->lock);
++	initHiddenClassForObject(new);
+ 	objc_setAssociatedObject(new, &prototypeKey, object,
+ 			OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+ 	return new;
 diff --git a/blocks_runtime.h b/blocks_runtime.h
 index f69490ae9..3bdaaae08 100644
 --- a/blocks_runtime.h
