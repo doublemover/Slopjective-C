@@ -10,7 +10,8 @@
   "exports": [
     "c_frame_factory",
     "c_frame_destroyed",
-    "c_frame_scoped"
+    "c_frame_scoped",
+    "c_frame_owned_qualification"
   ],
   "dependencies": []
 }

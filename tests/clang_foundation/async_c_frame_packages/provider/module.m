@@ -2,6 +2,7 @@
 #include <objc3c/runtime/objc3_runtime_services.h>
 #include <stdlib.h>
 #include <string.h>
+#include "owned.h"
 
 static const objc3_async_result_type int_type = {
     sizeof(objc3_async_result_type),
@@ -67,8 +68,8 @@ objc3_async_frame c_frame_factory(int value) {
                              &int_type};
 }
 
-static int scope_child(int value) __objc3_async_frame { return value + 1; }
-int c_frame_scoped(int value) __objc3_async_frame __attribute__((objc_task_group)) {
+static int scope_child(int value) async { return value + 1; }
+int c_frame_scoped(int value) async __attribute__((objc_task_group)) {
   objc3_task_group_t *group = objc3_task_group_scope_current();
   assert(group);
   objc3_async_frame frame = scope_child(value);
