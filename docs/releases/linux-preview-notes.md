@@ -30,8 +30,8 @@ conformance.
   and checks source-line resolution after installation and relocation.
 - A single compiler invocation can combine Objective-C 3, C, and C++ source
   files. Each input receives the language options appropriate to that file.
-- Linux libobjc2 initializes association locks before publishing the storage
-  to concurrent callers.
+- Linux libobjc2 publishes association storage only after initializing its
+  locks and synchronizes publication of class dispatch tables.
 
 The candidate extension ABI is 24. Rebuild Objective-C 3 objects, PCH files,
 semantic interfaces, and source packages produced by earlier SDKs, including

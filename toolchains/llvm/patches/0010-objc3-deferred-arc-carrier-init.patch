@@ -134,7 +134,7 @@ index 3bebb08c524f29b98544ccee3933540bcc4db257..bebcfe47150fc8504d5edbbfa596d4e5
                                             QualType Type, bool IsMove) {
    if (Type.isNull() || !isa<ObjC3OptionalType, ObjC3ResultType>(
 diff --git a/clang/lib/Analysis/UninitializedValues.cpp b/clang/lib/Analysis/UninitializedValues.cpp
-index 1969afa581a8e2459d5f3ff8cc8a7e7e8b97be79..85911f90848cc05fee3fd89dee634d16b95e6e71 100644
+index 1969afa581a8e2459d5f3ff8cc8a7e7e8b97be79..122ea0c8ad6e74c777e22d9f43418b225f8adf99 100644
 --- a/clang/lib/Analysis/UninitializedValues.cpp
 +++ b/clang/lib/Analysis/UninitializedValues.cpp
 @@ -15,6 +15,7 @@
@@ -162,7 +162,60 @@ index 1969afa581a8e2459d5f3ff8cc8a7e7e8b97be79..85911f90848cc05fee3fd89dee634d16
      QualType ty = vd->getType();
      if (const auto *RD = ty->getAsRecordDecl())
        return recordIsNotEmpty(RD);
-@@ -281,6 +285,7 @@ public:
+@@ -75,6 +79,7 @@ namespace {
+ 
+ class DeclToIndex {
+   llvm::DenseMap<const VarDecl *, unsigned> map;
++  llvm::SmallBitVector DeferredCarrierIndices;
+ 
+ public:
+   DeclToIndex() = default;
+@@ -85,6 +90,10 @@ public:
+   /// Return the number of declarations in the map.
+   unsigned size() const { return map.size(); }
+ 
++  bool isDeferredCarrier(unsigned Index) const {
++    return DeferredCarrierIndices[Index];
++  }
++
+   /// Returns the bit vector index for a given declaration.
+   std::optional<unsigned> getValueIndex(const VarDecl *d) const;
+ };
+@@ -97,8 +106,10 @@ void DeclToIndex::computeMap(const DeclContext &dc) {
+                                                E(dc.decls_end());
+   for ( ; I != E; ++I) {
+     const VarDecl *vd = *I;
+-    if (isTrackedVar(vd, &dc))
++    if (isTrackedVar(vd, &dc)) {
+       map[vd] = count++;
++      DeferredCarrierIndices.push_back(isObjC3DeferredCarrierLocal(*vd));
++    }
+   }
+ }
+ 
+@@ -149,7 +160,7 @@ public:
+     return vals[block->getBlockID()];
+   }
+ 
+-  void setAllScratchValues(Value V);
++  void setScratchValuesForWarnings(Value V);
+   void mergeIntoScratch(ValueVector const &source, bool isFirst);
+   bool updateValueVectorWithScratch(const CFGBlock *block);
+ 
+@@ -193,9 +204,10 @@ static void printVector(const CFGBlock *block, ValueVector &bv,
+ }
+ #endif
+ 
+-void CFGBlockValues::setAllScratchValues(Value V) {
++void CFGBlockValues::setScratchValuesForWarnings(Value V) {
+   for (unsigned I = 0, E = scratch.size(); I != E; ++I)
+-    scratch[I] = V;
++    if (!declToIndex.isDeferredCarrier(I))
++      scratch[I] = V;
+ }
+ 
+ void CFGBlockValues::mergeIntoScratch(ValueVector const &source,
+@@ -281,6 +293,7 @@ public:
  private:
    const DeclContext *DC;
    llvm::DenseMap<const DeclRefExpr *, Class> Classification;
@@ -170,7 +223,7 @@ index 1969afa581a8e2459d5f3ff8cc8a7e7e8b97be79..85911f90848cc05fee3fd89dee634d16
  
    bool isTrackedVar(const VarDecl *VD) const {
      return ::isTrackedVar(VD, DC);
-@@ -301,6 +306,12 @@ public:
+@@ -301,6 +314,12 @@ public:
    void operator()(const Stmt *S) { Visit(S); }
  
    Class get(const DeclRefExpr *DRE) const {
@@ -183,7 +236,7 @@ index 1969afa581a8e2459d5f3ff8cc8a7e7e8b97be79..85911f90848cc05fee3fd89dee634d16
      llvm::DenseMap<const DeclRefExpr*, Class>::const_iterator I
          = Classification.find(DRE);
      if (I != Classification.end())
-@@ -394,6 +405,13 @@ void ClassifyRefs::VisitBinaryOperator(const BinaryOperator *BO) {
+@@ -394,6 +413,13 @@ void ClassifyRefs::VisitBinaryOperator(const BinaryOperator *BO) {
    // when TransferFunctions visits it. A compound-assignment does not affect
    // whether a variable is uninitialized, and there's no point counting it as a
    // use.
@@ -197,7 +250,26 @@ index 1969afa581a8e2459d5f3ff8cc8a7e7e8b97be79..85911f90848cc05fee3fd89dee634d16
    if (BO->isCompoundAssignmentOp())
      classify(BO->getLHS(), Use);
    else if (BO->getOpcode() == BO_Assign || BO->getOpcode() == BO_Comma)
-@@ -773,7 +791,9 @@ void TransferFunctions::VisitBinaryOperator(const BinaryOperator *BO) {
+@@ -732,7 +758,8 @@ void TransferFunctions::VisitCallExpr(const CallExpr *ce) {
+       // now, just assume such a call initializes all variables.  FIXME: Only
+       // mark variables as initialized if they have an initializer which is
+       // reachable from here.
+-      vals.setAllScratchValues(Initialized);
++      // The heuristic does not establish a managed carrier's lifetime.
++      vals.setScratchValuesForWarnings(Initialized);
+     }
+     else if (Callee->hasAttr<AnalyzerNoReturnAttr>()) {
+       // Functions labeled like "analyzer_noreturn" are often used to denote
+@@ -742,7 +769,7 @@ void TransferFunctions::VisitCallExpr(const CallExpr *ce) {
+       // suppressing branch-specific false positives when we call one of these
+       // functions but keep pretending the path continues (when in reality the
+       // user doesn't care).
+-      vals.setAllScratchValues(Unknown);
++      vals.setScratchValuesForWarnings(Unknown);
+     }
+   }
+ }
+@@ -773,7 +800,9 @@ void TransferFunctions::VisitBinaryOperator(const BinaryOperator *BO) {
    if (BO->getOpcode() == BO_Assign) {
      FindVarResult Var = findVar(BO->getLHS());
      if (const VarDecl *VD = Var.getDecl())
@@ -205,6 +277,15 @@ index 1969afa581a8e2459d5f3ff8cc8a7e7e8b97be79..85911f90848cc05fee3fd89dee634d16
 +      if (!isObjC3DeferredCarrierLocal(*VD) ||
 +          isa<DeclRefExpr>(BO->getLHS()->IgnoreParenImpCasts()))
 +        vals[VD] = Initialized;
+   }
+ }
+ 
+@@ -846,7 +875,7 @@ void TransferFunctions::VisitObjCMessageExpr(const ObjCMessageExpr *ME) {
+   // If the Objective-C message expression is an implicit no-return that
+   // is not modeled in the CFG, set the tracked dataflow values to Unknown.
+   if (objCNoRet.isImplicitNoReturn(ME)) {
+-    vals.setAllScratchValues(Unknown);
++    vals.setScratchValuesForWarnings(Unknown);
    }
  }
  
@@ -578,10 +659,10 @@ index c2eeae9d8b6a86bec70fc1dd264b694c431b8330..6d44955cfbd1ece64f9eab3ae596a7d3
             diag::err_amdgcn_predicate_type_is_not_constructible)
 diff --git a/clang/test/ObjC3/Sema/deferred-arc-carrier-init.m b/clang/test/ObjC3/Sema/deferred-arc-carrier-init.m
 new file mode 100644
-index 0000000000000000000000000000000000000000..4c501a0e63bc3a5e3f8077dcce52a0e5ea91707b
+index 0000000000000000000000000000000000000000..e6700165898e20c1d36b14423065235c5d3feaa5
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/deferred-arc-carrier-init.m
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,55 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -Wno-uninitialized -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -Wno-uninitialized -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -Wno-uninitialized -emit-obj -o %t.o -verify %s
@@ -620,6 +701,14 @@ index 0000000000000000000000000000000000000000..4c501a0e63bc3a5e3f8077dcce52a0e5
 +void read_own_assignment(void) {
 +  Maybe result;
 +  result = result; // expected-error {{is used before definite initialization}}
++}
++
++int resume_execution(void) __attribute__((returns_twice));
++
++void call_without_assignment(void) {
++  Maybe result;
++  (void)resume_execution();
++  (void)__objc3_has_value(result); // expected-error {{is used before definite initialization}}
 +}
 +
 +void constant_requires_initializer(void) {

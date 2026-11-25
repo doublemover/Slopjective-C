@@ -103,7 +103,7 @@
     },
     {
       "file": "0010-objc3-deferred-arc-carrier-init.patch",
-      "sha256": "a9bd748f435a2491911b66033e395a1f48761a433bd68d28f38d64d686d76393"
+      "sha256": "3be5d72cf0a17d327e5175e554feafc5e4c6ba2092639080ce8d580d67037c34"
     }
   ],
   "pristine_baseline_build_id": "llvmorg-23.1.5-392dfff97d29-pristine-v1",
