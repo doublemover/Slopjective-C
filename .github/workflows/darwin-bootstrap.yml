@@ -112,6 +112,7 @@ jobs:
           fi
           if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
             changes=$(git diff --name-only HEAD^1 HEAD -- toolchains/llvm/experimental \
+              .github/workflows/darwin-bootstrap.yml \
               scripts/objc3c_toolchain/cli.py \
               scripts/objc3c_toolchain/darwin_registration.py \
               scripts/objc3c_toolchain/darwin_sdk.py scripts/objc3c_toolchain/darwin_sdk_arc.py \
@@ -119,6 +120,7 @@ jobs:
               tests/tooling/test_darwin_sdk.py tests/tooling/test_darwin_sdk_portable_services.py \
               tests/clang_foundation/darwin_portable_services \
               native/objc3c/src/runtime/platform/darwin_registration.c \
+              native/objc3c/src/runtime/public/objc3_darwin.h \
               native/objc3c/src/runtime/public/objc3_collections.h \
               native/objc3c/src/runtime/public/objc3_stdlib_status.h \
               native/objc3c/src/runtime/public/objc3_text.h \
@@ -206,13 +208,109 @@ jobs:
             !${{ runner.temp }}/darwin-bootstrap-evidence/runtime/sdk/qualification/Relocated Objective-C 3 SDK/**
           if-no-files-found: error
           retention-days: 7
+  xscomic:
+    name: Run xsComic core against the installed Apple Silicon SDK
+    needs: bootstrap
+    if: needs.bootstrap.outputs.runtime_selected == 'true'
+    runs-on: macos-15
+    permissions:
+      actions: read
+      contents: read
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Read the exact xsComic source pin
+        id: app
+        shell: bash
+        run: |
+          test "$(uname -m)" = arm64
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          pin = json.loads(Path('toolchains/llvm/experimental/darwin-xscomic.json').read_text())
+          if pin['repository'] != 'doublemover/xsComic' or not re.fullmatch('[0-9a-f]{40}', pin['revision']):
+              raise SystemExit('xsComic qualification requires an exact source revision')
+          with Path(os.environ['GITHUB_OUTPUT']).open('a') as output:
+              print(f"revision={pin['revision']}", file=output)
+          PY
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: doublemover/xsComic
+          ref: ${{ steps.app.outputs.revision }}
+          path: xscomic-consumer
+          persist-credentials: false
+      - name: Install native codec dependencies
+        run: brew install pkg-config libarchive jpeg-turbo libpng webp libtiff libavif libheif giflib
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: darwin-arm64-bootstrap-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/darwin-sdk-producer
+      - name: Install the SDK archive produced by this revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          package="$RUNNER_TEMP/darwin-sdk-producer/runtime/sdk/package"
+          evidence="$RUNNER_TEMP/xscomic-evidence"
+          sdk="$RUNNER_TEMP/xsComic Objective-C 3 SDK"
+          mkdir -p "$evidence"
+          archive_sha=$(python3 - "$package/package.json" "$GITHUB_SHA" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          receipt = json.loads(Path(sys.argv[1]).read_text())
+          if receipt['revision'] != sys.argv[2] or receipt['status'] != 'PASS':
+              raise SystemExit('The SDK producer receipt does not match the checked-out compiler revision')
+          print(receipt['archive_sha256'])
+          PY
+          )
+          python3 -B -m scripts.objc3c_toolchain darwin install \
+            --archive "$package/objc3-darwin-sdk.tar.gz" --archive-sha256 "$archive_sha" \
+            --prefix "$sdk" | tee "$evidence/install.json"
+          printf 'XSCOMIC_OBJC3_SDK=%s\n' "$sdk" >> "$GITHUB_ENV"
+      - name: Compile and run the Objective-C 3 core suite
+        shell: bash
+        working-directory: xscomic-consumer
+        env:
+          XSCOMIC_REVISION: ${{ steps.app.outputs.revision }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$XSCOMIC_REVISION"
+          printf '%s\n' "$XSCOMIC_REVISION" > "$RUNNER_TEMP/xscomic-evidence/source-revision"
+          ./scripts/run-objc3-macos-tests.sh 2>&1 | tee "$RUNNER_TEMP/xscomic-evidence/suite.log"
+      - name: Retain xsComic SDK identity, logs, and native executable
+        if: always()
+        shell: bash
+        run: |
+          destination="$RUNNER_TEMP/xscomic-evidence/core"
+          mkdir -p "$destination"
+          source="xscomic-consumer/build/objc3-macos-tests"
+          for path in "$source"/*.log "$source"/*.txt "$source/sdk.json" "$source/xsComicObjC3Tests"; do
+            if [[ -f "$path" ]]; then cp "$path" "$destination/"; fi
+          done
+      - name: Upload the xsComic qualification evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: xscomic-darwin-core-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/xscomic-evidence
+          if-no-files-found: warn
+          retention-days: 7
   verify:
     name: Verify retained Apple Silicon evidence
     if: ${{ always() && !inputs.candidate && !inputs.replacement }}
-    needs: bootstrap
+    needs: [bootstrap, xscomic]
     runs-on: ubuntu-26.04
     env:
       NATIVE_OUTCOME: ${{ needs.bootstrap.result }}
+      XSCOMIC_OUTCOME: ${{ needs.xscomic.result }}
       RUNTIME_SELECTED: ${{ needs.bootstrap.outputs.runtime_selected }}
       SANITIZERS_SELECTED: ${{ needs.bootstrap.outputs.sanitizers_selected }}
     steps:
@@ -222,8 +320,8 @@ jobs:
           test "$NATIVE_OUTCOME" = success
           case "$RUNTIME_SELECTED:$SANITIZERS_SELECTED" in
             false:false) echo 'DARWIN_EVIDENCE_MODE=bootstrap' >> "$GITHUB_ENV" ;;
-            true:false) echo 'DARWIN_EVIDENCE_MODE=package' >> "$GITHUB_ENV" ;;
-            true:true) echo 'DARWIN_EVIDENCE_MODE=package-sanitizers' >> "$GITHUB_ENV" ;;
+            true:false) test "$XSCOMIC_OUTCOME" = success && echo 'DARWIN_EVIDENCE_MODE=package' >> "$GITHUB_ENV" ;;
+            true:true) test "$XSCOMIC_OUTCOME" = success && echo 'DARWIN_EVIDENCE_MODE=package-sanitizers' >> "$GITHUB_ENV" ;;
             *) echo 'Missing Apple Silicon execution selection' >&2; exit 1 ;;
           esac
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -239,6 +337,32 @@ jobs:
           python3 -B -m scripts.objc3c_toolchain.darwin_evidence \
             --evidence out/native-darwin-evidence --revision "$GITHUB_SHA" \
             --outcome "$NATIVE_OUTCOME" --mode "$DARWIN_EVIDENCE_MODE" | tee out/darwin-terminal.json
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: env.RUNTIME_SELECTED == 'true'
+        with:
+          name: xscomic-darwin-core-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/xscomic-darwin-evidence
+      - name: Admit the native xsComic run from the same SDK
+        if: env.RUNTIME_SELECTED == 'true'
+        shell: bash
+        run: |
+          python3 -B - <<'PY'
+          import json
+          from pathlib import Path
+
+          from scripts.objc3c_toolchain.darwin_evidence import verify_xscomic
+
+          terminal = json.loads(Path('out/darwin-terminal.json').read_text())
+          receipt = verify_xscomic(Path('out/xscomic-darwin-evidence'), terminal)
+          Path('out/xscomic-terminal.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: env.RUNTIME_SELECTED == 'true'
+        with:
+          name: xscomic-terminal-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/xscomic-terminal.json
+          if-no-files-found: error
+          retention-days: 7
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: darwin-terminal-${{ github.run_id }}-${{ github.run_attempt }}

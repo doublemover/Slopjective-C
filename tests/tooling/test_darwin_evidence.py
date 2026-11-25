@@ -76,6 +76,35 @@ def test_command_evidence_can_be_empty_but_never_linked(tmp_path):
         evidence.retained(tmp_path, alias.name, allow_empty=True)
 
 
+@pytest.mark.parametrize('defect', [None, 'source', 'seal', 'loader', 'runtime', 'results'])
+def test_native_xscomic_evidence_requires_the_pinned_source_and_installed_runtime(tmp_path, defect):
+    core = tmp_path / 'core'
+    core.mkdir()
+    pin = json.loads((evidence.ROOT / 'toolchains/llvm/experimental/darwin-xscomic.json').read_text())
+    (tmp_path / 'source-revision').write_text(REVISION if defect == 'source' else pin['revision'])
+    manifest = {'revision': REVISION, 'compiler_version': 'clang version 23.1.5'}
+    seal = evidence._digest(manifest)
+    installed = {'status': 'PASS', 'archive_sha256': 'a' * 64, 'seal_sha256': seal,
+                 'prefix': '/private/var/tmp/xsComic SDK'}
+    (tmp_path / 'install.json').write_text(json.dumps(installed))
+    (core / 'sdk.json').write_text(json.dumps({**manifest, 'seal_sha256': 'c' * 64 if defect == 'seal' else seal}))
+    (core / 'compiler.txt').write_text(manifest['compiler_version'] + '\n')
+    (core / 'xsComicObjC3Tests').write_bytes(
+        struct.pack('<10I', 0xfeedfacf, 0x0100000c, 0, MACHO_TYPES['executable'], 1, 8, 0, 0, 0, 8))
+    (core / 'load-paths.txt').write_text(
+        'xsComicObjC3Tests:\n\t@rpath/libobjc3darwin.dylib (version)\n\t/usr/lib/libSystem.B.dylib (version)\n'
+        + ('\t/usr/lib/libobjc.A.dylib (version)\n' if defect == 'runtime' else ''))
+    location = '/tmp/wrong SDK' if defect == 'loader' else '/var/tmp/xsComic SDK'
+    (core / 'dyld.log').write_text(f'dyld[42]: <id> {location}/lib/libobjc3darwin.dylib\n')
+    (core / 'results.txt').write_text(f"=== SUMMARY: 188 passed, {1 if defect == 'results' else 0} failed ===\n")
+    sdk = {**installed, 'revision': REVISION, 'mode': 'package'}
+    if defect:
+        with pytest.raises(ValueError, match='xsComic'):
+            evidence.verify_xscomic(tmp_path, sdk)
+    else:
+        assert evidence.verify_xscomic(tmp_path, sdk)['tests_passed'] == 188
+
+
 @pytest.mark.parametrize('arity,fault', [
     (arity, fault) for arity in (1, 2)
     for fault in (None, 'missing-ir', 'wrong-optimization', 'changed-imports', 'missing-run')

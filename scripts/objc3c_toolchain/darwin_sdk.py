@@ -19,7 +19,8 @@ import unicodedata
 
 from .darwin_bootstrap import DEPLOYMENT_TARGET, ROOT, require_apple_silicon, verify_macho
 from .darwin_registration import (
-    BLOCK_SOURCES, BLOCK_WITNESS, MANAGED_LAYOUT_SOURCES, MANAGED_LAYOUT_WITNESS,
+    BLOCK_SOURCES, BLOCK_WITNESS, CARRIER_DISPATCH_SOURCES, CARRIER_DISPATCH_WITNESS,
+    MANAGED_LAYOUT_SOURCES, MANAGED_LAYOUT_WITNESS,
     RUNTIME_HEADER, TYPED_ERROR_SOURCES, TYPED_ERROR_WITNESS, TYPED_METHOD_SOURCES, TYPED_METHOD_WITNESS,
 )
 from . import darwin_sdk_arc as arc_consumer
@@ -41,7 +42,8 @@ LIBRARY = 'libobjc3darwin'
 SYSTEM = '/usr/lib/libSystem.B.dylib'
 DEMO = 'share/objc3c/examples/registration'
 DEMO_FILES = ('api.h', 'provider.m', 'main.m', 'late.m', *arc_consumer.SOURCES,
-              *TYPED_METHOD_SOURCES, *MANAGED_LAYOUT_SOURCES, *BLOCK_SOURCES, *TYPED_ERROR_SOURCES)
+              *TYPED_METHOD_SOURCES, *MANAGED_LAYOUT_SOURCES, *BLOCK_SOURCES,
+              *TYPED_ERROR_SOURCES, *CARRIER_DISPATCH_SOURCES)
 API_HEADER = 'include/objc3_darwin.h'
 WITNESS = 'owned Objective-C 3 Darwin registration: PASS\nowned Objective-C 3 Darwin instances: PASS'
 MAX_ENTRIES = 10000
@@ -626,7 +628,8 @@ def qualify(archive: Path, expected_sha256: str, output: Path) -> dict:
                 ('typed-method', TYPED_METHOD_SOURCES, TYPED_METHOD_WITNESS, []),
                 ('managed-layout', MANAGED_LAYOUT_SOURCES, MANAGED_LAYOUT_WITNESS, []),
                 ('block-lifetime', BLOCK_SOURCES, BLOCK_WITNESS, ['-fblocks']),
-                ('typed-errors', TYPED_ERROR_SOURCES, TYPED_ERROR_WITNESS, [])):
+                ('typed-errors', TYPED_ERROR_SOURCES, TYPED_ERROR_WITNESS, []),
+                ('carrier-dispatch', CARRIER_DISPATCH_SOURCES, CARRIER_DISPATCH_WITNESS, [])):
             objects = []
             for source in (name for name in sources if name.endswith('.m')):
                 name = source.removesuffix('.m') + '.o'

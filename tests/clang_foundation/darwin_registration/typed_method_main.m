@@ -34,6 +34,8 @@ int main(void) {
   DarwinTypedTriple zero = send_result((DarwinTypedChild *)0, &offset);
   if (zero.first || zero.second || zero.third || evaluations != 2)
     return 3;
+  if (![object present] || [(DarwinTypedChild *)0 present])
+    return 5;
 #if __has_feature(objc_arc)
   @autoreleasepool {
 #endif

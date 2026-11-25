@@ -7,4 +7,7 @@
 - (id)identity:(id)value {
   return value;
 }
+- (_Bool)present {
+  return 1;
+}
 @end

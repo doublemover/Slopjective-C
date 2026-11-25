@@ -149,6 +149,14 @@ checks each invocation's `defer`, and verifies that draining the pool
 finalizes the error once. The profile admits nonatomic accessors and
 compile-time protocols alongside owned allocation and initialization.
 
+The carrier witness calls a native C function returning a plain `Optional`
+and sends owned `Optional` arguments and results. It checks nil sends,
+active payload ownership, and automatic destruction of an ivar-held
+payload. The Apple Silicon workflow then installs that run's SDK archive
+on a separate runner and builds and executes the pinned xsComic
+Objective-C 3 core suite. Its artifact retains the source commit, installed
+SDK receipt, compiler version, Mach-O executable, loader paths, and results.
+
 The qualifier also compiles the current concrete collection and text service
 sources with the patched compiler and libc++. The existing map-count and text
 boundary regressions run from the relocated tree with active checks. Their

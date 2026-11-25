@@ -61,6 +61,12 @@ TYPED_ERROR_IMPORTS = {
     'objc3_darwin_lookup_typed_v1', 'objc3_darwin_object_class_v1',
     'objc3_darwin_superclass_v1', 'objc3_darwin_arc_autorelease_v1',
 }
+CARRIER_DISPATCH_SOURCES = ('carrier_dispatch.m',)
+CARRIER_DISPATCH_WITNESS = 'owned Objective-C 3 Darwin carrier dispatch: PASS'
+CARRIER_DISPATCH_IMPORTS = {
+    'objc3_darwin_lookup_typed_v1', 'objc3_darwin_arc_retain_v1',
+    'objc3_darwin_arc_release_v1', 'objc3_darwin_arc_load_weak_retained_v1',
+}
 CARRIER_METHOD_DIAGNOSTIC = "ObjC3 carrier operation 'by-value call ABI' for type 'Optional(int)' has no qualified lowering"
 TYPED_METHOD_IMPORTS = {
     'lib/libtyped-method-child.dylib': 'objc3_darwin_lookup_super_typed_v1',
@@ -534,6 +540,9 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
     report['typed_errors'] = _exercise_owned_program(
         run, defaults, profile['compiler_runtime_flag'], link, stages, layout,
         'typed-errors', TYPED_ERROR_SOURCES[0], TYPED_ERROR_WITNESS, TYPED_ERROR_IMPORTS)
+    report['carrier_dispatch'] = _exercise_owned_program(
+        run, defaults, profile['compiler_runtime_flag'], link, stages, layout,
+        'carrier-dispatch', CARRIER_DISPATCH_SOURCES[0], CARRIER_DISPATCH_WITNESS, CARRIER_DISPATCH_IMPORTS)
     report['portable_services'] = _exercise_portable_services(
         run, defaults, linker, stages, layout, cxx_flags=report['cxx_toolchain']['flags'])
 

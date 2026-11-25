@@ -10,6 +10,7 @@ __attribute__((objc_root_class))
 @interface DarwinTypedBase
 - (DarwinTypedTriple)combine:(DarwinTypedTriple)value offset:(const int *)offset bias:(int)bias;
 - (id)identity:(id)value;
+- (_Bool)present;
 @end
 
 @interface DarwinTypedChild : DarwinTypedBase

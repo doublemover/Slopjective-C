@@ -14,7 +14,8 @@ from . import darwin_sdk_arc as sdk_arc
 from . import darwin_sdk_portable_services as services
 from .darwin_bootstrap import DEPLOYMENT_TARGET, ROOT, verify_macho
 from .darwin_registration import (
-    BLOCK_CAPTURE_IMPORTS, BLOCK_SOURCES, BLOCK_WITNESS, CARRIER_METHOD_DIAGNOSTIC,
+    BLOCK_CAPTURE_IMPORTS, BLOCK_SOURCES, BLOCK_WITNESS, CARRIER_DISPATCH_IMPORTS, CARRIER_DISPATCH_SOURCES,
+    CARRIER_DISPATCH_WITNESS, CARRIER_METHOD_DIAGNOSTIC,
     MANAGED_LAYOUT_IMPORTS, MANAGED_LAYOUT_SOURCES, MANAGED_LAYOUT_WITNESS,
     NATIVE, PORTABLE_HEADERS, PORTABLE_SERVICES, RUNTIME, RUNTIME_HEADER,
     TYPED_ERROR_IMPORTS, TYPED_ERROR_SOURCES, TYPED_ERROR_WITNESS,
@@ -368,6 +369,8 @@ def registration(root: Path, first: dict, revision: str, *, require_arc: bool) -
                          BLOCK_WITNESS, BLOCK_CAPTURE_IMPORTS, flags=['-fblocks'])
     native_owned_program(path, report['typed_errors'], labels, 'typed-errors', TYPED_ERROR_SOURCES[0],
                          TYPED_ERROR_WITNESS, TYPED_ERROR_IMPORTS)
+    native_owned_program(path, report['carrier_dispatch'], labels, 'carrier-dispatch', CARRIER_DISPATCH_SOURCES[0],
+                         CARRIER_DISPATCH_WITNESS, CARRIER_DISPATCH_IMPORTS)
     portable = report['portable_services']
     inputs = {NATIVE / name for name in PORTABLE_HEADERS}
     for service, fixture in PORTABLE_SERVICES.values():
@@ -562,7 +565,8 @@ def package(root: Path, runtime: dict, revision: str, *, require_sanitizers: boo
             ('typed-method', TYPED_METHOD_SOURCES, TYPED_METHOD_WITNESS, set()),
             ('managed-layout', MANAGED_LAYOUT_SOURCES, MANAGED_LAYOUT_WITNESS, set()),
             ('block-lifetime', BLOCK_SOURCES, BLOCK_WITNESS, {'-fblocks'}),
-            ('typed-errors', TYPED_ERROR_SOURCES, TYPED_ERROR_WITNESS, set())):
+            ('typed-errors', TYPED_ERROR_SOURCES, TYPED_ERROR_WITNESS, set()),
+            ('carrier-dispatch', CARRIER_DISPATCH_SOURCES, CARRIER_DISPATCH_WITNESS, set())):
         installed_owned_fixture(path, runtime, installed, payload, qualified, consumer, family, sources, witness, flags)
     return packed
 
@@ -612,6 +616,46 @@ def verify(root: Path, revision: str, *, outcome: str, mode: str) -> dict:
     if packed is not None:
         result.update(archive_sha256=packed['archive_sha256'], seal_sha256=packed['seal_sha256'])
     return result
+
+
+def verify_xscomic(root: Path, sdk: dict) -> dict:
+    """Bind the native app run to the SDK independently admitted in this run."""
+    root = root.resolve(strict=True)
+    pin = json.loads((ROOT / 'toolchains/llvm/experimental/darwin-xscomic.json').read_bytes())
+    source = retained(root, 'source-revision').read_text().strip()
+    installed = info(root, 'install.json')
+    manifest = info(root, 'core/sdk.json')
+    seal = manifest.pop('seal_sha256')
+    if (sdk['status'] != 'PASS' or sdk['mode'] not in ('package', 'package-sanitizers') or
+            source != pin['revision'] or installed['status'] != 'PASS' or
+            installed['archive_sha256'] != sdk['archive_sha256'] or
+            installed['seal_sha256'] != sdk['seal_sha256'] or seal != sdk['seal_sha256'] or
+            seal != _digest(manifest) or manifest['revision'] != sdk['revision']):
+        raise ValueError('xsComic did not run against the admitted native SDK and source revision')
+    compiler = retained(root, 'core/compiler.txt').read_text().splitlines()[0]
+    if compiler != manifest['compiler_version']:
+        raise ValueError('xsComic did not use the installed compiler identity')
+    executable = verify_macho(retained(root, 'core/xsComicObjC3Tests', limit=PRODUCT_BYTES), 'executable')
+    loads = retained(root, 'core/load-paths.txt').read_text().splitlines()[1:]
+    libraries = [line.strip().split(' (', 1)[0] for line in loads]
+    if ({SYSTEM, f'@rpath/{LIBRARY}.dylib'} - set(libraries) or
+            any(re.fullmatch(r'libobjc(?:\.[A-Za-z0-9]+)?\.dylib', Path(name).name)
+                for name in libraries)):
+        raise ValueError('xsComic has inconsistent owned runtime dependencies')
+    runtime = str(Path(installed['prefix']) / 'lib' / (LIBRARY + '.dylib'))
+    traced_paths = {runtime}
+    if runtime.startswith(('/private/var/', '/private/tmp/')):
+        traced_paths.add(runtime.removeprefix('/private'))
+    trace = retained(root, 'core/dyld.log').read_text().splitlines()
+    matches = [line for line in trace if any(line.endswith(' ' + location) for location in traced_paths)]
+    results = retained(root, 'core/results.txt')
+    summary = re.findall(r'^=== SUMMARY: ([1-9][0-9]*) passed, 0 failed ===$', results.read_text(), re.MULTILINE)
+    if len(matches) != 1 or len(summary) != 1:
+        raise ValueError('xsComic omitted successful native execution with the installed runtime')
+    return {'status': 'PASS', 'repository': pin['repository'], 'source_revision': source,
+            'compiler_revision': sdk['revision'], 'compiler_version': compiler, 'archive_sha256': sdk['archive_sha256'],
+            'seal_sha256': seal, 'executable': executable, 'load_paths': libraries,
+            'tests_passed': int(summary[0]), 'results_sha256': file_digest(results)}
 
 
 def admit_terminal(replayed: dict, terminal: Path, expected_sha256: str) -> dict:
