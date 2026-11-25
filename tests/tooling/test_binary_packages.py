@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import copy
+from functools import partial
 from hashlib import sha256
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 from pathlib import Path
@@ -9,11 +11,13 @@ import shutil
 import stat
 import subprocess
 import sys
+from threading import Thread
 import zipfile
 
 import pytest
 
 from scripts.objc3c_toolchain import binary_packages as packages
+from scripts.objc3c_toolchain import package_registry as registry
 
 
 def test_installed_shared_library_accepts_one_versioned_soname_without_a_development_link(tmp_path):
@@ -261,6 +265,45 @@ def test_truncated_archive_is_rejected_by_cli(bundle, tmp_path):
     assert result.returncode == 1
     assert 'binary package install failed:' in result.stderr and 'Traceback' not in result.stderr
     assert not (tmp_path / 'installed' / identity).exists()
+
+
+def test_hosted_registry_resolves_pinned_media_and_replays_offline(bundle, tmp_path, monkeypatch):
+    source, manifest, identity = bundle
+    hosted = tmp_path / 'hosted'
+    publication = registry.publish(source, identity, hosted)
+    assert registry.publish(source, identity, hosted) == publication
+    sdk = tmp_path / 'sdk'
+    sdk.mkdir()
+    monkeypatch.setattr(packages, 'sdk_identity',
+                        lambda _: {'seal_sha256': manifest['sdk_seal'], 'target': manifest['target']})
+    store = tmp_path / 'installed'
+    modules = [('fixture.Top', 'top-v1')]
+    handler = partial(SimpleHTTPRequestHandler, directory=hosted)
+    with ThreadingHTTPServer(('127.0.0.1', 0), handler) as server:
+        worker = Thread(target=server.serve_forever)
+        worker.start()
+        try:
+            url = f'http://127.0.0.1:{server.server_port}/index.json'
+            pin = publication['index_sha256']
+            with pytest.raises(ValueError, match='index SHA-256'):
+                registry.fetch(sdk, url, '0' * 64, identity, modules, store)
+            with pytest.raises(ValueError, match='module identity locks'):
+                registry.fetch(sdk, url, pin, identity, [('fixture.Top', 'wrong')], store)
+            archive = Path(publication['archive'])
+            contents = archive.read_bytes()
+            archive.write_bytes(contents[:-1])
+            with pytest.raises(ValueError, match='size or SHA-256'):
+                registry.fetch(sdk, url, pin, identity, modules, store)
+            assert not (store / identity).exists()
+            archive.write_bytes(contents)
+            first = registry.fetch(sdk, url, pin, identity, modules, store)
+        finally:
+            server.shutdown()
+            worker.join()
+    assert not first['cache_hit']
+    assert registry.fetch(sdk, url, pin, identity, modules, store, offline=True) == {**first, 'cache_hit': True}
+    with pytest.raises(ValueError, match='pinned index in the cache'):
+        registry.fetch(sdk, url, pin, identity, modules, tmp_path / 'empty', offline=True)
 
 
 @pytest.mark.parametrize('damage', ['object', 'interface', 'sidecar', 'extra-file', 'symbolic-file', 'symbolic-directory', 'symbolic-root', 'wrong-lock'])

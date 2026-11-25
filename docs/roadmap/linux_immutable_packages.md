@@ -66,8 +66,22 @@ Installation accepts a verified directory or one compressed ZIP. Archive
 export sorts the artifact paths, writes a canonical manifest, and uses fixed
 file metadata. It reports the archive SHA-256 separately from the package
 content identity. Supply the trusted content identity independently when
-inspecting, installing, or consuming. Remote registries and version selection
-remain separate milestones.
+inspecting, installing, or consuming.
+
+Use `registry-publish` to build a versioned index and its immutable archives
+for a static HTTP or HTTPS host. Publish the contents of `--registry-dir`
+together and supply the index digest from a trusted release record. The fetch
+command verifies the index, archive bytes, exact native module locks and
+producing SDK before installation. Add `--offline` to replay the same index
+and package locks from the verified local store without a network request.
+
+```sh
+objc3c-package registry-publish --package ./published/CONTENT_SHA256 \
+  --content-sha256 CONTENT_SHA256 --registry-dir ./registry
+objc3c-package fetch --index-url https://packages.example.org/index.json \
+  --index-sha256 INDEX_SHA256 --content-sha256 CONTENT_SHA256 \
+  --module fixture.Top top-v1 --store ./installed
+```
 
 `inspect` verifies either representation and prints the target, SDK seal,
 optimization, module identities, artifact hashes and dependency visibility as

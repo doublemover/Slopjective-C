@@ -553,19 +553,33 @@ def main(argv=None):
     publication.add_argument('--store', type=Path, required=True)
     export = commands.add_parser('export', help='write a deterministic ZIP from a verified package directory')
     inspection = commands.add_parser('inspect', help='show a verified package or a selected module closure')
+    registry_publish = commands.add_parser('registry-publish', help='prepare a static registry index and archive')
+    fetch = commands.add_parser('fetch', help='resolve and install an exact package from a pinned registry')
     installation = commands.add_parser('install', help='install a verified package directory or ZIP')
     consumer = commands.add_parser('consume')
-    for command in (export, inspection, installation, consumer):
+    for command in (export, inspection, registry_publish, installation, consumer):
         command.add_argument('--package', type=Path, required=True)
         command.add_argument('--content-sha256', required=True)
     export.add_argument('--output', type=Path, required=True)
     inspection.add_argument('--module', nargs=2, metavar=('NAME', 'PACKAGE'), action='append', default=[])
+    registry_publish.add_argument('--registry-dir', type=Path, required=True)
+    fetch.add_argument('--index-url', required=True)
+    fetch.add_argument('--index-sha256', required=True)
+    fetch.add_argument('--content-sha256', required=True)
+    fetch.add_argument('--module', nargs=2, metavar=('NAME', 'PACKAGE'), action='append', required=True)
+    fetch.add_argument('--store', type=Path, required=True)
+    fetch.add_argument('--offline', action='store_true', help='verify the cached index and package without network access')
     installation.add_argument('--store', type=Path, required=True)
     consumer.add_argument('--application', type=Path, required=True)
     consumer.add_argument('--output-dir', type=Path, required=True)
     consumer.add_argument('--add-package', nargs=2, metavar=('DIRECTORY', 'CONTENT_SHA256'),
                           action='append', default=[], help='add another exact immutable package lock')
     args = parser.parse_args(argv)
+    if args.command in ('fetch', 'registry-publish'):
+        if __package__:
+            from . import package_registry
+        else:
+            import package_registry
     try:
         if args.command == 'install':
             result = install(args.package, args.content_sha256, args.store)
@@ -573,6 +587,8 @@ def main(argv=None):
             result = export_archive(args.package, args.content_sha256, args.output)
         elif args.command == 'inspect':
             result = inspect(args.package, args.content_sha256, args.module)
+        elif args.command == 'registry-publish':
+            result = package_registry.publish(args.package, args.content_sha256, args.registry_dir)
         else:
             sdk = args.sdk_root
             if sdk is None:
@@ -581,6 +597,9 @@ def main(argv=None):
                 sdk = Path(os.environ.get('OBJC3C_SDK_ROOT') or default)
             if args.command == 'publish':
                 result = publish(sdk, args.build_dir, args.store)
+            elif args.command == 'fetch':
+                result = package_registry.fetch(sdk, args.index_url, args.index_sha256, args.content_sha256,
+                                                args.module, args.store, offline=args.offline)
             else:
                 additional = tuple((Path(path), signature) for path, signature in args.add_package)
                 result = consume(sdk, args.package, args.content_sha256, args.application, args.output_dir,
