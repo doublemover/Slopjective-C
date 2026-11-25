@@ -69,6 +69,15 @@ directory chosen with `--root`. That directory contains `activate.sh`, the
 lock. Dependencies installed through `--provision` are distribution packages
 and can be used by other software.
 
+## Symbolize application diagnostics
+
+The SDK includes `bin/llvm-symbolizer` from its own LLVM build. After activating
+the SDK, the symbolizer is available on `PATH`. To make the association explicit,
+set `ASAN_SYMBOLIZER_PATH` or the debugger's `external_symbolizer_path` option to
+`$OBJC3C_SDK_ROOT/bin/llvm-symbolizer`. The latter option works in
+`UBSAN_OPTIONS` and `TSAN_OPTIONS`. Compile the application with `-g` for
+source file and line information.
+
 ## License and source
 
 The release includes the [GPLv2 project license](../../LICENSE).

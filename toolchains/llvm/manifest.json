@@ -133,6 +133,7 @@
       "llvm-ranlib",
       "llvm-readobj",
       "llvm-objdump",
+      "llvm-symbolizer",
       "clangTooling",
       "clangIndex",
       "clangCodeGen",
@@ -167,7 +168,8 @@
           "llvm-ar",
           "llvm-ranlib",
           "llvm-readobj",
-          "llvm-objdump"
+          "llvm-objdump",
+          "llvm-symbolizer"
         ]
       },
       {
@@ -223,6 +225,7 @@
       "llvm-ranlib",
       "llvm-readobj",
       "llvm-objdump",
+      "llvm-symbolizer",
       "lldb",
       "lldb-server",
       "llvm-dwarfdump",

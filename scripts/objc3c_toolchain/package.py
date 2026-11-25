@@ -358,6 +358,9 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     shutil.copyfile(Path(__file__).with_name('cmake_linux.sh'),
                     prefix / 'share/objc3c/install-cmake-linux.sh')
     shutil.copyfile(repo / 'toolchains/linux-hosts.json', prefix / 'share/objc3c/linux-hosts.json')
+    symbolizer = prefix / 'bin/llvm-symbolizer'
+    if not symbolizer.is_file() or not os.access(symbolizer, os.X_OK):
+        raise ValueError('the Linux SDK requires the staged LLVM symbolizer')
     normalize_permissions(prefix)
     data = {'schema': SCHEMA, 'source_build_id': source['build_id'],
             'upstream_commit': source['upstream_commit'], 'patch_digest': source['patch_digest'],

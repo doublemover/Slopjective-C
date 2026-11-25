@@ -110,6 +110,8 @@ def qualify_installed(repo: Path, prefix: Path, output: Path) -> dict:
         run('embedding-run', [client / 'build/embedding', prefix])
         run('embedding-dwarf', [prefix / 'bin/llvm-dwarfdump', '--verify', client / 'build/embedding'])
         run('dwarf', [prefix / 'bin/llvm-dwarfdump', '--verify', client / 'application-O0'])
+        run('source-symbolization', [os.sys.executable, '-B', 'verify-symbolizer.py',
+                                     prefix, client / 'application-O0'])
         run('carrier-transfer-dwarf', [prefix / 'bin/llvm-dwarfdump', '--verify', client / 'carrier-transfer-O0'])
         for language in ('objective-c', 'objective-c++'):
             run(f'carrier-assignment-dwarf-{language}',
