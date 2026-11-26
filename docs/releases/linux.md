@@ -123,3 +123,17 @@ Before making a conformance claim, assemble the matching
 [profile evidence](../../spec/conformance/profile_release_evidence_checklist.md)
 from tests executed against the shipped archive, including the required
 independent review. The preview release manifest carries an empty profile claim list.
+
+To verify the compiler feature queries, activate the installed SDK and run the
+following from a checkout containing the release's capability catalog. Run it
+on each native architecture. For an older release, pass `--authority` with
+`schemas/objc3-language-capabilities.json` from the corresponding source tag.
+
+```sh
+python3 -m scripts.objc3c_toolchain.qualify_linux_capabilities \
+  --sdk-root "$OBJC3C_SDK_ROOT" --output "linux-$(uname -m)-capability-queries.json"
+```
+
+The report records the SDK seal, compiler digest, catalog identity and each
+advertised feature's witness references. Compare the seal with the release
+manifest and review the referenced behavior evidence before publishing claims.

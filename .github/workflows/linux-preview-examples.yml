@@ -13,6 +13,7 @@ on:
       - "showcase/log-summary/**"
       - "showcase/collections-text/**"
       - "showcase/parcel-quotes/**"
+      - "scripts/objc3c_toolchain/qualify_linux_capabilities.py"
       - ".github/workflows/linux-preview-examples.yml"
 permissions:
   contents: read
@@ -55,6 +56,43 @@ jobs:
           cd "$downloads"
           sha256sum --check --ignore-missing SHA256SUMS
           sh install-linux.sh --provision --archive "$archive" --sha256 "$checksum" --root /opt/objc3c
+      - name: Verify the published compiler capability queries
+        shell: bash
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: |
+          source /opt/objc3c/activate.sh
+          evidence="$RUNNER_TEMP/objc3-capabilities"
+          mkdir -p "$evidence"
+          revision=$(python3 -c 'import json; print(json.load(open("docs/releases/preview-manifest.json"))["revision"])')
+          curl --fail --location --silent --show-error --retry 3 \
+            "https://raw.githubusercontent.com/doublemover/Slopjective-C/$revision/schemas/objc3-language-capabilities.json" \
+            --output "$evidence/catalog.json"
+          python3 -B -m scripts.objc3c_toolchain.qualify_linux_capabilities \
+            --sdk-root "$OBJC3C_SDK_ROOT" --authority "$evidence/catalog.json" --output "$evidence/queries.json"
+          python3 -B - "$evidence/queries.json" "$ARCH" <<'PY'
+          import json
+          from pathlib import Path
+          import sys
+          from scripts.objc3c_toolchain.release_install import published_archive
+
+          manifest = json.loads(Path('docs/releases/preview-manifest.json').read_text())
+          archive = published_archive(manifest, 'linux-' + sys.argv[2])
+          receipt = json.loads(Path(sys.argv[1]).read_text())
+          if (receipt['sdk_seal'] != archive['seal_sha256'] or
+                  receipt['source_build_id'] != archive['source_build_id'] or
+                  receipt['target'] != archive['target']):
+              raise SystemExit('Capability query receipt does not belong to the published archive')
+          receipt['release'] = {'tag': manifest['tag'], 'revision': manifest['revision'],
+                                'archive_sha256': archive['sha256']}
+          Path(sys.argv[1]).write_text(json.dumps(receipt, indent=2, sort_keys=True) + '\n')
+          PY
+      - name: Retain the exact release capability evidence
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: published-capability-queries-${{ matrix.arch }}
+          path: ${{ runner.temp }}/objc3-capabilities/
+          if-no-files-found: error
       - name: Run the documented examples outside the checkout
         shell: bash
         run: |
