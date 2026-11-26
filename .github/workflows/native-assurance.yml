@@ -256,6 +256,9 @@ jobs:
           retention-days: 1
   plan:
     name: Classify exact source revision
+    if: >-
+      !inputs.diagnostic_core_only ||
+      (inputs.diagnostic_transport_run == '' && inputs.diagnostic_coverage_run == '')
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     outputs:
       native: ${{ steps.plan.outputs.native }}
@@ -329,8 +332,9 @@ jobs:
 
   product-producer:
     name: Build and seal exact Linux SDK producer
-    needs: plan
-    if: needs.plan.outputs.native == 'true' && !inputs.diagnostic_core_only && inputs.diagnostic_transport_run == ''
+    if: >-
+      !inputs.diagnostic_core_only && inputs.diagnostic_transport_run == '' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container:
       image: debian:13
@@ -347,10 +351,14 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: native-plan-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: out/native-assurance/selection
+      - &local-periodic-plan
+        name: Classify the exact revision without waiting for another runner
+        shell: bash
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          python3 -B scripts/objc3c_toolchain/linux_host.py --expect-host "$OBJC3C_REQUESTED_HOST" --field host
+          python3 -B -m scripts.objc3c_assurance plan \
+            --plan out/native-assurance/selection/plan.json --periodic-sha "$GITHUB_SHA"
       - uses: ./.github/actions/linux-host-tools
         with:
           output: out/native-assurance/startup/product-producer
@@ -491,8 +499,9 @@ jobs:
 
   asan-foundation-producer:
     name: Build exact sanitizer compiler producer
-    needs: plan
-    if: needs.plan.outputs.native == 'true' && !inputs.diagnostic_core_only && inputs.diagnostic_transport_run == ''
+    if: >-
+      !inputs.diagnostic_core_only && inputs.diagnostic_transport_run == '' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container:
       image: debian:13
@@ -511,10 +520,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: native-plan-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: out/native-assurance/selection
+      - *local-periodic-plan
       - uses: ./.github/actions/linux-host-tools
         with:
           output: out/native-assurance/startup/asan-foundation-producer
@@ -683,8 +689,9 @@ jobs:
 
   independent-native:
     name: Execute independent native owner (frontend-fuzz)
-    needs: plan
-    if: needs.plan.outputs.native == 'true' && !inputs.diagnostic_core_only && inputs.diagnostic_transport_run == ''
+    if: >-
+      !inputs.diagnostic_core_only && inputs.diagnostic_transport_run == '' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container:
       image: debian:13
@@ -701,10 +708,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: native-plan-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: out/native-assurance/selection
+      - *local-periodic-plan
       - uses: ./.github/actions/linux-host-tools
         with:
           output: out/native-assurance/startup/frontend-fuzz
@@ -748,8 +752,9 @@ jobs:
 
   coverage-producer:
     name: Build exact source-coverage compiler producer
-    needs: plan
-    if: needs.plan.outputs.native == 'true' && !inputs.diagnostic_core_only && inputs.diagnostic_transport_run == ''
+    if: >-
+      !inputs.diagnostic_core_only && inputs.diagnostic_transport_run == '' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container:
       image: debian:13
@@ -766,10 +771,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: native-plan-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: out/native-assurance/selection
+      - *local-periodic-plan
       - uses: ./.github/actions/linux-host-tools
         with:
           output: out/native-assurance/startup/coverage-producer
@@ -864,7 +866,7 @@ jobs:
   coverage-aggregate:
     name: Merge all source-coverage partitions
     needs: [plan, coverage-producer, coverage-partitions]
-    if: always() && !inputs.diagnostic_core_only && needs.plan.result == 'success' && needs.coverage-producer.result == 'success' && needs.coverage-partitions.result == 'success'
+    if: ${{ !inputs.diagnostic_core_only && needs.plan.result == 'success' && needs.coverage-producer.result == 'success' && needs.coverage-partitions.result == 'success' }}
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -987,7 +989,7 @@ jobs:
 
   gate:
     name: Extended Linux native assurance gate
-    if: always() && !inputs.diagnostic_core_only
+    if: "!cancelled() && !inputs.diagnostic_core_only"
     needs:
       [
         plan,

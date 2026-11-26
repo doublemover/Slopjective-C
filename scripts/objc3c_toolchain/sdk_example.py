@@ -80,8 +80,12 @@ def write_json(path: Path, value: dict, *, compact: bool = False) -> None:
     temporary = Path(name)
     try:
         with os.fdopen(descriptor, 'w') as stream:
-            json.dump(value, stream, indent=None if compact else 2, sort_keys=True,
-                      separators=(',', ':') if compact else None)
+            if compact:
+                # The C encoder handles compact receipts with many command and
+                # dependency records without a Python write for every JSON token.
+                stream.write(json.dumps(value, sort_keys=True, separators=(',', ':')))
+            else:
+                json.dump(value, stream, indent=2, sort_keys=True)
             stream.write('\n')
         os.replace(temporary, path)
     finally:

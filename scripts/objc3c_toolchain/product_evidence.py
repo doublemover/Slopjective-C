@@ -104,11 +104,12 @@ def phase_of(name, argv):
 
 
 class ProductCommands:
-    def __init__(self, output: Path, *, sources=(), budget=1024**3):
+    def __init__(self, output: Path, *, sources=(), budget=1024**3, checkpoint_commands=True):
         self.output = output.resolve()
         self.output.mkdir(parents=True, exist_ok=False)
         (self.output / 'blobs').mkdir()
         self.budget, self.retained_bytes = budget, 0
+        self.checkpoint_commands = checkpoint_commands
         self.signatures = {}
         self.blobs = {}
         self.fixed, self.external = {}, {}
@@ -313,7 +314,6 @@ class ProductCommands:
             row.update(command(args, cwd=work, environment=gate.environment, log=log, timeout=timeout))
             row['signal'] = -row['exit_code'] if row['exit_code'] < 0 else None
             row['environment'] = dict(gate.environment)
-            self.save()
             if row['timed_out'] or row['exit_code'] != expected:
                 raise ValueError('product command failed: '+name+'; see '+str(log))
             require_clean_diagnostic(log.read_text(errors='replace'))
@@ -365,7 +365,8 @@ class ProductCommands:
             self.report.update(status='FAIL', error=str(error))
             raise
         finally:
-            self.save()
+            if self.checkpoint_commands or row['status'] != 'PASS':
+                self.save()
         return row
 
     def record(self, gate, name, argv, rows, **configuration):

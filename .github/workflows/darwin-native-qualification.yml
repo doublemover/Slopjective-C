@@ -271,7 +271,7 @@ jobs:
           retention-days: 7
   verify:
     name: Verify retained Apple Silicon evidence
-    if: always()
+    if: "!cancelled()"
     needs: [bootstrap, xscomic]
     runs-on: ubuntu-26.04
     env:

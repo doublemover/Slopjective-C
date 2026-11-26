@@ -134,31 +134,27 @@ export function validatePreviewArchiveWriter(text, job) {
 
 export function validateNativePR(text) {
   const workflow = yaml.load(text);
-  const owner = workflow.jobs?.["native-pr-execution"];
   const gate = workflow.jobs?.["native-pr"];
-  const steps = owner?.steps ?? [];
+  const steps = gate?.steps ?? [];
   if (
     Object.keys(workflow.on ?? {}).join() !== "pull_request" ||
     workflow.on.pull_request !== null ||
     Object.keys(workflow.permissions ?? {}).join() !== "contents" ||
     workflow.permissions.contents !== "read" ||
-    !owner || owner.if ||
-    !gate || gate.if !== "always()" || gate.needs !== "native-pr-execution" ||
-    [owner, gate].some((job) => job.permissions || job["continue-on-error"] ||
-      (job.steps ?? []).some((step) => step["continue-on-error"] || (step.uses && !pinnedAction(step.uses))))
+    Object.keys(workflow.jobs ?? {}).join() !== "native-pr" ||
+    !gate || gate.if || gate.needs || gate.permissions || gate["continue-on-error"] ||
+    steps.some((step) => step["continue-on-error"] || (step.uses && !pinnedAction(step.uses)))
   )
-    throw new Error("Native PR gate must cover every PR with pinned, read-only execution");
+    throw new Error("Native PR gate must cover every PR on one runner with pinned, read-only execution");
 
   const checkout = steps.find((step) => step.uses?.startsWith("actions/checkout@"));
   const previewManifest = steps.find((step) => step.id === "preview-manifest");
   const previewCache = steps.find((step) => step.uses === previewArchiveCache);
   const previewInstall = steps.find((step) => step.run?.includes("-m scripts.objc3c_assurance.preview_download"));
-  const execute = steps.find((step) => step.run?.includes("-m scripts.objc3c_assurance.pr_native"));
+  const execute = steps.find((step) => step.id === "run");
   const upload = steps.find((step) => step.uses?.startsWith("actions/upload-artifact@"));
-  const gates = gate.steps ?? [];
-  const gateCheckout = gates.find((step) => step.uses?.startsWith("actions/checkout@"));
-  const download = gates.find((step) => step.uses?.startsWith("actions/download-artifact@"));
-  const verify = gates.find((step) => step.run?.includes("--verify-evidence out/native-pr-evidence"));
+  const download = steps.find((step) => step.uses?.startsWith("actions/download-artifact@"));
+  const verify = steps.find((step) => step.run?.includes("--verify-evidence out/native-pr-evidence"));
   if (
     checkout?.with?.["persist-credentials"] !== false ||
     checkout.with["fetch-depth"] !== 0 ||
@@ -170,7 +166,7 @@ export function validateNativePR(text) {
     previewInstall?.if !== previewCache?.if ||
     previewInstall?.env?.PREVIEW_CACHE !== "${{ steps.preview-cache.outputs.directory }}" ||
     !previewInstall?.run.includes('--archive-cache "$PREVIEW_CACHE"') ||
-    !execute ||
+    !execute?.run?.includes("-m scripts.objc3c_assurance.pr_native") ||
     execute.if ||
     !execute.run.includes('--head "$PR_HEAD" --base "$PR_BASE" --tested "$TESTED_SHA"') ||
     !upload?.if?.includes("always()") ||
@@ -178,13 +174,12 @@ export function validateNativePR(text) {
     !["github.sha", "github.run_id", "github.run_attempt"].every((value) =>
       upload.with.name?.includes(value),
     ) ||
-    gate.env?.NATIVE_EXECUTION !== "${{ needs.native-pr-execution.result }}" ||
-    !gates[0]?.run?.includes('"$NATIVE_EXECUTION" != success') || gates[0].if ||
-    gateCheckout?.with?.["persist-credentials"] !== false || gateCheckout.with["fetch-depth"] !== 0 ||
-    download?.with?.name !== upload.with.name || download.with.path !== "out/native-pr-evidence" ||
+    !(steps.indexOf(execute) < steps.indexOf(upload) && steps.indexOf(upload) < steps.indexOf(download) &&
+      steps.indexOf(download) < steps.indexOf(verify)) ||
+    download?.if || download?.with?.name !== upload.with.name || download.with.path !== "out/native-pr-evidence" ||
     !verify || verify.if || !verify.run.includes('-m scripts.objc3c_assurance.pr_native') ||
     !verify.run.includes('--head "$PR_HEAD" --base "$PR_BASE" --tested "$TESTED_SHA"') ||
-    !verify.run.includes('--execution "$NATIVE_EXECUTION"')
+    !verify.run.includes('--execution "${{ steps.run.outcome }}"')
   )
     throw new Error(
       "Native PR gate must execute and retain evidence for the exact tested revision",
@@ -292,11 +287,11 @@ export function validateNativeGate(text) {
   ];
   if (
     gate?.name !== "Extended Linux native assurance gate" ||
-    gate.if !== "always() && !inputs.diagnostic_core_only" ||
+    gate.if !== "!cancelled() && !inputs.diagnostic_core_only" ||
     JSON.stringify(gate.needs?.toSorted()) !== JSON.stringify(requiredGateNeeds) ||
     gate["continue-on-error"]
   )
-    throw new Error("Native aggregate must always evaluate every required prerequisite");
+    throw new Error("Native aggregate must evaluate every required prerequisite on active runs");
 
   const diagnostic = jobs["diagnostic-native"];
   const producer = jobs["product-producer"];
@@ -333,14 +328,20 @@ export function validateNativeGate(text) {
       "Sanitizer producer must publish success bytes and always retain failure evidence",
     );
   const fullOwnerCondition =
-    "needs.plan.outputs.native == 'true' && !inputs.diagnostic_core_only && inputs.diagnostic_transport_run == ''";
+    "!inputs.diagnostic_core_only && inputs.diagnostic_transport_run == '' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')";
+  for (const job of [producer, asanProducer, independent, coverageProducer]) {
+    const selection = (job?.steps ?? []).find((step) =>
+      step.run?.includes("scripts.objc3c_assurance plan"),
+    );
+    if (job?.needs || job?.if !== fullOwnerCondition || selection?.if ||
+        !selection?.run.includes('--plan out/native-assurance/selection/plan.json --periodic-sha "$GITHUB_SHA"') ||
+        !selection.run.includes('--expect-host "$OBJC3C_REQUESTED_HOST"') ||
+        !selection.run.includes('git config --global --add safe.directory "$GITHUB_WORKSPACE"'))
+      throw new Error("Independent Linux producers must select the exact periodic revision on their own runner");
+  }
   if (
     diagnostic?.if !==
       "needs.plan.outputs.native == 'true' && inputs.diagnostic_core_only && inputs.diagnostic_transport_run == '' && inputs.diagnostic_coverage_run == ''" ||
-    producer?.if !== fullOwnerCondition ||
-    asanProducer?.if !== fullOwnerCondition ||
-    independent?.if !== fullOwnerCondition ||
-    coverageProducer?.if !== fullOwnerCondition ||
     events.workflow_dispatch.inputs.diagnostic_transport_run?.default !== "" ||
     events.workflow_dispatch.inputs.diagnostic_transport_artifact?.default !== "" ||
     transport?.if !== "inputs.diagnostic_core_only && inputs.diagnostic_transport_run != ''" ||
@@ -589,7 +590,7 @@ export function validateNativeRelease(nativeText, releaseText, workflows = {}) {
     Object.hasOwn(call.with ?? {}, "diagnostic_core_only") ||
     call["continue-on-error"] ||
     releaseGate?.needs !== "build" ||
-    releaseGate.if !== "always()" ||
+    releaseGate.if !== "!cancelled()" ||
     releaseGate["continue-on-error"] ||
     !releaseGate.steps?.some(
       (step) =>
@@ -715,7 +716,7 @@ export function validateImplementationGate(text) {
   );
   if (
     gate?.name !== "Extended Linux implementation analysis gate" ||
-    gate.if !== "always()" ||
+    gate.if !== "!cancelled()" ||
     JSON.stringify(gate.needs?.toSorted()) !== JSON.stringify(["analysis", "foundation", "plan"]) ||
     gate["continue-on-error"] ||
     !verify || verify.if || verify["continue-on-error"] ||
@@ -975,7 +976,7 @@ export async function validateWorkflowContracts(config, readWorkflow) {
     const verifier = gate?.steps?.[0];
     if (Object.hasOwn(source ?? {}, "if") || guard?.env?.SOURCE_SHA !== "${{ inputs.source_sha }}" ||
         !guard.run?.includes('"$SOURCE_SHA" != "$GITHUB_SHA"') || !guard.run?.includes("exit 1") ||
-        gate?.if !== "always()" || JSON.stringify(gate.needs?.toSorted()) !== JSON.stringify(["native", "source"]) ||
+        gate?.if !== "!cancelled()" || JSON.stringify(gate.needs?.toSorted()) !== JSON.stringify(["native", "source"]) ||
         verifier?.env?.SOURCE_RESULT !== "${{ needs.source.result }}" ||
         verifier?.env?.NATIVE_RESULT !== "${{ needs.native.result }}" ||
         verifier?.env?.SOURCE_SHA !== "${{ inputs.source_sha }}" ||

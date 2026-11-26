@@ -35,7 +35,7 @@ jobs:
       archive_install: false
   gate:
     name: Verify exact-revision periodic evidence
-    if: always()
+    if: "!cancelled()"
     needs: [source, native]
     runs-on: ubuntu-26.04
     steps:

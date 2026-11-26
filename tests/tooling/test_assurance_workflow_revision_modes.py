@@ -87,6 +87,9 @@ python3() { "$TEST_PYTHON" "$ARGV_RECORDER" "$@"; }
 '''
     for operation, variants in commands.items():
         for index, command in enumerate(variants):
+            if event == 'pull_request' and 'selection/plan.json --periodic-sha' in command:
+                # The producer-local planning step only runs on schedule or dispatch.
+                continue
             output = tmp_path / (operation + '-' + str(index) + '.jsonl')
             subprocess.run(['bash', '-e', '-o', 'pipefail', '-c', prefix + command], check=True,
                 env={**os.environ, 'TEST_PYTHON': sys.executable, 'ARGV_RECORDER': str(recorder),

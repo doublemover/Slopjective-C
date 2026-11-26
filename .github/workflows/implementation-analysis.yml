@@ -216,7 +216,7 @@ jobs:
           retention-days: 7
   gate:
     name: Extended Linux implementation analysis gate
-    if: always()
+    if: "!cancelled()"
     needs: [plan, foundation, analysis]
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     steps:
