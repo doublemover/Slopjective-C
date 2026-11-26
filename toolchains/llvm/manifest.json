@@ -111,7 +111,7 @@
     },
     {
       "file": "0012-objc3-locked-package-module-declaration.patch",
-      "sha256": "313a92d2673c7afe445a99aec2f00eb7e1f4b228f56b998217dc49e60f19fd5f"
+      "sha256": "566990ff7113c7b04bf95219bff3f7bcb6dcae0ecc67c8f974ff239ba70a9e12"
     }
   ],
   "pristine_baseline_build_id": "llvmorg-23.1.5-392dfff97d29-pristine-v1",

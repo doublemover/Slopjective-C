@@ -846,16 +846,16 @@ index dc61dffcea5cd6375f4f253487a006f97c791a50..a007516a74d5e07880b0020fd5012558
 -                 .getQuantity() -
 -             superInstanceSize),
 -        /*isSigned=*/true);
-+    // Fixed Darwin layouts include the ISA word. GNUstep computes instance
-+    // size after resolving the negative relative layout at registration.
-+    int64_t InstanceSize = DarwinLayout
-+        ? DarwinLayout->getSizeInBytes().getFixedValue()
-+        : 0 - (Context.getASTObjCInterfaceLayout(classDecl)
-+                   .getSize()
-+                   .getQuantity() -
-+               superInstanceSize);
-+    if (ManagedIsa)
-+      InstanceSize = DarwinOwnSize;
++    // A stateless Darwin class contributes zero bytes, even when Clang
++    // gives its empty Objective-C++ interface a one-byte layout.
++    int64_t InstanceSize = DarwinOwnSize;
++    if (DarwinLayout)
++      InstanceSize = DarwinLayout->getSizeInBytes().getFixedValue();
++    else if (!DarwinRegistration)
++      InstanceSize = 0 - (Context.getASTObjCInterfaceLayout(classDecl)
++                             .getSize()
++                             .getQuantity() -
++                         superInstanceSize);
 +    classFields.addInt(LongTy, InstanceSize, /*isSigned=*/true);
  
      if (classDecl->all_declared_ivar_begin() == nullptr)

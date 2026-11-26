@@ -5,6 +5,6 @@
   "compiler_runtime_flag": "-fobjc-runtime=gnustep-2.99",
   "runtime_abi": "objc3-darwin-registration-v1",
   "inheritance": "stateless-super-v1",
-  "patch_sha256": "c472436bf78a0e29a13c932d6de894c9e44acf36b18b175a4d7cd46cb26a1115",
+  "patch_sha256": "d77830b4c16151ea4f925fbb6f43c60c8ea65b561c7e50c6da7c3b92a1d1393d",
   "layout": "fixed-root-int-v1"
 }

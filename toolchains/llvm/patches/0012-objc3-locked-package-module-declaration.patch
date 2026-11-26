@@ -108,27 +108,24 @@ index 0000000..0b9e4a2
 +// RUN: %clang_cc1 -fsyntax-only -fobjc-version=3 -fmodule-name=Example.Parser -verify %s
 +@module Example.Other; // expected-error {{does not match the selected package module 'Example.Parser'}}
 +int location_after_module_declaration;
-diff --git a/clang/test/ObjC3/Parser/package-module-pch.m b/clang/test/ObjC3/Parser/package-module-pch.m
+diff --git a/clang/test/ObjC3/Parser/Inputs/package-module-owner.h b/clang/test/ObjC3/Parser/Inputs/package-module-owner.h
 new file mode 100644
-index 0000000..40b74b9
 --- /dev/null
-+++ b/clang/test/ObjC3/Parser/package-module-pch.m
-@@ -0,0 +1,15 @@
-+// RUN: split-file %s %t
-+// RUN: %clang_cc1 -fobjc-version=3 -fmodule-name=Example.Parser -x objective-c-header -emit-pch -o %t/owner.pch %t/owner.h
-+// RUN: %clang_cc1 -fobjc-version=3 -fmodule-name=Example.Parser -include-pch %t/owner.pch -fsyntax-only %t/use.m
-+// RUN: %clang_cc1 -fobjc-version=3 -fmodule-name=Example.Parser -fsyntax-only -verify %t/include.m
-+
-+//--- owner.h
++++ b/clang/test/ObjC3/Parser/Inputs/package-module-owner.h
+@@ -0,0 +1,2 @@
 +@module Example.Parser; // expected-error {{must be written without attributes in the primary source file}}
 +typedef int SharedValue;
+diff --git a/clang/test/ObjC3/Parser/package-module-pch.m b/clang/test/ObjC3/Parser/package-module-pch.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/package-module-pch.m
+@@ -0,0 +1,6 @@
++// RUN: %clang_cc1 -fobjc-version=3 -fmodule-name=Example.Parser -x objective-c-header -emit-pch -o %t.pch %S/Inputs/package-module-owner.h
++// RUN: %clang_cc1 -fobjc-version=3 -fmodule-name=Example.Parser -include-pch %t.pch -fsyntax-only %s
++// RUN: %clang_cc1 -fobjc-version=3 -fmodule-name=Example.Parser -include %S/Inputs/package-module-owner.h -fsyntax-only -verify %s
 +
-+//--- use.m
 +@module Example.Parser;
 +SharedValue validate_replayed_declaration(void);
-+
-+//--- include.m
-+#include "owner.h"
 diff --git a/clang/test/ObjC3/Parser/package-module.m b/clang/test/ObjC3/Parser/package-module.m
 new file mode 100644
 index 0000000..dba06c9
