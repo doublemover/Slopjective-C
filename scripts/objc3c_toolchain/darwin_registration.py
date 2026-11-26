@@ -160,6 +160,14 @@ int main(int argc, char **argv) {
             'reported_version': version, 'hash_probe': {**artifact, 'load_paths': libraries}}
 
 
+def registration_declaration_command(compiler: Path | str, *target_options: str) -> list[str | Path]:
+    # This entry point uses ordinary Objective-C syntax. It can check the SDK
+    # declarations with stock Clang before building the experimental frontend.
+    return [compiler, '--no-default-config', *target_options, '-std=c17',
+            '-Wall', '-Wextra', '-Werror', '-fsyntax-only', '-I', RUNTIME_HEADER.parent,
+            FIXTURES / 'main.m']
+
+
 def qualify(bootstrap_report: Path, output: Path, *, fetch: bool, package_sdk: bool = False,
             sdk_sanitizers: bool = False) -> dict:
     if sdk_sanitizers and not package_sdk:
@@ -223,6 +231,8 @@ def qualify(bootstrap_report: Path, output: Path, *, fetch: bool, package_sdk: b
                       platform_identity=host['platform_identity'], llvm_identity=host['llvm_identity'],
                       runtime_source_sha256=file_digest(RUNTIME), runtime_header_sha256=file_digest(RUNTIME_HEADER),
                       fixtures={path.name: file_digest(path) for path in sorted(FIXTURES.iterdir())})
+        run(*registration_declaration_command(stage0_c, '--target='+profile['target'], '-isysroot', sdk),
+            label='registration-api-declarations')
         report['cxx_toolchain'] = _qualify_xcode_cxx(run, host, stage0_cxx, profile['target'], output)
         memory = int(run('/usr/sbin/sysctl', '-n', 'hw.memsize'))
         cpus = os.cpu_count() or 1
@@ -305,7 +315,7 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
     report['compiler_builtins'] = {'path': str(builtins), 'sha256': file_digest(builtins)}
     defaults = [clang, '--no-default-config', target, '-isysroot', sdk, '-resource-dir', resource]
     objective_c = [*defaults, '-fobjc-version=3', profile['compiler_runtime_flag'],
-                   '-fno-objc-arc', '-fno-objc-exceptions']
+                   '-fno-objc-arc', '-fno-objc-exceptions', '-I', RUNTIME_HEADER.parent]
     link = [*defaults, '--ld-path=' + linker, '-Wl,-dead_strip']
     otool = '/usr/bin/otool'
     ar = llvm_root / 'bin/llvm-ar'
@@ -342,7 +352,7 @@ def _exercise(run, clang: Path, llvm_root: Path, sdk: str, linker: str, output: 
     run(*defaults, '-std=c17', '-Wall', '-Wextra', '-Werror', '-O2', '-g', '-c', RUNTIME, '-o', runtime_object)
     for name, obj in fixture_objects.items():
         managed = name.startswith('managed_layout_')
-        flags = ['-fobjc-arc', '-I', RUNTIME_HEADER.parent] if managed else []
+        flags = ['-fobjc-arc'] if managed else []
         label = {'label': name.replace('_', '-') + '-object'} if managed or name.startswith('two_int_method_') else {}
         run(*objective_c, *flags, '-Wall', '-Wextra', '-Werror', '-O2', '-g',
             '-c', FIXTURES / (name + '.m'), '-o', obj, **label)

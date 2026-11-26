@@ -9,6 +9,15 @@ import pytest
 from scripts.objc3c_toolchain import darwin_registration
 
 
+def test_registration_fixture_uses_declared_public_runtime_api():
+    compiler = shutil.which('clang')
+    if compiler is None:
+        pytest.skip('stock Clang is needed for the Darwin declaration check')
+    result = subprocess.run(darwin_registration.registration_declaration_command(compiler),
+                            capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+
+
 def test_experimental_profile_binds_separate_patch_and_native_job_budget():
     profile, patch = darwin_registration.load_profile()
     assert profile['profile'] == 'macos-arm64-registration-experimental'

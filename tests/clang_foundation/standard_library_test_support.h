@@ -93,7 +93,14 @@ inline void LinkAndExecute(const fs::path &root,const fs::path &main_object,
   link.insert(link.end(),library_arguments.begin(),library_arguments.end());
   llvm::BumpPtrAllocator allocator;llvm::StringSaver saver(allocator);llvm::SmallVector<const char *,16> flags;
   llvm::cl::TokenizeGNUCommandLine(OBJC3_STANDARD_LIBRARY_TEST_LINK_FLAGS,saver,flags);
-  for(const char *flag:flags)link.emplace_back(flag);
+  for (const char *flag : flags) {
+    // Request instruments these objects for sanitizers only. Linking the
+    // coverage runtime here would emit a profile for an uninstrumented child.
+    llvm::StringRef option(flag);
+    if (option != "-fprofile-instr-generate" &&
+        !option.starts_with("-fprofile-instr-generate="))
+      link.emplace_back(flag);
+  }
   if(objc) {
     const fs::path runtime=OBJC3_STANDARD_LIBRARY_TEST_OBJC_LIBRARY;
     link.push_back(runtime.string());link.push_back("-Wl,-rpath,"+runtime.parent_path().string());
