@@ -489,7 +489,7 @@ def installed_arc(path: Path, manifest: dict, qualified: dict) -> None:
             set(cpp['configurations']) != {'O0', 'O2'} or
             set(cpp['helper']['load_paths']) != {'@rpath/' + helper, SYSTEM, sdk_arc.LIBCXX}):
         raise ValueError('Darwin Objective-C++ evidence does not cover both optimization modes')
-    require_macho(path, directory + helper, cpp['helper'], 'dylib')
+    require_macho(path, directory + helper, cpp['helper'], 'dynamic_library')
     for optimization, row in cpp['configurations'].items():
         binary = 'arc-unwind-' + optimization
         require_macho(path, directory + binary + '.o', row['object'], 'object')

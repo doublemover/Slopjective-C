@@ -49,7 +49,8 @@ def thin_archive(name, data):
     return b'!<arch>\n' + ar_member('__.SYMDEF', b'') + ar_member(f'#1/{len(extended)}', extended + data)
 
 
-def test_relocated_compiler_finds_the_public_registration_header(tmp_path):
+@pytest.mark.parametrize('entry', ('clang', 'driver'))
+def test_relocated_compiler_finds_the_public_registration_header(tmp_path, entry):
     clang = shutil.which('clang')
     if clang is None:
         pytest.skip('requires stock Clang')
@@ -64,9 +65,21 @@ def test_relocated_compiler_finds_the_public_registration_header(tmp_path):
     (consumer / 'api.h').write_bytes((darwin_registration.FIXTURES / 'api.h').read_bytes())
     source.write_text('#include "api.h"\n'
                       'const objc3_darwin_class *lookup(void) { return objc3_darwin_class_v1("Probe"); }\n')
-    _, *args = sdk.relocated_clang_arguments(prefix, tmp_path, resource)
-    result = subprocess.run([clang, *args, '-ffreestanding', '-nostdlibinc',
-                             '-fsyntax-only', '-Werror', source], cwd=consumer, capture_output=True, text=True)
+    flags = ['-ffreestanding', '-nostdlibinc', '-fsyntax-only', '-Werror', str(source)]
+    if entry == 'clang':
+        _, *args = sdk.relocated_clang_arguments(prefix, tmp_path, resource)
+        args.extend(flags)
+    else:
+        resource_dir = 'lib/clang/' + resource.name
+        (prefix / resource_dir).parent.mkdir(parents=True)
+        (prefix / resource_dir).symlink_to(resource, target_is_directory=True)
+        manifest = {'profile': sdk.PROFILE, 'target': sdk.TARGET,
+                    'compiler_runtime_flag': sdk.RUNTIME_FLAG, 'resource_dir': resource_dir}
+        _, *args = sdk.installed_driver.driver_command(prefix, manifest, tmp_path, Path('/usr/bin/ld'),
+                                                       flags, 'dynamic')
+        # Stock Clang exercises the same header search without the ObjC3 frontend flags.
+        args = [arg for arg in args if arg not in ('-fobjc-version=3', sdk.RUNTIME_FLAG)]
+    result = subprocess.run([clang, *args], cwd=consumer, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
 
 
@@ -361,6 +374,40 @@ def test_installed_arc_witness_binds_the_archive_compiler_headers_and_loaded_run
                                                    'stddef': str(stddef), 'pthread': str(pthread)}
         assert receipt['artifacts']['arc']['rpaths'] == [rpath]
         assert commands[-1]['argv'] == [str(output / 'arc')]
+
+
+def test_cpp_arc_qualification_uses_the_dynamic_library_macho_kind(tmp_path, structural_host, monkeypatch):
+    prefix = tmp_path / 'Relocated SDK'
+    output = tmp_path / 'Fresh consumer'
+    output.mkdir()
+    clang, driver = prefix / 'bin/clang', prefix / sdk.DRIVER
+    runtime = prefix / 'lib/libobjc3darwin.dylib'
+    put(prefix, 'lib/libobjc3darwin.dylib', macho(6))
+    inputs = {sdk.DRIVER: driver, **{f'{sdk.DEMO}/{name}': prefix / sdk.DEMO / name
+                                  for name in arc.ARCXX_SOURCES}}
+
+    def execute(*args, cwd=None, commands=None, rejects=(), trace_libraries=False):
+        assert cwd == output
+        if '-dynamiclib' in args:
+            assert args[0] == clang
+            args[-1].write_bytes(macho(6))
+        elif '-fsyntax-only' in args:
+            assert rejects and '-fobjc-exceptions' in args
+        elif '-o' in args:
+            assert args[0] == driver
+            args[-1].write_bytes(macho(1 if '-c' in args else 2))
+        elif args[0] == '/usr/bin/nm':
+            return '___gxx_personality_v0\n_objc3_darwin_arc_release_v1'
+        else:
+            assert trace_libraries and args[0].name in ('arc-unwind-O0', 'arc-unwind-O2')
+            commands.append({'stderr': f'dyld[123]: <UUID> {runtime}\n'})
+            return arc.ARCXX_WITNESS
+
+    monkeypatch.setattr(sdk, '_run', execute)
+    monkeypatch.setattr(sdk, '_load_paths', lambda tool, artifact, expected, commands: expected)
+    report = arc.qualify_cpp_unwinding(prefix, structural_host, output, [], [clang], runtime, inputs)
+    assert report['helper']['kind'] == 'dynamic_library'
+    assert set(report['configurations']) == {'O0', 'O2'}
 
 
 def payload_archive(destination, manifest, *members):

@@ -70,7 +70,7 @@ index 265e88a..990c877 100644
 +    llvm::SmallString<128> Name;
 +    do {
 +      if (Tok.isNot(tok::identifier)) {
-+        Diag(Tok, diag::err_expected_ident);
++        Diag(Tok, diag::err_expected) << tok::identifier;
 +        SkipUntil(tok::semi, StopAtSemi);
 +        TryConsumeToken(tok::semi);
 +        return nullptr;
@@ -134,10 +134,12 @@ new file mode 100644
 index 0000000..dba06c9
 --- /dev/null
 +++ b/clang/test/ObjC3/Parser/package-module.m
-@@ -0,0 +1,6 @@
+@@ -0,0 +1,8 @@
 +// RUN: %clang_cc1 -fsyntax-only -fobjc-version=3 -fmodule-name=Example.Parser -verify=package %s
 +// RUN: %clang_cc1 -fsyntax-only -fobjc-version=3 -verify=unlocked %s
 +// RUN: %clang_cc1 -fsyntax-only -x objective-c++ -std=c++20 -fobjc-version=3 -fmodule-name=Example.Parser -verify=package %s
 +@module Example.Parser; // unlocked-error {{requires a selected package module}}
 +int retained_source_declaration(void);
 +@module Other.Name; // package-error {{may declare only one package module}} unlocked-error {{may declare only one package module}}
++@module Example.; // package-error {{expected identifier}} unlocked-error {{expected identifier}}
++int retained_after_malformed_module_declaration(void);

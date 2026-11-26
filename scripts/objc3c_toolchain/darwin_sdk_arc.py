@@ -107,7 +107,7 @@ def qualify_cpp_unwinding(prefix, host, output, commands, defaults, runtime, ins
            installed[f'{DEMO}/arc_unwind_boundary.cpp'],
            '-Wl,-install_name,@rpath/' + helper.name, '-o', helper)
     otool = host['tools']['otool']['path']
-    helper_artifact = verify_macho(helper, 'dylib')
+    helper_artifact = verify_macho(helper, 'dynamic_library')
     helper_artifact['load_paths'] = _load_paths(otool, helper, ['@rpath/' + helper.name, SYSTEM, LIBCXX], commands)
     source = installed[f'{DEMO}/arc_unwind.mm']
     args = [driver, '--driver-mode=g++', '-std=c++20', '-fobjc-arc', '-fobjc-arc-exceptions', '-fblocks',

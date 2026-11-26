@@ -58,7 +58,8 @@ def driver_command(prefix: Path, manifest: dict, sdk: Path, linker: Path, args: 
     argv = [str(prefix / 'bin/clang'), '--no-default-config']
     if args == ['--version']:
         return [*argv, *args]
-    argv += ['--target=' + manifest['target'], '-isysroot', str(sdk), '-resource-dir', str(prefix / resource)]
+    argv += ['--target=' + manifest['target'], '-isysroot', str(sdk), '-resource-dir', str(prefix / resource),
+             '-I', str(prefix / 'include')]
     if (any(arg.endswith(('.m', '.mm', '.objc3')) or arg.startswith('-xobjective-c') for arg in args) or
             any(arg == '-x' and language.startswith('objective-c') for arg, language in zip(args, args[1:]))):
         argv += ['-fobjc-version=3', manifest['compiler_runtime_flag']]
