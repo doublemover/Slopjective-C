@@ -578,8 +578,8 @@ def qualify(archive: Path, expected_sha256: str, output: Path) -> dict:
         project.mkdir()
         clang, ar, dwarf = (prefix / 'bin' / name for name in ('clang', 'llvm-ar', 'llvm-dwarfdump'))
         resource = prefix / manifest['resource_dir']
-        def native(*args, rejects=()):
-            return _run(*args, cwd=project, commands=commands, rejects=rejects)
+        def native(*args, rejects=(), trace_libraries=False):
+            return _run(*args, cwd=project, commands=commands, rejects=rejects, trace_libraries=trace_libraries)
 
         if native(clang, '--no-default-config', '--version').split('\n', 1)[0] != manifest['compiler_version']:
             raise ValueError('relocated compiler source/configuration identity changed')

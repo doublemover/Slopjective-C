@@ -305,7 +305,7 @@ jobs:
           retention-days: 7
   verify:
     name: Verify retained Apple Silicon evidence
-    if: ${{ always() && !inputs.candidate && !inputs.replacement }}
+    if: ${{ !cancelled() && !inputs.candidate && !inputs.replacement }}
     needs: [bootstrap, xscomic]
     runs-on: ubuntu-26.04
     env:
