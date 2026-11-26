@@ -17,6 +17,7 @@ from scripts.objc3c_toolchain import darwin_compiler_cache as compiler_cache
 from scripts.objc3c_toolchain import darwin_sdk_activation as activation
 from scripts.objc3c_toolchain import darwin_sdk_replay as replay
 from scripts.objc3c_toolchain.package import MANIFEST, SCHEMA, _digest, _file_hash, inventory, normalize_permissions, verify_sdk
+from scripts.objc3c_toolchain.sdk_example import dependencies
 
 
 def macho(kind, *, cpu=0x0100000c):
@@ -65,7 +66,9 @@ def test_relocated_compiler_finds_the_public_registration_header(tmp_path, entry
     (consumer / 'api.h').write_bytes((darwin_registration.FIXTURES / 'api.h').read_bytes())
     source.write_text('#include "api.h"\n'
                       'const objc3_darwin_class *lookup(void) { return objc3_darwin_class_v1("Probe"); }\n')
-    flags = ['-ffreestanding', '-nostdlibinc', '-fsyntax-only', '-Werror', str(source)]
+    depfile = consumer / 'headers.d'
+    flags = ['-ffreestanding', '-nostdlibinc', '-fsyntax-only', '-Werror', '-MD', '-MF',
+             str(depfile), str(source)]
     if entry == 'clang':
         _, *args = sdk.relocated_clang_arguments(prefix, tmp_path, resource)
         args.extend(flags)
@@ -81,6 +84,7 @@ def test_relocated_compiler_finds_the_public_registration_header(tmp_path, entry
         args = [arg for arg in args if arg not in ('-fobjc-version=3', sdk.RUNTIME_FLAG)]
     result = subprocess.run([clang, *args], cwd=consumer, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
+    assert public_header.resolve() in dependencies(depfile, consumer)
 
 
 @pytest.fixture
