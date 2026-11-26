@@ -16,6 +16,7 @@ from scripts.objc3c_toolchain import cli, darwin_registration, darwin_sdk as sdk
 from scripts.objc3c_toolchain import darwin_sdk_activation as activation
 from scripts.objc3c_toolchain import darwin_sdk_replay as replay
 from scripts.objc3c_toolchain.package import MANIFEST, SCHEMA, _digest, _file_hash, inventory, normalize_permissions, verify_sdk
+from scripts.objc3c_toolchain.sdk_example import dependencies
 
 
 def macho(kind, *, cpu=0x0100000c):
@@ -64,9 +65,12 @@ def test_relocated_compiler_finds_the_public_registration_header(tmp_path):
     source.write_text('#include "api.h"\n'
                       'const objc3_darwin_class *lookup(void) { return objc3_darwin_class_v1("Probe"); }\n')
     _, *args = sdk.relocated_clang_arguments(prefix, tmp_path, resource)
+    depfile = consumer / 'headers.d'
     result = subprocess.run([clang, *args, '-ffreestanding', '-nostdlibinc',
-                             '-fsyntax-only', '-Werror', source], cwd=consumer, capture_output=True, text=True)
+                             '-fsyntax-only', '-Werror', '-MD', '-MF', depfile, source],
+                            cwd=consumer, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
+    assert public_header.resolve() in dependencies(depfile, consumer)
 
 
 @pytest.fixture
