@@ -692,9 +692,9 @@ index dc61dffcea5cd6375f4f253487a006f97c791a50..a007516a74d5e07880b0020fd5012558
 +      }
 +      if (isObjC3DarwinARC(CGM)) {
 +        const auto &Lang = CGM.getLangOpts();
-+        if (Lang.CPlusPlus || Lang.ObjCExceptions || Lang.Exceptions) {
++        if (Lang.ObjCExceptions || (Lang.Exceptions && !Lang.CXXExceptions)) {
 +          CGM.Error(SourceLocation(),
-+                    "experimental Darwin ARC requires Objective-C without exceptions");
++                    "experimental Darwin ARC only supports native C++ exceptions");
 +          return nullptr;
 +        }
 +        // Every lifetime call must already name an owned entry point. LLVM's
@@ -1095,14 +1095,14 @@ index 230fd92b304414ccca79dd85d46cbc9a7c58b4c7..e3c062f42ad0a7984e1d7bfee377e05f
 +              << runtimeArg->getAsString(args) << "Objective-C 2 mode; use -fobjc-version=3";
 +        if (isObjCAutoRefCount(args)) {
 +          const char *Unsupported = nullptr;
-+          if (llvm::any_of(inputs, [](const InputInfo &Input) {
-+                return types::isCXX(Input.getType());
-+              }))
-+            Unsupported = "Objective-C++ ARC";
-+          else if (args.hasFlag(options::OPT_fobjc_exceptions,
-+                                options::OPT_fno_objc_exceptions, false))
++          const bool HasCXXInput = llvm::any_of(inputs, [](const InputInfo &Input) {
++            return types::isCXX(Input.getType());
++          });
++          if (args.hasFlag(options::OPT_fobjc_exceptions,
++                           options::OPT_fno_objc_exceptions, false))
 +            Unsupported = "-fobjc-exceptions";
-+          else if (args.hasFlag(options::OPT_fexceptions,
++          else if (!HasCXXInput &&
++                   args.hasFlag(options::OPT_fexceptions,
 +                                options::OPT_fno_exceptions, false))
 +            Unsupported = "-fexceptions";
 +          if (Unsupported)
@@ -1121,3 +1121,19 @@ index 230fd92b304414ccca79dd85d46cbc9a7c58b4c7..e3c062f42ad0a7984e1d7bfee377e05f
  
      runtimeArg->render(args, cmdArgs);
      return runtime;
+diff --git a/clang/lib/CodeGen/CGException.cpp b/clang/lib/CodeGen/CGException.cpp
+index 6d07d65..b9c8eef 100644
+--- a/clang/lib/CodeGen/CGException.cpp
++++ b/clang/lib/CodeGen/CGException.cpp
+@@ -248,6 +248,11 @@ const EHPersonality &EHPersonality::get(CodeGenModule &CGM,
+   if (FD && FD->usesSEHTry())
+     return getSEHPersonalityMSVC(T);
+ 
++  if (L.ObjC && L.CPlusPlus && L.ObjC3 && !L.ObjCExceptions && T.isMacOSX() &&
++      L.ObjCRuntime.getKind() == ObjCRuntime::GNUstep &&
++      L.ObjCRuntime.getVersion() == VersionTuple(2, 99))
++    return getCXXPersonality(Target, CGOpts);
++
+   if (L.ObjC)
+     return L.CPlusPlus ? getObjCXXPersonality(Target, CGOpts, L)
+                        : getObjCPersonality(Target, CGOpts, L);

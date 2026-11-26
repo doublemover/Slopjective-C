@@ -457,7 +457,8 @@ def installed_arc(path: Path, manifest: dict, qualified: dict) -> None:
     installed = qualified['installation']
     prefix, resource = Path(installed['prefix']), manifest['resource_dir']
     runtime = f'lib/{LIBRARY}.dylib'
-    inputs = [*(f'{DEMO}/{name}' for name in sdk_arc.SOURCES), 'bin/clang', 'bin/llvm-dwarfdump',
+    inputs = [*(f'{DEMO}/{name}' for name in sdk_arc.SOURCES), 'bin/objc3c', 'include/objc3_darwin.h',
+              'bin/clang', 'bin/llvm-dwarfdump',
               f'{resource}/include/stddef.h', f'{resource}/lib/darwin/libclang_rt.osx.a', runtime]
     loaded = {'path': str(prefix / runtime), 'sha256': manifest['files'][runtime]['sha256']}
     if (arc['schema'] != sdk_arc.SCHEMA or arc['status'] != 'PASS' or arc['support_truth'] is not False or
@@ -482,6 +483,30 @@ def installed_arc(path: Path, manifest: dict, qualified: dict) -> None:
                         for candidate in reported_paths)
                     for row in qualified['commands'])):
         raise ValueError('Darwin archived ARC consumer did not execute with the installed runtime')
+    cpp = arc['objcxx']
+    helper = sdk_arc.ARCXX_BOUNDARY
+    if (cpp['status'] != 'PASS' or cpp['standard'] != 'c++20' or
+            set(cpp['configurations']) != {'O0', 'O2'} or
+            set(cpp['helper']['load_paths']) != {'@rpath/' + helper, SYSTEM, sdk_arc.LIBCXX}):
+        raise ValueError('Darwin Objective-C++ evidence does not cover both optimization modes')
+    require_macho(path, directory + helper, cpp['helper'], 'dylib')
+    for optimization, row in cpp['configurations'].items():
+        binary = 'arc-unwind-' + optimization
+        require_macho(path, directory + binary + '.o', row['object'], 'object')
+        require_macho(path, directory + binary, row['executable'], 'executable')
+        source = str(prefix / DEMO / 'arc_unwind.mm')
+        if (set(row['load_paths']) != {*loaded_paths, sdk_arc.LIBCXX, '@rpath/' + helper} or
+                row['loaded_runtime'] != loaded['path'] or
+                not any(command['argv'][-4:] == ['-c', source, '-o', row['object']['path']] and
+                        {'-std=c++20', '-fobjc-arc', '-fobjc-arc-exceptions', '-fexceptions', '-'+optimization} <= set(command['argv']) and
+                        command['exit_status'] == 0 for command in qualified['commands']) or
+                not any(command['argv'] == [row['executable']['path']] and command['exit_status'] == 0 and
+                        command.get('dyld_print_libraries') is True and
+                        command['stdout'].strip() == sdk_arc.ARCXX_WITNESS and
+                        any(line.endswith(' ' + candidate) for line in command['stderr'].splitlines()
+                            for candidate in reported_paths)
+                        for command in qualified['commands'])):
+            raise ValueError(f'Darwin Objective-C++ {optimization} unwind evidence is incomplete')
 
 
 def installed_services(path: Path, manifest: dict, runtime: dict, packed: dict, qualified: dict) -> None:

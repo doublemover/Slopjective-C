@@ -642,8 +642,6 @@ def _exercise_arc(run, defaults, runtime_flag: str, link, stages: Path,
         diagnostic = runtime_flag if option == '-fobjc-link-runtime' else 'experimental Darwin ARC'
         run(*objective_c, option, '-c', source, '-o', stages / 'unsupported-arc.o',
             rejects=(diagnostic, option), label='unsupported-arc' + option)
-    run(*objective_c, '-x', 'objective-c++', '-std=c++20', '-c', source, '-o', stages / 'unsupported-arc.o',
-        rejects=('experimental Darwin ARC', 'Objective-C++ ARC'), label='unsupported-arc-objcxx')
 
     owned = {'objc3_darwin_arc_' + operation + '_v1' for operation in (
         'retain', 'release', 'init_weak', 'store_weak', 'load_weak_retained',

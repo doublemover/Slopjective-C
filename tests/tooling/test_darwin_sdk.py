@@ -264,6 +264,7 @@ def test_installed_arc_witness_binds_the_archive_compiler_headers_and_loaded_run
     put(xcode, 'usr/include/pthread.h', b'Apple pthread header')
     host = {**structural_host, 'sdk_path': str(xcode)}
     output = tmp_path / arc.DIRECTORY
+    monkeypatch.setattr(arc, 'qualify_cpp_unwinding', lambda *args: {'status': 'PASS'})
     rpath = '@loader_path/../Relocated Objective-C 3 SDK/lib'
     commands = []
 

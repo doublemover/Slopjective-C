@@ -18,6 +18,18 @@ def test_registration_fixture_uses_declared_public_runtime_api():
     assert result.returncode == 0, result.stderr
 
 
+def test_darwin_cpp_arc_witness_has_no_undeclared_runtime_calls():
+    compiler = shutil.which('clang')
+    if compiler is None:
+        pytest.skip('stock Clang is needed for the Darwin declaration check')
+    result = subprocess.run([compiler, '--target=arm64-apple-macos15.0', '-std=c++20',
+        '-fsyntax-only', '-Wall', '-Wextra', '-Werror', '-nostdinc++', '-ffreestanding',
+        '-fobjc-arc', '-fblocks', '-fexceptions', '-fno-objc-exceptions',
+        '-I', darwin_registration.RUNTIME_HEADER.parent,
+        darwin_registration.FIXTURES / 'arc_unwind.mm'], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+
+
 def test_experimental_profile_binds_separate_patch_and_native_job_budget():
     profile, patch = darwin_registration.load_profile()
     assert profile['profile'] == 'macos-arm64-registration-experimental'

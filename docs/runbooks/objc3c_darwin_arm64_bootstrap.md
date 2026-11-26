@@ -134,8 +134,11 @@ at O0 and O2. It checks owned allocation, strong references, weak zeroing,
 ordinary autoreleased returns, and nested pools. A second thread holds a weak
 load across the original owner's release and drains its own pool while the
 main thread's pool holds a different live object. The static and dynamic routes
-verify the executable's imports and run after relocation. The controls reject
-exceptions, Objective-C++ ARC, and Apple runtime linkage. ARC weak
+verify the executable's imports and run after relocation. A C++20 ARC
+consumer also exercises native C++ unwinding across a separate dylib through
+the installed driver at O0 and O2. It checks precise object lifetime, a Block
+capture, weak zeroing, and the C++ destructor and catch. The controls reject
+Objective-C exception options and Apple runtime linkage. ARC weak
 slots require native pointer alignment. Autoreleasing a live instance requires
 an active pool on the calling thread.
 
