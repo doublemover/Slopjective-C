@@ -4,9 +4,12 @@ import argparse
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path, PurePosixPath
 import re
+import shutil
 import subprocess
+import tarfile
 import tempfile
 import time
+from urllib.error import HTTPError
 from urllib.parse import quote
 from urllib.request import urlopen
 
@@ -58,8 +61,8 @@ def fetch_upstream(root: Path, commit: str, inputs: list[str]) -> None:
                 with urlopen(url, timeout=30) as response:
                     contents = response.read()
                 break
-            except OSError:
-                if attempt == 2:
+            except OSError as error:
+                if attempt == 2 or (isinstance(error, HTTPError) and error.code == 429):
                     raise
                 time.sleep(attempt + 1)
         file = root / name
@@ -69,6 +72,34 @@ def fetch_upstream(root: Path, commit: str, inputs: list[str]) -> None:
     with ThreadPoolExecutor(max_workers=12) as pool:
         for _ in pool.map(fetch, inputs):
             pass
+
+
+def fetch_upstream_archive(root: Path, commit: str, inputs: list[str]) -> None:
+    """Stream the pinned tree into a directory containing only patch inputs and diagnostic tables."""
+    url = f'https://codeload.github.com/llvm/llvm-project/tar.gz/{commit}'
+    prefix = f'llvm-project-{commit}/'
+    remaining = {*inputs, (DIAGNOSTIC_ROOT / 'Diagnostic.td').as_posix()}
+    extracted = set()
+    with urlopen(url, timeout=60) as response, tarfile.open(fileobj=response, mode='r|gz') as archive:
+        for member in archive:
+            if not member.name.startswith(prefix):
+                continue
+            name = member.name[len(prefix):]
+            path = PurePosixPath(name)
+            diagnostic = (path.parent == DIAGNOSTIC_ROOT and
+                          path.name.startswith('Diagnostic') and path.suffix == '.td')
+            if name not in remaining and name not in extracted and not diagnostic:
+                continue
+            if not member.isfile() or name != path.as_posix() or name in extracted:
+                raise ValueError(f'unexpected LLVM archive entry: {name}')
+            destination = root / path
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            with archive.extractfile(member) as source, destination.open('wb') as output:
+                shutil.copyfileobj(source, output)
+            extracted.add(name)
+            remaining.discard(name)
+    if remaining:
+        raise ValueError(f'LLVM archive {commit} is missing: {", ".join(sorted(remaining))}')
 
 
 def check_diagnostic_references(patches: list[Path], tables: Path) -> int:
@@ -92,37 +123,42 @@ def check_diagnostic_references(patches: list[Path], tables: Path) -> int:
     return len(references)
 
 
-def check_diagnostics(repo: Path) -> tuple[int, int]:
-    commit, patches = pinned_inputs(repo)
-    darwin = repo / 'toolchains/llvm/experimental/darwin-registration.patch'
-    with tempfile.TemporaryDirectory(prefix='objc3-llvm-diagnostics-') as temporary:
-        root = Path(temporary)
-        tables = root / DIAGNOSTIC_ROOT
-        pending = ['Diagnostic.td']
+def fetch_diagnostic_tables(root: Path, commit: str) -> None:
+    tables = root / DIAGNOSTIC_ROOT
+    pending = ['Diagnostic.td']
+    try:
         while pending:
-            fetch_upstream(root, commit, [str(DIAGNOSTIC_ROOT / name) for name in pending])
+            fetch_upstream(root, commit, [(DIAGNOSTIC_ROOT / name).as_posix() for name in pending])
             pending = sorted({included for name in pending
                               for included in DIAGNOSTIC_INCLUDE.findall((tables / name).read_text(encoding='utf-8'))
                               if not (tables / included).is_file()})
-        apply = ['git', 'apply', '--whitespace=nowarn', f'--include={DIAGNOSTIC_ROOT}/Diagnostic*.td']
-        for patch in patches:
-            subprocess.run([*apply, str(patch)], cwd=root, check=True)
-        native = check_diagnostic_references(patches, tables)
-        subprocess.run([*apply, str(darwin)], cwd=root, check=True)
-        return native, check_diagnostic_references([*patches, darwin], tables)
+    except HTTPError as error:
+        if error.code != 429:
+            raise
+        fetch_upstream_archive(root, commit, [])
 
 
-def check(repo: Path) -> tuple[int, int]:
+def check(repo: Path, *, diagnostics_only: bool = False) -> None:
     commit, patches = pinned_inputs(repo)
-    inputs = upstream_paths(patches)
+    darwin = repo / 'toolchains/llvm/experimental/darwin-registration.patch'
+    apply = ['git', 'apply', '--whitespace=nowarn']
     with tempfile.TemporaryDirectory(prefix='objc3-llvm-patch-check-') as temporary:
         root = Path(temporary)
-        fetch_upstream(root, commit, inputs)
+        if diagnostics_only:
+            fetch_diagnostic_tables(root, commit)
+            apply.append(f'--include={DIAGNOSTIC_ROOT}/Diagnostic*.td')
+        else:
+            inputs = upstream_paths([*patches, darwin])
+            fetch_upstream_archive(root, commit, inputs)
         for patch in patches:
-            apply = ['git', 'apply', '--whitespace=nowarn']
-            subprocess.run([*apply, '--check', str(patch)], cwd=root, check=True)
             subprocess.run([*apply, str(patch)], cwd=root, check=True)
-    return len(patches), len(inputs)
+        tables = root / DIAGNOSTIC_ROOT
+        native = check_diagnostic_references(patches, tables)
+        subprocess.run([*apply, str(darwin)], cwd=root, check=True)
+        overlay = check_diagnostic_references([*patches, darwin], tables)
+    if not diagnostics_only:
+        print(f'{len(patches)} locked LLVM patches and the Darwin overlay apply to the {len(inputs)} pinned upstream files.')
+    print(f'Clang diagnostic references resolved against the pinned tables ({native} Linux, {overlay} Darwin).')
 
 
 if __name__ == '__main__':
@@ -131,12 +167,7 @@ if __name__ == '__main__':
                         help='check Clang diagnostic names against the patched TableGen records')
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[2]
-    if args.diagnostics_only:
-        try:
-            native, darwin = check_diagnostics(repo)
-        except (OSError, ValueError, subprocess.CalledProcessError) as error:
-            parser.exit(1, f'{error}\n')
-        print(f'Clang diagnostic references resolved against the pinned tables ({native} Linux, {darwin} Darwin).')
-    else:
-        patches, files = check(repo)
-        print(f'{patches} locked LLVM patches apply to the {files} pinned upstream files.')
+    try:
+        check(repo, diagnostics_only=args.diagnostics_only)
+    except (OSError, ValueError, tarfile.TarError, subprocess.CalledProcessError) as error:
+        parser.exit(1, f'{error}\n')
