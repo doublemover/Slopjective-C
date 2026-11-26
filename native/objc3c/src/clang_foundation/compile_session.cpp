@@ -451,6 +451,8 @@ class ContractAction final : public NativeAction {
 
   bool BeginSourceFileAction(clang::CompilerInstance &compiler) override {
     if (!NativeAction::BeginSourceFileAction(compiler)) return false;
+    if (request_.objc3 && request_.module_owned_names)
+      compiler.getPreprocessor().setObjC3PackageOwner(request_.module_name);
     if (!request_.module_imports.empty()) {
       std::vector<std::string> names;
       for (const auto &module : request_.module_imports)

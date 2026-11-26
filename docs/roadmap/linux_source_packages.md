@@ -75,6 +75,15 @@ interface identity must reproduce the requested language, standard, ownership an
 runtime. Objective-C modes use source-directed imports; plain C++ uses the locked
 imports supplied by its manifest.
 
+An Objective-C or Objective-C++ provider may declare its owning module with
+`@module fixture.Leaf;` in its primary source file. The compiler checks the
+dotted name against the package selected by the workspace. A different name,
+a second declaration, or a declaration in an included header is an error at
+the source location. Source `@import` uses the same direct dependency locks
+and visibility rules as the workspace. A standalone Clang invocation with a
+source module declaration supplies the expected identity with
+`-fmodule-name=fixture.Leaf`.
+
 Native semantic imports enforce visibility. A public edge re-exports its module;
 a private edge remains available to its declaring module. Physical availability
 of a transitive artifact does not expose its declarations to an importer. The
@@ -121,10 +130,10 @@ visibility locks and relative object/interface/sidecar paths with content hashes
 Its content identity is reproduced by unchanged builds. The record describes the
 build output. The [immutable package workflow](linux_immutable_packages.md)
 publishes and installs that inventory for consumers without provider sources.
-Remote registries and public module-language syntax remain separate milestones.
+The [hosted registry](linux_immutable_packages.md) uses the same admitted package identities.
 
 Installed qualification covers all eight supported mode combinations at O0/O2,
-with 112 builds and 32 rejected package/visibility cases. It verifies cold/warm
+with 112 builds and 44 rejected package, declaration, and visibility cases. It verifies cold/warm
 builds, a shared diamond leaf,
 provider body edits with preserved timestamps, private implementation edits,
 damaged objects/interfaces, transitive API changes, wrong package locks and

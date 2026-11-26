@@ -1,3 +1,7 @@
+#if defined(__OBJC__)
+@module fixture.Leaf;
+#endif
+
 typedef int LeafValue;
 int leaf(void) { return 40; }
 

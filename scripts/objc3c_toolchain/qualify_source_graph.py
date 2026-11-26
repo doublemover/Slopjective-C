@@ -139,6 +139,30 @@ def qualify_case(sdk: Path, output: Path, language: str, standard: str, ownershi
                           'optimization': optimization, 'case': 'package-lock',
                           'prior_record_preserved': True, 'exit_code': rejected.returncode,
                           'expected_exit_code': 1, 'expected_termination': 'wrapper-validation-exit'})
+        if language != 'c++':
+            valid_leaf = leaf.read_bytes()
+            module_object = build / 'modules/fixture.Leaf/module.o'
+            previous_object = hashlib.sha256(module_object.read_bytes()).hexdigest()
+            declared = b'@module fixture.Leaf;'
+            if declared not in valid_leaf:
+                raise ValueError('package fixture omitted its native module declaration')
+            leaf.write_bytes(valid_leaf.replace(declared, b'@module fixture.Unexpected;', 1))
+            rejected = subprocess.run(command, cwd=root, stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT, text=True, errors='replace')
+            leaf.write_bytes(valid_leaf)
+            retained_log = output / f'{case_prefix}-module-declaration.log'
+            shutil.copyfile(module_object.with_name('compile.log'), retained_log)
+            diagnostic = "module declaration 'fixture.Unexpected' does not match the selected package module 'fixture.Leaf'"
+            code = require_private_visibility_exit(
+                rejected, module_object.with_name('compile-result.json'), retained_log, diagnostic)
+            if (hashlib.sha256(module_object.read_bytes()).hexdigest() != previous_object or
+                    (build / 'build-report.json').exists()):
+                raise ValueError('module declaration mismatch replaced a previously admitted package')
+            negatives.append({'language': language, 'standard': standard, 'ownership': ownership,
+                'optimization': optimization, 'case': 'module-declaration-identity',
+                'prior_object_preserved': True, 'failed_build_record_removed': True,
+                'exit_code': rejected.returncode, 'compiler_exit_code': code,
+                'expected_exit_code': 1, 'expected_termination': 'diagnostic-exit'})
         # Top re-exports Left -> Leaf, while its Right edge is private.
         # The cold application already used Leaf's transitive public type.
         app = sources / ('app/main' + suffix)
@@ -196,8 +220,8 @@ def qualify(sdk: Path, output: Path, jobs: int = 1) -> dict:
             'status': 'FAIL', 'failures': failures, 'builds': records, 'rejections': negatives}, indent=2) + '\n')
         details = '; '.join('/'.join(row['mode']) + ': ' + row['error'] for row in failures)
         raise ValueError(f'installed graph qualification failed: {details}; see {receipt_path}')
-    if not (len(records) == 112 and len(negatives) == 32):
-        raise ValueError('qualify_source_graph: required semantic check failed: len(records) == 112 and len(negatives) == 32')
+    if not (len(records) == 112 and len(negatives) == 44):
+        raise ValueError('qualify_source_graph: required semantic check failed: len(records) == 112 and len(negatives) == 44')
     result = {'schema': 'objc3c.source-graph-qualification.v4', 'status': 'PASS',
               'outside_checkout': True, 'paths_with_spaces_and_quotes': True,
               'builds': records, 'rejections': negatives}

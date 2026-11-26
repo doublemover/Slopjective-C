@@ -108,6 +108,10 @@
     {
       "file": "0011-swift-erased-result-object-size.patch",
       "sha256": "5a3e71c58858c2f4b56161003123eb8201ccd6d85d3e76732f9f670485f2ffd1"
+    },
+    {
+      "file": "0012-objc3-locked-package-module-declaration.patch",
+      "sha256": "4e0c446bc534d5a23872eb11c0f158c10706260873727f0c8ae6e00c1183637f"
     }
   ],
   "pristine_baseline_build_id": "llvmorg-23.1.5-392dfff97d29-pristine-v1",

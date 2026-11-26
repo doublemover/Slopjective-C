@@ -1,0 +1,143 @@
+diff --git a/clang/include/clang/Basic/DiagnosticParseKinds.td b/clang/include/clang/Basic/DiagnosticParseKinds.td
+index f08daa9..8693620 100644
+--- a/clang/include/clang/Basic/DiagnosticParseKinds.td
++++ b/clang/include/clang/Basic/DiagnosticParseKinds.td
+@@ -1934,6 +1934,14 @@ def err_hlsl_rootsig_non_zero_flag : Error<"flag value is neither a literal 0 no
+ 
+ def err_objc3_match_binding_required : Error<"this match pattern requires a binding">;
+ def err_objc3_match_invalid_pattern : Error<"invalid match pattern">;
++def err_objc3_module_context : Error<
++  "@module must be written without attributes in the primary source file">;
++def err_objc3_module_duplicate : Error<
++  "an Objective-C 3 translation unit may declare only one package module">;
++def err_objc3_module_no_owner : Error<
++  "module declaration '%0' requires a selected package module">;
++def err_objc3_module_owner_mismatch : Error<
++  "module declaration '%0' does not match the selected package module '%1'">;
+ def err_objc3_reserved_behavior_block : Error<
+   "property behavior blocks are reserved for a future Objective-C revision">;
+ def note_objc3_apply_property_behavior_attribute : Note<
+diff --git a/clang/include/clang/Lex/Preprocessor.h b/clang/include/clang/Lex/Preprocessor.h
+index d921634..f8cf07b 100644
+--- a/clang/include/clang/Lex/Preprocessor.h
++++ b/clang/include/clang/Lex/Preprocessor.h
+@@ -378,6 +378,8 @@ private:
+ 
+   // Registry-backed ObjC3 imports are resolved by Sema at their source position.
+   SmallVector<std::string, 4> ObjC3SourceModuleNames;
++  std::string ObjC3PackageOwner;
++  bool ObjC3PackageDeclarationSeen = false;
+ 
+   /// The source location of the \c module contextual keyword we just
+   /// lexed, if any.
+@@ -1850,6 +1852,15 @@ public:
+   bool CollectPPImportSuffixAndEnterStream(SmallVectorImpl<Token> &Toks,
+                                            bool StopUntilEOD = false);
+ 
++  void setObjC3PackageOwner(StringRef Name) { ObjC3PackageOwner = Name.str(); }
++  StringRef getObjC3PackageOwner() const { return ObjC3PackageOwner; }
++  bool markObjC3PackageDeclaration() {
++    if (ObjC3PackageDeclarationSeen)
++      return false;
++    ObjC3PackageDeclarationSeen = true;
++    return true;
++  }
++
+   void setObjC3SourceModuleNames(ArrayRef<std::string> Names) {
+     ObjC3SourceModuleNames.assign(Names.begin(), Names.end());
+   }
+diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
+index 265e88a..990c877 100644
+--- a/clang/lib/Parse/ParseObjc.cpp
++++ b/clang/lib/Parse/ParseObjc.cpp
+@@ -65,6 +65,48 @@ Parser::ParseObjCAtDirectives(ParsedAttributes &DeclAttrs,
+     return nullptr;
+   }
+ 
++  // The package graph has already selected the owning interface identity.
++  // A source declaration makes that identity explicit without changing it.
++  if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
++      Tok.getIdentifierInfo()->isStr("module")) {
++    ConsumeToken();
++    if (!DeclAttrs.empty() || AtLoc.isMacroID() ||
++        !PP.getSourceManager().isWrittenInMainFile(AtLoc)) {
++      Diag(AtLoc, diag::err_objc3_module_context);
++      SkipUntil(tok::semi, StopAtSemi);
++      TryConsumeToken(tok::semi);
++      return nullptr;
++    }
++    const SourceLocation NameLoc = Tok.getLocation();
++    llvm::SmallString<128> Name;
++    do {
++      if (Tok.isNot(tok::identifier)) {
++        Diag(Tok, diag::err_expected_ident);
++        SkipUntil(tok::semi, StopAtSemi);
++        TryConsumeToken(tok::semi);
++        return nullptr;
++      }
++      if (!Name.empty())
++        Name.push_back('.');
++      Name += Tok.getIdentifierInfo()->getName();
++      ConsumeToken();
++    } while (TryConsumeToken(tok::period));
++    if (ExpectAndConsume(tok::semi, diag::err_module_expected_semi))
++      return nullptr;
++    if (!PP.markObjC3PackageDeclaration()) {
++      Diag(AtLoc, diag::err_objc3_module_duplicate);
++      return nullptr;
++    }
++    StringRef Owner = PP.getObjC3PackageOwner();
++    if (Owner.empty())
++      Owner = getLangOpts().CurrentModule;
++    if (Owner.empty())
++      Diag(NameLoc, diag::err_objc3_module_no_owner) << Name.str();
++    else if (Owner != Name)
++      Diag(NameLoc, diag::err_objc3_module_owner_mismatch) << Name.str() << Owner;
++    return nullptr;
++  }
++
+   switch (Tok.getObjCKeywordID()) {
+   case tok::objc_interface:
+   case tok::objc_protocol:
+diff --git a/clang/test/ObjC3/Parser/package-module-mismatch.m b/clang/test/ObjC3/Parser/package-module-mismatch.m
+new file mode 100644
+index 0000000..0b9e4a2
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/package-module-mismatch.m
+@@ -0,0 +1,3 @@
++// RUN: %clang_cc1 -fsyntax-only -fobjc-version=3 -fmodule-name=Example.Parser -verify %s
++@module Example.Other; // expected-error {{does not match the selected package module 'Example.Parser'}}
++int location_after_module_declaration;
+diff --git a/clang/test/ObjC3/Parser/package-module-pch.m b/clang/test/ObjC3/Parser/package-module-pch.m
+new file mode 100644
+index 0000000..40b74b9
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/package-module-pch.m
+@@ -0,0 +1,15 @@
++// RUN: split-file %s %t
++// RUN: %clang_cc1 -fobjc-version=3 -fmodule-name=Example.Parser -x objective-c-header -emit-pch -o %t/owner.pch %t/owner.h
++// RUN: %clang_cc1 -fobjc-version=3 -fmodule-name=Example.Parser -include-pch %t/owner.pch -fsyntax-only %t/use.m
++// RUN: %clang_cc1 -fobjc-version=3 -fmodule-name=Example.Parser -fsyntax-only -verify %t/include.m
++
++//--- owner.h
++@module Example.Parser; // expected-error {{must be written without attributes in the primary source file}}
++typedef int SharedValue;
++
++//--- use.m
++@module Example.Parser;
++SharedValue validate_replayed_declaration(void);
++
++//--- include.m
++#include "owner.h"
+diff --git a/clang/test/ObjC3/Parser/package-module.m b/clang/test/ObjC3/Parser/package-module.m
+new file mode 100644
+index 0000000..dba06c9
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/package-module.m
+@@ -0,0 +1,6 @@
++// RUN: %clang_cc1 -fsyntax-only -fobjc-version=3 -fmodule-name=Example.Parser -verify=package %s
++// RUN: %clang_cc1 -fsyntax-only -fobjc-version=3 -verify=unlocked %s
++// RUN: %clang_cc1 -fsyntax-only -x objective-c++ -std=c++20 -fobjc-version=3 -fmodule-name=Example.Parser -verify=package %s
++@module Example.Parser; // unlocked-error {{requires a selected package module}}
++int retained_source_declaration(void);
++@module Other.Name; // package-error {{may declare only one package module}} unlocked-error {{may declare only one package module}}
