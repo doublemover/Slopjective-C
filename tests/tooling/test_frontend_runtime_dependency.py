@@ -31,6 +31,7 @@ def dependency(tmp_path, monkeypatch):
              'robin_map_commit': 'b'*40,
              'configuration': {'compiler_sha256': owner.digest(bootstrap / 'bin/clang')}}
     def run(argv, **kwargs):
+        assert kwargs.get('timeout') is None
         assert kwargs['env']['LD_LIBRARY_PATH'] == str(bootstrap / 'lib')
         assert kwargs['env']['LLVM_PROFILE_FILE'] == '/dev/null'
         Path(argv[argv.index('--report-file')+1]).write_text(json.dumps(value))

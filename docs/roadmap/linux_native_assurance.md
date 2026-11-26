@@ -36,11 +36,12 @@ newer revisions cancel obsolete quick runs. These checks provide fast contract,
 configuration and regression feedback. They do not qualify a rebuilt compiler,
 sanitizer profile, fuzz campaign, source coverage or SDK archive.
 
-`Extended Linux native assurance` is explicitly dispatched or runs on its existing
-weekly schedule. `Extended Linux implementation analysis` is dispatched, weekly,
-or called by SDK release qualification. The extended LLVM IR/debugger campaign
-is manual. Full native results remain required inside their own aggregate and
-release owners, while ordinary PR feedback does not wait for cold LLVM builds.
+`Native Linux PR checks` runs the required bounded source gate for the tested
+merge. An admitted base SDK supplies the foundation for matching source edits.
+Foundation changes select a current rebuild. `Extended Linux native assurance`
+runs by manual dispatch or on its Sunday schedule. `Extended Linux implementation
+analysis` runs by dispatch, on its later Sunday schedule, or from SDK release
+qualification. The extended LLVM campaign remains manual.
 
 Run a long campaign for the desired branch when needed:
 
@@ -71,9 +72,15 @@ The stable source surface uses existing owners:
   Test XML from those same commands.
 - Native runtime CMake tests compile emitted Objective-C/Objective-C++ and execute
   against the pinned runtime. CTest discovery must match JUnit execution exactly.
-- The frontend owner reconciles its generated manifest with CTest, builds and
-  executes each registration serially, hashes the binary, and reclaims successful
-  test executables. Every selected registration also needs passing JUnit evidence.
+  The runner checks that the inventory, log, and JUnit paths are fresh before
+  writing discovery evidence.
+- The frontend owner reconciles its generated manifest with the full CTest
+  inventory. After linking each owned binary, it rediscovers the exact selected
+  registrations for that binary and checks their commands before execution.
+  Discovery records its command, bounded output, elapsed time, and outcome.
+  The owner hashes the binary, reclaims successful test executables, and keeps
+  the executable and diagnostics on discovery or test failure. Each selected
+  registration needs passing JUnit evidence.
 - Installed source witnesses build and run O0/O2 applications, PCH consumers,
   embedding and debugger examples outside the checkout. This is an installed
   development stage, not a newly qualified release archive.
@@ -97,14 +104,25 @@ An unexpected pass or other lit failure cannot become successful evidence.
 
 ## Cadence and evidence
 
-The repaired `adaptive-closeout.yml` is reusable-only. It consumes the dispatcher's
-immutable source SHA and runs the same native surface, actual runtime sanitizers,
-and upstream AST, Objective-C Sema/CodeGen, PCH, Modules and Driver regressions.
-Whole `check-clang`/`check-llvm` promotion awaits measured cost. This repair adds no
-cron, runner class, cadence opportunity or private-schedule activation. Existing
-monthly/14-day activity rules, pause and failed-attempt accounting remain intact.
-Policy tests parse the actual workflow files and reject missing/renamed workloads,
-conditional execution, mutable source forwarding and missing terminal verification.
+The Saturday adaptive evaluation keeps its existing monthly anchor, 14-day
+activity budget and pause rules. Only an eligible evaluation invokes the reusable
+closeout. An unchanged source with a recent attempt skips the native invocation.
+The closeout requires the dispatcher commit and calls the canonical native
+workflow on that same revision. Its terminal job requires both source admission
+and successful native verification. Fresh distribution installs and release
+analysis remain owned by the separate manual SDK release.
+
+The previous standalone closeout failed on the default branch at `0266e510`.
+The core shard tried to read an SDK manifest before its producer had created it.
+The coverage shard's suite passed, then the old artifact budget rejected its
+evidence. The terminal job correctly failed the overall attempt. [Run 44920211861](https://github.com/doublemover/Slopjective-C/actions/runs/44920211861) · [Core receipt](https://github.com/doublemover/Slopjective-C/actions/runs/44920211861/artifacts/14715307710) · [Coverage receipt](https://github.com/doublemover/Slopjective-C/actions/runs/44920211861/artifacts/14724009006)
+
+The canonical Sunday native and analysis workflows passed on the same revision.
+The native producer's upstream receipt records eight directories across AST,
+Objective-C and Objective-C++ Sema/CodeGen, PCH, Modules and Driver. Lit recorded
+4,273 passes, 106 unsupported tests and three expected failures. The adaptive
+closeout now uses this same producer and aggregate, including the existing
+sanitizer, runtime, coverage and front-end owners. [Native gate](https://github.com/doublemover/Slopjective-C/actions/runs/45028112852/job/137305319523) · [Upstream receipt](https://github.com/doublemover/Slopjective-C/actions/runs/45028112852/artifacts/14761961903) · [Analysis gate](https://github.com/doublemover/Slopjective-C/actions/runs/45038463224/job/137297246552)
 
 Evidence names include tested revision, run ID and attempt. Required uploads fail
 when absent and expire after seven days. Native receipts hash the complete durable
@@ -169,16 +187,26 @@ python3 -B -m scripts.objc3c_toolchain.development_graph \
 
 ## Acceptance still required
 
-Implementation and boundary controls are prepared. A live exact-revision native
-CI run, cold/reuse/invalidation cost measurements and repository check-policy review remain outstanding. Required PR checks should
-refer to automatic quick checks; optional extended checks must not be required
-for every PR. Repository protection settings were not changed by this workflow
-cutover. Each shard's
-six-hour timeout is a ceiling, not a measured timing claim. The split publisher,
-selection and aggregate pass 116 focused assurance/cost tests and 63 workflow
-policy controls; hosted completion of the new layout is still required. No repository
-protection setting or billing/private-schedule variable was changed. Keep #8283
-open until those acceptance conditions are established.
+Record these results before closing #8283.
+
+- Admit the hosted cold PR execution and its independent `native-pr` result with
+  the exact base, head and tested merge SHA, the selected complete foundation
+  and its phase ledger, and the passing runtime and frontend inventories. Retain
+  elapsed time, peak child RSS, disk and artifact bytes. The already-running
+  cold PR checks the workflow version at its own SHA. A later terminal-gate
+  change requires its own hosted receipt. [PR 8331 cold run](https://github.com/doublemover/Slopjective-C/actions/runs/45289344500)
+- Pair the cold observation with the admitted warm SDK route and a changed
+  foundation input that forces an exact rebuild. Record the selected source and
+  baseline SDK identities, phase costs and the observed invalidation reason.
+- On the first due default-branch adaptive invocation after the repair, confirm
+  the dispatcher's source-admission job, the canonical native terminal gate and
+  the outer terminal step. Verify that all evidence belongs to the same SHA and
+  includes the upstream selection. A cadence decision without eligible work has
+  no native results to admit.
+- Have a repository administrator verify the applicable check requirements for
+  `native-pr`, `tooling`, `documentation` and `policy` using their exact names
+  as reported by GitHub. The extended and release gates have separate admission
+  contexts.
 
 Native checked commands now use bounded subprocess sessions. Timeout and
 interruption kill compiler descendants even when they start separate process

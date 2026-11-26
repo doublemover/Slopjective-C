@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
   const auto start = std::chrono::steady_clock::now();
   for (unsigned round = 0; round < rounds; ++round) {
     work(size, seed);
-    if (delay) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    if (delay) std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
   const auto nanos = std::chrono::duration_cast<std::chrono::nanoseconds>(
     std::chrono::steady_clock::now()-start).count();

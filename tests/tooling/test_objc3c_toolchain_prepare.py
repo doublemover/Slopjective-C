@@ -263,7 +263,7 @@ def test_cache_bytes_and_new_fragments_invalidate_seal_but_documents_do_not(tmp_
     stamp = cache.stat()
     cache.write_bytes(cache.read_bytes().replace(b' ON ', b'OFF '))
     os.utime(cache, ns=(stamp.st_atime_ns, stamp.st_mtime_ns))
-    with pytest.raises(ToolchainError, match='build configuration'):
+    with pytest.raises(core.FoundationConfigurationChanged, match='build configuration'):
         core.verify_development(repo, manifest_path=manifest, source_dir=source)
     changed = core.seal_development(repo, manifest_path=manifest, source_dir=source)
     assert changed['build_config_digest'] != before['build_config_digest']
@@ -272,6 +272,19 @@ def test_cache_bytes_and_new_fragments_invalidate_seal_but_documents_do_not(tmp_
     fragment.write_text('set(LLVM_ENABLE_EH ON)')
     with pytest.raises(ToolchainError, match='build configuration'):
         core.verify_development(repo, manifest_path=manifest, source_dir=source)
+
+
+def test_forged_configuration_digest_is_not_a_normal_configuration_change(tmp_path, monkeypatch):
+    repo, manifest, patch = make_repo(tmp_path, monkeypatch)
+    source = make_development_source(repo, manifest, patch)
+    core.seal_development(repo, manifest_path=manifest, source_dir=source)
+    marker = source / '.objc3c-prepared-source.json'
+    recorded = json.loads(marker.read_text())
+    recorded['build_config_digest'] = '0' * 64
+    marker.write_text(json.dumps(recorded))
+    with pytest.raises(ToolchainError, match='inconsistent build configuration') as error:
+        core.verify_development(repo, manifest_path=manifest, source_dir=source)
+    assert not isinstance(error.value, core.FoundationConfigurationChanged)
 
 
 @pytest.mark.parametrize('case', ['missing', 'file-link', 'directory-link', 'legacy'])

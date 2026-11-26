@@ -5626,7 +5626,7 @@ index 000000000..1a930933b
 +void raw_callback_declaration(const char *);
 diff --git a/clang/test/ObjC3/Sema/callable-ownership-casts.m b/clang/test/ObjC3/Sema/callable-ownership-casts.m
 new file mode 100644
-index 000000000..1bca66bd1
+index 000000000..521002d38
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/callable-ownership-casts.m
 @@ -0,0 +1,99 @@
@@ -5722,8 +5722,8 @@ index 000000000..1bca66bd1
 +}
 +void implicit_callable_contracts(RawBytesCallback raw, BorrowedCallback borrowed,
 +                                  BorrowedFactory result) {
-+  BorrowedCallback fabricated = raw; // expected-error {{callable conversion changes an ownership or borrowed lifetime contract}}
-+  BorrowedCallback named = raw_callback_declaration; // expected-error {{callable conversion changes an ownership or borrowed lifetime contract}}
++  BorrowedCallback fabricated = raw; // c-error {{callable conversion changes an ownership or borrowed lifetime contract}} cxx-error {{cannot initialize a variable of type}}
++  BorrowedCallback named = raw_callback_declaration; // c-error {{callable conversion changes an ownership or borrowed lifetime contract}} cxx-error {{cannot initialize a variable of type}}
 +  RawBytesFactory erased = result; // c-error {{callable conversion changes an ownership or borrowed lifetime contract}} cxx-error {{cannot initialize a variable of type 'RawBytesFactory'}}
 +  BorrowedCallback same = borrowed;
 +  RawBytesCallback weakened = borrowed;
@@ -7294,14 +7294,18 @@ index 000000000..be5cf98c4
 +BaseBytes base_bytes(void *owner) __attribute__((objc_returns_borrowed(owner_index=0)));
 diff --git a/clang/test/ObjC3/Sema/borrowed-base-subobjects.mm b/clang/test/ObjC3/Sema/borrowed-base-subobjects.mm
 new file mode 100644
-index 000000000..484628105
+index 000000000..617ef4134
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-base-subobjects.mm
-@@ -0,0 +1,122 @@
+@@ -0,0 +1,126 @@
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-base-subobjects.h -o %t-20-mrc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-20-mrc.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-base-subobjects.h -o %t-20-arc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-20-arc.pch -DFROM_PCH -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-base-subobjects.h -o %t-mrc.pch
 +// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-mrc.pch -DFROM_PCH -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-base-subobjects.h -o %t-arc.pch
@@ -20142,3 +20146,600 @@ new file mode 100644
 +  (void)@keypath(SplitAccessors, consumingRead); // expected-error {{key paths cannot erase consuming accessor ownership}}
 +  (void)@keypath(SplitAccessors, effectfulRead); // expected-error {{key-path accessors must be synchronous and nonthrowing}}
 +}
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-statement-result.h b/clang/test/ObjC3/Sema/Inputs/borrowed-statement-result.h
+new file mode 100644
+index 000000000..40c0bd568
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-statement-result.h
+@@ -0,0 +1,9 @@
++typedef borrowed const char *BorrowedBytes;
++void observe_bytes(const char * __attribute__((noescape)));
++BorrowedBytes owner_bytes(void *) __attribute__((objc_returns_borrowed(owner_index=0)));
++extern const char *escaped_result;
++
++static inline char inspect_in_region(BorrowedBytes value) {
++  const char *alias = value;
++  return __extension__ ({ observe_bytes(alias); alias[0]; });
++}
+diff --git a/clang/test/ObjC3/Sema/Inputs/callable-block-contracts.h b/clang/test/ObjC3/Sema/Inputs/callable-block-contracts.h
+new file mode 100644
+index 000000000..510ac6641
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/callable-block-contracts.h
+@@ -0,0 +1,31 @@
++typedef struct ForeignObject *ForeignRef;
++typedef borrowed const char *BorrowedBytes;
++typedef void (^ConsumedBlock)(id __attribute__((ns_consumed)));
++typedef void (^ForeignBlock)(ForeignRef __attribute__((cf_consumed)));
++typedef void (^PlainForeignBlock)(ForeignRef);
++typedef id (^RetainedBlock)(void) __attribute__((ns_returns_retained));
++typedef id (^PlainFactoryBlock)(void);
++typedef BorrowedBytes (^BorrowedResultBlock)(id);
++typedef const char *(^RawResultBlock)(id);
++typedef void (^BorrowedBlock)(BorrowedBytes);
++typedef void (^RawBlock)(const char *);
++typedef void (^NoEscapeBlock)(const char * __attribute__((noescape)));
++typedef void (*BorrowedCallback)(BorrowedBytes);
++typedef void (*RawCallback)(const char *);
++typedef void (*BorrowedConsumer)(BorrowedCallback);
++typedef void (*RawConsumer)(RawCallback);
++typedef BorrowedBlock (*BorrowedBlockFactory)(void);
++typedef RawBlock (*RawBlockFactory)(void);
++void accept_borrowed_callback(BorrowedCallback);
++void raw_callback(const char *);
++void observe_bytes(const char * __attribute__((noescape)));
++
++#ifdef __cplusplus
++struct CallbackOwner {
++  void raw(const char *);
++};
++typedef void (CallbackOwner::*BorrowedMember)(BorrowedBytes);
++template<class Callback> void dependent_adapter(Callback callback) {
++  accept_borrowed_callback(callback);
++}
++#endif
+diff --git a/clang/test/ObjC3/Sema/Inputs/if-binding-dependent-bool.h b/clang/test/ObjC3/Sema/Inputs/if-binding-dependent-bool.h
+new file mode 100644
+index 000000000..0946a9c74
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/if-binding-dependent-bool.h
+@@ -0,0 +1,31 @@
++typedef Optional(int) MaybeInt;
++
++struct ImplicitBool {
++  operator bool() const;
++};
++
++struct ExplicitBool {
++  explicit operator bool() const;
++};
++
++template<class T, int Threshold>
++int dependent_let_condition(MaybeInt source, T condition) {
++  if let value = source, value > Threshold, condition {
++    return value;
++  }
++  return 0;
++}
++
++template<class Test>
++int dependent_var_condition(MaybeInt source, Test test) {
++  if var value = source, test(value) {
++    return ++value;
++  }
++  return 0;
++}
++
++template<class T>
++int dependent_guard_condition(MaybeInt source, T condition) {
++  guard let value = source, condition else { return 0; }
++  return value;
++}
+diff --git a/clang/test/ObjC3/Sema/borrowed-statement-result.m b/clang/test/ObjC3/Sema/borrowed-statement-result.m
+new file mode 100644
+index 000000000..7e7413870
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-statement-result.m
+@@ -0,0 +1,79 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-statement-result.h -o %t.c.mrc.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t.c.mrc.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-statement-result.h -o %t.c.arc.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t.c.arc.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-statement-result.h -o %t.cxx20.mrc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t.cxx20.mrc.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-statement-result.h -o %t.cxx20.arc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t.cxx20.arc.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-statement-result.h -o %t.cxx23.mrc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t.cxx23.mrc.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-statement-result.h -o %t.cxx23.arc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t.cxx23.arc.pch -DFROM_PCH -fsyntax-only -verify %s
++
++#ifndef FROM_PCH
++#include "Inputs/borrowed-statement-result.h"
++#endif
++
++void indirect_result(BorrowedBytes value, const char **destination, int select) {
++  const char *alias = value;
++  *destination = (const char *)(select ? __extension__ ({
++    (void)0;
++    __extension__ ({ label: alias; });
++  }) : "owned"); // expected-error@-3 {{borrowed pointer escapes}}
++}
++
++void selectively_clear_local(BorrowedBytes value) {
++  const char *slot = value;
++  const char **target = __extension__ ({ const char **local = &slot; local; });
++  *target = "owned";
++  escaped_result = slot;
++}
++
++const char *owned_statement_result(BorrowedBytes value) {
++  const char *alias = value;
++  return __extension__ ({ observe_bytes(alias); "owned"; });
++}
++
++BorrowedBytes forwarded_owner(void *owner)
++    __attribute__((objc_returns_borrowed(owner_index=0))) {
++  const char *alias = owner_bytes(__extension__ ({ owner; }));
++  return __extension__ ({ alias; });
++}
++
++
++char binding_result(BorrowedBytes value) {
++  const char *alias = value;
++  return __extension__ ({
++    guard let live = Some(BorrowedBytes, alias) else { return 0; }
++    if let observed = Some(BorrowedBytes, live) { observe_bytes(observed); }
++    live[0];
++  });
++}
++
++#if __has_feature(objc_arc)
++id fresh_owner(void) __attribute__((ns_returns_retained));
++BorrowedBytes object_bytes(id) __attribute__((objc_returns_borrowed(owner_index=0)));
++
++void expired_statement_result(void) {
++  const char *alias = __extension__ ({ // expected-error {{owner lifetime has ended}}
++    id owner = fresh_owner();
++    const char *result = object_bytes(owner);
++    result;
++  });
++  observe_bytes(alias); // expected-error {{after its owner lifetime ended}}
++}
++
++void replaced_owner(void) {
++  id owner = fresh_owner();
++  const char *alias = __extension__ ({ const char *result = object_bytes(owner); result; });
++  owner = fresh_owner();
++  observe_bytes(alias); // expected-error {{after its owner lifetime ended}}
++}
++#endif
+diff --git a/clang/test/ObjC3/Sema/callable-block-contracts.m b/clang/test/ObjC3/Sema/callable-block-contracts.m
+new file mode 100644
+index 000000000..e992964c1
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/callable-block-contracts.m
+@@ -0,0 +1,109 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fblocks -fsyntax-only -verify=expected,c %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fblocks -emit-pch %S/Inputs/callable-block-contracts.h -o %t.c.mrc.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fblocks -include-pch %t.c.mrc.pch -DFROM_PCH -fsyntax-only -verify=expected,c %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fblocks -fobjc-arc -fsyntax-only -verify=expected,c %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fblocks -fobjc-arc -emit-pch %S/Inputs/callable-block-contracts.h -o %t.c.arc.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fblocks -fobjc-arc -include-pch %t.c.arc.pch -DFROM_PCH -fsyntax-only -verify=expected,c %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fblocks -fsyntax-only -verify=expected,cxx %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fblocks -emit-pch %S/Inputs/callable-block-contracts.h -o %t.cxx20.mrc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fblocks -include-pch %t.cxx20.mrc.pch -DFROM_PCH -fsyntax-only -verify=expected,cxx %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fblocks -fobjc-arc -fsyntax-only -verify=expected,cxx %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fblocks -fobjc-arc -emit-pch %S/Inputs/callable-block-contracts.h -o %t.cxx20.arc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fblocks -fobjc-arc -include-pch %t.cxx20.arc.pch -DFROM_PCH -fsyntax-only -verify=expected,cxx %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fblocks -fsyntax-only -verify=expected,cxx %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fblocks -emit-pch %S/Inputs/callable-block-contracts.h -o %t.cxx23.mrc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fblocks -include-pch %t.cxx23.mrc.pch -DFROM_PCH -fsyntax-only -verify=expected,cxx %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fblocks -fobjc-arc -fsyntax-only -verify=expected,cxx %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fblocks -fobjc-arc -emit-pch %S/Inputs/callable-block-contracts.h -o %t.cxx23.arc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fblocks -fobjc-arc -include-pch %t.cxx23.arc.pch -DFROM_PCH -fsyntax-only -verify=expected,cxx %s
++
++#ifndef FROM_PCH
++#include "Inputs/callable-block-contracts.h"
++#endif
++
++void explicit_block_casts(ForeignBlock foreign, PlainForeignBlock plain,
++                          RetainedBlock retained, PlainFactoryBlock factory,
++                          BorrowedResultBlock result, RawBlock raw,
++                          NoEscapeBlock safe, ConsumedBlock consumed) {
++  (void)(ForeignBlock)plain; // expected-error {{callable cast changes an ownership or borrowed lifetime contract}}
++  (void)(PlainForeignBlock)foreign; // expected-error {{callable cast changes an ownership or borrowed lifetime contract}}
++  (void)(RetainedBlock)factory; // expected-error {{callable cast changes an ownership or borrowed lifetime contract}}
++  (void)(PlainFactoryBlock)retained; // expected-error {{callable cast changes an ownership or borrowed lifetime contract}}
++  (void)(RawResultBlock)result; // expected-error {{callable cast changes an ownership or borrowed lifetime contract}}
++  (void)(BorrowedBlock)raw; // expected-error {{callable cast changes an ownership or borrowed lifetime contract}}
++  (void)(NoEscapeBlock)raw; // expected-error {{callable cast changes an ownership or borrowed lifetime contract}}
++  ConsumedBlock same = (ConsumedBlock)consumed;
++  ConsumedBlock null_block = (ConsumedBlock)0;
++  RawBlock weaker = (RawBlock)safe;
++  (void)same;
++  (void)null_block;
++  (void)weaker;
++#ifdef __cplusplus
++  (void)static_cast<bool>(consumed);
++  (void)reinterpret_cast<RawResultBlock>(result); // expected-error {{callable cast changes an ownership or borrowed lifetime contract}}
++#endif
++}
++
++void explicit_nested_block_casts(BorrowedBlockFactory factory) {
++  RawBlock array[2] = {0, 0};
++  (void)(RawBlockFactory)factory; // expected-error {{callable cast changes an ownership or borrowed lifetime contract}}
++  (void)(BorrowedBlock (*)[2])&array; // expected-error {{callable cast changes an ownership or borrowed lifetime contract}}
++}
++
++void implicit_assignment(BorrowedCallback *target, RawCallback raw) {
++  *target = raw; // c-error {{callable conversion changes an ownership or borrowed lifetime contract}} cxx-error {{incompatible function pointer types assigning}}
++}
++
++BorrowedCallback implicit_return(RawCallback raw) {
++  return raw; // c-error {{callable conversion changes an ownership or borrowed lifetime contract}} cxx-error {{cannot initialize return object of type}}
++}
++
++void implicit_argument(void) {
++  accept_borrowed_callback(raw_callback); // c-error {{callable conversion changes an ownership or borrowed lifetime contract}} cxx-error {{no matching function for call to 'accept_borrowed_callback'}}
++}
++
++void implicit_nested(RawConsumer raw, RawBlock plain, BorrowedResultBlock result) {
++  BorrowedConsumer consumer = raw; // c-error {{callable conversion changes an ownership or borrowed lifetime contract}} cxx-error {{cannot initialize a variable of type}}
++  BorrowedBlock block = plain; // c-error {{callable conversion changes an ownership or borrowed lifetime contract}} cxx-error {{cannot initialize a variable of type}}
++  RawResultBlock erased = result; // c-error {{callable conversion changes an ownership or borrowed lifetime contract}} cxx-error {{cannot initialize a variable of type}}
++  (void)consumer;
++  (void)block;
++  (void)erased;
++}
++
++void implicit_allowed(BorrowedBytes value, BorrowedCallback borrowed,
++                      RawCallback raw, BorrowedBlock block, RawBlock plain,
++                      int choose) {
++  BorrowedCallback same = borrowed;
++  RawCallback weaker = borrowed;
++  RawBlock ordinary = plain;
++  BorrowedCallback null_callback = 0;
++  RawCallback chosen_callback = choose ? borrowed : raw;
++  RawBlock chosen_block = choose ? plain : block;
++  observe_bytes(value);
++  (void)chosen_callback;
++  (void)chosen_block;
++  (void)same;
++  (void)weaker;
++  (void)ordinary;
++  (void)null_callback;
++}
++
++#ifdef __cplusplus
++void implicit_member(void) {
++  BorrowedMember fabricated = &CallbackOwner::raw; // expected-error {{cannot initialize a variable of type}}
++  (void)fabricated;
++}
++
++void implicit_template(void) {
++  dependent_adapter(raw_callback); // expected-note {{in instantiation of function template specialization}}
++}
++// expected-error@Inputs/callable-block-contracts.h:29 {{no matching function for call to 'accept_borrowed_callback'}}
++// expected-note@Inputs/callable-block-contracts.h:19 2 {{candidate function not viable}}
++#endif
++
++void direct_borrow_control(BorrowedBytes value) {
++  const char *alias = value;
++  observe_bytes(alias);
++  raw_callback(alias); // expected-error {{borrowed pointer escapes}}
++}
+diff --git a/clang/test/ObjC3/Sema/if-binding-dependent-bool.mm b/clang/test/ObjC3/Sema/if-binding-dependent-bool.mm
+new file mode 100644
+index 000000000..c62eaf20d
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/if-binding-dependent-bool.mm
+@@ -0,0 +1,70 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch %S/Inputs/if-binding-dependent-bool.h -o %t.20.mrc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t.20.mrc.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch %S/Inputs/if-binding-dependent-bool.h -o %t.20.arc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t.20.arc.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch %S/Inputs/if-binding-dependent-bool.h -o %t.23.mrc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t.23.mrc.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch %S/Inputs/if-binding-dependent-bool.h -o %t.23.arc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t.23.arc.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DPOSITIVE_ONLY -ast-dump %s | FileCheck %s --check-prefix=AST
++
++#ifndef FROM_PCH
++#include "Inputs/if-binding-dependent-bool.h"
++#endif
++#ifndef POSITIVE_ONLY
++// expected-error@Inputs/if-binding-dependent-bool.h:13 3 {{condition must have Bool type}}
++// expected-error@Inputs/if-binding-dependent-bool.h:21 3 {{condition must have Bool type}}
++// expected-error@Inputs/if-binding-dependent-bool.h:29 {{condition must have Bool type}}
++
++bool bool_test(int);
++int int_test(int);
++int *pointer_test(int);
++ExplicitBool converted_test(int);
++
++template int dependent_let_condition<bool, 0>(MaybeInt, bool);
++template int dependent_let_condition<int, 0>(MaybeInt, int); // expected-note {{in instantiation of function template specialization}}
++template int dependent_let_condition<int *, 0>(MaybeInt, int *); // expected-note {{in instantiation of function template specialization}}
++template int dependent_let_condition<ImplicitBool, 0>(MaybeInt, ImplicitBool); // expected-note {{in instantiation of function template specialization}}
++template int dependent_guard_condition<bool>(MaybeInt, bool);
++template int dependent_guard_condition<ImplicitBool>(MaybeInt, ImplicitBool); // expected-note {{in instantiation of function template specialization}}
++
++int dependent_calls(MaybeInt source) {
++  int result = dependent_var_condition(source, bool_test);
++  result += dependent_var_condition(source, int_test); // expected-note {{in instantiation of function template specialization}}
++  result += dependent_var_condition(source, pointer_test); // expected-note {{in instantiation of function template specialization}}
++  return result + dependent_var_condition(source, converted_test); // expected-note {{in instantiation of function template specialization}}
++}
++
++int directly_checked(MaybeInt source, ExplicitBool bad) {
++  if var value = source, bad { // expected-error {{condition must have Bool type}}
++    return ++value;
++  }
++  return 0;
++}
++#else
++struct ConditionTemporary {
++  ConditionTemporary();
++  ~ConditionTemporary();
++};
++struct Test {
++  bool operator()(const ConditionTemporary &, int) const;
++};
++template<class Predicate>
++int with_cleanup(MaybeInt source, Predicate predicate) {
++  if var value = source, predicate(ConditionTemporary{}, value) {
++    return ++value;
++  }
++  return 0;
++}
++template int with_cleanup<Test>(MaybeInt, Test);
++// AST: FunctionDecl {{.*}} with_cleanup '{{.*}}Test)'
++// AST: ObjC3IfBindingStmt
++// AST: ObjC3BindingCondition
++// AST: ExprWithCleanups {{.*}} 'bool'
++// AST: CXXOperatorCallExpr {{.*}} 'bool' '()'
++// AST: CXXBindTemporaryExpr {{.*}} 'ConditionTemporary'
++#endif
+diff --git a/clang/test/ObjC3/Sema/Inputs/callable-borrowed-template.h b/clang/test/ObjC3/Sema/Inputs/callable-borrowed-template.h
+new file mode 100644
+index 000000000..578a6fc78
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/callable-borrowed-template.h
+@@ -0,0 +1,55 @@
++typedef borrowed const char *Bytes;
++typedef void (*BorrowedCallback)(Bytes);
++typedef void (*RawCallback)(const char *);
++typedef void (*BorrowedSecond)(const char *, Bytes);
++typedef void (*BorrowedFirst)(Bytes, const char *);
++typedef void (^BorrowedBlock)(Bytes);
++typedef void (^RawBlock)(const char *);
++
++void accept_borrowed(BorrowedCallback);
++void accept_block(BorrowedBlock);
++void raw_call(const char *);
++void borrowed_call(Bytes);
++
++template<class Callback> void adapt_callback(Callback callback) {
++  accept_borrowed(callback);
++}
++
++template<class Callback> void invoke_callback(Callback callback, Bytes value) {
++  callback(value);
++}
++
++template<class Callback> void adapt_block(Callback callback) {
++  accept_block(callback);
++}
++
++template<class Callback> struct ContractKind { enum { Value = 0 }; };
++template<class Arg> using BorrowedArgument = borrowed Arg *;
++template<class Arg> struct ContractKind<void (*)(BorrowedArgument<Arg>)> {
++  enum { Value = 1 };
++};
++
++typedef Bytes (*ReturningCallback)(void *, Bytes)
++    __attribute__((objc_returns_borrowed(owner_index=0)));
++typedef Bytes (^ReturningBlock)(void *, Bytes)
++    __attribute__((objc_returns_borrowed(owner_index=0)));
++
++template<class Callback>
++Bytes forward_owner(Callback callback, void *owner, Bytes value)
++    __attribute__((objc_returns_borrowed(owner_index=1))) {
++  return callback(owner, value);
++}
++
++__attribute__((ms_abi, objc_returns_borrowed(owner_index=0)))
++Bytes adjusted(void *owner, Bytes value);
++__attribute__((objc_returns_borrowed(owner_index=0)))
++Bytes adjusted(void *owner, Bytes value);
++using Adjusted = Bytes (__attribute__((ms_abi, objc_returns_borrowed(owner_index=0)))
++                         *)(void *, Bytes);
++
++void swift_borrow(Bytes __attribute__((swift_context))) __attribute__((swiftcall));
++void swift_raw(const char * __attribute__((swift_context))) __attribute__((swiftcall));
++void swift_without_context(Bytes) __attribute__((swiftcall));
++using SwiftBorrowed = decltype(&swift_borrow);
++using SwiftRaw = decltype(&swift_raw);
++using SwiftWithoutContext = decltype(&swift_without_context);
+diff --git a/clang/test/ObjC3/Sema/callable-borrowed-template.mm b/clang/test/ObjC3/Sema/callable-borrowed-template.mm
+new file mode 100644
+index 000000000..eff96784b
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/callable-borrowed-template.mm
+@@ -0,0 +1,97 @@
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -fblocks -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -fblocks -fsyntax-only -verify -DREJECT_UNKNOWN=1 %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -fblocks -emit-pch %S/Inputs/callable-borrowed-template.h -o %t.20.mrc.pch
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -fblocks -include-pch %t.20.mrc.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -fblocks -include-pch %t.20.mrc.pch -DFROM_PCH -DREJECT_UNKNOWN=1 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -fsyntax-only -verify -DREJECT_UNKNOWN=1 %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -emit-pch %S/Inputs/callable-borrowed-template.h -o %t.20.arc.pch
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -include-pch %t.20.arc.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -include-pch %t.20.arc.pch -DFROM_PCH -DREJECT_UNKNOWN=1 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -fblocks -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -fblocks -fsyntax-only -verify -DREJECT_UNKNOWN=1 %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -fblocks -emit-pch %S/Inputs/callable-borrowed-template.h -o %t.23.mrc.pch
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -fblocks -include-pch %t.23.mrc.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -fblocks -include-pch %t.23.mrc.pch -DFROM_PCH -DREJECT_UNKNOWN=1 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -fsyntax-only -verify -DREJECT_UNKNOWN=1 %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -emit-pch %S/Inputs/callable-borrowed-template.h -o %t.23.arc.pch
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -include-pch %t.23.arc.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -include-pch %t.23.arc.pch -DFROM_PCH -DREJECT_UNKNOWN=1 -fsyntax-only -verify %s
++
++#ifndef FROM_PCH
++#include "Inputs/callable-borrowed-template.h"
++#endif
++
++// A data-pointer alias retains the ordinary native type. Callable parameter
++// contracts participate in the canonical signature at their exact position.
++static_assert(__is_same(Bytes, const char *));
++static_assert(!__is_same(BorrowedCallback, RawCallback));
++static_assert(!__is_same(BorrowedFirst, BorrowedSecond));
++static_assert(!__is_same(BorrowedBlock, RawBlock));
++static_assert(ContractKind<BorrowedCallback>::Value == 1);
++static_assert(ContractKind<RawCallback>::Value == 0);
++
++void accepted(BorrowedCallback callback, BorrowedBlock block, Bytes value) {
++  adapt_callback(callback);
++  adapt_callback<BorrowedCallback>(callback);
++  adapt_callback(borrowed_call);
++  adapt_block(block);
++  adapt_block<BorrowedBlock>(block);
++  invoke_callback(callback, value);
++  invoke_callback<BorrowedCallback>(callback, value);
++  invoke_callback(block, value);
++  RawCallback weakened = callback;
++  RawBlock weakened_block = block;
++  (void)weakened;
++  (void)weakened_block;
++}
++
++#if REJECT_UNKNOWN
++void rejected(RawCallback callback, RawBlock block) {
++  adapt_callback(callback); // expected-note {{in instantiation of function template specialization}}
++  adapt_block(block); // expected-note {{in instantiation of function template specialization}}
++}
++// expected-error@Inputs/callable-borrowed-template.h:15 {{no matching function for call to 'accept_borrowed'}}
++// expected-error@Inputs/callable-borrowed-template.h:23 {{no matching function for call to 'accept_block'}}
++// expected-note@Inputs/callable-borrowed-template.h:9 {{candidate function not viable}}
++// expected-note@Inputs/callable-borrowed-template.h:10 {{candidate function not viable}}
++#else
++// expected-no-diagnostics
++#endif
++
++static_assert(__is_same(decltype(&adjusted), Adjusted));
++
++__attribute__((objc_returns_borrowed(owner_index=2)))
++Bytes forward_result(ReturningCallback callback, ReturningBlock block,
++                     void *owner, Bytes value, bool choose) {
++  if (choose)
++    return forward_owner(callback, owner, value);
++  return forward_owner<ReturningBlock>(block, owner, value);
++}
++
++__attribute__((objc_returns_borrowed(owner_index=0)))
++Bytes forward_adjusted(void *owner, Bytes value) {
++  return forward_owner(adjusted, owner, value);
++}
++
++void weaker_swift_callback(SwiftBorrowed callback, Bytes value) {
++  SwiftRaw weaker = callback;
++  (void)weaker;
++  callback(value);
++}
++
++#if REJECT_UNKNOWN
++void observe_uncontracted(const char *);
++void returning_callback_must_not_escape(ReturningCallback callback, void *owner,
++                                        Bytes value) {
++  observe_uncontracted(forward_owner(callback, owner, value)); // expected-error {{borrowed pointer escapes through an argument without a non-escaping lifetime contract}}
++}
++
++void preserve_swift_call_contracts(SwiftBorrowed callback, SwiftRaw raw) {
++  SwiftBorrowed fabricated = raw; // expected-error {{cannot initialize a variable of type 'SwiftBorrowed'}}
++  SwiftWithoutContext missing = callback; // expected-error {{cannot initialize a variable of type 'SwiftWithoutContext'}}
++  (void)fabricated;
++  (void)missing;
++}
++#endif
+diff --git a/clang/test/ObjC3/Sema/managed-cxx-nested-alignment.mm b/clang/test/ObjC3/Sema/managed-cxx-nested-alignment.mm
+new file mode 100644
+index 000000000..b32c1b5cb
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/managed-cxx-nested-alignment.mm
+@@ -0,0 +1,62 @@
++// REQUIRES: x86-registered-target, aarch64-registered-target
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++-header -emit-pch %s -o %t.x86_64.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++ -include %s -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++ -include %s -DREJECT -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++ -include-pch %t.x86_64.pch -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++ -include-pch %t.x86_64.pch -DREJECT -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++-header -emit-pch %s -o %t.aarch64.pch
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++ -include %s -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++ -include %s -DREJECT -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++ -include-pch %t.aarch64.pch -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++ -include-pch %t.aarch64.pch -DREJECT -fsyntax-only -verify %s
++
++#ifndef MANAGED_CXX_ALIGN_DECLS
++#define MANAGED_CXX_ALIGN_DECLS
++typedef Optional(id) Owned;
++typedef Result(id, id) OwnedResult;
++struct Payload { Owned option; OwnedResult result; };
++struct Aligned { char prefix; Payload fields[2]; };
++#pragma pack(push, 1)
++struct alignas(8) AlignedDespitePacking { Payload fields[2]; };
++struct DirectCarrierField { char prefix; Owned object; };
++struct PointerField { char prefix; Payload *view; };
++template<class T> struct Deferred { char prefix; T elements[2]; };
++#pragma pack(pop)
++#else
++static_assert(alignof(Aligned) == alignof(Payload));
++static_assert(alignof(AlignedDespitePacking) == alignof(Payload));
++static_assert(alignof(DirectCarrierField) == 1);
++static_assert(alignof(PointerField) == 1);
++void construct(const Aligned &from, AlignedDespitePacking &source,
++               const DirectCarrierField &leaf) {
++  Aligned aligned;
++  Aligned copy = from;
++  AlignedDespitePacking moved = static_cast<AlignedDespitePacking &&>(source);
++  DirectCarrierField leaf_copy = leaf;
++}
++#ifdef REJECT
++#pragma pack(push, 1)
++struct DirectNested {
++  char prefix;
++  Payload field; // expected-error {{ObjC3 nested managed C++ record 'Payload' requires 8-byte alignment at field 'field' (actual alignment 1)}}
++};
++struct NestedArray {
++  char prefix;
++  Payload elements[2]; // expected-error {{ObjC3 nested managed C++ record 'Payload' requires 8-byte alignment at field 'elements' (actual alignment 1)}}
++};
++#pragma pack(pop)
++struct PackedField {
++  char prefix;
++  Payload field __attribute__((packed)); // expected-error {{ObjC3 nested managed C++ record 'Payload' requires 8-byte alignment at field 'field' (actual alignment 1)}}
++};
++typedef Payload __attribute__((aligned(1))) PayloadAlias;
++struct AliasField {
++  char prefix;
++  PayloadAlias field; // expected-error {{requires 8-byte alignment at field 'field' (actual alignment 1)}}
++};
++int delayed = sizeof(Deferred<Payload>); // expected-note {{in instantiation of template class 'Deferred<Payload>' requested here}}
++                                         // expected-error@* {{ObjC3 nested managed C++ record 'Payload' requires 8-byte alignment at field 'elements' (actual alignment 1)}}
++#else
++// expected-no-diagnostics
++#endif
++#endif

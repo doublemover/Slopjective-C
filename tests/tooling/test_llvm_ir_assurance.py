@@ -29,13 +29,60 @@ def module(*, optnone=False):
             'attributes #0 = { '+('optnone noinline' if optnone else 'nounwind')+' }\n')
 
 
+def test_installed_ir_reuses_the_exact_sdk_and_checks_both_executable_routes(tmp_path):
+    from scripts.objc3c_toolchain.binary_packages import digest
+    from scripts.objc3c_toolchain.llvm_installed_ir import qualify
+
+    selected = os.environ.get('OBJC3_TEST_NATIVE_REUSE_SDK')
+    if not selected:
+        pytest.skip('requires the exact installed Linux preview')
+    sdk = Path(selected)
+    seal = json.loads((sdk / 'objc3-sdk.json').read_text())['seal_sha256']
+    with pytest.raises(ValueError, match='identity mismatch'):
+        qualify(sdk, tmp_path / 'wrong-seal', seal_sha256='0'*64)
+    assert not (tmp_path / 'wrong-seal').exists()
+    evidence = tmp_path / 'retained IR evidence with spaces'
+    report = qualify(sdk, evidence, seal_sha256=seal)
+    assert report['status'] == 'PASS' and report['sdk']['seal_sha256'] == seal
+    assert len(report['cases']) == 7
+    for row in report['cases']:
+        assert row['routes']['driver']['observation'] == row['routes']['backend']['observation']
+    commands = [row for row in report['commands'] if '-verify-machineinstrs' in row['argv']]
+    assert len(commands) == 14 and {row['argv'][0] for row in commands} == {str(sdk.resolve() / 'bin/llc')}
+    assert report['tools']['objc3c'] == {'path': str(sdk.resolve() / 'bin/objc3c'),
+                                       'sha256': digest(sdk / 'bin/objc3c')}
+    imported, = (row for row in report['cases'] if row['transport'] == 'interface')
+    assert imported['modules']['consumer']['instruction_bodies_changed']
+    case_name = imported['name']
+    work = evidence / case_name
+    assert not (work / 'provider.mm').exists() and not (work / 'oracle.h').exists()
+    native = imported['interface']
+    assert set(native['artifacts']) == {f'{case_name}/{name}' for name in
+                                        ('oracle.Provider.objc3i', 'oracle.Provider.objc3i.json')}
+    assert set(native['retained_provider']) == {f'retained-provider/{case_name}/{name}' for name in
+                                                ('provider.mm', 'oracle.h')}
+    for relative, signature in {**native['artifacts'], **native['retained_provider'], **native['records']}.items():
+        assert digest(evidence / relative) == signature
+    assert set(native['records']) == {f'{case_name}/{phase}.dependencies.json' for phase in
+                                      ('frontend', 'optimized', 'driver')}
+    for filename in native['records']:
+        selected, = json.loads((evidence / filename).read_text())['modules']
+        assert {key: selected[key] for key in native['lock']} == native['lock']
+
+
 def test_corpus_keeps_authored_oracles_and_lowering_transports():
     document = corpus(ROOT)
-    assert len(document['cases']) == 8
+    assert len(document['cases']) == 11
     assert {row['transport'] for row in document['cases']} == {'source', 'pch', 'interface'}
     assert sum(row.get('thinlto', False) for row in document['cases']) == 3
     assert {'arc', 'mrc'} == {row['ownership'] for row in document['cases']}
     assert {'c17', 'c++20', 'c++23'} == {row['standard'] for row in document['cases']}
+    cases = {row['name']: row for row in document['cases']}
+    for transport in ('source', 'pch'):
+        row = cases['borrowed-packed-' + transport]
+        assert row['transport'] == transport and row['language'] == 'objective-c++'
+        assert row['sources'] == ['carrier-record-native.m', 'ownership-callable.mm']
+    assert cases['packed-record-pch']['marker'] == 'OBJC3_IR_ASSURANCE_PACKED_RECORDS'
 
 
 def test_module_facts_reject_an_optimizer_with_no_work():
@@ -71,6 +118,15 @@ def test_llvm_cannot_silently_ignore_a_bad_extension(tmp_path):
 def execution(tmp_path):
     report = {'status': 'running'}
     return Execution(tmp_path, {'PATH': os.defpath, 'LC_ALL': 'C'}, report, timeout=2), report
+
+
+def test_default_execution_uses_host_deadline_and_measures_command_resources(tmp_path):
+    report = {}
+    runner = Execution(tmp_path, dict(os.environ), report)
+    runner.run('normal', [sys.executable, '-c', 'print("complete")'])
+    row, = report['commands']
+    assert row['exit_code'] == 0 and not row['timed_out']
+    assert row['cpu_seconds'] >= 0 and row['peak_process_rss_kib'] > 0
 
 
 def test_missing_outputs_and_stale_outputs_fail_closed(tmp_path):
@@ -128,6 +184,15 @@ def test_timeout_kills_children_that_create_separate_ninja_style_process_groups(
     assert not running
 
 
+def test_job_limited_command_measures_its_own_resources_and_separates_diagnostics(tmp_path):
+    output, errors = tmp_path / 'output.log', tmp_path / 'errors.log'
+    row = command([sys.executable, '-c', 'import sys; print("result"); print("diagnostic", file=sys.stderr)'],
+                  cwd=tmp_path, environment=dict(os.environ), log=output, timeout=None, stderr_log=errors)
+    assert row['exit_code'] == 0 and not row['timed_out']
+    assert row['seconds'] > 0 and row['cpu_seconds'] >= 0 and row['peak_process_rss_kib'] > 0
+    assert output.read_text() == 'result\n' and errors.read_text() == 'diagnostic\n'
+
+
 def test_interruption_kills_and_reaps_the_detached_command_session(tmp_path, monkeypatch):
     class Process:
         pid = 31415
@@ -136,7 +201,8 @@ def test_interruption_kills_and_reaps_the_detached_command_session(tmp_path, mon
         def __exit__(self, *args): return False
         def wait(self, timeout=None):
             self.calls += 1
-            if self.calls == 1: raise KeyboardInterrupt
+            if self.calls == 1:
+                raise KeyboardInterrupt
             return -9
     process, killed = Process(), []
     monkeypatch.setattr(execution_owner.subprocess, 'Popen', lambda *args, **kwargs: process)
@@ -149,14 +215,16 @@ def test_interruption_kills_and_reaps_the_detached_command_session(tmp_path, mon
 
 def elf(runpath: str, capacity: int, tag: int = 29) -> bytes:
     """Small ELF64 with dynamic/string sections, plus observable code payload."""
-    data = bytearray(512)
+    encoded = runpath.encode()
+    assert len(encoded) < capacity
+    data = bytearray(288 + capacity + 16)
     data[:6] = b'\x7fELF\x02\x01'
     struct.pack_into('<Q', data, 40, 64)
     struct.pack_into('<HH', data, 58, 64, 3)
     struct.pack_into('<IIQQQQIIQQ', data, 128, 0, 6, 0, 0, 256, 32, 2, 0, 8, 16)
     struct.pack_into('<IIQQQQIIQQ', data, 192, 0, 3, 0, 0, 288, capacity, 0, 0, 1, 0)
     struct.pack_into('<QQ', data, 256, tag, 0)
-    data[288:288+len(runpath)] = runpath.encode()
+    data[288:288+len(encoded)] = encoded
     data[-16:] = b'code-must-match!!'
     return bytes(data)
 
@@ -164,16 +232,17 @@ def elf(runpath: str, capacity: int, tag: int = 29) -> bytes:
 def test_install_identity_allows_only_exact_cmake_runpath_transition(tmp_path):
     expected = '$ORIGIN/../lib:$ORIGIN/../lib/x86_64-unknown-linux-gnu'
     before = expected+':'+str(tmp_path / 'build/lib')+':'
+    capacity = len(before.encode()) + 1
     canonical, installed = tmp_path / 'build.elf', tmp_path / 'installed.elf'
-    canonical.write_bytes(elf(before, 160, 15))
-    installed.write_bytes(elf(expected, 160, 15))
+    canonical.write_bytes(elf(before, capacity, 15))
+    installed.write_bytes(elf(expected, capacity, 15))
     assert verify_installation(canonical, installed, tmp_path / 'build')['status'] == 'PASS'
     data = bytearray(installed.read_bytes())
     data[-1] ^= 1
     installed.write_bytes(data)
     with pytest.raises(ValueError, match='outside its exact'):
         verify_installation(canonical, installed, tmp_path / 'build')
-    installed.write_bytes(elf('/tmp/unowned', 160, 15))
+    installed.write_bytes(elf('/tmp/unowned', capacity, 15))
     with pytest.raises(ValueError, match='RPATH transition'):
         verify_installation(canonical, installed, tmp_path / 'build')
 
@@ -181,9 +250,10 @@ def test_install_identity_allows_only_exact_cmake_runpath_transition(tmp_path):
 def test_install_identity_rejects_lower_precedence_runpath(tmp_path):
     expected = '$ORIGIN/../lib:$ORIGIN/../lib/x86_64-unknown-linux-gnu'
     before = expected+':'+str(tmp_path / 'build/lib')+':'
+    capacity = len(before.encode()) + 1
     canonical, installed = tmp_path / 'build.elf', tmp_path / 'installed.elf'
-    canonical.write_bytes(elf(before, 160))
-    installed.write_bytes(elf(expected, 160))
+    canonical.write_bytes(elf(before, capacity))
+    installed.write_bytes(elf(expected, capacity))
     with pytest.raises(ValueError, match='RPATH transition'):
         verify_installation(canonical, installed, tmp_path / 'build')
 
@@ -191,9 +261,10 @@ def test_install_identity_rejects_lower_precedence_runpath(tmp_path):
 def test_install_identity_preserves_old_dtag_rpath_precedence(tmp_path):
     expected = '$ORIGIN/../lib:$ORIGIN/../lib/x86_64-unknown-linux-gnu'
     before = expected+':'+str(tmp_path / 'build/lib')+':'
+    capacity = len(before.encode()) + 1
     canonical, installed = tmp_path / 'build.elf', tmp_path / 'installed.elf'
-    canonical.write_bytes(elf(before, 160, 15))
-    installed.write_bytes(elf(expected, 160, 15))
+    canonical.write_bytes(elf(before, capacity, 15))
+    installed.write_bytes(elf(expected, capacity, 15))
     result = verify_installation(canonical, installed, tmp_path / 'build')
     assert result['status'] == 'PASS' and result['dynamic_tag'] == 'RPATH'
 
@@ -207,10 +278,11 @@ def test_clean_foundation_admission_does_not_require_unbuilt_development_tools(t
     build.mkdir()
     stage.mkdir()
     plan = {'paths': {'build': str(build), 'stage': str(stage)}, 'source_build_id': 'current'}
+    plans = {'configure': plan, 'build': {}, 'test': {'follow_up_commands': [['native-unit']]}, 'stage': {}}
     report = {'status': 'passed', 'source_identity': 'current',
-              'phases': [{'phase': phase, 'exit_code': 0} for phase in ('configure', 'build', 'test', 'stage')]}
+              'phases': [{'phase': phase, 'exit_code': 0} for phase in ('configure', 'build', 'test', 'stage', 'test')]}
     (build / 'foundation-build-report.json').write_text(json.dumps(report))
-    monkeypatch.setattr(llvm_tools, 'build_plans', lambda *args, **kwargs: {'configure': plan})
+    monkeypatch.setattr(llvm_tools, 'build_plans', lambda *args, **kwargs: plans)
     monkeypatch.setattr(llvm_tools, 'verify_effective_configuration', lambda value: {})
     assert llvm_tools.foundation(tmp_path)[0] == plan
     with pytest.raises(FileNotFoundError):
@@ -219,6 +291,49 @@ def test_clean_foundation_admission_does_not_require_unbuilt_development_tools(t
     (build / 'foundation-build-report.json').write_text(json.dumps(report))
     with pytest.raises(ValueError, match='complete matching foundation'):
         llvm_tools.foundation(tmp_path)
+
+
+def test_campaign_uses_exact_prepared_receipt_before_building_only_support_targets(tmp_path, monkeypatch):
+    from scripts.objc3c_toolchain import llvm_campaign as campaign
+
+    output = tmp_path / 'out/evidence'
+    receipt = tmp_path / 'tools.json'
+    receipt.write_text('{}')
+    with pytest.raises(ValueError, match='matching prepared foundation'):
+        campaign.qualify(tmp_path, output, tools_receipt=receipt)
+    assert not output.exists()
+
+    build = tmp_path / 'build'
+    build.mkdir()
+    (build / 'foundation-build-report.json').write_text('{}')
+    plan = {'source_build_id': 'exact-source', 'build_config_digest': 'exact-config',
+            'paths': {'stage': str(tmp_path / 'stage'), 'build': str(build)},
+            'host_environment': {'cmake_path': '/owned/cmake', 'ninja_path': '/owned/ninja',
+                                 'bootstrap_root': '/owned/bootstrap'}}
+    monkeypatch.setattr(campaign.subprocess, 'check_output', lambda *args, **kwargs: 'a'*40)
+    monkeypatch.setattr(campaign, 'admit_foundation', lambda *_: (plan, {}))
+    monkeypatch.setattr(campaign, 'build_foundation', lambda *args, **kwargs: pytest.fail('reused foundation rebuilt'))
+    calls = []
+
+    def admit(repo, *, run, receipt):
+        calls.append(receipt)
+        return {'identity': 'verified-graph'}, {}, {}
+
+    class ReachedSupportBuild(RuntimeError):
+        pass
+
+    def build_support(self, name, command, **kwargs):
+        assert calls == [receipt]
+        assert name == 'development-tools' and 'SupportTests' in command
+        assert not {'opt', 'llvm-dis', 'llvm-reduce'} & set(command)
+        raise ReachedSupportBuild
+
+    monkeypatch.setattr(campaign, 'qualify_tools', admit)
+    monkeypatch.setattr(campaign.Execution, 'run', build_support)
+    with pytest.raises(ReachedSupportBuild):
+        campaign.qualify(tmp_path, output, prepared=True, tools_receipt=receipt)
+    prepared = json.loads((output / 'qualification.json').read_text())
+    assert prepared['reused_development_tools']['identity'] == 'verified-graph'
 
 
 def spec():

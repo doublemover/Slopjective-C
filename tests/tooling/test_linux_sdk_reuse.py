@@ -1,11 +1,16 @@
 from pathlib import Path
 import os
 import json
+import shutil
+import subprocess
 
 import pytest
 
 from scripts.objc3c_toolchain.linux_sdk import copy_foundation, foundation_identity
 from scripts.objc3c_toolchain.linux_host import native_linux_host, native_target
+
+FOUNDATION_RECIPE = {'upstream_commit': 'upstream', 'patch_digest': 'patches',
+                     'build_config_digest': 'configuration'}
 
 
 @pytest.fixture(autouse=True)
@@ -175,11 +180,13 @@ def test_packaging_input_edit_prevents_installation(tmp_path, monkeypatch):
     sdk.mkdir()
     monkeypatch.setenv('OBJC3C_BOOTSTRAP_LLVM_ROOT', str(sdk))
     monkeypatch.setattr(linux_sdk, 'verify_sdk', lambda *a: {
+        **FOUNDATION_RECIPE,
         'source_build_id': 'llvm-build', 'seal_sha256': 'seal', 'target': native_target()})
-    monkeypatch.setattr(linux_sdk, 'verify_development', lambda *a: {'build_id': 'llvm-build'})
+    monkeypatch.setattr(linux_sdk, 'verify_development', lambda *a: {**FOUNDATION_RECIPE, 'build_id': 'llvm-build'})
     changed = False
     monkeypatch.setattr(linux_sdk, 'input_identity', lambda *a: {
         'sha256': 'edited' if changed else 'qualified', 'foundation_contents': 'foundation',
+        'native_test_inputs_sha256': 'test-inputs',
         'native_headers': {'sha256': 'native-headers'}, 'compiler_runtimes': {'sha256': 'builtin-input'}})
     monkeypatch.setattr(linux_sdk, 'discover_native_headers', lambda *a: {'sha256': 'native-headers'})
     monkeypatch.setattr(linux_sdk, 'materialize_native_headers', lambda *a: {'files': 0})
@@ -191,6 +198,9 @@ def test_packaging_input_edit_prevents_installation(tmp_path, monkeypatch):
     monkeypatch.setattr(linux_sdk, 'adopt_candidate_foundation', lambda *a, **kw: {'duplicate_stage_reclaimed': False})
 
     def execute(command, **kwargs):
+        assert kwargs.get('timeout') is None
+        if command[0] == 'ctest':
+            assert '--timeout' not in command
         if 'scripts.objc3c_toolchain_runtime.build_linux' in command:
             result = {'stage': str(sdk), 'build_key': 'runtime', 'robin_map_source': str(sdk)}
             destination = Path(command[command.index('--report-file') + 1])
@@ -277,11 +287,14 @@ def test_packaged_filecheck_does_not_change_foundation_signature(tmp_path):
     assert foundation_identity(prefix) == before
 
 
-@pytest.mark.parametrize('name', ['keypath_service_test.cpp', 'support/new_oracle.hpp'])
+@pytest.mark.parametrize('name', ['native/objc3c/tests/keypath_service_test.cpp',
+                                 'native/objc3c/tests/support/new_oracle.hpp',
+                                 'tests/clang_foundation/interface_import_test.cpp',
+                                 'tests/tooling/fixtures/clang_foundation/support.hpp'])
 def test_native_test_sources_invalidate_qualification_without_rebuilding_foundation(tmp_path, monkeypatch, name):
     from scripts.objc3c_toolchain import linux_sdk
     repo, prefix = identity_project(tmp_path, monkeypatch, {'source_build_id': 'same-foundation'})
-    path = repo / 'native/objc3c/tests' / name
+    path = repo / name
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text('pass')
     before = linux_sdk.input_identity(repo, prefix)
@@ -291,10 +304,175 @@ def test_native_test_sources_invalidate_qualification_without_rebuilding_foundat
     os.utime(path, ns=(stamp.st_atime_ns, stamp.st_mtime_ns))
     after = linux_sdk.input_identity(repo, prefix)
     assert after['sha256'] != before['sha256']
+    assert after['native_test_inputs_sha256'] != before['native_test_inputs_sha256']
     assert after['foundation_plan'] == before['foundation_plan']
     assert after['frontend'] == before['frontend']
+    path.write_text('pass')
+    os.utime(path, ns=(stamp.st_atime_ns, stamp.st_mtime_ns))
+    assert linux_sdk.input_identity(repo, prefix) == before
     path.unlink()
-    assert linux_sdk.input_identity(repo, prefix)['sha256'] != after['sha256']
+    assert linux_sdk.input_identity(repo, prefix)['native_test_inputs_sha256'] != before['native_test_inputs_sha256']
+
+
+def test_native_test_edit_enters_fresh_qualification_instead_of_installing_old_release(tmp_path, monkeypatch):
+    from scripts.objc3c_toolchain import linux_sdk
+    repo, prefix = identity_project(tmp_path, monkeypatch, {'source_build_id': 'same-foundation'})
+    source = repo / 'native/objc3c/tests/keypath_service_test.cpp'
+    source.parent.mkdir(parents=True)
+    source.write_text('return 0;')
+    original = linux_sdk.input_identity(repo, prefix)
+    stamp = source.stat()
+    builds = repo / 'out/toolchains/linux-sdk-builds'
+    original_receipt = builds / original['sha256'] / 'release.json'
+    original_receipt.parent.mkdir(parents=True)
+    original_receipt.write_text(json.dumps({'status': 'PASS', 'input_identity': original['sha256'],
+        'archive': 'expected.tar.zst', 'archive_sha256': 'archive'}))
+    monkeypatch.setattr(linux_sdk, 'verify_sdk', lambda *_: {
+        **FOUNDATION_RECIPE,
+        'source_build_id': 'llvm-build', 'seal_sha256': 'seal', 'target': native_target()})
+    monkeypatch.setattr(linux_sdk, 'verify_development', lambda *_: {**FOUNDATION_RECIPE, 'build_id': 'llvm-build'})
+    installations, candidates = [], []
+    monkeypatch.setattr(linux_sdk, 'install', lambda *args: installations.append(args) or {})
+
+    def enter_fresh_qualification(foundation, candidate):
+        candidates.append((foundation, candidate))
+        raise ValueError('fresh candidate reached')
+
+    monkeypatch.setattr(linux_sdk, 'copy_foundation', enter_fresh_qualification)
+    assert linux_sdk.build_sdk(repo, foundation_sdk=prefix)['cache_hit']
+    source.write_text('return 1;')
+    os.utime(source, ns=(stamp.st_atime_ns, stamp.st_mtime_ns))
+    edited = linux_sdk.input_identity(repo, prefix)
+    with pytest.raises(linux_sdk.ReleaseInputChanged, match='differ from requested qualification'):
+        linux_sdk.build_sdk(repo, foundation_sdk=prefix, reuse_input_identity=original['sha256'])
+    assert not candidates and not (builds / edited['sha256']).exists()
+    with pytest.raises(ValueError, match='fresh candidate reached'):
+        linux_sdk.build_sdk(repo, foundation_sdk=prefix)
+    assert len(installations) == 1
+    assert candidates == [(prefix, builds / edited['sha256'] / 'prefix')]
+    assert not (builds / edited['sha256'] / 'release.json').exists()
+    source.write_text('return 0;')
+    os.utime(source, ns=(stamp.st_atime_ns, stamp.st_mtime_ns))
+    assert linux_sdk.build_sdk(repo, foundation_sdk=prefix)['cache_hit']
+    assert len(installations) == 2
+
+
+def test_changed_recipe_routes_active_sdk_to_the_foundation_builder(tmp_path, monkeypatch):
+    from scripts.objc3c_toolchain import linux_sdk
+    from scripts.objc3c_toolchain.core import FoundationConfigurationChanged
+
+    repo = tmp_path / 'repo'
+    install_root = repo / 'installed'
+    active = install_root / 'current'
+    active.mkdir(parents=True)
+    (active / 'objc3-sdk.json').write_text(json.dumps({'source_build_id': 'previous-configuration'}))
+    monkeypatch.setenv('OBJC3C_BOOTSTRAP_LLVM_ROOT', str(tmp_path))
+
+    def changed(_repo):
+        raise FoundationConfigurationChanged('development build configuration changed')
+
+    def rebuild(root, **options):
+        assert root == repo and options['stage'] is True
+        raise RuntimeError('entered current foundation build')
+
+    monkeypatch.setattr(linux_sdk, 'verify_development', changed)
+    monkeypatch.setattr(linux_sdk, 'verify_sdk', lambda *_: pytest.fail('must not reuse old SDK'))
+    monkeypatch.setattr(linux_sdk, 'build_foundation', rebuild)
+    with pytest.raises(RuntimeError, match='entered current foundation build'):
+        linux_sdk.build_sdk(repo, install_root=install_root)
+
+
+@pytest.mark.parametrize('field,diagnostic', [('build_config_digest', 'build configuration differs'),
+                                              ('patch_digest', 'source differs at patch_digest'),
+                                              ('target', 'targets a different machine')])
+def test_a_matching_display_id_cannot_override_full_foundation_identity(tmp_path, monkeypatch, field, diagnostic):
+    from scripts.objc3c_toolchain import linux_sdk
+
+    prefix = tmp_path / 'sdk'
+    prefix.mkdir()
+    candidate = {**FOUNDATION_RECIPE, 'source_build_id': 'llvm-build', 'seal_sha256': 'seal',
+                 'target': native_target()}
+    candidate[field] = 'different'
+    monkeypatch.setattr(linux_sdk, 'verify_sdk', lambda *_: candidate)
+    monkeypatch.setattr(linux_sdk, 'verify_development', lambda *_: {**FOUNDATION_RECIPE, 'build_id': 'llvm-build'})
+    monkeypatch.setattr(linux_sdk, 'input_identity', lambda *_: pytest.fail('ineligible foundation was admitted'))
+    with pytest.raises(ValueError, match=diagnostic):
+        linux_sdk.build_sdk(tmp_path / 'repo', foundation_sdk=prefix)
+
+
+@pytest.mark.parametrize('source_directory', ['native/objc3c/tests', 'tests/clang_foundation'])
+def test_registered_keypath_test_rebuilds_at_the_same_mtime_when_requalified(tmp_path, monkeypatch,
+                                                                           source_directory):
+    selected = os.environ.get('OBJC3_TEST_NATIVE_REUSE_SDK')
+    if not selected:
+        pytest.skip('requires an installed Linux SDK for the focused native reuse witness')
+    from scripts.objc3c_toolchain import linux_sdk
+    from scripts.objc3c_toolchain.frontend_tests import qualify
+
+    installed = Path(selected).resolve(strict=True)
+    checkout = Path(__file__).resolve().parents[2]
+    repo, prefix = identity_project(tmp_path, monkeypatch, {'source_build_id': 'same-foundation'})
+    native = repo / 'native/objc3c'
+    for relative in ('tests/test_assertion_policy.h', 'cmake/FrontendTests.cmake'):
+        destination = native / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(checkout / 'native/objc3c' / relative, destination)
+    source = repo / source_directory / 'keypath_service_test.cpp'
+    source.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(checkout / 'native/objc3c/tests/keypath_service_test.cpp', source)
+    header = native / 'runtime/public/objc3_keypath.h'
+    header.parent.mkdir(parents=True)
+    shutil.copyfile(installed / 'include/objc3c/runtime/objc3_keypath.h', header)
+    (native / 'CMakeLists.txt').write_text('cmake_minimum_required(VERSION 3.24)\n'
+        'project(keypath_reuse_witness LANGUAGES CXX)\n'
+        'set(CMAKE_CXX_STANDARD 20)\nenable_testing()\n'
+        'add_library(objc3c_build_defaults INTERFACE)\n'
+        'target_include_directories(objc3c_build_defaults INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")\n'
+        'include(cmake/FrontendTests.cmake)\n'
+        f'add_executable(objc3_keypath_service_test "{source}")\n'
+        f'target_link_libraries(objc3_keypath_service_test PRIVATE "{installed / "lib/libobjc3_runtime_services.a"}")\n'
+        'objc3c_add_frontend_test(NAME objc3_keypath_service COMMAND objc3_keypath_service_test)\n'
+        'objc3c_write_frontend_test_inventory()\n')
+    original, timestamp = source.read_bytes(), source.stat()
+    assertion = b'assert(objc3_keypath_validate_v2(&descriptor) == OBJC3_KEYPATH_OK);'
+    assert original.count(assertion) == 1
+    edited = original.replace(assertion, assertion.replace(b' == ', b' != '))
+    assert len(edited) == len(original)
+    build = tmp_path / 'warm-frontend'
+
+    def execute(phase, name, argv):
+        result = subprocess.run(argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=60)
+        (tmp_path / (phase + '-' + name + '.log')).write_text(result.stdout)
+        result.check_returncode()
+
+    identities = []
+    for phase, data in (('baseline', original), ('edited', edited), ('restored', original)):
+        source.write_bytes(data)
+        os.utime(source, ns=(timestamp.st_atime_ns, timestamp.st_mtime_ns))
+        assert source.stat().st_mtime_ns == timestamp.st_mtime_ns
+        identity = linux_sdk.input_identity(repo, prefix)
+        identities.append({key: identity[key] for key in ('sha256', 'native_test_inputs_sha256', 'foundation_plan')})
+        execute(phase, 'configure', ['cmake', '-S', native, '-B', build, '-G', 'Ninja',
+            '-DCMAKE_BUILD_TYPE=Release', f'-DCMAKE_CXX_COMPILER={installed / "bin/clang++"}',
+            f'-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld={installed / "bin/ld.lld"}',
+            f'-DOBJC3C_NATIVE_TEST_INPUT_SHA256={identity["native_test_inputs_sha256"]}'])
+        output = tmp_path / phase
+        if phase == 'edited':
+            with pytest.raises(ValueError, match='frontend test commands failed'):
+                qualify(build, output, lambda name, argv: execute(phase, name, argv), jobs=1)
+            failure = json.loads((output / 'qualification.json').read_text())
+            assert failure['status'] == 'FAIL' and failure['failures'][0]['phase'] == 'ctest'
+            diagnostic = (tmp_path / 'edited-frontend-objc3_keypath_service-ctest.log').read_text()
+            assert 'objc3_keypath_validate_v2(&descriptor) != OBJC3_KEYPATH_OK' in diagnostic
+        else:
+            result = qualify(build, output, lambda name, argv: execute(phase, name, argv), jobs=1)
+            assert result['status'] == 'PASS' and result['frontend_ctests'] == 1
+            assert result['test_executables'] == 1
+    assert identities[0] == identities[2]
+    assert identities[0]['sha256'] != identities[1]['sha256']
+    assert identities[0]['native_test_inputs_sha256'] != identities[1]['native_test_inputs_sha256']
+    assert len({record['foundation_plan'] for record in identities}) == 1
+    (tmp_path / 'input-identities.json').write_text(json.dumps(identities, indent=2))
 
 
 @pytest.mark.parametrize('shape', ['file', 'directory', 'root', 'cycle', 'broken'])
@@ -353,8 +531,9 @@ def test_cache_hit_requires_a_pass_receipt_for_the_selected_identity(
     directory.mkdir(parents=True)
     prefix = sdk(tmp_path / 'foundation')
     monkeypatch.setattr(linux_sdk, 'verify_sdk', lambda *_: {
+        **FOUNDATION_RECIPE,
         'source_build_id': 'llvm-build', 'seal_sha256': 'seal', 'target': native_target()})
-    monkeypatch.setattr(linux_sdk, 'verify_development', lambda *_: {'build_id': 'llvm-build'})
+    monkeypatch.setattr(linux_sdk, 'verify_development', lambda *_: {**FOUNDATION_RECIPE, 'build_id': 'llvm-build'})
     monkeypatch.setattr(linux_sdk, 'input_identity', lambda *_: {'sha256': 'qualified'})
     installations = []
     monkeypatch.setattr(linux_sdk, 'install', lambda *args: installations.append(args) or {})

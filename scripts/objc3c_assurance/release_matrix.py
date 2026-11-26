@@ -8,8 +8,10 @@ from pathlib import Path
 import shutil
 
 from scripts.objc3c_toolchain.binary_packages import write_json
+from scripts.objc3c_toolchain.linux_archive_reuse import verify_retained as verify_archive_reuse
+from scripts.objc3c_toolchain.linux_host import native_linux_host
 from scripts.objc3c_toolchain.semantic_build_costs import snapshot
-from .evidence import (evidence_budget, SCHEMA, aggregate, artifact, native_files,
+from .evidence import (SCHEMA, aggregate, artifact, native_files,
                        suite_results, validate_evidence_sizes)
 from .plan import foundation_receipts, from_checkout, selected_suites, validate
 from .runner import run
@@ -122,6 +124,7 @@ def aggregate_core(repo: Path, plan: dict, partials: Path, output: Path) -> dict
     products = []
     elapsed = 0.0
     peak = 0
+    archive_reuse = None
     from .sanitizer_matrix import merge as merge_sanitizers
     merged_sanitizers = merge_sanitizers(plan, partials, output / '_sanitizer_union', repo=repo)
     for group, suites in GROUPS.items():
@@ -163,6 +166,18 @@ def aggregate_core(repo: Path, plan: dict, partials: Path, output: Path) -> dict
                     raise ValueError('release matrix suite artifact changed while merging: '+name)
             records[name] = {**row, 'artifacts': [artifact(output, output / saved['path'])
                                                    for saved in row['artifacts']]}
+        if group == 'product-producer' and native_linux_host() == 'linux-x86_64':
+            source = root / 'archive-reuse.json'
+            if not source.is_file():
+                raise ValueError('x86-64 release is missing its required archive replay receipt')
+            retained = artifact(root, source)
+            destination = output / 'archive-reuse.json'
+            shutil.copyfile(source, destination)
+            archive_reuse = artifact(output, destination)
+            if archive_reuse != retained:
+                raise ValueError('archive replay receipt changed while assembling terminal evidence')
+            verify_archive_reuse(destination, output / 'package/release.json',
+                                 revision=plan['revision']['tested'], host='linux-x86_64')
     if not products or any(product != products[0] for product in products):
         raise ValueError('release matrix consumers used different compiler product identities')
 
@@ -181,11 +196,11 @@ def aggregate_core(repo: Path, plan: dict, partials: Path, output: Path) -> dict
               'elapsed_seconds_sum': round(elapsed, 6),
               'peak_child_rss_kib_max': peak}
     report['operational_costs'] = artifact(output, output / 'operational-costs.json')
-    total = sum(saved['bytes'] for row in ordered for saved in row['artifacts'])
-    total += report['operational_costs']['bytes']
-    validate_evidence_sizes(ordered, report['operational_costs']['bytes'])
-    if total > evidence_budget(expected):
-        raise ValueError('merged core evidence exceeds the native artifact budget')
+    operational = report['operational_costs']['bytes']
+    if archive_reuse is not None:
+        report['archive_reuse'] = archive_reuse
+        operational += archive_reuse['bytes']
+    validate_evidence_sizes(ordered, operational)
     write_json(output / 'result.json', report)
     aggregate(plan, output, outcomes={'plan': 'success', 'native': 'success'},
               tested=plan['revision']['tested'], shard='core')

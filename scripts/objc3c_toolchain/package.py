@@ -206,7 +206,7 @@ def _qualify_call_suite(prefix: Path, output: Path, seal: str, suite: str, count
         result = subprocess.run([os.sys.executable, '-B',
             str(prefix / 'share/objc3c/examples/native' / ('qualify-' + suite + '.py')),
             '--sdk-root', str(prefix), '--output-dir', str(output)],
-            stdout=log, stderr=subprocess.STDOUT, timeout=1200)
+            stdout=log, stderr=subprocess.STDOUT)
     if result.returncode:
         raise ValueError(f'{suite} failed; see {output / "execution.log"}')
     evidence = json.loads((output / 'qualification.json').read_text())
@@ -358,6 +358,9 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     shutil.copyfile(Path(__file__).with_name('cmake_linux.sh'),
                     prefix / 'share/objc3c/install-cmake-linux.sh')
     shutil.copyfile(repo / 'toolchains/linux-hosts.json', prefix / 'share/objc3c/linux-hosts.json')
+    symbolizer = prefix / 'bin/llvm-symbolizer'
+    if not symbolizer.is_file() or not os.access(symbolizer, os.X_OK):
+        raise ValueError('the Linux SDK requires the staged LLVM symbolizer')
     normalize_permissions(prefix)
     data = {'schema': SCHEMA, 'source_build_id': source['build_id'],
             'upstream_commit': source['upstream_commit'], 'patch_digest': source['patch_digest'],
@@ -376,7 +379,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     with log_summary.open('wb') as log:
         subprocess.run(['env', '-u', 'LD_LIBRARY_PATH', f'PATH={prefix / "bin"}{os.pathsep}{os.environ["PATH"]}',
                         'sh', prefix / 'share/objc3c/examples/log-summary/verify.sh'],
-                       stdout=log, stderr=subprocess.STDOUT, timeout=180, check=True)
+                       stdout=log, stderr=subprocess.STDOUT, check=True)
     from functools import partial
     from .host import resource_limits
     from .qualify_source_modules import qualify
@@ -447,7 +450,8 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
         ('installed_array_carriers', 'array-carriers', {'executions': 9, 'commands': 77, 'forced_failures': 6, 'rejections': 6}),
         ('installed_record_carriers', 'record-carriers', {'executions': 17, 'commands': 109, 'rejections': 8, 'admissions': 2}),
         ('installed_heap_carriers', 'heap-carriers', {'executions': 17, 'commands': 111, 'rejections': 7, 'admissions': 5}),
-        ('installed_cxx_interfaces', 'cpp-interfaces', {'executions': 16, 'commands': 124, 'rejections': 6, 'admissions': 10}),
+        ('installed_cxx_interfaces', 'cpp-interfaces', {'executions': 16, 'commands': 130, 'rejections': 7,
+                                                       'admissions': 10, 'result_locks': 1}),
     )
     for key, suite, counts in suites:
         tasks[key] = partial(_qualify_call_suite, prefix, validation_report.parent / ('installed-' + suite),

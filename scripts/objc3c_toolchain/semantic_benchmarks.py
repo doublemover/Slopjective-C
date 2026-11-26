@@ -19,6 +19,7 @@ from .binary_packages import digest, find_installed_shared_library, write_json
 from .package import SCHEMA, _digest, inventory, verify_sdk
 import shutil
 from .compiler_instrumentation import loaded_graph
+from .collection_scaling import collection_scaling_inputs, measure_collection_scaling
 from .semantic_runtime_oracles import (CURRENT_WORKLOAD_VERSION, FAMILIES, OWNERSHIP_FAMILIES,
     GENERATED_TASK_FAMILIES, TASK_FRAME_MUTATIONS, completed_task_count, expected_work,
     ownership_flags, runtime_workload_result, task_frame_control_result)
@@ -27,6 +28,7 @@ from .sanitizer_policy import require_clean_diagnostic
 
 SCALES = (32, 256, 2048)
 ROUNDS, SEED = 16, 17
+MINIMUM_DELAY_CONTROL_SECONDS = ROUNDS * 0.001 / 2
 
 
 def _link_or_copy(source, destination):
@@ -127,7 +129,11 @@ def runtime_result(text, scale):
 
 
 def sample(argv, *, cwd, environment, log, timeout=120):
-    """Per-command wait4 rusage; never reuse a global descendant RSS maximum."""
+    """Per-command wait4 rusage, with an optional explicit benchmark budget.
+
+    Qualification/build callers pass None to leave wall time to their runner.
+    Never reuse a global descendant RSS maximum.
+    """
     started, timed_out = time.monotonic(), False
     with log.open('w') as stream:
         with subprocess.Popen(list(map(str, argv)), cwd=cwd, env=environment,
@@ -139,7 +145,7 @@ def sample(argv, *, cwd, environment, log, timeout=120):
                     if child:
                         process.returncode = os.waitstatus_to_exitcode(status)
                         break
-                    if time.monotonic()-started >= timeout:
+                    if timeout is not None and time.monotonic()-started >= timeout:
                         timed_out = True
                         _kill_session(process.pid)
                         _, status, usage = os.wait4(process.pid, 0)
@@ -236,7 +242,8 @@ def prepare_prefix(stage, prefix, *, source_build_id, target, imports=False, ser
     return verify_sdk(prefix)
 
 
-def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_runtime=False):
+def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3,
+            extended_runtime=False, collection_scaling=False):
     repo, output = repo.resolve(strict=True), output.resolve()
     if (platform.system() != 'Linux' or platform.machine().lower() not in ('x86_64', 'amd64', 'aarch64', 'arm64') or
             type(repetitions) is not int or not 3 <= repetitions <= 15 or
@@ -249,6 +256,8 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
     output.mkdir(parents=True)
     fixture = repo / 'tests/benchmarks/collections.cpp'
     fixtures = [Path(__file__), fixture]
+    if collection_scaling:
+        fixtures += collection_scaling_inputs(repo)
     if extended_runtime:
         fixtures += [repo / 'tests/benchmarks/runtime_workloads.cpp',
                      repo / 'tests/benchmarks/ownership_workloads.mm',
@@ -295,6 +304,7 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
             resources = [path for path in (prefix / 'lib/clang').iterdir() if path.is_dir()]
             if len(resources) != 1:
                 raise ValueError('benchmark requires one explicit compiler resource root')
+            state['resource_dir'] = resources[0]
             compiler = prefix / 'bin/clang++'
             flags = ['--no-default-config', '-resource-dir', resources[0], '-std=c++20', '-O2']
             # Record sanitizer markers in both implementation and runtime inputs.
@@ -413,37 +423,33 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
                         if not artifact.is_file() or not artifact.stat().st_size:
                             raise ValueError('frontend benchmark omitted its object')
                         row['object_sha256'] = digest(artifact)
-        # A bounded same-input delay must preserve semantics and produce a
-        # measurable minimum effect. This calibrates a control, not product limits.
-        state, delayed = states[-1], []
-        for repetition in range(repetitions):
-            row = run('delay-control-'+str(repetition), [*state['rows']['runtime-32'][:-1], '1'], state)
-            delayed.append(runtime_result(Path(row['log']).read_text(), 32)['nanoseconds']/1e9)
-        ordinary = [row['work_seconds'] for row in report['samples'] if row.get('workload') == 'runtime-32'
-                    and row['sdk_index'] == state['index'] and not row.get('warmup')]
-        effect = statistics.median(delayed)-statistics.median(ordinary)
-        if effect < ROUNDS*0.001/2:
-            raise ValueError('bounded-delay regression control was not detected')
-        report['delay_control'] = {'status': 'PASS', 'samples_seconds': delayed, 'median_effect_seconds': effect,
-            'semantic_output_unchanged': True, 'minimum_control_effect_seconds': ROUNDS*0.001/2}
+        # Keep each delay next to its same-input control and alternate which
+        # runs first. Independent product measurements can drift under load.
+        state = states[-1]
+
+        def delay_control(workload, label, ordinary, delayed):
+            controls, treatments = [], []
+            for repetition in range(repetitions):
+                following = (('ordinary', ordinary, controls), ('delayed', delayed, treatments))
+                for variant, command, samples in following[::1 if repetition % 2 == 0 else -1]:
+                    row = run(f'{label}-{repetition}-{variant}', command, state)
+                    samples.append(semantic_result(Path(row['log']).read_text(), workload)['nanoseconds']/1e9)
+            effect = statistics.median(treatment - control for control, treatment in zip(controls, treatments))
+            if effect < MINIMUM_DELAY_CONTROL_SECONDS:
+                raise ValueError(f'bounded-delay regression control was not detected: {workload}')
+            return {'status': 'PASS', 'samples_seconds': treatments, 'control_samples_seconds': controls,
+                    'median_effect_seconds': effect, 'semantic_output_unchanged': True,
+                    'minimum_control_effect_seconds': MINIMUM_DELAY_CONTROL_SECONDS}
+
+        ordinary = state['rows']['runtime-32']
+        report['delay_control'] = delay_control('runtime-32', 'delay-control', ordinary, [*ordinary[:-1], '1'])
         if extended_runtime:
             report['runtime_delay_controls'] = []
             for family in FAMILIES:
                 workload = 'runtime-'+family+'-32'
-                delayed = []
-                for repetition in range(repetitions):
-                    row = run(f'delay-control-{family}-{repetition}',
-                              [*state['rows'][workload], '1'], state)
-                    delayed.append(semantic_result(Path(row['log']).read_text(), workload)['nanoseconds']/1e9)
-                ordinary = [row['work_seconds'] for row in report['samples']
-                    if row.get('workload') == workload and row['sdk_index'] == state['index'] and
-                    row.get('warmup') is False]
-                effect = statistics.median(delayed)-statistics.median(ordinary)
-                if effect < ROUNDS*0.001/2:
-                    raise ValueError('extended runtime delay control was not detected: '+family)
-                report['runtime_delay_controls'].append({'family': family, 'status': 'PASS',
-                    'samples_seconds': delayed, 'median_effect_seconds': effect,
-                    'semantic_output_unchanged': True, 'minimum_control_effect_seconds': ROUNDS*0.001/2})
+                ordinary = state['rows'][workload]
+                control = delay_control(workload, 'delay-control-'+family, ordinary, [*ordinary, '1'])
+                report['runtime_delay_controls'].append({'family': family, **control})
             report['task_frame_controls'] = []
             for fault, (before, after) in TASK_FRAME_MUTATIONS.items():
                 text = (repo / 'tests/benchmarks/task_frame_workloads.cpp').read_text()
@@ -464,6 +470,11 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
                     report['task_frame_controls'].append({'family': family, 'fault': fault, 'status': 'PASS',
                         'classification': 'semantic-mismatch', 'sample': row['name'], 'semantic_result': result,
                         'source_sha256': digest(source)})
+        if collection_scaling:
+            scaling = measure_collection_scaling(repo, states, repetitions, run, summarize)
+            for graph in scaling['loaders']:
+                frozen.update(graph['loader']['libraries'])
+            report['collection_scaling'] = scaling
         report['summaries'] = [{
             'sdk_index': state['index'], 'workload': name,
             'wall': summarize([row for row in report['samples'] if row.get('workload') == name and
@@ -507,6 +518,8 @@ def main():
     parser.add_argument('--baseline-sdk', type=Path)
     parser.add_argument('--repetitions', type=int, default=3)
     parser.add_argument('--extended-runtime', action='store_true')
+    parser.add_argument('--collection-scaling', action='store_true',
+                        help='measure concrete map and set phases and allocation requests')
     result = measure(**vars(parser.parse_args()))
     print(json.dumps({'status': result['status'], 'timing_decision': result['timing_decision']}))
 

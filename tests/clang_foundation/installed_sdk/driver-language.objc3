@@ -1,0 +1,8 @@
+#if defined(__OBJC__) != EXPECT_OBJC || defined(__cplusplus) != EXPECT_CXX
+#error unexpected source language
+#endif
+#if __has_feature(objc_arc) != EXPECT_ARC
+#error unexpected Objective-C ownership mode
+#endif
+
+int main(void) { return 0; }

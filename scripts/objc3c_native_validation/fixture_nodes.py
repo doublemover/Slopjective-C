@@ -5,13 +5,15 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import hashlib
 import json
-import math
 import os
 from pathlib import Path
 import re
 import shutil
 import subprocess
 import uuid
+
+
+from scripts.objc3c_cross_lane_execution import validate_node_timeout
 
 
 _WINDOWS = os.name == "nt"
@@ -131,7 +133,7 @@ def _wrapper(repo: Path, runner: Path, driver: str, toolchain: dict) -> str:
 
 
 def _run_hidden(command: list[str], repo: Path, stdout: Path, stderr: Path,
-                timeout_seconds: float, snapshot_environment: dict[str, str]) -> int:
+                timeout_seconds: float | None, snapshot_environment: dict[str, str]) -> int:
     if not _WINDOWS:
         raise RuntimeError("Native runtime fixture nodes require the admitted Windows host")
     # Windows environment names are case insensitive, whereas a plain Python
@@ -352,9 +354,8 @@ def run_fixture_node(repo: Path, node: dict, output_dir: Path, toolchain: dict) 
     build_id = toolchain.get("sdk_build_id")
     if not isinstance(build_id, str) or not _BUILD_ID.fullmatch(build_id):
         raise ValueError("Fixture node requires a safe sdk_build_id")
-    timeout = node.get("timeout_seconds", 300)
-    if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or not math.isfinite(timeout) or timeout <= 0:
-        raise ValueError("Fixture node timeout_seconds must be positive and finite")
+    timeout = node.get("timeout_seconds")
+    validate_node_timeout(timeout)
     environment = _fixture_environment(toolchain)
     repo = Path(repo).resolve(strict=True)
     runner_name, folder = _RUNNERS[suite]

@@ -28,6 +28,18 @@
       "installed": "share/objc3c/examples/packages/workspace.json",
       "tutorial": "docs/tutorials/guided_walkthrough.md",
       "qualification": "installed_source_graph"
+    },
+    {
+      "id": "collections-text",
+      "source": "showcase/collections-text/collections-text.objc3",
+      "tutorial": "docs/tutorials/collections_text.md",
+      "qualification": "published_preview_examples"
+    },
+    {
+      "id": "parcel-quotes",
+      "source": "showcase/parcel-quotes",
+      "tutorial": "showcase/parcel-quotes/README.md",
+      "qualification": "published_preview_examples"
     }
   ]
 }

@@ -65,7 +65,7 @@ def qualify_case(sdk: Path, output: Path, language: str, standard: str, ownershi
             with log.open('w') as stream:
                 completed = subprocess.run([str(sdk / 'bin/objc3c-build'), '--workspace', str(sources / 'workspace.json'),
                     '--output-dir', str(build), '--optimization', optimization],
-                    cwd=root, stdout=stream, stderr=subprocess.STDOUT, check=False, timeout=180)
+                    cwd=root, stdout=stream, stderr=subprocess.STDOUT, check=False)
             if completed.returncode:
                 for failure_log in sorted([*build.rglob('compile.log'), *build.rglob('lookup.log')]):
                     destination = output / (case_prefix + '-' + label + '-' + failure_log.parent.name + '-' + failure_log.name + '.failure.log')
@@ -130,7 +130,7 @@ def qualify_case(sdk: Path, output: Path, language: str, standard: str, ownershi
         command = [str(sdk / 'bin/objc3c-build'), '--workspace', str(sources / 'workspace.json'),
                    '--output-dir', str(build), '--optimization', optimization]
         rejected = subprocess.run(command, cwd=root, stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT, text=True, errors='replace', timeout=180)
+            stderr=subprocess.STDOUT, text=True, errors='replace')
         require_diagnostic_exit(rejected.returncode, rejected.stdout, 'package build failed:', 'identity lock')
         if (build / 'build-report.json').read_bytes() != prior_report:
             raise ValueError('wrong package lock did not reject before changing a prior build record')
@@ -146,7 +146,7 @@ def qualify_case(sdk: Path, output: Path, language: str, standard: str, ownershi
         obj = build / 'application/module.o'
         before = hashlib.sha256(obj.read_bytes()).hexdigest()
         rejected = subprocess.run(command, cwd=root, stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT, text=True, errors='replace', timeout=180)
+            stderr=subprocess.STDOUT, text=True, errors='replace')
         log = build / 'application/compile.log'
         retained_log = output / f'{case_prefix}-private-visibility.log'
         shutil.copyfile(log, retained_log)

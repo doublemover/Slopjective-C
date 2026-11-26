@@ -22,7 +22,6 @@ jobs:
   build:
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-26.04
-    timeout-minutes: 10
     permissions:
       contents: read
       pages: read
@@ -46,7 +45,6 @@ jobs:
     if: github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-26.04
-    timeout-minutes: 10
     permissions:
       contents: read
       pages: write

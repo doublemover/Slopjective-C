@@ -65,7 +65,7 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
     cases, commands = [], []
     products = None
 
-    def run(label, argv, cwd):
+    def run(label, argv, cwd, *, timeout=None):
         log = output / (label + '.log')
         if products:
             products.record(policy, label, argv, commands, cwd=cwd, log=log,
@@ -73,7 +73,7 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
             return log
         with log.open('w') as stream:
             result = subprocess.run(list(map(str, argv)), cwd=cwd, env=env,
-                                    stdout=stream, stderr=subprocess.STDOUT, timeout=120)
+                                    stdout=stream, stderr=subprocess.STDOUT, timeout=timeout)
         commands.append({'name': label, 'exit_code': result.returncode,
                          'log_sha256': packages.digest(log)})
         if result.returncode:
@@ -155,7 +155,7 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                     if resource_root:
                         link += ['-resource-dir', resource_root]
                 run(label + '-link', [*link, '-o', executable], root)
-                run(label + '-execute', [executable], root)
+                run(label + '-execute', [executable], root, timeout=120)
                 run(label + '-dwarf', [sdk / 'bin/llvm-dwarfdump', '--verify', executable], root)
                 debugger_values = None
                 if opt == 'O0' and not sanitizer:

@@ -70,7 +70,42 @@ metadata is checked before verification is shared. Focused native replay and
 corruption controls passed at this checkpoint. The sanitizer and terminal
 gates later passed on both hosts for the published ABI 24 preview.
 
+The retained installed and structured product-partition receipts from both hosts
+contain 32 detecting/corrected pairs. Their diagnostic bytes, configured exits,
+symbolized source frames, and effective strict options verify against the recorded
+digests. The same receipts retain 16 actual runtime executables with matching
+loader records and clean outcomes. Each recorded O0/O2 runtime profile contains
+19 objects and 19 archive members. [x86-64 installed](https://github.com/doublemover/Slopjective-C/actions/runs/44865570421/artifacts/14695617338) · [x86-64 structured product](https://github.com/doublemover/Slopjective-C/actions/runs/44865570421/artifacts/14696682106) · [AArch64 installed](https://github.com/doublemover/Slopjective-C/actions/runs/44865570382/artifacts/14698722034) · [AArch64 structured product](https://github.com/doublemover/Slopjective-C/actions/runs/44865570382/artifacts/14698466609)
+
 The [release status](../releases/status.md) identifies the exact preview
 archives and hosted qualification. SDK 2.62 / ABI 21 was an earlier
 development checkpoint. The [preview issue review](linux_preview_issue_review.md)
 tracks the remaining acceptance work.
+
+## Warm frontend test objects
+
+**#8322:** SDK requalification passes the registered native test input digest to
+the frontend build. Each native test target's compile command now changes when
+the test-source inventory changes, even when file sizes and modification times
+are preserved. The LLVM foundation identity stays stable across test-only edits.
+
+A focused Release build uses the published x86-64 SDK's compiler and runtime
+archive with the registered keypath test. Its original and restored inputs pass
+CTest. Flipping one assertion with the same source size and timestamp causes
+the warm build to recompile and CTest to record the edited assertion failure.
+
+## Warm release archive replay
+
+The x86-64 native assurance producer now reenters the Linux SDK owner after
+publication. The replay requires the current qualification identity and the
+matching active generation. It reads the archive admission records and verifies
+the sealed prefix without rebuilding tools, extracting the payload, or writing
+another archive. Its ten-minute step retains `archive-reuse.json` alongside the
+producer evidence. The receipt compares the before and after archive,
+sidecar, and release receipt digests and records identity, readmission, and
+installation timings. A stale qualification request must fail before activation.
+
+Local controls run the same replay against an actual packaged zstd fixture with
+build, repackaging, and extraction hooks disabled. The same-size test-edit
+control also exercises the production qualification identity calculation. A
+hosted full-size replay receipt is pending.

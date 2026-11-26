@@ -20,6 +20,16 @@ Include all changed native source, headers and tests in the export. Commit the
 maintained patches and manifest with the frontend/runtime integration and
 fixtures. Do not commit the nested LLVM checkout or add a parallel draft tree.
 
+Run these before building Clang. The diagnostic check downloads only the pinned
+diagnostic tables and validates references in the Linux and Darwin patches.
+The header checks use stock `clang` on `PATH` and a relocated SDK layout.
+
+```sh
+uv run python -m scripts.objc3c_toolchain.check_llvm_patch_application --diagnostics-only
+uv run pytest -q tests/tooling/test_darwin_registration.py tests/tooling/test_darwin_sdk.py \
+  -k 'declared or relocated_compiler'
+```
+
 Inspect the Linux build plan before a substantial compiler build:
 
 ```sh
@@ -63,6 +73,19 @@ Fresh Debian/Ubuntu archive qualification is a separate operation owned by
 `scripts/qualify_linux_distributions.py`; inspect its `--help` for the release
 receipt and requested qualification scope. Record the archive checksum, SDK
 seal, native build identity and actual checks in the acceptance receipt.
+
+The native PR, preview calibration, and installed LLVM assurance jobs can
+restore one compressed preview archive by native host and its reviewed
+SHA-256. The installer checks the archive, source build, and seal before
+activation. Manual preview calibration or installed LLVM assurance runs can
+populate the cache after success. Native PR jobs remove the compressed file
+after installation to leave room for compilation.
+
+Hosted builds, qualification, artifact transfers, and evidence gates use the
+GitHub Actions job deadline. Coverage records elapsed work. Test fixtures can
+declare a liveness deadline when nontermination is a test failure. Network
+provisioning detects stalled transfers. Optional LLVM IR, reduction, and
+expensive-check commands accept a deadline when requested by the caller.
 
 For public delivery use the [Linux release owner checklist](../releases/linux.md#release-owner-checklist).
 The draft workflow accepts two successful native qualification runs for its

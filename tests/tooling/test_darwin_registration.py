@@ -1,0 +1,418 @@
+from pathlib import Path
+import shutil
+import signal
+import subprocess
+import sys
+
+import pytest
+
+from scripts.objc3c_toolchain import darwin_registration
+
+
+def test_registration_fixture_uses_declared_public_runtime_api():
+    compiler = shutil.which('clang')
+    if compiler is None:
+        pytest.skip('stock Clang is needed for the Darwin declaration check')
+    result = subprocess.run(darwin_registration.registration_declaration_command(compiler),
+                            capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+
+
+def test_experimental_profile_binds_separate_patch_and_native_job_budget():
+    profile, patch = darwin_registration.load_profile()
+    assert profile['profile'] == 'macos-arm64-registration-experimental'
+    assert profile['inheritance'] == 'stateless-super-v1'
+    assert profile['layout'] == 'fixed-root-int-v1'
+    assert patch.parent.name == 'experimental'
+    assert patch.name not in (darwin_registration.ROOT / 'toolchains/llvm/patches/series').read_text()
+    assert darwin_registration.compile_jobs(3, 7 * 1024 ** 3) == 2
+    assert darwin_registration.compile_jobs(12, 24 * 1024 ** 3) == 11
+    assert darwin_registration.compile_jobs(2, 64 * 1024 ** 3) == 2
+
+
+def test_fixed_layout_dwarf_requires_exact_class_extent_and_field_offset():
+    transcript = '''0x00000025: DW_TAG_structure_type
+        DW_AT_name ("DarwinFixedBase")
+        DW_AT_byte_size (0x10)
+0x0000002b:   DW_TAG_member
+        DW_AT_name ("value")
+        DW_AT_type (0x0000005c "int")
+        DW_AT_data_member_location (0x08)
+'''
+    darwin_registration.verify_fixed_layout_dwarf(transcript, 'DarwinFixedBase')
+    with pytest.raises(ValueError, match='wrong int ivar offset'):
+        darwin_registration.verify_fixed_layout_dwarf(transcript.replace('0x08', '0x00'), 'DarwinFixedBase')
+    with pytest.raises(ValueError, match='wrong size'):
+        darwin_registration.verify_fixed_layout_dwarf(transcript.replace('0x10', '0x08'), 'DarwinFixedBase')
+
+
+def test_experimental_driver_rejects_other_hosts_before_build(monkeypatch, tmp_path):
+    monkeypatch.setattr(darwin_registration.platform, 'machine', lambda: 'x86_64')
+    with pytest.raises(ValueError, match='native arm64 Python'):
+        darwin_registration.qualify(tmp_path / 'missing.json', tmp_path / 'output', fetch=False)
+    assert not (tmp_path / 'output').exists()
+
+
+def test_only_threaded_arc_execution_has_a_liveness_limit(monkeypatch, tmp_path):
+    calls = {}
+    imports = {'objc3_darwin_arc_' + name + '_v1' for name in (
+        'retain', 'release', 'init_weak', 'store_weak', 'load_weak_retained', 'copy_weak',
+        'destroy_weak', 'pool_push', 'pool_pop', 'autorelease', 'store_strong')}
+
+    def run(*argv, label, timeout=None, **kwargs):
+        calls[label] = timeout
+        if label.endswith('-ir'):
+            argv[-1].write_text(''.join(f'call void @{name}()\n' for name in sorted(imports)))
+        if label.endswith('-load-paths'):
+            paths = ['/usr/lib/libSystem.B.dylib']
+            if '-dynamic-' in label:
+                paths.append('@rpath/libobjc3darwin.dylib')
+            return 'executable:\n' + '\n'.join(paths)
+        if label.endswith('-native'):
+            return 'owned Objective-C 3 Darwin ARC: PASS'
+        return ''
+
+    monkeypatch.setattr(darwin_registration, '_owned_objc_imports',
+                        lambda run, path, label: sorted(imports) if '-static-' not in label else [])
+    monkeypatch.setattr(darwin_registration, 'verify_macho', lambda path, kind: {'kind': kind})
+    receipt = darwin_registration._exercise_arc(run, ['/llvm/clang'], '-fobjc-runtime=gnustep-2.99',
+                                                ['/llvm/clang'], tmp_path, tmp_path, Path('/llvm/dwarfdump'))
+    assert receipt['status'] == 'PASS'
+    assert {label: timeout for label, timeout in calls.items() if timeout is not None} == {
+        f'arc-{opt}-{linkage}-native': darwin_registration.ARC_THREAD_WITNESS_TIMEOUT_SECONDS
+        for opt in ('o0', 'o2') for linkage in ('static', 'dynamic')}
+
+
+def test_xcode_cxx_preflight_requires_selected_headers_and_sdk_libcxx(monkeypatch, tmp_path):
+    developer = tmp_path / 'Xcode Developer'
+    headers = developer / 'Toolchains/Selected/usr/include/c++/v1'
+    bundled = tmp_path / 'LLVM Archive/include/c++/v1'
+    apple = developer / 'Toolchains/Selected/usr/bin/clang++'
+    sdk = developer / 'Platforms/MacOSX/SDKs/MacOSX.sdk'
+    library_stub = sdk / 'usr/lib/libc++.tbd'
+    for path in (headers / '__config', bundled / '__config', apple, library_stub):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(path.name)
+    with pytest.raises(ValueError, match=r'Apple Clang did not report libc\+\+ headers'):
+        darwin_registration.xcode_cxx_headers(str(bundled), developer)
+
+    commands = {}
+    emitted = tmp_path / 'xcode-cxx-hash'
+    def run(*args, label):
+        commands[label] = list(map(str, args))
+        if label == 'xcode-libcxx-hash-link':
+            emitted.write_text('mock executable')
+        return {
+            'xcode-clangxx': str(apple),
+            'xcode-cxx-search': f'#include <...> search starts here:\n {bundled}\n {headers}\nEnd of search list.',
+            'xcode-libcxx-hash-load-paths': (
+                f'{emitted}:\n /usr/lib/libc++.1.dylib (compatibility version 1.0.0)\n'
+                ' /usr/lib/libSystem.B.dylib (compatibility version 1.0.0)'),
+            'xcode-libcxx-hash-native': 'Xcode libc++ 190100',
+        }.get(label, '')
+
+    monkeypatch.setattr(darwin_registration, 'verify_macho', lambda path, kind: {'path': str(path), 'kind': kind})
+    host = {'platform_identity': {'sdk_path': str(sdk), 'developer_dir': str(developer)},
+            'apple_toolchain': {'paths': {'ld': '/xcode/ld'}}}
+    result = darwin_registration._qualify_xcode_cxx(run, host, Path('/llvm/clang++'), 'arm64-apple-macos15.0', tmp_path)
+    assert result['headers'] == str(headers)
+    assert result['header_config_sha256'] == darwin_registration.file_digest(headers / '__config')
+    assert result['library_stub_sha256'] == darwin_registration.file_digest(library_stub)
+    assert result['flags'] == ['-stdlib=libc++', '-nostdinc++', '-isystem', str(headers)]
+    assert all(flag in commands['xcode-libcxx-hash-link'] for flag in result['flags'])
+    assert str(bundled) not in commands['xcode-libcxx-hash-link']
+    assert commands['xcode-libcxx-hash-native'] == [str(emitted), 'stable-hash-input', 'stable-hash-input']
+    assert 'std::hash<std::string>' in (tmp_path / 'xcode-cxx-hash.cpp').read_text()
+
+
+@pytest.mark.parametrize('extra_library', ['', '/usr/lib/libobjc.A.dylib'])
+def test_portable_services_link_current_sources_and_run_after_relocation(monkeypatch, tmp_path, extra_library):
+    stages = tmp_path / 'build'
+    layout = tmp_path / 'Relocated install'
+    stages.mkdir()
+    (layout / 'bin').mkdir(parents=True)
+    commands = {}
+
+    def run(*args, label):
+        argv = list(map(str, args))
+        commands[label] = argv
+        if '-o' in argv:
+            Path(argv[argv.index('-o')+1]).write_bytes(b'linked by mock compiler')
+        if label.endswith('-load-paths'):
+            paths = ['/usr/lib/libc++.1.dylib', '/usr/lib/libSystem.B.dylib']
+            if extra_library:
+                paths.append(extra_library)
+            return argv[-1]+'\n'+'\n'.join(f'  {path} (compatibility version 1.0.0)' for path in paths)
+        return ''
+
+    def verify_macho(path, kind):
+        assert path.is_file()
+        return {'path': str(path), 'format': 'Mach-O arm64', 'kind': kind}
+
+    monkeypatch.setattr(darwin_registration, 'verify_macho', verify_macho)
+    defaults = ['/owned/clang', '--target=arm64-apple-macos15.0', '-isysroot', '/owned/SDK']
+    cxx_flags = ['-stdlib=libc++', '-nostdinc++', '-isystem', '/xcode/include/c++/v1']
+    if extra_library:
+        with pytest.raises(ValueError, match='unexpected portable Darwin service dependencies'):
+            darwin_registration._exercise_portable_services(run, defaults, '/owned/ld', stages, layout, cxx_flags=cxx_flags)
+        assert 'stdlib-map-count-native' not in commands
+        return
+    report = darwin_registration._exercise_portable_services(run, defaults, '/owned/ld', stages, layout, cxx_flags=cxx_flags)
+    assert report['status'] == 'PASS'
+    assert set(report['suites']) == {'stdlib-map-count', 'text-scalar-boundary'}
+    for label, unit, fixture in (
+        ('stdlib-map-count', 'collections_service', 'stdlib_map_count_test'),
+        ('text-scalar-boundary', 'text_service', 'text_scalar_boundary_test'),
+    ):
+        service = f'native/objc3c/src/runtime/stdlib/{unit}.cpp'
+        test = f'native/objc3c/tests/{fixture}.cpp'
+        for source in (service, test):
+            assert report['inputs'][source] == darwin_registration.file_digest(darwin_registration.ROOT / source)
+        assert str(darwin_registration.ROOT / service) in commands[label+'-service']
+        assert str(darwin_registration.ROOT / test) in commands[label+'-fixture']
+        assert '-UNDEBUG' in commands[label+'-fixture']
+        assert str(stages / (unit+'.o')) in commands[label+'-link']
+        assert str(stages / (fixture+'.o')) in commands[label+'-link']
+        assert all('--driver-mode=g++' in commands[label+'-'+step] for step in ('service', 'fixture', 'link'))
+        assert all(all(flag in commands[label+'-'+step] for flag in cxx_flags) for step in ('service', 'fixture', 'link'))
+        assert commands[label+'-native'] == [str(layout / 'bin' / label)]
+
+
+@pytest.mark.skipif(sys.platform != 'linux' or not shutil.which('cc'), reason='LP64 C registry control uses Linux cc')
+def test_owned_registry_lookup_and_negative_metadata_controls(tmp_path):
+    harness = tmp_path / 'harness.c'
+    harness.write_text('''
+#include "darwin_registration.c"
+#include <sys/resource.h>
+
+static int class_answer(const void *receiver, const struct selector_record *selector) {
+  return receiver && selector ? 42 : -1;
+}
+
+static int instance_answer(const void *receiver, const struct selector_record *selector) {
+  return receiver && selector ? 17 : -1;
+}
+
+static int child_answer(const void *receiver, const struct selector_record *selector) {
+  return receiver && selector ? 19 : -1;
+}
+
+static int int_argument(const void *receiver, const struct selector_record *selector, int input) {
+  return receiver && selector ? input + 17 : -1;
+}
+
+struct triple { long first, second, third; };
+typedef struct triple (*mixed_implementation)(const void *, const struct selector_record *,
+                                             struct triple, const int *, int);
+
+static struct triple mixed_argument(const void *receiver, const struct selector_record *selector,
+                                    struct triple value, const int *offset, int bias) {
+  if (receiver && selector) {
+    value.first += *offset;
+    value.second += bias;
+  }
+  return value;
+}
+
+static const struct selector_record selector = {"answer", "i16@0:8"};
+static const struct selector_record same_signature = {"answer", "i16@0:8"};
+static const struct selector_record typed = {"argument:", "i20@0:8i16"};
+static const struct selector_record wrong_type = {"answer", "i20@0:8i16"};
+static const struct selector_record wrong_signature = {"answer:", ""};
+static const struct selector_record mixed = {"combine:offset:bias:", "{triple=qqq}52@0:8{triple=qqq}16r^i40i48"};
+static const struct method_list class_methods = {
+  NULL, 1, sizeof(struct method_record), {{(method_address)class_answer, &selector, "i16@0:8"}}
+};
+static const struct method_list instance_methods = {
+  NULL, 3, sizeof(struct method_record), {
+    {(method_address)instance_answer, &selector, "i16@0:8"},
+    {(method_address)int_argument, &typed, "i20@0:8i16"},
+    {(method_address)mixed_argument, &mixed, "{triple=qqq}52@0:8{triple=qqq}16r^i40i48"},
+  }
+};
+static const struct method_list child_methods = {
+  NULL, 1, sizeof(struct method_record), {{(method_address)child_answer, &selector, "i16@0:8"}}
+};
+static const struct method_list wrong_methods = {
+  NULL, 1, sizeof(struct method_record), {{(method_address)instance_answer, &wrong_signature, "i24@0:8d16"}}
+};
+static const struct class_record meta = {.flags = 1, .methods = &class_methods};
+static const struct class_record root = {.isa = &meta, .name = "Root", .methods = &instance_methods};
+static const struct class_record child_meta = {.flags = 1};
+static const struct class_record child = {
+  .isa = &child_meta, .superclass = &root, .name = "Child", .methods = &child_methods
+};
+static const struct class_record cyclic = {.isa = &meta, .superclass = &cyclic, .name = "Cyclic"};
+static const struct class_record stateful = {.isa = &meta, .name = "Stateful", .instance_size = 8};
+static const struct class_record wrong_methods_class = {.isa = &meta, .name = "Wrong", .methods = &wrong_methods};
+int objc3_darwin_check_arc_threads(const void *cls);
+
+int main(int argc, char **argv) {
+  struct rlimit no_core = {0, 0};
+  setrlimit(RLIMIT_CORE, &no_core);
+  const char *control = argc > 1 ? argv[1] : "";
+  if (strcmp(control, "unregistered") == 0)
+    objc3_darwin_lookup_v1(&root, &selector);
+  if (strcmp(control, "allocate-unregistered") == 0)
+    objc3_darwin_allocate_v1(&root);
+  const struct class_record *child_batch[] = {&child};
+  objc3_darwin_register_v1(child_batch, 1);
+  if (strcmp(control, "missing-superclass") == 0)
+    objc3_darwin_class_v1("Child");
+  if (strcmp(control, "cyclic-superclass") == 0) {
+    const struct class_record *bad[] = {&cyclic};
+    objc3_darwin_register_v1(bad, 1);
+    objc3_darwin_allocate_v1(&cyclic);
+  }
+  const struct class_record *batch[] = {&root};
+  objc3_darwin_register_v1(batch, 1);
+  if (strcmp(control, "duplicate") == 0)
+    objc3_darwin_register_v1(batch, 1);
+  if (strcmp(control, "deallocate-class") == 0)
+    objc3_darwin_deallocate_v1((void *)&root);
+  if (strcmp(control, "stateful") == 0) {
+    const struct class_record *bad[] = {&stateful};
+    objc3_darwin_register_v1(bad, 1);
+  }
+  if (strncmp(control, "fixed-", 6) == 0) {
+    int offset = 8;
+    struct {
+      int count;
+      size_t stride;
+      struct ivar_record ivars[1];
+    } ivars = {1, sizeof(struct ivar_record), {{"value", "i", &offset, 4, fixed_int_ivar_flags}}};
+    struct class_record fixed = {.isa = &meta, .name = "Fixed", .version = 1,
+                                 .instance_size = 16, .ivars = (const void *)&ivars};
+    if (strcmp(control, "fixed-offset") == 0)
+      offset = 0;
+    if (strcmp(control, "fixed-stride") == 0)
+      ivars.stride = 16;
+    if (strcmp(control, "fixed-extent") == 0)
+      fixed.instance_size = 8;
+    const struct class_record *bad[] = {&fixed};
+    objc3_darwin_register_v1(bad, 1);
+    return 12;
+  }
+  if (strncmp(control, "managed-", 8) == 0) {
+    int isa_offset = 0;
+    int field_offset = 8;
+    struct {
+      int count;
+      size_t stride;
+      struct ivar_record ivars[2];
+    } ivars = {2, sizeof(struct ivar_record), {
+      {"isa", "#", &isa_offset, 8, 28},
+      {"field", "@", &field_offset, 8, 29},
+    }};
+    struct class_record managed = {.isa = &meta, .name = "Managed", .version = 2,
+                                   .instance_size = 16, .ivars = (const void *)&ivars};
+    if (strcmp(control, "managed-isa") == 0)
+      ivars.ivars[0].flags |= 1;
+    if (strcmp(control, "managed-overlap") == 0)
+      field_offset = 0;
+    if (strcmp(control, "managed-alignment") == 0)
+      ivars.ivars[1].flags = 36;
+    if (strcmp(control, "managed-extent") == 0)
+      managed.instance_size = 12;
+    const struct class_record *bad[] = {&managed};
+    objc3_darwin_register_v1(bad, 1);
+    return 15;
+  }
+  if (strcmp(control, "wrong-method-table") == 0) {
+    const struct class_record *bad[] = {&wrong_methods_class};
+    objc3_darwin_register_v1(bad, 1);
+  }
+  if (objc3_darwin_class_v1("Root") != &root || objc3_darwin_class_v1("Missing"))
+    return 1;
+  if (objc3_darwin_lookup_v1(&root, &selector)(&root, &selector) != 42)
+    return 2;
+  if (objc3_darwin_lookup_v1(NULL, &selector)(NULL, &selector) != 0)
+    return 3;
+  const struct class_record **first = objc3_darwin_allocate_v1(&root);
+  const struct class_record **second = objc3_darwin_allocate_v1(&root);
+  if (!first || !second || first == second || *first != &root || *second != &root)
+    return 4;
+  if (strcmp(control, "wrong-selector-type") == 0)
+    objc3_darwin_lookup_v1(second, &typed);
+  if (strcmp(control, "wrong-int-selector-type") == 0)
+    objc3_darwin_lookup_int_arg_v1(second, &selector);
+  if (strcmp(control, "wrong-signature-at-same-name") == 0)
+    objc3_darwin_lookup_int_arg_v1(second, &wrong_type);
+  if (objc3_darwin_lookup_v1(first, &same_signature)(first, &same_signature) != 17)
+    return 5;
+  objc3_darwin_deallocate_v1(first);
+  if (objc3_darwin_lookup_v1(second, &selector)(second, &selector) != 17)
+    return 6;
+  objc3_darwin_deallocate_v1(second);
+  objc3_darwin_deallocate_v1(NULL);
+  if (instances || objc3_darwin_allocate_v1(NULL))
+    return 7;
+  if (objc3_darwin_class_v1("Child") != &child ||
+      objc3_darwin_lookup_v1(&child, &selector)(&child, &selector) != 42)
+    return 8;
+  void *derived = objc3_darwin_allocate_v1(&child);
+  if (!derived || objc3_darwin_lookup_v1(derived, &selector)(derived, &selector) != 19)
+    return 9;
+  const struct super_record instance_super = {derived, &root};
+  const struct super_record class_super = {&child, &meta};
+  if (strcmp(control, "wrong-super-start") == 0) {
+    const struct super_record wrong = {derived, &meta};
+    objc3_darwin_lookup_super_v1(&wrong, &selector);
+  }
+  if (strcmp(control, "wrong-int-super-selector-type") == 0)
+    objc3_darwin_lookup_super_int_arg_v1(&instance_super, &selector);
+  if (objc3_darwin_lookup_super_v1(&instance_super, &selector)(derived, &selector) != 17 ||
+      objc3_darwin_lookup_super_v1(&class_super, &selector)(&child, &selector) != 42)
+    return 10;
+  if (objc3_darwin_lookup_int_arg_v1(derived, &typed)(derived, &typed, -12) != 5 ||
+      objc3_darwin_lookup_super_int_arg_v1(&instance_super, &typed)(derived, &typed, -12) != 5 ||
+      objc3_darwin_lookup_int_arg_v1(NULL, &typed)(NULL, &typed, -12) != 0)
+    return 13;
+  if (strcmp(control, "wrong-general-signature") == 0) {
+    const struct selector_record wrong_mixed = {mixed.name, typed.type};
+    objc3_darwin_lookup_typed_v1(derived, &wrong_mixed);
+  }
+  mixed_implementation inherit = (mixed_implementation)objc3_darwin_lookup_typed_v1(derived, &mixed);
+  mixed_implementation super_mixed = (mixed_implementation)objc3_darwin_lookup_super_typed_v1(&instance_super, &mixed);
+  const int offset = 9;
+  const struct triple result = inherit(derived, &mixed, (struct triple){2, 4, 6}, &offset, 3);
+  if (super_mixed != inherit || result.first != 11 || result.second != 7 || result.third != 6 ||
+      objc3_darwin_lookup_typed_v1(NULL, &mixed))
+    return 14;
+  objc3_darwin_deallocate_v1(derived);
+  if (!objc3_darwin_check_arc_threads(&root) || instances)
+    return 11;
+  return 0;
+}
+''')
+    binary = tmp_path / 'registry'
+    subprocess.run(['cc', '-O2', '-Wall', '-Wextra', '-Werror', '-pthread', '-I',
+                    darwin_registration.RUNTIME.parent, harness,
+                    darwin_registration.FIXTURES / 'arc_threads.c', '-o', binary], check=True)
+    subprocess.run([binary], check=True)
+    for name, diagnostic in (
+        ('duplicate', 'duplicate class name'),
+        ('unregistered', 'receiver has no registered class or live instance'),
+        ('allocate-unregistered', 'allocation requires a registered class'),
+        ('deallocate-class', 'deallocation requires a live instance'),
+        ('stateful', 'invalid stateless class metadata'),
+        ('fixed-offset', 'invalid fixed root ivar layout'),
+        ('fixed-stride', 'invalid fixed root class layout'),
+        ('fixed-extent', 'invalid fixed root class layout'),
+        ('managed-isa', 'invalid managed ISA layout'),
+        ('managed-overlap', 'invalid managed ivar extent'),
+        ('managed-alignment', 'invalid managed ivar metadata'),
+        ('managed-extent', 'invalid managed ivar extent'),
+        ('wrong-method-table', 'invalid Darwin method metadata'),
+        ('wrong-selector-type', 'selector encoding does not match the Darwin lookup ABI'),
+        ('wrong-int-selector-type', 'selector encoding does not match the Darwin lookup ABI'),
+        ('wrong-int-super-selector-type', 'selector encoding does not match the Darwin lookup ABI'),
+        ('wrong-signature-at-same-name', 'method selector is missing'),
+        ('wrong-general-signature', 'method selector is missing'),
+        ('missing-superclass', 'class has an unregistered superclass'),
+        ('cyclic-superclass', 'class hierarchy has a cycle'),
+        ('wrong-super-start', 'super dispatch start is not an ancestor of the receiver'),
+    ):
+        result = subprocess.run([binary, name], capture_output=True, text=True)
+        assert result.returncode == -signal.SIGABRT
+        assert diagnostic in result.stderr

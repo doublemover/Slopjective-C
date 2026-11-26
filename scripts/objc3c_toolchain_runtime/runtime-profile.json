@@ -62,18 +62,15 @@
       "source_patches": [
         {
           "file": "scripts/objc3c_toolchain_runtime/patches/0001-linux22-owned-value-unwind.patch",
-          "sha256": "d7534713014db2ad9cde7324dc5941ac0deb221ab4c51bf7d5cf44597def6311"
+          "sha256": "c4b06f7d603edb32e85594ea63c8de49af1bfd576d954b5d9504e5360ca7aa8d"
         }
       ],
       "autorelease_pool_policy": "native-arc-only"
     },
     "macos-arm64": {
       "target_triple": "arm64-apple-macosx",
-      "runtime_family": "apple-system-libobjc",
-      "runtime_release": "system-sdk",
-      "objc_abi_flag": "platform default",
-      "blocks_provider": "apple-system",
-      "foundation_required_for_runtime_fixture": false
+      "status": "blocked",
+      "reason": "macOS arm64 requires an owned Objective-C 3 runtime profile and native qualification"
     },
     "linux-aarch64": {
       "target_triple": "aarch64-unknown-linux-gnu",
@@ -103,7 +100,7 @@
       "source_patches": [
         {
           "file": "scripts/objc3c_toolchain_runtime/patches/0001-linux22-owned-value-unwind.patch",
-          "sha256": "d7534713014db2ad9cde7324dc5941ac0deb221ab4c51bf7d5cf44597def6311"
+          "sha256": "c4b06f7d603edb32e85594ea63c8de49af1bfd576d954b5d9504e5360ca7aa8d"
         }
       ],
       "autorelease_pool_policy": "native-arc-only"

@@ -63,7 +63,8 @@ def owned(tmp_path):
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(ROOT / relative, target)
     manifest = json.loads((tmp_path / 'toolchains/llvm/manifest.json').read_text())
-    sealed = {'configuration_inputs': {'toolchains/llvm/cmake/ObjC3LLVMCache.cmake': 'cache'},
+    sealed = {'upstream_commit': manifest['upstream']['commit'],
+              'configuration_inputs': {'toolchains/llvm/cmake/ObjC3LLVMCache.cmake': 'cache'},
               'patch_digest': 'a' * 64, 'build_config_digest': 'b' * 64,
               'build_id': 'ordinary-build', 'tree_sha256': 'source-tree'}
     return tmp_path, manifest, sealed
@@ -201,6 +202,8 @@ def test_canonical_planner_isolates_all_profile_outputs_and_stamps(owned, monkey
             assert special['paths'][output] == normal['paths'][output] + '-' + NAME
         assert special['instrumentation']['subject'] == 'compiler-implementation'
         assert normal['source_build_id'] != special['source_build_id']
+        assert normal['upstream_commit'] == special['upstream_commit'] == sealed['upstream_commit']
+        assert normal['patch_digest'] == special['patch_digest'] == sealed['patch_digest']
         assert normal['build_config_digest'] != special['build_config_digest']
         assert special['effective_configuration']['LLVM_USE_SANITIZER'] == 'Address;Undefined'
     config = instrumented['configure']

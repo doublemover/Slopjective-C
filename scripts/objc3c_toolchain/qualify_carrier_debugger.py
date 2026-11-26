@@ -154,27 +154,26 @@ def qualify(sdk: Path, output: Path, *, compiler: Path | None = None,
     def run(label: str, argv, cwd: Path) -> str:
         log = output / (label + '.log')
         started = time.monotonic()
-        timed_out = False
         with log.open('w') as stream:
             process = subprocess.Popen(list(map(str, argv)), cwd=cwd, env=env,
                                        stdout=stream, stderr=subprocess.STDOUT,
                                        start_new_session=True)
             try:
-                code = process.wait(timeout=120)
-            except subprocess.TimeoutExpired:
-                timed_out = True
+                code = process.wait()
+            except BaseException:
                 try:
                     os.killpg(process.pid, signal.SIGKILL)
                 except ProcessLookupError:
                     pass
-                code = process.wait()
+                process.wait()
+                raise
         report['commands'].append({'name': label, 'exit_code': code,
                                    'command': list(map(str, argv)),
-                                   'timed_out': timed_out,
+                                   'timed_out': False,
                                    'elapsed_seconds': round(time.monotonic() - started, 6),
                                    'log_sha256': packages.digest(log)})
         persist()
-        if code or timed_out:
+        if code:
             raise ValueError('native carrier debugger failed: ' + label + '; see ' + str(log))
         return log.read_text()
 

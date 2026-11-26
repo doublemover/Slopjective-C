@@ -1,0 +1,72 @@
+@import objc3.collections;
+@import objc3.text;
+
+#include <inttypes.h>
+#include <stdio.h>
+#include <string.h>
+
+static int failed(const char *operation, int status) {
+  fprintf(stderr, "%s failed (status %d)\n", operation, status);
+  return 1;
+}
+
+int main(int argc, char *argv[]) {
+  if (argc > 2) {
+    fputs("usage: collections-text [TEXT]\n", stderr);
+    return 2;
+  }
+  const char *input = argc == 2 ? argv[1] : "café 🌍";
+  const uint64_t input_bytes = strlen(input);
+  objc3_text_v2_t text = NULL;
+  int status = objc3_runtime_stdlib_text_v2_create_utf8_checked(input, input_bytes, &text);
+  if (status == OBJC3_STDLIB_V2_INVALID_UTF8) {
+    fputs("input is not valid UTF-8\n", stderr);
+    return 1;
+  }
+  if (status != OBJC3_STDLIB_V2_OK) return failed("create text", status);
+  defer { objc3_runtime_stdlib_text_v2_release_checked(text); }
+
+  uint64_t scalars = 0;
+  status = objc3_runtime_stdlib_text_v2_scalar_count_checked(text, &scalars);
+  if (status != OBJC3_STDLIB_V2_OK) return failed("count scalars", status);
+  if (scalars > INT32_MAX) return failed("store scalar count", OBJC3_STDLIB_V2_OVERFLOW);
+
+  objc3_text_v2_t prefix = NULL;
+  status = objc3_text_prefix(text, 4, &prefix);
+  if (status != OBJC3_STDLIB_V2_OK) return failed("take text prefix", status);
+  defer { objc3_runtime_stdlib_text_v2_release_checked(prefix); }
+  uint64_t prefix_size = 0;
+  status = objc3_runtime_stdlib_text_v2_byte_count_checked(prefix, &prefix_size);
+  if (status != OBJC3_STDLIB_V2_OK) return failed("count prefix bytes", status);
+  // A UTF-8 scalar occupies at most four bytes.
+  uint8_t prefix_bytes[4 * 4];
+  if (prefix_size > sizeof prefix_bytes) return failed("copy prefix", OBJC3_STDLIB_V2_OVERFLOW);
+  for (uint64_t i = 0; i < prefix_size; ++i) {
+    status = objc3_runtime_stdlib_text_v2_byte_at_checked(prefix, i, &prefix_bytes[i]);
+    if (status != OBJC3_STDLIB_V2_OK) return failed("read prefix byte", status);
+  }
+
+  objc3_map_i32_i32_v2_t lengths = NULL;
+  status = objc3_runtime_stdlib_map_i32_i32_v2_create(&lengths);
+  if (status != OBJC3_STDLIB_V2_OK) return failed("create length map", status);
+  defer { objc3_runtime_stdlib_map_i32_i32_v2_release(lengths); }
+  uint64_t entries = 0;
+  status = objc3_map_i32_insert_count(lengths, 7, 0, &entries);
+  if (status != OBJC3_STDLIB_V2_OK) return failed("insert entry", status);
+  status = objc3_map_i32_insert_count(lengths, 7, (int32_t)scalars, &entries);
+  if (status != OBJC3_STDLIB_V2_OK) return failed("replace entry", status);
+
+  int32_t length = 0, fallback = 0;
+  status = objc3_map_i32_get_or(lengths, 7, -1, &length);
+  if (status != OBJC3_STDLIB_V2_OK) return failed("read entry", status);
+  status = objc3_map_i32_get_or(lengths, 99, -1, &fallback);
+  if (status != OBJC3_STDLIB_V2_NOT_FOUND) return failed("check missing entry", status);
+
+  printf("text: scalar count %" PRIu64 ", UTF-8 byte count %" PRIu64 "\n", scalars, input_bytes);
+  fputs("prefix (up to 4 scalars): ", stdout);
+  fwrite(prefix_bytes, 1, prefix_size, stdout);
+  putchar('\n');
+  printf("entry 7: length %" PRId32 ", map size %" PRIu64 "\n", length, entries);
+  printf("entry 99: NOT_FOUND, fallback %" PRId32 "\n", fallback);
+  return ferror(stdout) ? 1 : 0;
+}

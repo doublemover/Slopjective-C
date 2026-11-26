@@ -16,6 +16,10 @@ class ToolchainError(RuntimeError):
     """An invalid manifest, source tree, or failed preparation operation."""
 
 
+class FoundationConfigurationChanged(ToolchainError):
+    """The sealed patch tree is current, and its build recipe has changed."""
+
+
 PINNED_UPSTREAM = {
     "tag": "llvmorg-23.1.5",
     "tag_object": "604d7ddfacefc074968a9ba0d88c667ab31b42bd",
@@ -138,12 +142,17 @@ def configuration_inputs(repo: Path) -> dict[str, str]:
             for path in sorted(root.rglob('*')) if path.is_file()}
 
 
+def _build_config_digest(build: dict, inputs: dict) -> str:
+    data = {'build': build, 'configuration_inputs': inputs}
+    return hashlib.sha256(json.dumps(data, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+
+
 def _identity(manifest: dict[str, Any], patches: list[tuple[str, Path, str]], pristine: bool, repo: Path) -> dict[str, Any]:
     upstream = manifest["upstream"]
     patch_rows = [{"file": name, "sha256": digest} for name, _, digest in patches]
     patch_digest = hashlib.sha256(json.dumps(patch_rows, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     config_inputs = configuration_inputs(repo)
-    build_digest = hashlib.sha256(json.dumps({"build": manifest["build"], "configuration_inputs": config_inputs}, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    build_digest = _build_config_digest(manifest['build'], config_inputs)
     if pristine:
         build_id = f"{manifest['pristine_baseline_build_id']}-{build_digest[:8]}"
     else:
@@ -259,11 +268,22 @@ def verify_development(repo: Path, *, manifest_path: Path | None = None,
         recorded = json.loads(_identity_path(source).read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise ToolchainError(f"development source has not been sealed: {exc}") from exc
-    if recorded.get("source_kind") != "development" or recorded.get("tree_sha256") != tree:
+    if not isinstance(recorded, dict) or recorded.get("source_kind") != "development" or recorded.get("tree_sha256") != tree:
         raise ToolchainError("development seal is missing or does not match the current source tree")
-    if any(recorded.get(key) != value for key, value in expected.items()):
-        raise ToolchainError("development seal does not match current upstream, patches, or build configuration")
-    return recorded
+    differences = {key for key, value in expected.items() if recorded.get(key) != value}
+    if not differences:
+        return recorded
+    configuration = {'build', 'configuration_inputs', 'build_config_digest', 'build_id'}
+    if not configuration <= recorded.keys() or 'schema_version' in differences:
+        raise ToolchainError('development seal lacks the current build configuration identity')
+    if differences <= configuration:
+        previous = _build_config_digest(recorded['build'], recorded['configuration_inputs'])
+        if (recorded['build_config_digest'] != previous or
+                recorded['build_id'] != expected['build_id'][:-8] + previous[:8]):
+            raise ToolchainError('development seal has an inconsistent build configuration identity')
+        raise FoundationConfigurationChanged('development build configuration changed '
+                                             f'from {previous[:8]} to {expected["build_config_digest"][:8]}')
+    raise ToolchainError('development seal does not match the current upstream and locked patches')
 
 
 def build_plans(repo: Path, *, manifest_path: Path | None = None,
@@ -387,6 +407,8 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
         "schema_version": 1,
         "source_build_id": source_id,
         "source_tree": sealed["tree_sha256"],
+        "upstream_commit": sealed["upstream_commit"],
+        "patch_digest": sealed["patch_digest"],
         "build_config_digest": sealed["build_config_digest"],
         "configuration_inputs": sealed["configuration_inputs"],
         "configuration_trace": str(configuration_trace),
@@ -398,6 +420,7 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
             "LLVM_ENABLE_EH": "ON" if build["eh"] else "OFF",
             "LLVM_TARGETS_TO_BUILD": ";".join(build["targets"]),
             "LLVM_ENABLE_PROJECTS": ";".join(build["projects"]),
+            "CLANG_OBJC3_PATCH_DIGEST": sealed["patch_digest"],
             "CLANG_OBJC3_CONFIG_DIGEST": sealed["build_config_digest"],
         },
         "host_environment": environment,

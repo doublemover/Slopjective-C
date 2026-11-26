@@ -7,18 +7,25 @@ Verification alone does not establish semantic equivalence.
 
 ## Selected execution surface
 
-[The corpus](../../toolchains/llvm/ir-corpus.json) selects eight authored witnesses:
+[The corpus](../../toolchains/llvm/ir-corpus.json) selects eleven cases covering
 explicit captures in ARC/source and MRC/PCH modes; managed function/message/Block
-calls; guard cleanup; carrier transfers; native async frames; typed keypath PCH;
-and managed semantic-interface imports. C17, C++20 and C++23 are represented.
+calls; borrowed callable templates and packed ARC records; guard cleanup; carrier
+transfers; native async frames; typed keypath PCH; and managed semantic-interface
+imports. C17, C++20 and C++23 are represented.
 Every case runs O0/O2. Captures add a public `-Os` canary. Captures, managed calls
 and async also run the actual production ThinLTO route.
 
-This is **17 configurations, 29 translation units and 37 runtime executions**,
-not the full language/ownership/import Cartesian product. Runtime success uses
+This selects **23 configurations, 41 translation units and 49 runtime executions**
+across representative language, ownership and import combinations. Runtime success uses
 the existing assertions, destruction counters, active-arm checks, cleanup/event
 ordering and operand-evaluation checks. Production and split routes must each
 pass those assertions independently.
+
+The borrowed callable source and PCH cases check distinct template specialization
+counters, function and Block invocation, borrowed-return forwarding, and a packed
+strong C++ field's copy, move and destruction. The C17 PCH case reuses the installed
+record witness for packed fields and arrays, active and inactive carrier arms,
+exact destruction, and exception cleanup of a constructed prefix.
 
 For each translation unit the runner retains:
 
@@ -152,10 +159,24 @@ The synthetic controls are not presented as frontend-generated semantic proof.
 
 ## Current limits
 
-The complete bounded source/PCH/interface matrix passed: 17 configurations,
+The optional `installed-preview` workflow mode uses the published SDK identified
+in the release manifest. It captures real frontend and optimized IR for three
+generated programs at O0 and O2. The shipped `llc` verifies machine instructions,
+and the shipped `llvm-dwarfdump` checks both driver and backend objects. Executables
+from both routes must agree with the independent semantic model and load the
+runtime from the verified SDK. This mode reuses the release archive directly.
+The development lane owns pass-level verification, ThinLTO stages, debugger
+execution, and reduction.
+
+The initial eight-case source/PCH/interface matrix passed 17 configurations,
 29 translation units, 37 runtime executions and 764 recorded commands. The
 independent control campaign and real reduction also passed. Final results belong
 to their machine-readable receipts; the accepted SDK archive remains unchanged.
+
+The three ownership cases passed 12 x86-64 executions through the combined
+compiler route and the split `opt`/`llc` route. AArch64 cross checks passed real
+frontend lowering, verifier and optimizer stages, backend verification, and
+object DWARF. The expanded matched development campaign awaits a native receipt.
 
 The isolated ASan/UBSan LLDB consumer also passed after matching the foundation's
 TableGen, Debuginfod and HTTP development archives. Its receipt verifies 921 LLDB
@@ -192,3 +213,40 @@ accuracy. At `abbfff813`, the complete campaign passes all 21 selected IR/debugg
 configurations; both optimized-local checks correctly report unavailable state.
 The [issue inventory](../support/linux_open_issue_review.json) records the source
 identity and receipt hashes. Hosted cold-run acceptance remains under #8283.
+
+## Historical hosted execution and reuse
+
+The hosted x86-64 job at `c564dfb2d` reported 21 successful IR and debugger
+executions and 63 generated semantic cases with seven controls. Its upload log
+identifies artifact `13669670681` and the archive SHA-256. The download endpoint
+now returns HTTP 404. The [receipt index](../support/linux_analysis_receipts.json)
+records these values and the decoded job log digest. [Hosted LLVM job](https://github.com/doublemover/Slopjective-C/actions/runs/42593505049/job/129080538608)
+
+- The historical campaign source requires valid and malformed IR controls and
+  deliberate invalid MIR rejection before the corpus runs. It verifies real
+  transformed O2 and size IR and reconciles source, PCH, and interface case and
+  stage inventories. The installed preview witness independently verified real
+  transformed O2 IR and native execution through both code-generation routes.
+- The historical controls bind tool substitution, absent passes, missing
+  outputs, crashes and timeouts to rejection. Optimized debugger cases cover
+  source and visible-state expectations. The separate malformed DWARF control
+  requires an actual verifier diagnostic.
+- The reducer requires the intended deterministic exit and rejects unrelated
+  invalid IR, link errors, and correct output. It retains the original and
+  requires native replay of the reduced case. The historical aggregate log
+  confirms campaign success. Individual pass, reduction and optimized-debugger
+  receipts require the unavailable archive.
+
+A current local producer can reuse the exact sanitizer foundation with
+`llvm_campaign --prepared`. The IR owner can also admit an existing matching
+`--tools-receipt`. Full pass and reduction replay needs the exact build-tree
+`opt`, `llvm-dis`, and `llvm-reduce` executables, their owning Ninja inputs, the
+matched SDK and the language/runtime fixtures. The published SDK supports the
+installed preview witness through its packaged tools. The published analyzer
+producer inventory contains neither those development executables nor their
+Ninja target closure. Current-head full optimizer qualification remains open.
+
+Use campaign-level `--prepared --tools-receipt` to admit the retained development
+executables and their exact Ninja object and archive bytes before the support
+build. The hosted development mode can also run compiler instrumentation using
+the same producer when `verify_compiler_graph` is selected.

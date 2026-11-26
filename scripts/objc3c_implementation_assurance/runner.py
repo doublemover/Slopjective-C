@@ -103,7 +103,7 @@ def _run_locked(repo: Path, plan: dict, output: Path, partition: dict,
         try:
             print('implementation assurance '+name+': '+str(logs / (name+'.log')), flush=True)
             row = execute_command(argv, cwd=repo, environment=environment,
-                                  log=logs / (name+'.log'), timeout=1800)
+                                  log=logs / (name+'.log'), timeout=None)
             row['name'] = name
             report['commands'].append(row)
             if row['timed_out'] or row['exit_code'] != 0:

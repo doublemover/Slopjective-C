@@ -18,6 +18,7 @@ import subprocess
 import tempfile
 import time
 
+from scripts.objc3c_cross_lane_execution import validate_node_timeout
 from scripts.objc3c_toolchain.build import foundation_lock
 from scripts.objc3c_toolchain.core import verify_development
 from scripts.objc3c_native_validation import defer_source, guard_source, optional_access_source, coalescing_source
@@ -92,7 +93,9 @@ def cases() -> dict[str, dict]:
 
 
 def qualify(repo: Path, build: Path, sdk: Path, output: Path, *, public_guard: bool = False,
-            public_optional_access: bool = False, public_coalescing: bool = False) -> dict:
+            public_optional_access: bool = False, public_coalescing: bool = False,
+            timeout_seconds: float | None = None) -> dict:
+    validate_node_timeout(timeout_seconds)
     output.mkdir(parents=True, exist_ok=True)
     receipt = output / "runtime.json"
     report = {
@@ -126,7 +129,7 @@ def qualify(repo: Path, build: Path, sdk: Path, output: Path, *, public_guard: b
                 start_new_session=True, preexec_fn=no_core,
             )
             try:
-                code = process.wait(timeout=120)
+                code = process.wait(timeout=timeout_seconds)
             except subprocess.TimeoutExpired:
                 timed_out = True
                 try:

@@ -4,9 +4,9 @@ import json
 
 import pytest
 
-from scripts.objc3c_toolchain.runtime_schedule_model import (Model, OPCODES, check, coverage_domain, generate,
-    protocol, signature, shrink, validate)
-from scripts.objc3c_toolchain.runtime_schedules import observations
+from scripts.objc3c_toolchain.runtime_schedule_model import (Model, OPCODES, TYPE_MISMATCH, VERSION, check,
+    coverage_domain, generate, generate_split_epoch, protocol, signature, shrink, validate)
+from scripts.objc3c_toolchain.runtime_schedules import observations, select_exploration, watchdog_snapshot
 
 
 @pytest.mark.parametrize('seed', range(64))
@@ -60,6 +60,56 @@ def test_fixed_seeds_cover_the_reviewed_grammar_without_claiming_scheduler_exhau
     assert observed == transitions and adjacent == pairs
 
 
+def test_exploration_budgets_and_selection_have_stable_replay_identities():
+    histories, selection = select_exploration(12)
+    assert (histories, selection) == select_exploration(12)
+    assert len(histories) == len(selection['selected']) == selection['budget']['histories'] == 12
+    assert {row['seed'] for row in selection['selected'] + selection['rejected']} == set(range(64, 128))
+    assert all(row['reason'] in ('history-budget', 'duplicate-operation-protocol') for row in selection['rejected'])
+    prefix, prefix_selection = select_exploration(2)
+    assert prefix == histories[:2]
+    assert {row['gate'] for row in prefix_selection['selected']} == {'before-registration', 'after-registration'}
+    assert len({(row['gate'], row['group_cancellation'], row['actor_cancellation'])
+                for row in selection['selected']}) == len(selection['candidate_coverage']['gate_and_cancellation_combinations']) == 8
+    assert {signature(history) for history in histories} == {row['history_sha256'] for row in selection['selected']}
+    for invalid in (0, 13, True):
+        with pytest.raises(ValueError, match='history budget'):
+            select_exploration(invalid)
+
+
+@pytest.mark.parametrize('seed', (64, 65))
+def test_split_epoch_settles_only_the_first_task_and_delivers_late_waiters(seed):
+    value = generate_split_epoch(seed)
+    trace = Model().run(value['operations'])
+    step = next(i for i, row in enumerate(trace) if row['operation'] == 'advance-first-task')
+    assert trace[step]['tasks'][0][:3] == [1, 1, 1]
+    assert sum(sum(task) for task in trace[step]['tasks'][1:]) == 0
+    assert trace[step+1]['status'] == 0 and trace[step+2]['tasks'][0][3] == trace[step]['tasks'][0][3]+1
+    assert trace[-1]['tasks'][0][4] == 0
+    assert check(value, trace)['status'] == 'PASS'
+    with pytest.raises(ValueError, match='worker gate'):
+        validate(dict(value, model_version=VERSION))
+    wrong_order = copy.deepcopy(value)
+    gate = wrong_order['operations'].pop(step)
+    wrong_order['operations'].insert(0, gate)
+    with pytest.raises(ValueError, match='one pending task'):
+        validate(wrong_order)
+
+
+def test_mismatched_next_wait_leaves_the_result_unconsumed():
+    value = generate(0)
+    model = Model()
+    trace = model.run(value['operations'])
+    probe = next(row for row in trace if row['operation'] == 'next-mismatched-type')
+    assert probe['status'] == TYPE_MISMATCH and probe['output'] == -1
+    assert {row['output'] for row in trace if row['operation'] == 'next' and row['status'] == 0} == model.group
+    premature_end = next(row for row in trace if row['operation'] == 'next' and row['status'] != 0)
+    final_result = [row for row in trace if row['operation'] == 'next' and row['status'] == 0][-1]
+    final_result.update(status=premature_end['status'], output=-1)
+    with pytest.raises(ValueError, match='absent or consumed twice'):
+        check(value, trace)
+
+
 def test_shrinking_preserves_public_preconditions_owned_handles_and_explicit_quiescence():
     history = generate(0)
     def defect(candidate):
@@ -74,3 +124,17 @@ def test_shrinking_preserves_public_preconditions_owned_handles_and_explicit_qui
 @pytest.mark.parametrize('text', ['', '[]', '{}\n'*97, 'not-json'])
 def test_missing_malformed_and_excessive_native_ledgers_fail(text):
     with pytest.raises(ValueError): observations(text)
+
+
+def test_watchdog_locates_the_blocked_operation_from_the_retained_ledger(tmp_path):
+    history = generate(0)
+    complete = Model().run(history['operations'])[:4]
+    log = tmp_path / 'worker.log'
+    log.write_text('\n'.join(map(json.dumps, complete)) + '\n{"operation":')
+    fixture = tmp_path / 'operations.json'
+    fixture.write_text(protocol(history))
+    report = watchdog_snapshot({'name': 'history', 'log': str(log)}, ['fixture', 'worker', fixture])
+    assert report['status'] == 'timeout'
+    assert report['completed_operations'] == len(complete)
+    assert report['pending_operation'] == history['operations'][len(complete)]
+    assert report['last_events'] == complete[-3:]

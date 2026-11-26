@@ -43,13 +43,6 @@ void CheckResult(const CompileResult &result) {
   }
   assert(result.success);
 }
-const std::vector<llvm::StringRef> semantics = {
-    "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
-    "objc3.native-return-ownership.v1",    "objc3.direct-dispatch.v1",
-    "objc3.cxx-data-interfaces.v1",        "objc3.ownership-projection.v1",
-    "objc3.api-availability.v1",           "objc3.api-partitions.v1",
-    "objc3.cxx-namespaces.v1", "objc3.cxx-namespace-attributes.v1",
-    "objc3.cxx-definitions.v1", "objc3.cxx-friends.v3"};
 void Check(const fs::path &root, BaseLanguage language,
            const std::string &standard, bool arc) {
   const bool objc = language == BaseLanguage::ObjectiveC ||
@@ -99,6 +92,7 @@ void Check(const fs::path &root, BaseLanguage language,
   const auto artifact = *built.interface_artifact;
   assert(artifact.sidecar_json.find("objc3.api-partitions.v1") !=
          std::string::npos);
+  const auto semantics = SupportedSemanticInterfaceCapabilities();
   auto decoded = DecodeSemanticInterfaceSidecar(
       artifact.sidecar_json, artifact.source_bytes, semantics);
   assert(decoded);

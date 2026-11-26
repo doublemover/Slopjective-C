@@ -5,8 +5,15 @@
 #include <initializer_list>
 
 static bool reject_allocation, reject_copy, reject_aligned_allocation, reject_optional_copy;
+static thread_local bool reject_next_allocation;
+static thread_local unsigned rejected_single_allocations;
 extern "C" void *__wrap__ZnwmRKSt9nothrow_t(
     std::size_t size, const std::nothrow_t &) noexcept {
+  if (reject_next_allocation) {
+    reject_next_allocation = false;
+    ++rejected_single_allocations;
+    return nullptr;
+  }
   if (reject_allocation) return nullptr;
   try { return ::operator new(size); } catch (...) { return nullptr; }
 }
@@ -298,11 +305,155 @@ static void next_terminal_outcomes(objc3_executor_t *executor) {
     objc3_task_release(task);objc3_task_group_release(group);objc3_task_release(next);
   }
 }
+
+static void failed_dependency_dispatch(objc3_executor_t *executor) {
+  Source source;
+  auto *dependency = start_source(executor, source);
+  struct Waiter {
+    objc3_task_t *dependency;
+    unsigned resumes = 0, destroyed = 0, late_callbacks = 0;
+  } frames[] = {{dependency}, {dependency}};
+  objc3_task_t *parents[2]{};
+  for (unsigned i = 0; i != 2; ++i) {
+    objc3_task_start_options options{};
+    options.struct_size = sizeof(options);
+    options.version = OBJC3_SERVICE_ABI_VERSION;
+    options.executor = executor;
+    options.frame = &frames[i];
+    options.resume = [](objc3_task_t *parent, void *context) {
+      auto &frame = *static_cast<Waiter *>(context);
+      if (++frame.resumes == 1) {
+        assert(objc3_task_await(parent, frame.dependency) == OBJC3_SERVICE_OK);
+        return;
+      }
+      int retained_result = 0;
+      assert(objc3_task_copy_result(frame.dependency, &int_type, &int_ops, &retained_result) == OBJC3_SERVICE_OK);
+      assert(retained_result == 42);
+      const objc3_completion done{sizeof(done), OBJC3_SERVICE_ABI_VERSION,
+          OBJC3_COMPLETION_SUCCESS, 0, nullptr, nullptr, nullptr, nullptr};
+      assert(objc3_task_complete(parent, &done) == OBJC3_SERVICE_OK);
+    };
+    options.destroy = [](void *context) { ++static_cast<Waiter *>(context)->destroyed; };
+    assert(objc3_task_start(&options, &parents[i]) == OBJC3_SERVICE_OK);
+  }
+  pump(executor);
+  assert(source.resumes == 1 && frames[0].resumes == 1 && frames[1].resumes == 1);
+  assert(objc3_task_add_waiter(parents[0], [](void *context, const objc3_completion *outcome) {
+    auto &frame = *static_cast<Waiter *>(context);
+    assert(outcome->kind == OBJC3_COMPLETION_CANCELLED);
+    // Register reentrantly on the already published dependency. Its result
+    // remains available while the failing wake is being settled.
+    assert(objc3_task_add_waiter(frame.dependency, [](void *inner, const objc3_completion *value) {
+      assert(value->kind == OBJC3_COMPLETION_SUCCESS && value->has_payload == 1);
+      ++*static_cast<unsigned *>(inner);
+    }, &frame.late_callbacks) == OBJC3_SERVICE_OK);
+  }, &frames[0]) == OBJC3_SERVICE_OK);
+  const objc3_completion value{sizeof(value), OBJC3_SERVICE_ABI_VERSION,
+      OBJC3_COMPLETION_SUCCESS, 1, &source.value, &int_ops, nullptr, &int_type};
+  const auto previous_rejections = rejected_single_allocations;
+  reject_next_allocation = true;
+  assert(objc3_task_complete(dependency, &value) == OBJC3_SERVICE_OK);
+  assert(!reject_next_allocation && rejected_single_allocations == previous_rejections + 1);
+  assert(view(parents[0]).kind == OBJC3_COMPLETION_CANCELLED && frames[0].late_callbacks == 1);
+  assert(!objc3_task_is_cancel_requested(dependency) && source.destroyed == 1);
+  assert(frames[0].destroyed == 1 && frames[1].destroyed == 0);
+  pump(executor);
+  assert(view(parents[1]).kind == OBJC3_COMPLETION_SUCCESS);
+  assert(frames[0].resumes == 1 && frames[1].resumes == 2 && frames[1].destroyed == 1);
+  for (auto *parent : parents) objc3_task_release(parent);
+  objc3_task_release(dependency);
+}
+
+static void bounded_scope_cleanup_with_allocation_failure(objc3_executor_t *executor, bool fail_wake) {
+  struct Scope {
+    objc3_task_t *child = nullptr;
+    unsigned parent_resumes = 0, parent_destroyed = 0;
+    unsigned child_resumes = 0, child_destroyed = 0;
+    objc3_service_status cleanup = OBJC3_SERVICE_FAILED;
+  } scope;
+  objc3_task_start_options options{};
+  options.struct_size = sizeof(options);
+  options.version = OBJC3_SERVICE_ABI_VERSION;
+  options.executor = executor;
+  options.frame = &scope;
+  options.destroy = [](void *context) { ++static_cast<Scope *>(context)->parent_destroyed; };
+  options.resume = [](objc3_task_t *parent, void *context) {
+    auto &scope = *static_cast<Scope *>(context);
+    switch (++scope.parent_resumes) {
+    case 1: {
+      assert(objc3_task_group_scope_enter(parent) == OBJC3_SERVICE_OK);
+      auto *leaf = objc3_task_group_retain(objc3_task_group_scope_current());
+      assert(leaf);
+      for (unsigned depth = 1; depth < OBJC3_TASK_GROUP_MAX_DEPTH; ++depth) {
+        objc3_task_group_t *next = nullptr;
+        assert(objc3_task_group_create(leaf, &next) == OBJC3_SERVICE_OK);
+        objc3_task_group_release(leaf);
+        leaf = next;
+      }
+      objc3_task_start_options child{};
+      child.struct_size = sizeof(child);
+      child.version = OBJC3_SERVICE_ABI_VERSION;
+      child.frame = context;
+      child.resume = [](objc3_task_t *, void *opaque) { ++static_cast<Scope *>(opaque)->child_resumes; };
+      child.destroy = [](void *opaque) { ++static_cast<Scope *>(opaque)->child_destroyed; };
+      assert(objc3_task_start_child(parent, &child, &scope.child) == OBJC3_SERVICE_OK);
+      assert(objc3_task_group_add(leaf, scope.child) == OBJC3_SERVICE_OK);
+      objc3_task_group_release(leaf);
+      assert(objc3_task_schedule_resume(parent) == OBJC3_SERVICE_OK);
+      break;
+    }
+    case 2: {
+      assert(scope.child_resumes == 1 && scope.child_destroyed == 0);
+      // Scope entry reserved the cleanup waiter. A suspended leaf keeps this
+      // check independent of the later resumed-context publication attempt.
+      reject_next_allocation = true;
+      const auto status = objc3_task_group_scope_finish(parent, true, &scope.cleanup);
+      assert(status == OBJC3_SERVICE_OK && reject_next_allocation);
+      reject_next_allocation = false;
+      break;
+    }
+    case 3: {
+      assert(scope.cleanup == OBJC3_SERVICE_OK && scope.child_destroyed == 1);
+      const objc3_completion outcome{sizeof(outcome), OBJC3_SERVICE_ABI_VERSION,
+          OBJC3_COMPLETION_CANCELLED, 0, nullptr, nullptr, nullptr, nullptr};
+      assert(objc3_task_complete(parent, &outcome) == OBJC3_SERVICE_OK);
+      break;
+    }
+    default:
+      assert(false && "scope cleanup resumed more than once");
+    }
+  };
+  objc3_task_t *parent = nullptr;
+  assert(objc3_task_start(&options, &parent) == OBJC3_SERVICE_OK);
+  pump(executor);
+  assert(scope.parent_resumes == 2 && scope.parent_destroyed == 0);
+  assert(scope.cleanup == OBJC3_SERVICE_FAILED && objc3_task_is_cancel_requested(scope.child));
+  objc3_task_request_cancel(parent);
+  pump(executor);
+  assert(scope.parent_resumes == 2 && scope.child_destroyed == 0);
+  const objc3_completion outcome{sizeof(outcome), OBJC3_SERVICE_ABI_VERSION,
+      OBJC3_COMPLETION_CANCELLED, 0, nullptr, nullptr, nullptr, nullptr};
+  assert(objc3_task_complete(parent, &outcome) == OBJC3_SERVICE_NOT_READY);
+  const auto previous_rejections = rejected_single_allocations;
+  reject_next_allocation = fail_wake;
+  assert(objc3_task_complete(scope.child, &outcome) == OBJC3_SERVICE_OK);
+  assert(!reject_next_allocation && rejected_single_allocations == previous_rejections + fail_wake);
+  assert(scope.parent_destroyed == unsigned(fail_wake) && scope.child_destroyed == 1);
+  pump(executor);
+  assert(view(parent).kind == OBJC3_COMPLETION_CANCELLED);
+  assert(scope.parent_resumes == (fail_wake ? 2u : 3u) && scope.parent_destroyed == 1);
+  objc3_task_release(scope.child);
+  objc3_task_release(parent);
+}
+
 int main() {
   objc3_executor_t *executor=nullptr; assert(objc3_executor_create(1,&executor)==OBJC3_SERVICE_OK);
   validation_and_disposal(executor); dependency_and_copy_failures(executor);
   factory_failures(executor); group_join(executor);
   next_validation_and_fifo(executor);next_cancellation_and_failures(executor);
   next_terminal_outcomes(executor);
+  failed_dependency_dispatch(executor);
+  bounded_scope_cleanup_with_allocation_failure(executor, false);
+  bounded_scope_cleanup_with_allocation_failure(executor, true);
   objc3_executor_release(executor);
 }

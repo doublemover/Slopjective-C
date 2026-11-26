@@ -22,9 +22,15 @@ def reader_tree(tmp_path):
     for name in ('README.md', 'LICENSE', 'SECURITY.md'):
         (tmp_path / name).symlink_to(ROOT / name)
     shutil.copyfile(ROOT / 'CONTRIBUTING.md', tmp_path / 'CONTRIBUTING.md')
-    (tmp_path / 'docs/runbooks').mkdir()
-    for name in ('objc3c_public_command_surface.md', 'objc3c_maintainer_workflows.md'):
-        shutil.copyfile(ROOT / 'docs/runbooks' / name, tmp_path / 'docs/runbooks' / name)
+    runbooks = tmp_path / 'docs/runbooks'
+    runbooks.mkdir()
+    edited = {'objc3c_public_command_surface.md', 'objc3c_maintainer_workflows.md'}
+    for source in (ROOT / 'docs/runbooks').iterdir():
+        copied = runbooks / source.name
+        if source.name in edited:
+            shutil.copyfile(source, copied)
+        else:
+            copied.symlink_to(source, target_is_directory=source.is_dir())
     assert check(tmp_path)['status'] == 'PASS'
     return tmp_path
 
@@ -32,7 +38,8 @@ def reader_tree(tmp_path):
 def test_current_routes_and_installed_example_owners():
     report = check(ROOT)
     assert report['status'] == 'PASS'
-    assert report['examples'] == ['log-summary', 'managed-modules', 'native-application', 'package-graph']
+    assert report['examples'] == ['collections-text', 'log-summary', 'managed-modules',
+                                  'native-application', 'package-graph', 'parcel-quotes']
 
 
 @pytest.mark.parametrize('addition,diagnostic', [

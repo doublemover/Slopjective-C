@@ -79,6 +79,75 @@
       "oracle": "messages/blocks: nil receiver, weak/strong arms, copied snapshots and per-object destruction counts"
     },
     {
+      "name": "borrowed-packed-source",
+      "families": [
+        "carriers",
+        "calls",
+        "cleanup"
+      ],
+      "directory": "installed_sdk",
+      "sources": [
+        "carrier-record-native.m",
+        "ownership-callable.mm"
+      ],
+      "language": "objective-c++",
+      "standard": "c++20",
+      "ownership": "arc",
+      "transport": "source",
+      "optimizations": [
+        "O0",
+        "O2"
+      ],
+      "oracle": "deduced and explicit borrowed callbacks and Blocks, borrowed-return forwarding, distinct template counters and packed strong C++ destruction"
+    },
+    {
+      "name": "borrowed-packed-pch",
+      "families": [
+        "carriers",
+        "calls",
+        "cleanup"
+      ],
+      "directory": "installed_sdk",
+      "sources": [
+        "carrier-record-native.m",
+        "ownership-callable.mm"
+      ],
+      "language": "objective-c++",
+      "standard": "c++20",
+      "ownership": "arc",
+      "transport": "pch",
+      "header": "ownership-callable.h",
+      "marker": "IR_OWNERSHIP_PCH",
+      "optimizations": [
+        "O0",
+        "O2"
+      ],
+      "oracle": "deduced and explicit borrowed callbacks and Blocks, borrowed-return forwarding, distinct template counters and packed strong C++ destruction"
+    },
+    {
+      "name": "packed-record-pch",
+      "families": [
+        "carriers",
+        "cleanup"
+      ],
+      "directory": "installed_sdk",
+      "sources": [
+        "carrier-record-native.m",
+        "carrier-record-main.m"
+      ],
+      "language": "objective-c",
+      "standard": "c17",
+      "ownership": "arc",
+      "transport": "pch",
+      "header": "carrier-record-call.h",
+      "marker": "OBJC3_IR_ASSURANCE_PACKED_RECORDS",
+      "optimizations": [
+        "O0",
+        "O2"
+      ],
+      "oracle": "packed C field and pragma array operations: active and inactive arms, default/copy/move, exact destruction, and exceptional prefix rollback"
+    },
+    {
       "name": "guard-cleanup",
       "families": [
         "cleanup"
@@ -141,7 +210,6 @@
         "O2"
       ],
       "thinlto": true,
-      "optimizer_timeout_seconds": 900,
       "oracle": "Original native_leaf/native_parent: lazy frame abandonment, suspend/resume/destroy/cancel, exact defer/guard counts, live C++ string/Block and exception propagation"
     },
     {

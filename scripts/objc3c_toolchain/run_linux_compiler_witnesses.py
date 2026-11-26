@@ -48,7 +48,7 @@ def qualify(sdk: Path, output: Path, *, fixtures: Path | None = None,
         log = output / (label + '.log')
         with log.open('w') as stream:
             result = subprocess.run(list(map(str, command)), cwd=cwd, env=env,
-                stdin=stdin, stdout=stream, stderr=subprocess.STDOUT, timeout=180)
+                stdin=stdin, stdout=stream, stderr=subprocess.STDOUT)
         commands.append({'name': label, 'argv': list(map(str, command)),
                          'exit_code': result.returncode, 'expected': 1 if diagnostics else 0,
                          'expected_termination': 'diagnostic-exit' if diagnostics else 'success',

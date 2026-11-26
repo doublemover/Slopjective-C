@@ -89,6 +89,7 @@ cp -R "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/." .
 if [ "$smoke" = 1 ]; then
 objc3c main.objc3 -O0 -g -o application
 env -u LD_LIBRARY_PATH ./application
+python3 -B ./verify-symbolizer.py "$OBJC3C_SDK_ROOT" ./application
 python3 "$OBJC3C_SDK_ROOT/share/objc3c/examples/managed/build.py" --output-dir ./managed
 fi
 if [ "$qualification_scope" = full ] || [ "$qualification_scope" = package-build ]; then

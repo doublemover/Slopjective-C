@@ -390,7 +390,7 @@ int main(int argc, char **argv) {
     else return 2;
     // Bounded measurement control. The same completed semantic work and
     // lifetime oracles must hold with and without the extra timer cost.
-    if (delay) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    if (delay) std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
   const auto nanos = std::chrono::duration_cast<std::chrono::nanoseconds>(
     std::chrono::steady_clock::now() - started).count();

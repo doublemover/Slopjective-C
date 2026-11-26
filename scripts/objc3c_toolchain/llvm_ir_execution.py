@@ -1,11 +1,13 @@
 """Bounded, recorded LLVM subprocesses and explicit failure classifications."""
 from __future__ import annotations
 
+from contextlib import ExitStack
 import os
 from pathlib import Path
 import resource
 import signal
 import subprocess
+import sys
 import time
 
 if __package__:
@@ -70,20 +72,27 @@ def classify(stage: str, code: int, text: str, *, timed_out=False) -> str:
     return 'infrastructure'
 
 
-def command(argv, *, cwd: Path, environment: dict, log: Path, timeout: float) -> dict:
+def command(argv, *, cwd: Path, environment: dict, log: Path, timeout: float | None,
+            stderr_log: Path | None = None) -> dict:
     """Kill the entire process group on timeout; retain diagnostics for all exits."""
     started = time.monotonic()
     args = list(map(str, argv))
-    timed_out = False
+    timed_out, usage = False, None
     def no_core():
         resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
-    with log.open('w') as stream:
+    with ExitStack() as files:
+        stream = files.enter_context(log.open('w'))
+        errors = files.enter_context(stderr_log.open('w')) if stderr_log is not None else subprocess.STDOUT
         try:
             with subprocess.Popen(args, cwd=cwd, env=environment, stdout=stream,
-                                  stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+                                  stderr=errors, stdin=subprocess.DEVNULL,
                                   start_new_session=True, preexec_fn=no_core) as process:
                 try:
-                    code = process.wait(timeout=timeout)
+                    if timeout is None:
+                        _, status, usage = os.wait4(process.pid, 0)
+                        code = process.returncode = os.waitstatus_to_exitcode(status)
+                    else:
+                        code = process.wait(timeout=timeout)
                 except subprocess.TimeoutExpired:
                     timed_out = True
                     _kill_session(process.pid)
@@ -99,13 +108,17 @@ def command(argv, *, cwd: Path, environment: dict, log: Path, timeout: float) ->
         except OSError as error:
             stream.write(str(error)+'\n')
             code = 127
-    return {'argv': args, 'cwd': str(cwd), 'exit_code': code, 'timed_out': timed_out,
-            'seconds': round(time.monotonic()-started, 6), 'log': str(log),
-            'log_sha256': digest(log)}
+    row = {'argv': args, 'cwd': str(cwd), 'exit_code': code, 'timed_out': timed_out,
+           'seconds': round(time.monotonic()-started, 6), 'log': str(log), 'log_sha256': digest(log)}
+    if usage is not None:
+        rss = usage.ru_maxrss // 1024 if sys.platform == 'darwin' else usage.ru_maxrss
+        row.update(cpu_seconds=usage.ru_utime+usage.ru_stime, peak_process_rss_kib=rss,
+                   rss_scope='Largest individual process among the command and its waited descendants')
+    return row
 
 
 class Execution:
-    def __init__(self, output: Path, environment: dict, report: dict, *, timeout=180):
+    def __init__(self, output: Path, environment: dict, report: dict, *, timeout: float | None = None):
         self.output, self.environment, self.report, self.timeout = output, environment, report, timeout
         (output / 'logs').mkdir(parents=True)
         report['commands'] = []
@@ -121,7 +134,7 @@ class Execution:
         if any(path.exists() for path in paths):
             raise StageFailure(name, 'infrastructure', 'output already exists; stale output cannot pass')
         row = command(argv, cwd=cwd or self.output, environment=self.environment,
-            log=self.output / 'logs' / (name+'.log'), timeout=timeout or self.timeout)
+            log=self.output / 'logs' / (name+'.log'), timeout=self.timeout if timeout is None else timeout)
         text = Path(row['log']).read_text(errors='replace')
         row.update(name=name, stage=stage, expected_exit_code=expected,
                    outputs={str(path): digest(path) for path in paths if path.is_file()})

@@ -18,20 +18,18 @@ MAX_BYTES = 256 * 1024 * 1024
 SANITIZER_PRODUCT_BYTES = 3 * 1024**3
 
 
-def evidence_budget(suites) -> int:
-    return MAX_BYTES + (SANITIZER_PRODUCT_BYTES if 'sanitizer-products' in suites else 0)
-
-
-def validate_evidence_sizes(records: list[dict], operational_bytes: int = 0) -> None:
-    ordinary, products = operational_bytes, 0
+def validate_evidence_sizes(records: list[dict], operational_bytes: int = 0) -> int:
+    """Apply each suite's allowance before and after composing its evidence."""
+    if operational_bytes > MAX_BYTES:
+        raise ValueError(f'native operational evidence exceeds its artifact budget: {operational_bytes:,} > {MAX_BYTES:,} bytes')
+    total = operational_bytes
     for row in records:
         size = sum(saved['bytes'] for saved in row.get('artifacts', []))
-        if row['id'] == 'sanitizer-products':
-            products += size
-        else:
-            ordinary += size
-    if ordinary > MAX_BYTES or products > SANITIZER_PRODUCT_BYTES:
-        raise ValueError('native evidence exceeds its suite artifact budget')
+        limit = SANITIZER_PRODUCT_BYTES if row['id'] == 'sanitizer-products' else MAX_BYTES
+        if size > limit:
+            raise ValueError(f"native evidence exceeds its suite artifact budget for {row['id']}: {size:,} > {limit:,} bytes")
+        total += size
+    return total
 
 
 def package_execution(result: dict) -> list[dict]:
@@ -124,7 +122,7 @@ def lit(path: Path) -> list[dict]:
     return inventory
 
 
-def suite_results(root: Path, name: str) -> list[dict]:
+def suite_results(root: Path, name: str, *, frontend_names: frozenset[str] | None = None) -> list[dict]:
     """Validate the canonical owners' contents, rather than trust an outer PASS."""
     directory = root / name
 
@@ -155,10 +153,13 @@ def suite_results(root: Path, name: str) -> list[dict]:
     if name == 'frontend':
         result = read('frontend-tests/qualification.json')
         names = result.get('ctest_test_names', [])
+        expected = set(names) if frontend_names is None else frontend_names
+        selection = None if frontend_names is None else sorted(frontend_names)
         tests = result.get('tests', [])
-        if (not names or len(names) != len(set(names)) or
-                len(tests) != len(names) or {row['name'] for row in tests} != set(names) or
-                result.get('frontend_ctests') != len(names)):
+        if (not expected or not expected <= set(names) or len(names) != len(set(names)) or
+                result.get('selected_ctest_names') != selection or
+                len(tests) != len(expected) or {row['name'] for row in tests} != expected or
+                result.get('frontend_ctests') != len(expected)):
             raise ValueError('frontend manifest and executed tests are incomplete')
         for row in tests:
             junit(directory / ('frontend-' + row['name'] + '-ctest.xml'), expected={row['name']})
@@ -322,10 +323,18 @@ def suite_results(root: Path, name: str) -> list[dict]:
         store = result.get('product_evidence_store', {})
         store_path = directory / 'campaign/product-evidence-blobs'
         store_files = list(store_path.iterdir()) if store_path.is_dir() and not store_path.is_symlink() else []
-        from scripts.objc3c_toolchain.sanitizer_partitions import OWNERS, PARTITIONS, select, profiles, evidence_owners
+        from scripts.objc3c_toolchain.sanitizer_partitions import (
+            OWNERS, PARTITION_TASKS, PARTITIONS, SPLIT_FEATURES, evidence_owners,
+            owner_tasks, profiles, select, verify_feature_receipt,
+        )
         index = result.get('partition_index')
         expected = set(select(index))
-        if index is not None and (result.get('partition_count') != len(PARTITIONS) or
+        partition_tasks = result.get('partition_tasks')
+        if partition_tasks is not None and (index is not None or partition_tasks != list(PARTITION_TASKS) or
+                result.get('partition_count') != len(PARTITIONS)):
+            raise ValueError('sanitizer product transport union differs from its source assignment')
+        evidence_tasks = partition_tasks if partition_tasks is not None else expected
+        if (index is not None or partition_tasks is not None) and (result.get('partition_count') != len(PARTITIONS) or
                 result.get('owner_catalogue') != list(OWNERS) or
                 {(row.get('sanitizer'), row.get('optimization')) for row in result.get('runtime_profiles', [])}
                 != set(profiles(expected))):
@@ -336,7 +345,7 @@ def suite_results(root: Path, name: str) -> list[dict]:
                 result.get('expected_owners') != [row['name'] for row in rows] and
                 set(result.get('expected_owners', [])) != expected or
                 store.get('schema') != 'objc3c.product-evidence-shared-store.v1' or
-                store.get('owners') != evidence_owners(expected) or not store.get('references') or
+                store.get('owners') != evidence_owners(evidence_tasks) or not store.get('references') or
                 store.get('references') != len(store_files) or
                 store.get('stored_bytes') != sum(path.stat().st_size for path in store_files) or
                 store.get('private_bytes', 0) < store.get('stored_bytes', 0) or
@@ -347,18 +356,52 @@ def suite_results(root: Path, name: str) -> list[dict]:
                     any(char not in '0123456789abcdef' for char in path.stem)
                     for path in store_files)):
             raise ValueError('sanitizer product owner/profile matrix is incomplete')
+        if index is not None or partition_tasks is not None:
+            for task in evidence_tasks:
+                if task.startswith('features-'):
+                    verify_feature_receipt(directory / 'campaign', task)
+        if partition_tasks is not None:
+            for row in rows:
+                owner = row['name']
+                if owner in SPLIT_FEATURES:
+                    transports = row.get('transport_results', ())
+                    if (tuple(part.get('name') for part in transports) != owner_tasks(owner) or
+                            any(part.get('status') != 'PASS' for part in transports)):
+                        raise ValueError('sanitizer product owner has an incomplete transport union: '+owner)
         return sorted(rows, key=lambda row: row['name'])
     if name == 'runtime-schedules':
-        from scripts.objc3c_toolchain.runtime_schedules import SCENARIO_INVENTORY
+        from scripts.objc3c_toolchain.runtime_schedules import (BACKENDS, DEFAULT_SEEDS, OPTIMIZATIONS,
+            SANITIZERS, SCENARIO_INVENTORY, SCHEMA as SCHEDULE_SCHEMA, SEMANTIC_CONTROLS)
+        from scripts.objc3c_toolchain.runtime_schedule_model import coverage_domain, generate, signature
 
         result = read('campaign/qualification.json')
         histories, cases = result.get('histories', []), result.get('cases', [])
         scenarios, controls = result.get('scenario_cases', []), result.get('controls', [])
+        expected_histories = [generate(seed) for seed in DEFAULT_SEEDS]
+        expected_hashes = [signature(history) for history in expected_histories]
+        operations = {key: len(history['operations']) for key, history in zip(expected_hashes, expected_histories)}
+        generated = {(key, sanitizer, optimization, backend)
+                     for key in expected_hashes for sanitizer in SANITIZERS
+                     for optimization in OPTIMIZATIONS for backend in BACKENDS}
         configurations = {(sanitizer, optimization, fixture)
-                          for sanitizer in ('address,undefined', 'thread')
-                          for optimization in ('O0', 'O2')
+                          for sanitizer in SANITIZERS for optimization in OPTIMIZATIONS
                           for fixture in SCENARIO_INVENTORY.values()}
-        if (len(histories) != 8 or len(cases) != 8*2*2*3 or
+        slots = {(row.get('history'), row.get('sanitizer'), row.get('client_optimization'), row.get('backend')):
+                 row.get('observation_sha256') for row in cases if row.get('status') == 'PASS' and
+                 row.get('service_optimization') == 'O1' and row.get('history') in operations and
+                 row.get('operations') == operations[row['history']]}
+        reduction = result.get('reduction', {})
+        model = result.get('model_coverage', {})
+        transitions, pairs = coverage_domain()
+        if (result.get('schema') != SCHEDULE_SCHEMA or histories != expected_histories or
+                result.get('history_hashes') != expected_hashes or
+                result.get('control_history_hash') != expected_hashes[0] or
+                len(cases) != len(generated) or set(slots) != generated or
+                any(not isinstance(value, str) or not re.fullmatch('[a-f0-9]{64}', value)
+                    for value in slots.values()) or
+                any(slots[(key, sanitizer, optimization, 'manual')] !=
+                    slots[(key, sanitizer, optimization, 'manual-repeat')]
+                    for key in expected_hashes for sanitizer in SANITIZERS for optimization in OPTIMIZATIONS) or
                 len(scenarios) != len(configurations) or
                 result.get('scenario_inventory') != SCENARIO_INVENTORY or
                 {(row.get('sanitizer'), row.get('client_optimization'), row.get('fixture'))
@@ -366,14 +409,17 @@ def suite_results(root: Path, name: str) -> list[dict]:
                 != configurations or
                 any(row.get('scenarios') != sorted(name for name, owner in SCENARIO_INVENTORY.items()
                                                    if owner == row.get('fixture')) for row in scenarios) or
-                len(controls) != 5 or {row.get('name') for row in controls} != {
-                    'missing-frame-destruction', 'duplicate-waiter-delivery',
-                    'premature-quiescence-publication', 'overlapping-actor-jobs',
-                    'type-mismatched-next-consumption'} or
-                result.get('reduction', {}).get('status') != 'PASS' or
-                result.get('model_coverage', {}).get('missing_transitions') or
-                result.get('model_coverage', {}).get('missing_pairs') or
-                len(result.get('sanitizer_policy', {})) != 4):
+                len(controls) != len(SEMANTIC_CONTROLS) or
+                {row.get('name'): row.get('diagnostic') for row in controls if row.get('status') == 'PASS' and
+                 row.get('classification') == 'semantic-mismatch' and type(row.get('native_exit')) is int and
+                 row.get('native_exit') == 0 and row.get('sanitizer_clean') is True} != dict(SEMANTIC_CONTROLS.values()) or
+                reduction.get('status') != 'PASS' or reduction.get('fresh_native_replay') is not True or
+                reduction.get('original') != expected_histories[0] or
+                model.get('transition_domain') != sorted(transitions) or
+                model.get('pair_domain') != sorted(map(list, pairs)) or
+                model.get('missing_transitions') != [] or model.get('missing_pairs') != [] or
+                set(result.get('sanitizer_policy', {})) != {sanitizer.replace(',', '-')+'-'+optimization
+                 for sanitizer in SANITIZERS for optimization in OPTIMIZATIONS}):
             raise ValueError('generated runtime schedule matrix/controls are incomplete')
         return cases + scenarios + controls
     if name == 'frontend-fuzz':
@@ -397,10 +443,12 @@ def suite_results(root: Path, name: str) -> list[dict]:
         native = read('first-party/qualification.json')
         compiler = read('compiler/qualification.json')
         from .emitter_shards import emitter_partition
+        from scripts.objc3c_toolchain.source_coverage import first_party_inventory, validate_first_party_denominator
+        repo = Path(__file__).resolve().parents[2]
+        validate_first_party_denominator(native, current=first_party_inventory(repo))
         if (native.get('emitter_partition') != emitter_partition(directory / 'first-party', native['suites'])):
             raise ValueError('emitter coverage partition proof changed')
-        policy = json.loads((Path(__file__).resolve().parents[2] /
-                             'toolchains/llvm/source-coverage.json').read_text())
+        policy = json.loads((repo / 'toolchains/llvm/source-coverage.json').read_text())
         catalogue = [(component, test) for component in ('frontend', 'runtime')
                      for test in policy[component + '_tests']]
         compiler_units = compiler.get('executed_unit_binary_ids', {})
@@ -424,12 +472,15 @@ def suite_results(root: Path, name: str) -> list[dict]:
 
 
 def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str,
-              shard: str | None = None) -> dict:
+              shard: str | None = None, suite_ids: tuple[str, ...] | None = None,
+              frontend_names: frozenset[str] | None = None) -> dict:
     validate(plan)
     if plan['revision']['tested'] != tested or outcomes.get('plan') != 'success':
         raise ValueError('selection failed or selected the wrong tested revision')
-    suites = selected_suites(plan, shard)
+    suites = selected_suites(plan, shard, suite_ids=suite_ids)
     expected = {suite['id'] for suite in suites}
+    if frontend_names is not None and (suite_ids is None or 'frontend' not in expected):
+        raise ValueError('focused CTest evidence requires an explicit frontend suite')
     if not expected:
         if plan['classification'] != 'prose-only' or outcomes.get('native') != 'skipped':
             raise ValueError('only justified prose-only changes may skip native execution')
@@ -442,10 +493,11 @@ def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str,
         raise ValueError('native result is incomplete, stale, failed or belongs to another revision')
     if receipt.get('shard') != shard:
         raise ValueError('native result belongs to a different execution shard')
+    if suite_ids is not None and receipt.get('suite_partition') != list(suite_ids):
+        raise ValueError('native result belongs to a different execution partition')
     records = receipt.get('suites', [])
     if len(records) != len(expected) or {row['id'] for row in records} != expected:
         raise ValueError('native result differs from the exact required suite set')
-    total = 0
     paths = set()
     for row in records:
         if row.get('status') != 'PASS' or not row.get('executions') or not row.get('artifacts'):
@@ -458,26 +510,31 @@ def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str,
             if saved['path'] in paths or artifact(root, path) != saved:
                 raise ValueError('native artifact is missing, duplicated or changed')
             paths.add(saved['path'])
-            total += saved['bytes']
-        if suite_results(root, row['id']) != row['executions']:
+        if suite_results(root, row['id'], frontend_names=frontend_names) != row['executions']:
             raise ValueError('native execution inventory differs from canonical owner results')
     commands = receipt.get('commands', [])
     if any(row.get('exit_code') != 0 for row in commands):
         raise ValueError('native command evidence contains a failed execution')
-    from scripts.objc3c_toolchain.semantic_build_costs import snapshot
     cost_file = root / 'operational-costs.json'
-    saved_costs = receipt.get('operational_costs', {})
-    if saved_costs.get('path') != 'operational-costs.json' or artifact(root, cost_file) != saved_costs:
-        raise ValueError('native operational measurements are missing or changed')
-    observed = json.loads(cost_file.read_text())
-    expected_costs = snapshot(foundations=foundation_receipts(root, suites),
-        installations=[root / 'package/installation-cost.json'] if 'package' in expected else [])
-    if observed != expected_costs:
-        raise ValueError('native operational measurements differ from actual owner receipts')
-    total += saved_costs['bytes']
-    validate_evidence_sizes(records, saved_costs['bytes'])
-    if total > evidence_budget(expected):
-        raise ValueError('native evidence exceeds its suite artifact budget')
+    foundations = foundation_receipts(root, suites)
+    installations = [root / 'package/installation-cost.json'] if 'package' in expected else []
+    cost_bytes = 0
+    if suite_ids is None or foundations or installations:
+        from scripts.objc3c_toolchain.semantic_build_costs import snapshot
+        saved_costs = receipt.get('operational_costs', {})
+        if saved_costs.get('path') != 'operational-costs.json' or artifact(root, cost_file) != saved_costs:
+            raise ValueError('native operational measurements are missing or changed')
+        if json.loads(cost_file.read_text()) != snapshot(foundations=foundations, installations=installations):
+            raise ValueError('native operational measurements differ from actual owner receipts')
+        cost_bytes = saved_costs['bytes']
+    elif 'operational_costs' in receipt or cost_file.exists() or cost_file.is_symlink():
+        raise ValueError('native operational measurements have no selected owner')
+    if 'archive_reuse' in receipt:
+        saved = receipt['archive_reuse']
+        if shard != 'core' or 'package' not in expected or artifact(root, root / 'archive-reuse.json') != saved:
+            raise ValueError('native archive replay evidence is missing, changed or belongs to another owner')
+        cost_bytes += saved['bytes']
+    total = validate_evidence_sizes(records, cost_bytes)
     return {'status': 'PASS', 'classification': 'native', 'revision': plan['revision'],
             'suites': sorted(expected), 'artifact_bytes': total}
 
@@ -497,8 +554,6 @@ def aggregate_shards(plan: dict, root: Path, *, outcomes: dict, tested: str) -> 
             set(suites) != {row['id'] for row in plan['suites']}):
         raise ValueError('native execution shards overlap or omit selected suites')
     total = sum(row['artifact_bytes'] for row in results)
-    if total > evidence_budget(suites):
-        raise ValueError('native evidence exceeds its suite artifact budget')
     return {'status': 'PASS', 'classification': 'native', 'revision': plan['revision'],
             'suites': sorted(suites), 'shards': shards, 'artifact_bytes': total}
 

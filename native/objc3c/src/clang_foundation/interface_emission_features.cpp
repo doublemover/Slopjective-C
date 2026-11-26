@@ -1141,14 +1141,21 @@ bool HasDeclarationBorrowedInteriorStorage(const clang::NamedDecl *declaration) 
   });
 }
 
-bool HasDeclarationBorrowedCallableOwner(const clang::NamedDecl *declaration) {
-  return HasPublishedExpression(declaration, [](const clang::Stmt *statement) {
+PublishedBorrowedCallableContracts ReadPublishedBorrowedCallableContracts(const clang::NamedDecl *declaration) {
+  PublishedBorrowedCallableContracts contracts;
+  HasPublishedExpression(declaration, [&](const clang::Stmt *statement) {
     struct Ownership : clang::DynamicRecursiveASTVisitor {
-      bool found = false;
+      PublishedBorrowedCallableContracts &contracts;
+      explicit Ownership(PublishedBorrowedCallableContracts &contracts) : contracts(contracts) {}
       void NoteType(clang::QualType type) {
         for (unsigned depth = 0; !type.isNull() && depth != 64; ++depth) {
           if (const auto *function = type->getAs<clang::FunctionType>()) {
-            found |= function->hasObjC3BorrowedResult();
+            contracts.result |= function->hasObjC3BorrowedResult();
+            if (const auto *prototype = llvm::dyn_cast<clang::FunctionProtoType>(function);
+                prototype && prototype->hasExtParameterInfos())
+              contracts.parameters |= llvm::any_of(prototype->getExtParameterInfos(), [](const auto info) {
+                return IsCanonicalBorrowedParameter(info);
+              });
             return;
           }
           if (type->isPointerType() || type->isBlockPointerType() || type->isReferenceType())
@@ -1165,10 +1172,11 @@ bool HasDeclarationBorrowedCallableOwner(const clang::NamedDecl *declaration) {
         if (const auto *function = call->getDirectCallee()) NoteType(function->getType());
         return true;
       }
-    } visitor;
+    } visitor(contracts);
     visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));
-    return visitor.found;
+    return contracts.result && contracts.parameters;
   });
+  return contracts;
 }
 
 bool HasDeclarationNativeDependentAwait(const clang::NamedDecl *declaration) {
@@ -2352,8 +2360,10 @@ std::string ObjCContainerIdentity(const clang::NamedDecl *declaration,
                 CanonicalType(parameter->getUnderlyingType(), context);
       }
     }
-    if (const auto *superclass = interface->getSuperClassType())
+    if (const auto *superclass = interface->getSuperClassType()) {
+      if (superclass->isSpecialized()) text += ";objc-specialized-superclass:v1;";
       text += ";super-type=" + CanonicalType(clang::QualType(superclass, 0), context);
+    }
     return text;
   }
   if (const auto *protocol = llvm::dyn_cast<clang::ObjCProtocolDecl>(declaration)) {
@@ -2368,6 +2378,7 @@ std::string ObjCContainerIdentity(const clang::NamedDecl *declaration,
                 ? category->getClassInterface()->getNameAsString()
                 : std::string("<missing-class>")) +
            '(' + category->getNameAsString() + ')';
+    if (!category->protocols().empty()) text += kObjCCategoryProtocolsMarker;
     for (const auto *protocol : category->protocols())
       text += ";protocol=" + protocol->getNameAsString();
     return text;

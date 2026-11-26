@@ -5,28 +5,30 @@ import hashlib
 import json
 from pathlib import Path
 import re
-import subprocess
 
+from .ctest_discovery import discover
 from .sdk_example import write_json
 
 
-def qualify(build: Path, output: Path, run, *, jobs: int) -> dict:
+def qualify(build: Path, output: Path, run, *, jobs: int,
+            required_names: frozenset[str] | None = None) -> dict:
     """Build, execute and reclaim each owned test; retain failed outputs."""
     build = build.resolve(strict=True)
     report = {'status': 'running', 'schema': 'objc3c.frontend-serial-ctest.v2',
-              'tests': [], 'reclaimed': [], 'ctest_test_names': [], 'failures': []}
+              'tests': [], 'reclaimed': [], 'ctest_test_names': [], 'failures': [], 'discovery': []}
     output.mkdir(parents=True, exist_ok=True)
     receipt = output / 'qualification.json'
     write_json(receipt, report)
     try:
         plan = json.loads((build / 'frontend-test-targets.json').read_text())
-        metadata = json.loads(subprocess.check_output(
-            ['ctest', '--test-dir', str(build), '--show-only=json-v1'], text=True))
-        names = [test['name'] for test in metadata['tests']]
+        initial = {'phase': 'inventory'}
+        report['discovery'].append(initial)
+        names = list(discover(build, initial))
         rows = plan.get('tests', [])
-        if (not names or len(names) != len(set(names)) or
-                len(rows) != len(names) or {row['name'] for row in rows} != set(names)):
+        if len(rows) != len(names) or {row['name'] for row in rows} != set(names):
             raise ValueError('frontend target manifest does not match the CTest inventory')
+        if required_names is not None and (not required_names or not required_names <= set(names)):
+            raise ValueError('frontend selection is empty or outside the configured CTest inventory')
         groups = {}
         for row in rows:
             name, target, executable = row['name'], row['target'], Path(row['executable'])
@@ -43,8 +45,14 @@ def qualify(build: Path, output: Path, run, *, jobs: int) -> dict:
                 raise ValueError('frontend target aliases disagree on their executable')
             group.append(row)
         report['ctest_test_names'] = names
+        if required_names is not None:
+            report['selected_ctest_names'] = sorted(required_names)
         write_json(receipt, report)
         for target, variants in groups.items():
+            if required_names is not None:
+                variants = [row for row in variants if row['name'] in required_names]
+                if not variants:
+                    continue
             executable = Path(variants[0]['executable'])
             try:
                 run('frontend-' + variants[0]['name'] + '-build',
@@ -59,9 +67,9 @@ def qualify(build: Path, output: Path, run, *, jobs: int) -> dict:
             # CTest exposes the actual command once the executable exists.
             # Check aliases against that command instead of guessing a target
             # from each test's profile-specific name.
-            commands = {test['name']: test.get('command', []) for test in json.loads(
-                subprocess.check_output(['ctest', '--test-dir', str(build),
-                                         '--show-only=json-v1'], text=True))['tests']}
+            owner_discovery = {'phase': 'ownership', 'target': target}
+            report['discovery'].append(owner_discovery)
+            commands = discover(build, owner_discovery, selected=tuple(row['name'] for row in variants))
             for row in variants:
                 command = commands.get(row['name'], [])
                 position = row['command_index']
@@ -77,7 +85,7 @@ def qualify(build: Path, output: Path, run, *, jobs: int) -> dict:
                 try:
                     run('frontend-' + name + '-ctest',
                         ['ctest', '--test-dir', build, '--no-tests=error', '--output-on-failure',
-                         '-R', '^' + re.escape(name) + '$'])
+                         '--timeout', '0', '-R', '^' + re.escape(name) + '$'])
                 except Exception as error:
                     failure = str(error)
                 if executable.is_symlink() or not executable.is_file():

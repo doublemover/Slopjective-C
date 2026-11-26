@@ -2,8 +2,9 @@
 
 ## Working Boundary
 
-This runbook defines the live platform, toolchain, packaging, install, and
-support claim surface for objc3c.
+This runbook records the tiered runnable workflow's platform, toolchain,
+packaging, and support contracts. The native Clang SDK's published preview
+and experimental ports are tracked in the [release status](../releases/status.md).
 
 Use it when changing host support claims, toolchain version expectations,
 packaged install behavior, or archive/update support rules.
@@ -113,15 +114,17 @@ toolchain evidence; it is not a prose support statement.
 
 ## #8206 Umbrella Closure Boundary
 
-\#8206 is the platform expansion readiness umbrella, not a broad platform
-success claim. It closes only over checked-in source contracts:
+\#8206 tracks promotion of the tiered runnable workflow. The published Linux
+preview has its own release and install validation route. The Linux preview
+and the Apple Silicon experiment are listed in the [release status](../releases/status.md).
 
-- #8228 `linux-x64` remains an unsupported, fail-closed row until build,
-  package, install, installed-root execution, and native execution evidence
-  exists.
-- #8229 `darwin-arm64` remains an unsupported, fail-closed row until build,
-  package, install, installed-root execution, Mach-O/load-path, and native
-  execution evidence exists.
+- #8228 `linux-x64` names the legacy tiered workflow row. Its source promotion
+  contract applies to that workflow. The published SDK has native x86-64 and
+  AArch64 build, package, clean-install, and execution receipts. [Linux release manifest](../releases/preview-manifest.json)
+- #8229 `darwin-arm64` remains fail-closed for production. Optional Apple
+  Silicon registration packaging produces experimental evidence. Production
+  promotion requires reviewed build, package, install, Mach-O load-path, and
+  installed-root native execution for the shipping profile. [Apple Silicon experiment](objc3c_darwin_arm64_bootstrap.md)
 - #8230 ASan and #8231 UBSan are Windows x64 sanitizer package rows with
   source-owned package/install/execution evidence and fail-closed negative
   contracts; they do not promote host/platform support and hosted sanitizer
@@ -229,20 +232,17 @@ carry arm64 dSYM UUID records and binary-to-dSYM UUID matching. These generated
 fields remain `support_truth=false` and cannot promote `darwin-arm64` without
 reviewed checked-source rows.
 
-\#8206 has a source-owned fail-closed closure boundary and a separate future
-public platform-promotion boundary. The source-owned boundary keeps the
-umbrella matrix row `internal`, keeps Windows x64 as the only supported
-projection, keeps #8228 and #8229 rejected/fail-closed, and keeps hosted
-Linux/macOS evidence as review input rather than support truth. Public platform
-promotion is valid only after the umbrella matrix row is promoted from
-`internal`, #8228 and #8229 are promoted with the evidence above, sanitizer
-package rows remain bounded by their Windows x64 runtime-promotion gates, and
-\#8232 native object emission is coherent through `llc --filetype=obj` with no
-clang-substitute success path.
+The tiered workflow umbrella row remains `internal`, with Windows x64 Tier 1.
+Promotion uses reviewed source rows and the host-promotion contract. The
+sanitizer package rows keep their Windows x64 runtime-promotion gates. The
+\#8232 native-object contract requires coherent `llc` tools and non-empty
+target objects from `llc --filetype=obj`.
 
 ## Host And Toolchain Claim Boundary
 
-Current support claims must stay narrower than the evidence:
+The following rules apply to the tiered runnable workflow and its package
+channels. Use the [Linux preview support table](../releases/preview-support.md)
+for the published SDK's distribution and ABI matrix.
 
 - only the checked-in `windows-x64` host family is supported
 - only the checked-in archive/install channel set is supported
@@ -283,8 +283,7 @@ Tier publication rules:
 
 - no tier may be published without machine-owned support-matrix evidence
 - package/install/update claims must agree with the same tier assignment
-- `windows-x64` is the only host family that may currently be described as
-  supported on the public workflow surface
+- `windows-x64` is the supported host family in this tiered workflow
 
 ## Install And Archive Support Boundary
 
@@ -303,8 +302,9 @@ use the exact artifact-scoped runnable package entries published by the
 package-channel payload contract for `windows-x64`, `linux-x64`, and
 `darwin-arm64`; they must not use the legacy installed-tree shape such as
 `bin/objc3c-native*`, `lib/*`, or `include/objc3/runtime`. Linux and macOS
-release layouts are vocabulary for fail-closed rows only until their native
-host evidence is promoted.
+release layouts in this contract describe the tiered workflow's fail-closed
+rows. The published Linux installer uses the archive inventory and release
+layout in the [Linux SDK release guide](../releases/linux.md).
 
 ## Toolchain-Range And Archive Compatibility Policy
 
@@ -340,11 +340,10 @@ best-effort language.
   public workflow validation; generated artifacts stay review inputs until
   promoted into source truth
 
-The checked-in source contract may contain fail-closed package rows for future
-hosts. Those rows are not support claims: `linux-x64` (#8228) and
-`darwin-arm64` (#8229) remain unsupported until their source rows are replaced
-with build, package, install, installed-root execution, and native execution
-evidence from the public workflow surface.
+The tiered workflow's `linux-x64` and `darwin-arm64` rows remain fail-closed
+pending their checked source promotion. Linux preview installations use the
+manifest-bound SDK release path. The Apple Silicon experiment uses its own
+profile and records `support_truth: false`.
 
 Sanitizer package variants are separate from host support. The ASan (#8230) and
 UBSan (#8231) runtime package rows now carry concrete Windows x64

@@ -1,6 +1,7 @@
 """Defend current semantic benchmark work counts, sampling and failure bounds."""
 import json
 import errno
+import hashlib
 import os
 import sys
 from pathlib import Path
@@ -86,6 +87,119 @@ def calibration_receipt(path, *, offset=0.0, version=1):
     return report
 
 
+@pytest.fixture
+def collection_observations(tmp_path, monkeypatch):
+    from scripts.objc3c_toolchain import semantic_benchmark_calibration as calibration
+    from scripts.objc3c_toolchain.collection_scaling import (COLLECTION_EVIDENCE_SCOPE,
+        COLLECTION_METRICS, collection_phase_timing, collection_scaling_inputs,
+        expected_collection_phases)
+
+    case = ('map', 32, 16)
+    monkeypatch.setattr(calibration, 'collection_cases', lambda: [case])
+    monkeypatch.setattr(calibration, 'collection_sample_cases', lambda metric: [case])
+    repo = tmp_path / 'checkout'
+    repo.mkdir()
+
+    def observation(name, *, offset):
+        root = tmp_path / name
+        root.mkdir()
+        receipt = root / 'qualification.json'
+        report = calibration_receipt(receipt, offset=offset/1e9)
+        report['inputs'].update({str(path): 'e'*64 for path in collection_scaling_inputs(repo)})
+        loader_path = '/usr/lib/libstdc++.so'
+        binaries = {metric: f'/hosted/{name}/sdk-0/collection-scaling-{metric}'
+                    for metric in COLLECTION_METRICS}
+        samples, timing = [], []
+        for iteration in range(4):
+            for metric in COLLECTION_METRICS:
+                phases = expected_collection_phases(*case)
+                for phase, values in phases.items():
+                    if metric == 'time':
+                        values['nanoseconds'] = offset + 100_000 + iteration*1_000
+                    else:
+                        values.update(allocations=1, allocated_bytes=96)
+                    if metric == 'service-diagnostics' and phase in ('construct', 'remove', 'teardown'):
+                        before, retained = {'construct': (0, 1296), 'remove': (1296, 1104),
+                                            'teardown': (1104, 0)}[phase]
+                        values.update(index_bytes_before=before, retained_index_bytes=retained)
+                if metric == 'time' and iteration:
+                    timing.append(collection_phase_timing(*case[:2], phases))
+                command = f'{iteration}-sdk-0-collection-scaling-{metric}-map-32'
+                log = root / (command+'.log')
+                log.write_text(json.dumps(phases))
+                start = len(samples)*2_000_000
+                samples.append({'sdk_index': 0, 'metric': metric, 'family': case[0],
+                    'scale': case[1], 'rounds': case[2], 'warmup': iteration == 0, 'sample': command,
+                    'start_ns': start, 'end_ns': start+2_000_000, 'phases': phases})
+                report['samples'].append({'name': command, 'sdk_index': 0, 'exit_code': 0,
+                    'timed_out': False, 'argv': [binaries[metric], 'map', '32', '16'],
+                    'wall_seconds': .001, 'cpu_seconds': .0005, 'peak_process_rss_kib': 1024,
+                    'log': f'/hosted/{name}/{log.name}', 'log_sha256': hashlib.sha256(log.read_bytes()).hexdigest()})
+        report['collection_scaling'] = {'status': 'PASS', **COLLECTION_EVIDENCE_SCOPE,
+            'samples': samples, 'summaries': [{'sdk_index': 0, 'family': case[0], 'scale': case[1],
+                'rounds': case[2], 'phase_seconds': {phase: summarize(timing, phase) for phase in timing[0]}}],
+            'loaders': [{'metric': metric, 'sdk_index': 0,
+                'loader': {'binary': binary, 'sha256': 'a'*64, 'libraries': {loader_path: 'b'*64},
+                           'build_ids': {loader_path: 'host-library'}}}
+                for metric, binary in binaries.items()]}
+        receipt.write_text(json.dumps(report))
+        return receipt
+
+    return calibration, repo, observation
+
+
+def test_collection_calibration_pools_phase_times_and_keeps_raw_diagnostics(collection_observations):
+    calibration, repo, observation = collection_observations
+    first = observation('first', offset=0)
+    second = observation('second', offset=1000)
+    report = calibration.calibrate(repo, [first, second], repo / 'out/calibration', labels=['a', 'b'])
+    scaling = report['collection_scaling']
+    assert report['decision'] == 'calibrated-observation-advisory'
+    assert scaling['decision'] == 'observed-runner-variance-only'
+    assert len(scaling['source_samples']) == 2
+    raw = scaling['source_samples'][0]['samples']
+    assert len(raw) == 12 and raw[0]['warmup']
+    assert raw[0]['start_ns'] == 0 and raw[0]['end_ns'] == 2_000_000
+    assert raw[0]['log'] == '0-sdk-0-collection-scaling-time-map-32.log'
+    row = scaling['observations'][0]
+    assert row['phase_seconds']['remove']['pooled']['samples'] == 6
+    assert row['diagnostics']['service-diagnostics']['remove']['retained_index_bytes'] == {
+        'median': 1104, 'minimum': 1104, 'maximum': 1104}
+    assert row['diagnostics']['allocations']['construct']['allocated_bytes']['maximum'] == 96
+
+
+@pytest.mark.parametrize(('mutation', 'reason'), [
+    ('replay', 'duplicate collection timings'), ('loader', 'different collection contexts'),
+    ('log', 'log differs'), ('missing-log', 'could not read its raw log'),
+    ('timeline', 'invalid command or timeline evidence'), ('summary', 'summary differs'),
+    ('inventory', 'omitted or reordered raw samples'), ('input', 'different inputs contexts'),
+])
+def test_collection_calibration_rejects_incompatible_or_corrupted_evidence(collection_observations, mutation, reason):
+    calibration, repo, observation = collection_observations
+    first = observation('first', offset=0)
+    second = observation('second', offset=0 if mutation == 'replay' else 1000)
+    report = json.loads(second.read_text())
+    scaling = report['collection_scaling']
+    log = second.parent / (scaling['samples'][0]['sample']+'.log')
+    if mutation == 'loader':
+        scaling['loaders'][0]['loader']['libraries']['/usr/lib/libstdc++.so'] = 'f'*64
+    elif mutation == 'log':
+        log.write_text(log.read_text()+'\n')
+    elif mutation == 'missing-log':
+        log.unlink()
+    elif mutation == 'timeline':
+        scaling['samples'][1]['start_ns'] = 0
+    elif mutation == 'summary':
+        scaling['summaries'][0]['phase_seconds']['remove']['median'] = 0
+    elif mutation == 'inventory':
+        scaling['samples'].pop()
+    elif mutation == 'input':
+        report['inputs'][str(repo / 'tests/benchmarks/collection_scaling.cpp')] = 'f'*64
+    second.write_text(json.dumps(report))
+    with pytest.raises(ValueError, match=reason):
+        calibration.calibrate(repo, [first, second], repo / 'out/calibration')
+
+
 @pytest.mark.parametrize('scale', SCALES)
 def test_frontend_workload_scales_real_carrier_guard_match_and_cleanup_forms(scale):
     text = frontend_source(scale)
@@ -129,6 +243,36 @@ def test_timeout_is_retained_as_failure_with_no_successful_timing_claim(tmp_path
     row = sample([sys.executable, '-c', 'import time;time.sleep(30)'], cwd=tmp_path,
                  environment=dict(os.environ), log=tmp_path / 'timeout.log', timeout=0.05)
     assert row['timed_out'] and row['exit_code'] < 0
+
+
+def test_measurement_without_budget_waits_for_completion_and_retains_rusage(tmp_path, monkeypatch):
+    from itertools import count
+    from scripts.objc3c_toolchain import semantic_benchmarks as owner
+
+    ticks = count()
+    wait4 = owner.os.wait4
+    polls = []
+
+    def first_poll_pending(pid, options):
+        polls.append(pid)
+        return (0, 0, None) if len(polls) == 1 else wait4(pid, options)
+
+    def forbidden_kill(pid):
+        pytest.fail('unbudgeted qualification was terminated by the measurement helper')
+
+    # Simulate a build exceeding both the old 120s sample and 900s wrapper caps,
+    # while waiting for and collecting an actual child process normally.
+    monkeypatch.setattr(owner.time, 'monotonic', lambda: next(ticks) * 10000.0)
+    monkeypatch.setattr(owner.os, 'wait4', first_poll_pending)
+    monkeypatch.setattr(owner, '_kill_session', forbidden_kill)
+    log = tmp_path / 'runner-owned.log'
+    row = sample([sys.executable, '-c', 'print("completed")'], cwd=tmp_path,
+                 environment=dict(os.environ), log=log, timeout=None)
+    assert len(polls) >= 2
+    assert row['exit_code'] == 0 and not row['timed_out']
+    assert row['wall_seconds'] >= 10000 and row['cpu_seconds'] > 0
+    assert row['peak_process_rss_kib'] > 0 and log.read_text() == 'completed\n'
+    assert row['log_sha256'] == hashlib.sha256(log.read_bytes()).hexdigest()
 
 
 def test_interrupted_measurement_reaps_its_detached_process(tmp_path, monkeypatch):
@@ -240,6 +384,11 @@ def test_complete_receipt_keeps_workload_annotations_and_rechecks_sdk(
         assert all(row['wall']['samples'] == 3 for row in report['summaries'])
         assert len([row for row in report['samples'] if row.get('semantic_result')]) == (132 if extended_runtime else 12)
         assert report['delay_control']['status'] == 'PASS'
+        assert report['delay_control']['control_samples_seconds'] == [0.000001] * report['repetitions']
+        control_commands = [row['name'] for row in report['samples']
+                            if row['name'].startswith(('delay-control-0-', 'delay-control-1-'))]
+        assert control_commands == ['delay-control-0-ordinary', 'delay-control-0-delayed',
+                                    'delay-control-1-delayed', 'delay-control-1-ordinary']
         from scripts.objc3c_assurance.evidence import suite_results
         import copy
         import shutil

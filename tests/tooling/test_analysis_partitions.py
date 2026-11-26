@@ -23,7 +23,7 @@ def test_native_variant_partitions_cover_uneven_catalogue_once():
 def test_partition_places_expensive_actions_first_and_balances_them():
     rows = [{'identity': f'{index:064x}', 'file': name}
             for index, name in enumerate(('AST.cpp', 'Parser.cpp', 'Fast.cpp', 'Short.cpp', 'Tiny.cpp'))]
-    costs = {'default': 120, 'AST.cpp': 240, 'Parser.cpp': 240}
+    costs = {'default': 120, 'AST.cpp': 4200, 'Parser.cpp': 4200}
     shards = [partition_rows(rows, partition_spec(index, 2), seconds=costs) for index in range(2)]
     assert [[row['file'] for row in shard] for shard in shards] == [
         ['AST.cpp', 'Fast.cpp', 'Tiny.cpp'], ['Parser.cpp', 'Short.cpp']]
@@ -54,19 +54,3 @@ def test_relocated_partition_gate_requires_all_current_inputs_and_every_action(t
     else:
         assert (call()['status']=='PASS' and call()['analyzed_variants']==3 and
                 call()['partitions']==FULL_PARTITIONS)
-
-
-def test_compiler_and_native_budgets_follow_actual_source_ownership(tmp_path):
-    from scripts.objc3c_toolchain.implementation_analysis import translation_unit_timeout
-    source=tmp_path/'out/toolchains/objc3-development/src'
-    policy={'translation_unit_timeout_seconds':600,'maintained_translation_unit_timeout_seconds':3600,
-            'translation_unit_timeout_overrides_seconds':{
-                'native/objc3c/src/clang_foundation/interface_emission_features.cpp':1800}}
-    compiler={'owner':'maintained-clang','file':str(source/'clang/lib/AST/ASTImporter.cpp')}
-    native={'owner':'frontend','file':str(tmp_path/'native/objc3c/src/clang_foundation/interface_emission_features.cpp')}
-    assert translation_unit_timeout(policy,compiler,source)==3600
-    assert translation_unit_timeout(policy,native,source)==1800
-    native['owner']='standalone-runtime'
-    assert translation_unit_timeout(policy,native,source)==600
-    with pytest.raises(ValueError,match='escaped'):
-        translation_unit_timeout(policy,{'owner':'maintained-clang','file':'/unowned/ASTImporter.cpp'},source)

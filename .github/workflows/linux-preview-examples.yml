@@ -8,7 +8,11 @@ on:
       - "docs/tutorials/getting_started.md"
       - "docs/tutorials/build_run_verify.md"
       - "docs/tutorials/log_summary.md"
+      - "docs/tutorials/collections_text.md"
+      - "docs/tutorials/objc2_swift_cpp_comparison.md"
       - "showcase/log-summary/**"
+      - "showcase/collections-text/**"
+      - "showcase/parcel-quotes/**"
       - ".github/workflows/linux-preview-examples.yml"
 permissions:
   contents: read
@@ -20,7 +24,6 @@ jobs:
     name: Published preview examples (${{ matrix.arch }})
     runs-on: ${{ matrix.arch == 'aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container: debian:13
-    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -39,6 +42,9 @@ jobs:
           apt-get install -y --no-install-recommends ca-certificates curl python3
           tag=$(python3 -c 'import json; print(json.load(open("docs/releases/preview-manifest.json"))["tag"])')
           archive="objc3-sdk-$tag-linux-$ARCH.tar.zst"
+          checksum=$(python3 -B -c 'import json, sys
+          from scripts.objc3c_toolchain.release_install import published_archive
+          print(published_archive(json.load(open("docs/releases/preview-manifest.json")), "linux-" + sys.argv[1])["sha256"])' "$ARCH")
           downloads=$(mktemp -d)
           for file in "$archive" linux-release.json SHA256SUMS install-linux.sh install-sdk.py; do
             curl --fail --location --silent --show-error --retry 3 \
@@ -48,14 +54,13 @@ jobs:
           cmp docs/releases/preview-manifest.json "$downloads/linux-release.json"
           cd "$downloads"
           sha256sum --check --ignore-missing SHA256SUMS
-          checksum=$(awk -v archive="$archive" '$2 == archive { print $1 }' SHA256SUMS)
           sh install-linux.sh --provision --archive "$archive" --sha256 "$checksum" --root /opt/objc3c
       - name: Run the documented examples outside the checkout
         shell: bash
         run: |
           source /opt/objc3c/activate.sh
           scratch=$(mktemp -d)
-          cp -R showcase/log-summary "$scratch/"
+          cp -R showcase/log-summary showcase/collections-text showcase/parcel-quotes "$scratch/"
           awk '/^cat > hello[.]objc3 / { code = 1 } code && /^\x60\x60\x60/ { exit } code' \
             docs/tutorials/getting_started.md > "$scratch/hello.sh"
           test -s "$scratch/hello.sh"
@@ -63,3 +68,5 @@ jobs:
           bash -e hello.sh > output.txt
           printf 'Hello from Objective-C 3.0.\nDone.\n' | cmp - output.txt
           sh log-summary/verify.sh
+          env -u LD_LIBRARY_PATH sh collections-text/verify.sh
+          env -u LD_LIBRARY_PATH sh parcel-quotes/verify.sh

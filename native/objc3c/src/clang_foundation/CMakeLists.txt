@@ -227,7 +227,6 @@ if (BUILD_TESTING)
   target_link_libraries(objc3_opaque_storage_transaction_test PRIVATE objc3_runtime_services)
   target_link_options(objc3_opaque_storage_transaction_test PRIVATE "LINKER:--wrap=_Znwm")
   objc3c_add_frontend_test(NAME objc3_opaque_storage_transaction COMMAND objc3_opaque_storage_transaction_test)
-  set_tests_properties(objc3_opaque_storage_transaction PROPERTIES TIMEOUT 20)
   add_executable(objc3_assertion_control_test ../../tests/assertion_control_test.cpp)
   objc3c_add_frontend_test(NAME objc3_assertion_control COMMAND objc3_assertion_control_test)
   set_tests_properties(objc3_assertion_control PROPERTIES WILL_FAIL TRUE)
@@ -263,7 +262,6 @@ if (BUILD_TESTING)
   target_link_options(objc3_stdlib_map_count_test PRIVATE "LINKER:--wrap=_Znwm")
   target_link_libraries(objc3_stdlib_map_count_test PRIVATE objc3_runtime_services)
   objc3c_add_frontend_test(NAME objc3_stdlib_map_count COMMAND objc3_stdlib_map_count_test)
-  set_tests_properties(objc3_stdlib_map_count PROPERTIES TIMEOUT 20)
   add_executable(objc3_sdk_identity_test ../../../../tests/clang_foundation/sdk_identity_test.cpp)
   target_include_directories(objc3_sdk_identity_test SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_sdk_identity_test PRIVATE objc3c_clang_foundation)
@@ -374,9 +372,16 @@ if (BUILD_TESTING)
   find_library(_c_inline_objc_runtime NAMES objc
     PATHS ${_c_inline_runtime_paths} NO_DEFAULT_PATH NO_CACHE REQUIRED)
   set(_c_inline_link_flags "${CMAKE_CXX_FLAGS} ${CMAKE_EXE_LINKER_FLAGS}")
+  if(OBJC3C_COMPILER_INSTRUMENTATION_PROFILE)
+    get_target_property(_profile_link_options objc3c_build_defaults INTERFACE_LINK_OPTIONS)
+    list(JOIN _profile_link_options " " _profile_link_flags)
+    string(APPEND _c_inline_link_flags " ${_profile_link_flags}")
+  endif()
   string(REPLACE "\\" "\\\\" _c_inline_link_flags "${_c_inline_link_flags}")
   string(REPLACE "\"" "\\\"" _c_inline_link_flags "${_c_inline_link_flags}")
   string(REPLACE "\n" "\\n" _c_inline_link_flags "${_c_inline_link_flags}")
+  target_compile_definitions(objc3_interface_import_test PRIVATE
+    OBJC3_INTERFACE_TEST_OBJC_LIBRARY="${_c_inline_objc_runtime}")
   target_compile_definitions(objc3_c_inline_provider_test PRIVATE
     OBJC3_C_INLINE_TEST_LINKER="${CMAKE_CXX_COMPILER}"
     OBJC3_C_INLINE_TEST_OBJC_LIBRARY="${_c_inline_objc_runtime}"
@@ -384,7 +389,6 @@ if (BUILD_TESTING)
     OBJC3_C_INLINE_TEST_LINK_FLAGS="${_c_inline_link_flags}")
   add_dependencies(objc3_c_inline_provider_test objc3_runtime_services)
   objc3c_add_frontend_test(NAME objc3_c_inline_provider COMMAND objc3_c_inline_provider_test)
-  set_tests_properties(objc3_c_inline_provider PROPERTIES TIMEOUT 90)
   add_executable(objc3_standard_library_identity_test
     ../../../../tests/clang_foundation/standard_library_identity_test.cpp)
   target_include_directories(objc3_standard_library_identity_test SYSTEM PRIVATE
@@ -392,7 +396,6 @@ if (BUILD_TESTING)
   target_link_libraries(objc3_standard_library_identity_test PRIVATE objc3c_clang_foundation)
   objc3c_link_clang_components(objc3_standard_library_identity_test clangTooling)
   objc3c_add_frontend_test(NAME objc3_standard_library_identity COMMAND objc3_standard_library_identity_test)
-  set_tests_properties(objc3_standard_library_identity PROPERTIES TIMEOUT 30)
   add_executable(objc3_standard_library_provider_test
     ../../../../tests/clang_foundation/standard_library_provider_test.cpp)
   add_executable(objc3_standard_library_customization_provider_test
@@ -497,7 +500,7 @@ if (BUILD_TESTING)
         COMMAND objc3_native_standard_owned_payload_provider_test
           "${_owned_standard}" "${_owned_mode}" "${_owned_optimization}")
       set_tests_properties("${_owned_name}" PROPERTIES
-        LABELS "native;standard-library;ownership;extended" TIMEOUT 300)
+        LABELS "native;standard-library;ownership;extended")
     endforeach()
   endforeach()
   target_compile_definitions(objc3_native_mrc_record_payload_provider_test PRIVATE
@@ -507,49 +510,43 @@ if (BUILD_TESTING)
   objc3c_add_frontend_test(NAME objc3_native_deduced_group_provider
     COMMAND objc3_native_deduced_group_provider_test)
   set_tests_properties(objc3_native_deduced_group_provider PROPERTIES
-    LABELS "native;task-group;extended" TIMEOUT 300)
+    LABELS "native;task-group;extended")
   objc3c_add_frontend_test(NAME objc3_native_emission_policy_provider
     COMMAND objc3_native_emission_policy_provider_test)
   set_tests_properties(objc3_native_emission_policy_provider PROPERTIES
-    LABELS "native;emission-policy;extended" TIMEOUT 300)
+    LABELS "native;emission-policy;extended")
   objc3c_add_frontend_test(NAME objc3_native_mrc_record_payload_provider
     COMMAND objc3_native_mrc_record_payload_provider_test)
   set_tests_properties(objc3_native_mrc_record_payload_provider PROPERTIES
-    LABELS "native;mrc;carrier;extended" TIMEOUT 300)
+    LABELS "native;mrc;carrier;extended")
   objc3c_add_frontend_test(NAME objc3_native_storage_lifetime_provider
     COMMAND objc3_native_storage_lifetime_provider_test)
   set_tests_properties(objc3_native_storage_lifetime_provider PROPERTIES
-    LABELS "native;lifetime;extended" TIMEOUT 300)
+    LABELS "native;lifetime;extended")
   objc3c_add_frontend_test(NAME objc3_native_diagnostic_contract_provider
     COMMAND objc3_native_diagnostic_contract_provider_test)
   set_tests_properties(objc3_native_diagnostic_contract_provider PROPERTIES
-    LABELS "native;publication;extended" TIMEOUT 300)
+    LABELS "native;publication;extended")
   objc3c_add_frontend_test(NAME objc3_native_union_template_provider
     COMMAND objc3_native_union_template_provider_test)
   set_tests_properties(objc3_native_union_template_provider PROPERTIES
-    LABELS "native;publication;extended" TIMEOUT 300)
+    LABELS "native;publication;extended")
   objc3c_add_frontend_test(NAME objc3_native_abi_tag_provider
     COMMAND objc3_native_abi_tag_provider_test)
   set_tests_properties(objc3_native_abi_tag_provider PROPERTIES
-    LABELS "native;publication;extended" TIMEOUT 300)
+    LABELS "native;publication;extended")
   objc3c_add_frontend_test(NAME objc3_native_indirect_family_provider
     COMMAND objc3_native_indirect_family_provider_test)
   set_tests_properties(objc3_native_indirect_family_provider PROPERTIES
-    LABELS "native;ownership;extended" TIMEOUT 300)
+    LABELS "native;ownership;extended")
   objc3c_add_frontend_test(NAME objc3_native_typestate_provider
     COMMAND objc3_native_typestate_provider_test)
   set_tests_properties(objc3_native_typestate_provider PROPERTIES
-    LABELS "native;publication;extended" TIMEOUT 300)
+    LABELS "native;publication;extended")
   objc3c_add_frontend_test(NAME objc3_native_friend_template_provider
     COMMAND objc3_native_friend_template_provider_test)
   set_tests_properties(objc3_native_friend_template_provider PROPERTIES
-    LABELS "native;publication;extended" TIMEOUT 300)
-  set(_block_binding_timeout 300)
-  if(OBJC3C_SOURCE_COVERAGE)
-    # Profiled builds run both the frontend and the instrumented compiler for
-    # each ownership/standard mode, including interface and runtime checks.
-    set(_block_binding_timeout 900)
-  endif()
+    LABELS "native;publication;extended")
   foreach(_block_cxx IN ITEMS 20 23)
     foreach(_block_mode IN ITEMS arc mrc)
       if(_block_mode STREQUAL "arc")
@@ -561,87 +558,81 @@ if (BUILD_TESTING)
       objc3c_add_frontend_test(NAME "${_block_test}"
         COMMAND objc3_native_block_binding_provider_test "c++${_block_cxx}" "${_block_ownership}")
       set_tests_properties("${_block_test}" PROPERTIES
-        LABELS "native;ownership;concurrency;extended" TIMEOUT "${_block_binding_timeout}")
+        LABELS "native;ownership;concurrency;extended")
     endforeach()
   endforeach()
   objc3c_add_frontend_test(NAME objc3_native_deduction_guide_provider
     COMMAND objc3_native_deduction_guide_provider_test)
   set_tests_properties(objc3_native_deduction_guide_provider PROPERTIES
-    LABELS "native;publication;extended" TIMEOUT 300)
+    LABELS "native;publication;extended")
   objc3c_add_frontend_test(NAME objc3_native_explicit_specifier_provider
     COMMAND objc3_native_explicit_specifier_provider_test)
   set_tests_properties(objc3_native_explicit_specifier_provider PROPERTIES
-    LABELS "native;publication;extended" TIMEOUT 300)
+    LABELS "native;publication;extended")
   objc3c_add_frontend_test(NAME objc3_native_object_policy_provider
     COMMAND objc3_native_object_policy_provider_test)
   set_tests_properties(objc3_native_object_policy_provider PROPERTIES
-    LABELS "native;publication;interop;ownership;extended" TIMEOUT 300)
+    LABELS "native;publication;interop;ownership;extended")
   objc3c_add_frontend_test(NAME objc3_native_availability_provider
     COMMAND objc3_native_availability_provider_test)
   set_tests_properties(objc3_native_availability_provider PROPERTIES
-    LABELS "native;publication;interop;ownership;extended" TIMEOUT 300)
+    LABELS "native;publication;interop;ownership;extended")
   objc3c_add_frontend_test(NAME objc3_native_object_expression_provider
     COMMAND objc3_native_object_expression_provider_test)
   set_tests_properties(objc3_native_object_expression_provider PROPERTIES
-    LABELS "native;publication;interop;ownership;extended" TIMEOUT 300)
+    LABELS "native;publication;interop;ownership;extended")
   objc3c_add_frontend_test(NAME objc3_native_external_binding_provider
     COMMAND objc3_native_external_binding_provider_test)
   set_tests_properties(objc3_native_external_binding_provider PROPERTIES
-    LABELS "native;publication;interop;extended" TIMEOUT 300)
+    LABELS "native;publication;interop;extended")
   objc3c_add_frontend_test(NAME objc3_native_lifetime_annotation_provider
     COMMAND objc3_native_lifetime_annotation_provider_test)
   set_tests_properties(objc3_native_lifetime_annotation_provider PROPERTIES
-    LABELS "native;publication;ownership;extended" TIMEOUT 300)
+    LABELS "native;publication;ownership;extended")
   objc3c_add_frontend_test(NAME objc3_native_function_effect_provider
     COMMAND objc3_native_function_effect_provider_test)
   set_tests_properties(objc3_native_function_effect_provider PROPERTIES
-    LABELS "native;publication;extended" TIMEOUT 300)
+    LABELS "native;publication;extended")
   foreach(_boundary_standard IN ITEMS 20 23)
     foreach(_boundary_mode IN ITEMS 1 2)
       set(_boundary_test "objc3_native_boundary_resource_provider_cxx${_boundary_standard}_${_boundary_mode}")
       objc3c_add_frontend_test(NAME "${_boundary_test}"
         COMMAND objc3_native_boundary_resource_provider_test "c++${_boundary_standard}" "${_boundary_mode}")
       set_tests_properties("${_boundary_test}" PROPERTIES
-        LABELS "native;ownership;isolation;extended" TIMEOUT 300)
+        LABELS "native;ownership;isolation;extended")
     endforeach()
   endforeach()
   objc3c_add_frontend_test(NAME objc3_native_function_policy_provider
     COMMAND objc3_native_function_policy_provider_test)
-  set_tests_properties(objc3_native_function_policy_provider PROPERTIES TIMEOUT 300)
   objc3c_add_frontend_test(NAME objc3_native_actor_receiver_provider
     COMMAND objc3_native_actor_receiver_provider_test)
-  set_tests_properties(objc3_native_actor_receiver_provider PROPERTIES TIMEOUT 300)
   objc3c_add_frontend_test(NAME objc3_native_c_overload_provider
     COMMAND objc3_native_c_overload_provider_test)
-  set_tests_properties(objc3_native_c_overload_provider PROPERTIES TIMEOUT 300)
   objc3c_add_frontend_test(NAME objc3_native_assembly_profile_provider
     COMMAND objc3_native_assembly_profile_provider_test)
-  set_tests_properties(objc3_native_assembly_profile_provider PROPERTIES TIMEOUT 300)
   objc3c_add_frontend_test(NAME objc3_native_control_flow_provider
     COMMAND objc3_native_control_flow_provider_test)
-  set_tests_properties(objc3_native_control_flow_provider PROPERTIES TIMEOUT 300)
   objc3c_add_frontend_test(NAME objc3_native_friend_class_provider
     COMMAND objc3_native_friend_class_provider_test)
   set_tests_properties(objc3_native_friend_class_provider PROPERTIES
-    LABELS "native;publication;extended" TIMEOUT 300)
+    LABELS "native;publication;extended")
   objc3c_add_frontend_test(NAME objc3_standard_library_customization_provider
     COMMAND objc3_standard_library_customization_provider_test)
   set_tests_properties(objc3_standard_library_customization_provider PROPERTIES
-    LABELS "native;standard-library;extended" TIMEOUT 900)
+    LABELS "native;standard-library;extended")
   objc3c_add_frontend_test(NAME objc3_standard_library_provider COMMAND objc3_standard_library_provider_test)
-  set_tests_properties(objc3_standard_library_provider PROPERTIES TIMEOUT 300)
   objc3c_add_frontend_test(NAME objc3_standard_library_no_rtti_exceptions
     COMMAND objc3_standard_library_provider_test -fno-exceptions -fno-rtti)
   set_tests_properties(objc3_standard_library_no_rtti_exceptions PROPERTIES
-    LABELS "native;standard-library;extended" TIMEOUT 300)
+    LABELS "native;standard-library;extended")
   objc3c_add_frontend_test(NAME objc3_standard_library_assertions
     COMMAND objc3_standard_library_provider_test -D_GLIBCXX_ASSERTIONS=1)
   set_tests_properties(objc3_standard_library_assertions PROPERTIES
-    LABELS "native;standard-library;extended" TIMEOUT 600)
+    LABELS "native;standard-library;extended")
   objc3c_add_frontend_test(NAME objc3_standard_library_libstdcxx_debug
     COMMAND objc3_standard_library_provider_test -stdlib=libstdc++ -D_GLIBCXX_DEBUG=1)
   set_tests_properties(objc3_standard_library_libstdcxx_debug PROPERTIES
-    LABELS "native;standard-library;extended" TIMEOUT 600)
+    LABELS "native;standard-library;extended")
   # Keep synchronization independently scheduled; combining both package
   # inventories approaches the baseline timeout before compiler instrumentation.
   objc3c_add_frontend_test(NAME objc3_standard_library_synchronization
@@ -653,7 +644,7 @@ if (BUILD_TESTING)
   set_tests_properties(objc3_standard_library_synchronization
     objc3_standard_library_synchronization_no_rtti_exceptions
     objc3_standard_library_synchronization_assertions PROPERTIES
-    LABELS "native;standard-library;extended" TIMEOUT 300)
+    LABELS "native;standard-library;extended")
   set(OBJC3_TEST_LIBCXX_ROOT "" CACHE PATH
     "Optional libc++ installation for native standard-library interoperability tests")
   if(OBJC3_TEST_LIBCXX_ROOT)
@@ -666,19 +657,19 @@ if (BUILD_TESTING)
         -stdlib=libc++ -nostdinc++ -isystem "${OBJC3_TEST_LIBCXX_ROOT}/include/c++/v1"
         "-L${OBJC3_TEST_LIBCXX_ROOT}/lib" "-Wl,-rpath,${OBJC3_TEST_LIBCXX_ROOT}/lib")
     set_tests_properties(objc3_standard_library_libcxx PROPERTIES
-      LABELS "native;standard-library;extended" TIMEOUT 600)
+      LABELS "native;standard-library;extended")
     objc3c_add_frontend_test(NAME objc3_standard_library_libcxx_synchronization
       COMMAND objc3_standard_library_provider_test --synchronization --thread-annotations
         -stdlib=libc++ -nostdinc++ -isystem "${OBJC3_TEST_LIBCXX_ROOT}/include/c++/v1"
         "-L${OBJC3_TEST_LIBCXX_ROOT}/lib" "-Wl,-rpath,${OBJC3_TEST_LIBCXX_ROOT}/lib")
     set_tests_properties(objc3_standard_library_libcxx_synchronization PROPERTIES
-      LABELS "native;standard-library;extended" TIMEOUT 600)
+      LABELS "native;standard-library;extended")
     objc3c_add_frontend_test(NAME objc3_standard_library_libcxx_customizations
       COMMAND objc3_standard_library_customization_provider_test
         -stdlib=libc++ -nostdinc++ -isystem "${OBJC3_TEST_LIBCXX_ROOT}/include/c++/v1"
         "-L${OBJC3_TEST_LIBCXX_ROOT}/lib" "-Wl,-rpath,${OBJC3_TEST_LIBCXX_ROOT}/lib")
     set_tests_properties(objc3_standard_library_libcxx_customizations PROPERTIES
-      LABELS "native;standard-library;extended" TIMEOUT 900)
+      LABELS "native;standard-library;extended")
   endif()
   add_executable(objc3_borrowed_pointers_test
     ../../../../tests/clang_foundation/borrowed_pointers_test.cpp)
@@ -735,7 +726,7 @@ if (BUILD_TESTING)
   objc3c_add_frontend_test(NAME objc3_standard_library_specializations
     COMMAND objc3_interface_emitter_test standard-library-specializations)
   set_tests_properties(objc3_standard_library_headers objc3_standard_library_specializations
-    PROPERTIES LABELS "native;standard-library;extended" TIMEOUT 1800)
+    PROPERTIES LABELS "native;standard-library;extended")
   add_executable(objc3_isolation_contracts_test
     ../../../../tests/clang_foundation/isolation_contracts_test.cpp)
   target_include_directories(objc3_isolation_contracts_test SYSTEM PRIVATE
@@ -758,7 +749,6 @@ if (BUILD_TESTING)
       set(_provenance_name "objc3_native_global_provenance_${_provenance_standard}_${_provenance_ownership}")
       objc3c_add_frontend_test(NAME "${_provenance_name}"
         COMMAND objc3_native_global_provenance_test "${_provenance_argument}" "${_provenance_ownership}")
-      set_tests_properties("${_provenance_name}" PROPERTIES TIMEOUT 180)
     endforeach()
   endforeach()
   add_executable(objc3_explicit_capture_lists_test
@@ -850,7 +840,6 @@ if (BUILD_TESTING)
   target_link_options(objc3_text_scalar_boundary_test PRIVATE "LINKER:--wrap=_Znwm")
   target_link_libraries(objc3_text_scalar_boundary_test PRIVATE objc3_runtime_services)
   objc3c_add_frontend_test(NAME objc3_text_scalar_boundary COMMAND objc3_text_scalar_boundary_test)
-  set_tests_properties(objc3_text_scalar_boundary PROPERTIES TIMEOUT 20)
   add_executable(objc3_text_file_cli ../../tests/text_file_cli.cpp)
   target_link_libraries(objc3_text_file_cli PRIVATE objc3_runtime_services)
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
@@ -858,7 +847,6 @@ if (BUILD_TESTING)
     COMMAND "${Python3_EXECUTABLE}" -B
       "${CMAKE_CURRENT_SOURCE_DIR}/../../../../tests/clang_foundation/text_file_cli_test.py"
       "$<TARGET_FILE:objc3_text_file_cli>")
-  set_tests_properties(objc3_text_file_cli PROPERTIES TIMEOUT 30)
 
 endif()
 
@@ -873,37 +861,30 @@ if(BUILD_TESTING)
     OBJC3_META_TEST_OBJC_LIBRARY="${_c_inline_objc_runtime}"
     OBJC3_META_TEST_RUNTIME_HEADERS="${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public")
   objc3c_add_frontend_test(NAME objc3_meta_compilation COMMAND objc3_meta_compilation_test)
-  set_tests_properties(objc3_meta_compilation PROPERTIES TIMEOUT 180)
   objc3c_add_frontend_test(NAME objc3_meta_cli TARGET objc3c
     COMMAND "${Python3_EXECUTABLE}" -B "${_objc3_repo}/tests/clang_foundation/verify-meta-cli.py" "$<TARGET_FILE:objc3c>")
-  set_tests_properties(objc3_meta_cli PROPERTIES TIMEOUT 90)
   add_executable(objc3_meta_program_test "${_objc3_repo}/tests/clang_foundation/meta_program_test.cpp")
   target_include_directories(objc3_meta_program_test SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_meta_program_test PRIVATE objc3c_clang_foundation)
   objc3c_add_frontend_test(NAME objc3_meta_program COMMAND objc3_meta_program_test)
-  set_tests_properties(objc3_meta_program PROPERTIES TIMEOUT 20)
   add_executable(objc3_meta_package_test "${_objc3_repo}/tests/clang_foundation/meta_package_test.cpp")
   target_include_directories(objc3_meta_package_test SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_meta_package_test PRIVATE objc3c_clang_foundation)
   objc3c_add_frontend_test(NAME objc3_meta_package COMMAND objc3_meta_package_test)
-  set_tests_properties(objc3_meta_package PROPERTIES TIMEOUT 20)
   add_executable(objc3_native_weak_policy_test "${_objc3_repo}/tests/clang_foundation/native_weak_policy_test.cpp")
   target_include_directories(objc3_native_weak_policy_test SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_native_weak_policy_test PRIVATE objc3c_clang_foundation)
   objc3c_add_frontend_test(NAME objc3_native_weak_policy COMMAND objc3_native_weak_policy_test)
-  set_tests_properties(objc3_native_weak_policy PROPERTIES TIMEOUT 90)
   add_executable(objc3_native_transparent_union_test "${_objc3_repo}/tests/clang_foundation/native_transparent_union_test.cpp")
   target_include_directories(objc3_native_transparent_union_test SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_native_transparent_union_test PRIVATE objc3c_clang_foundation)
   objc3c_add_frontend_test(NAME objc3_native_transparent_union COMMAND objc3_native_transparent_union_test)
-  set_tests_properties(objc3_native_transparent_union PROPERTIES TIMEOUT 90)
   string(REPLACE ";" "," _objc3_test_codegen_backends "${LLVM_TARGETS_TO_BUILD}")
   add_executable(objc3_linux_codegen_targets_test "${_objc3_repo}/tests/clang_foundation/linux_codegen_targets_test.cpp")
   target_include_directories(objc3_linux_codegen_targets_test SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_linux_codegen_targets_test PRIVATE objc3c_clang_foundation)
   target_compile_definitions(objc3_linux_codegen_targets_test PRIVATE OBJC3_TEST_CODEGEN_BACKENDS="${_objc3_test_codegen_backends}")
   objc3c_add_frontend_test(NAME objc3_linux_codegen_targets COMMAND objc3_linux_codegen_targets_test)
-  set_tests_properties(objc3_linux_codegen_targets PROPERTIES TIMEOUT 90)
   add_executable(objc3_native_public_async_syntax_test "${_objc3_repo}/tests/clang_foundation/native_public_async_syntax_test.cpp")
   target_include_directories(objc3_native_public_async_syntax_test SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_native_public_async_syntax_test PRIVATE objc3c_clang_foundation)
@@ -916,25 +897,20 @@ if(BUILD_TESTING)
     OBJC3_PUBLIC_ASYNC_LINK_FLAGS="${_c_inline_link_flags}")
   add_dependencies(objc3_native_public_async_syntax_test objc3_runtime_services)
   objc3c_add_frontend_test(NAME objc3_native_public_async_syntax COMMAND objc3_native_public_async_syntax_test)
-  set_tests_properties(objc3_native_public_async_syntax PROPERTIES TIMEOUT 180)
   add_executable(objc3_native_aliasing_policy_test "${_objc3_repo}/tests/clang_foundation/native_aliasing_policy_test.cpp")
   target_include_directories(objc3_native_aliasing_policy_test SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_native_aliasing_policy_test PRIVATE objc3c_clang_foundation)
   objc3c_add_frontend_test(NAME objc3_native_aliasing_policy COMMAND objc3_native_aliasing_policy_test)
-  set_tests_properties(objc3_native_aliasing_policy PROPERTIES TIMEOUT 90)
   add_executable(objc3_diagnostic_edits_test "${_objc3_repo}/tests/clang_foundation/diagnostic_edits_test.cpp")
   target_include_directories(objc3_diagnostic_edits_test SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_diagnostic_edits_test PRIVATE objc3c_frontend_v2)
   objc3c_add_frontend_test(NAME objc3_diagnostic_edits COMMAND objc3_diagnostic_edits_test)
-  set_tests_properties(objc3_diagnostic_edits PROPERTIES TIMEOUT 90)
   objc3c_add_frontend_test(NAME objc3_diagnostic_cli TARGET objc3c
     COMMAND "${Python3_EXECUTABLE}" "${_objc3_repo}/tests/clang_foundation/diagnostic_cli_test.py" --driver "$<TARGET_FILE:objc3c>")
-  set_tests_properties(objc3_diagnostic_cli PROPERTIES TIMEOUT 90)
   add_executable(objc3_native_anonymous_factory_test "${_objc3_repo}/tests/clang_foundation/native_anonymous_factory_test.cpp")
   target_include_directories(objc3_native_anonymous_factory_test SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_native_anonymous_factory_test PRIVATE objc3c_clang_foundation)
   objc3c_add_frontend_test(NAME objc3_native_anonymous_factory COMMAND objc3_native_anonymous_factory_test)
-  set_tests_properties(objc3_native_anonymous_factory PROPERTIES TIMEOUT 90)
   objc3c_write_frontend_test_inventory()
   get_property(_custom_compile_rows GLOBAL PROPERTY OBJC3C_CUSTOM_COMPILE_ROWS)
   list(JOIN _custom_compile_rows ",\n" _custom_compile_json)

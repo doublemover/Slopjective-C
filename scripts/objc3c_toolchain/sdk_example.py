@@ -30,7 +30,7 @@ _verified_sdks: ContextVar[dict[Path, str]] = ContextVar('verified_sdks', defaul
 def _audit_sdk(sdk: Path, env: dict | None = None) -> None:
     subprocess.run([os.sys.executable, '-B', str(sdk / 'share/objc3c/verify-sdk.py'), str(sdk)],
                    env=environment(sdk) if env is None else env,
-                   check=True, capture_output=True, timeout=120)
+                   check=True, capture_output=True)
 
 
 def verify_installed_sdk(sdk: Path, *, env: dict | None = None) -> None:
@@ -80,8 +80,12 @@ def write_json(path: Path, value: dict, *, compact: bool = False) -> None:
     temporary = Path(name)
     try:
         with os.fdopen(descriptor, 'w') as stream:
-            json.dump(value, stream, indent=None if compact else 2, sort_keys=True,
-                      separators=(',', ':') if compact else None)
+            if compact:
+                # The C encoder handles compact receipts with many command and
+                # dependency records without a Python write for every JSON token.
+                stream.write(json.dumps(value, sort_keys=True, separators=(',', ':')))
+            else:
+                json.dump(value, stream, indent=2, sort_keys=True)
             stream.write('\n')
         os.replace(temporary, path)
     finally:
@@ -227,7 +231,7 @@ def discover_lookup(sdk: Path, config: dict, flags: list[str], target: str,
                 stream.write(json.dumps(command) + '\n')
                 stream.flush()
                 subprocess.run(command, cwd=output, env=env, stdout=stream,
-                               stderr=subprocess.STDOUT, check=True, timeout=180)
+                               stderr=subprocess.STDOUT, check=True)
             discovered[str(source)] = {'tokens_sha256': digest(tokens),
                 'dependencies': hashes(dependencies(depfile, output))}
         return discovered
@@ -298,7 +302,7 @@ def build(sdk: Path, sources: Path, output: Path, optimization: str,
         # Invalidate the last successful record before invoking the compiler.
         # A failed build must never leave a reusable partial artifact group.
         report_path.unlink(missing_ok=True)
-        subprocess.run(argv, cwd=output, env=env, check=True, timeout=180)
+        subprocess.run(argv, cwd=output, env=env, check=True)
         tracked = dependencies(depfile, output) if depfile else []
         tracked.extend(Path(path) for path in inputs)
         stages[name] = {'key': key, 'argv': argv, 'reused': False,
@@ -354,14 +358,14 @@ def build(sdk: Path, sources: Path, output: Path, optimization: str,
     # the native linker. No timestamp or cached host-library assumption is used.
     subprocess.run([str(sdk / 'bin/clang++'), '--no-default-config', '--target=' + target,
                     '-fuse-ld=lld', str(consumer), str(obj), '-L' + str(sdk / 'lib'), *runtime_link_flags(sdk),
-                    '-Wl,-rpath,' + rpath, '-o', str(executable)], env=env, check=True, timeout=180)
+                    '-Wl,-rpath,' + rpath, '-o', str(executable)], env=env, check=True)
     link_seconds = time.monotonic() - tick
     run_env = dict(env)
     run_env.pop('LD_LIBRARY_PATH', None)
     # During SDK production the executable is copied into bin after building.
     if installed_layout:
         run_env['LD_LIBRARY_PATH'] = str(sdk / 'lib')
-    subprocess.run([str(executable)], env=run_env, check=True, timeout=30)
+    subprocess.run([str(executable)], env=run_env, check=True)
     if hashes(path for path in sources.rglob('*') if path.is_file()) != source_inputs:
         raise ValueError('sample sources changed during the build')
     for name, saved in stages.items():

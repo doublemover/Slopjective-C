@@ -8,8 +8,11 @@ import {
   validateDependencyRouting,
   validateNativeContainer,
   validateNativeGate,
+  validateNativePR,
   validateNativeRelease,
   validateOptionalLLVM,
+  validatePreviewArchiveCache,
+  validatePreviewArchiveWriter,
   validateQuickChecks,
   validateWorkflowContracts,
 } from "./workflow-contract.mjs";
@@ -17,7 +20,7 @@ import {
 const config = JSON.parse(await readFile(new URL("./adaptive-ci.json", import.meta.url), "utf8"));
 const workflows = Object.fromEntries(
   await Promise.all(
-    ["adaptive-maintenance.yml", ...config.suites.map((suite) => suite.workflow)].map(
+    ["adaptive-maintenance.yml", "native-assurance.yml", ...config.suites.map((suite) => suite.workflow)].map(
       async (name) => [
         name,
         await readFile(new URL(`../workflows/${name}`, import.meta.url), "utf8"),
@@ -34,6 +37,11 @@ const native = await readFile(
   new URL("../workflows/native-assurance.yml", import.meta.url),
   "utf8",
 );
+const nativePR = await readFile(new URL("../workflows/native-pr.yml", import.meta.url), "utf8");
+const previewArchiveCache = await readFile(
+  new URL("../actions/linux-preview-archive-cache/action.yml", import.meta.url),
+  "utf8",
+);
 const implementation = await readFile(
   new URL("../workflows/implementation-analysis.yml", import.meta.url),
   "utf8",
@@ -44,6 +52,10 @@ const release = await readFile(
 );
 const llvmOptional = await readFile(
   new URL("../workflows/llvm-assurance.yml", import.meta.url),
+  "utf8",
+);
+const previewCalibration = await readFile(
+  new URL("../workflows/linux-preview-calibration.yml", import.meta.url),
   "utf8",
 );
 const toolingQuick = await readFile(
@@ -78,6 +90,71 @@ for (const name of ["planning-lint.yml", "adaptive-policy-checks.yml"])
   );
 test("every native, quick and planning owner reuses pinned dependency caches", () => {
   validateDependencyRouting(dependencyWorkflows);
+});
+test("native PR gate verifies the exact merge and retains failure evidence", () => {
+  validateNativePR(nativePR);
+  for (const edit of [
+    (workflow) => {
+      workflow.on.pull_request = { paths: ["native/**"] };
+    },
+    (workflow) => {
+      workflow.permissions.contents = "write";
+    },
+    (workflow) => {
+      workflow.jobs["native-pr"]["continue-on-error"] = true;
+    },
+    (workflow) => {
+      workflow.jobs["native-pr"].steps.find((step) => step.id === "run").if = "false";
+    },
+    (workflow) => {
+      workflow.jobs["native-pr"].steps.find((step) => step.uses?.startsWith("actions/upload-artifact@"))
+        .with.name = "latest";
+    },
+    (workflow) => {
+      workflow.jobs["native-pr"].steps.push({ uses: "actions/cache/save@" + "a".repeat(40) });
+    },
+    (workflow) => {
+      workflow.jobs["native-pr"].steps.find((step) => step.id === "preview-manifest").run =
+        "cp docs/releases/preview-manifest.json /tmp/manifest.json";
+    },
+    (workflow) => { workflow.jobs["native-pr"].if = "always()"; },
+    (workflow) => { workflow.jobs["native-pr"].needs = "another-runner"; },
+    (workflow) => {
+      const steps = workflow.jobs["native-pr"].steps;
+      steps.splice(steps.findIndex((step) => step.uses?.startsWith("actions/download-artifact@")), 1);
+    },
+    (workflow) => { workflow.jobs["native-pr"].steps.at(-1).if = "false"; },
+  ]) {
+    const workflow = yaml.load(nativePR);
+    edit(workflow);
+    assert.throws(() => validateNativePR(yaml.dump(workflow)), /Native PR gate must/);
+  }
+});
+
+test("published SDK cache binds the archive digest and limits cache writes to manual jobs", () => {
+  validatePreviewArchiveCache(previewArchiveCache);
+  for (const edit of [
+    ([coordinates]) => { coordinates.run = "echo key=linux-preview >> $GITHUB_OUTPUT"; },
+    ([, restore]) => { restore.with["restore-keys"] = "objc3-linux-preview"; },
+    ([, restore]) => { restore.uses = "actions/cache/restore@main"; },
+  ]) {
+    const action = yaml.load(previewArchiveCache);
+    edit(action.runs.steps);
+    assert.throws(() => validatePreviewArchiveCache(yaml.dump(action)), /Preview cache must restore exact/);
+  }
+  for (const [text, job] of [[llvmOptional, "installed-preview"], [previewCalibration, "calibration"]]) {
+    validatePreviewArchiveWriter(text, job);
+    for (const edit of [
+      (steps, writer) => { writer.if = "always()"; },
+      (steps, writer) => { writer.with.path = "out/"; },
+      (steps, writer) => { steps.unshift(...steps.splice(steps.indexOf(writer), 1)); },
+    ]) {
+      const workflow = yaml.load(text);
+      const steps = workflow.jobs[job].steps;
+      edit(steps, steps.find((step) => step.uses?.startsWith("actions/cache/save@")));
+      assert.throws(() => validatePreviewArchiveWriter(yaml.dump(workflow), job), /Preview cache must save admitted/);
+    }
+  }
 });
 test("workflow changes run the pinned actionlint and ShellCheck integration", () => {
   const workflow = yaml.load(dependencyWorkflows["adaptive-policy-checks.yml"]);
@@ -167,9 +244,33 @@ for (const fault of ["ambiguous default", "default skipped", "cache overlaps com
   });
 }
 
+for (const [command, fault] of [
+  ["scripts.objc3c_toolchain.llvm_installed_ir", "missing seal admission"],
+  ["scripts.objc3c_toolchain.semantic_source_feedback", "missing coverage qualification"],
+  [
+    "scripts.objc3c_toolchain.compiler_instrumentation",
+    "missing instrumentation graph verification",
+  ],
+]) {
+  test(`manual LLVM dispatch rejects ${fault}`, () => {
+    const workflow = yaml.load(llvmOptional);
+    const job = command.endsWith("llvm_installed_ir") ? "installed-preview" : "llvm-assurance";
+    const step = workflow.jobs[job].steps.find(({ run }) => run?.includes(command));
+    step.run = step.run.replace(
+      fault === "missing seal admission"
+        ? "--seal-sha256"
+        : fault === "missing coverage qualification"
+          ? "--coverage-qualification"
+          : command,
+      "changed-command",
+    );
+    assert.throws(() => validateOptionalLLVM(yaml.dump(workflow)));
+  });
+}
+
 for (const fault of [
   "missing PR",
-  "unbounded time",
+  "shortened job deadline",
   "hidden failure",
   "cold compiler build",
   "obsolete feedback",
@@ -177,7 +278,7 @@ for (const fault of [
   test(`quick PR checks reject ${fault}`, () => {
     const workflow = yaml.load(toolingQuick);
     if (fault === "missing PR") delete workflow.on.pull_request;
-    if (fault === "unbounded time") workflow.jobs.tooling["timeout-minutes"] = 360;
+    if (fault === "shortened job deadline") workflow.jobs.tooling["timeout-minutes"] = 15;
     if (fault === "hidden failure") workflow.jobs.tooling["continue-on-error"] = true;
     if (fault === "cold compiler build")
       workflow.jobs.tooling.steps.push({ run: "python -m scripts.objc3c_assurance run" });
@@ -349,14 +450,14 @@ for (const fault of [
     assert.throws(() => validateNativeRelease(yaml.dump(owner), yaml.dump(caller)));
   });
 }
-for (const fault of ["compiler overlaps transport", "implicit transport", "unbounded transport"]) {
+for (const fault of ["compiler overlaps transport", "implicit transport", "shortened transport deadline"]) {
   test(`artifact transport rejects ${fault}`, () => {
     const owner = yaml.load(native);
     if (fault === "compiler overlaps transport")
       owner.jobs["product-producer"].if = "needs.plan.outputs.native == 'true'";
     if (fault === "implicit transport") owner.jobs["diagnostic-transport"].if = "always()";
-    if (fault === "unbounded transport")
-      owner.jobs["diagnostic-transport"]["timeout-minutes"] = 360;
+    if (fault === "shortened transport deadline")
+      owner.jobs["diagnostic-transport"]["timeout-minutes"] = 15;
     assert.throws(() => validateNativeGate(yaml.dump(owner)));
   });
 }
@@ -401,7 +502,7 @@ for (const [fault, alter] of [
 for (const [name, workflowBefore, workflowAfter, releaseBefore, releaseAfter] of [
   ["cancelled cold build", "  cancel-in-progress: false", "  cancel-in-progress: true"],
   ["missing aggregate", "  gate:", "  renamed:"],
-  ["conditional aggregate", "    if: always()\n    needs:", "    if: success()\n    needs:"],
+  ["conditional aggregate", "    if: \"!cancelled()\"\n    needs:", "    if: success()\n    needs:"],
   ["automatic expensive PR", "on:\n", "on:\n  pull_request:\n"],
   [
     "missing release source",
@@ -422,7 +523,7 @@ test("native containers admit TSan personality and debugger process controls", a
   const llvm = await readFile(new URL("../workflows/llvm-assurance.yml", import.meta.url), "utf8");
   for (const [text, name] of [
     [native, "diagnostic-native"],
-    [workflows["adaptive-closeout.yml"], "compiler-closeout"],
+    [native, "product-producer"],
     [llvm, "llvm-assurance"],
   ]) {
     const job = yaml.load(text).jobs[name];
@@ -435,6 +536,13 @@ test("native containers admit TSan personality and debugger process controls", a
     ]) {
       assert.throws(() => validateNativeContainer({ ...job, container }));
     }
+  }
+});
+test("full native producers can start before the canonical plan artifact", () => {
+  for (const name of ["product-producer", "asan-foundation-producer", "independent-native", "coverage-producer"]) {
+    const owner = yaml.load(native);
+    owner.jobs[name].needs = "plan";
+    assert.throws(() => validateNativeGate(yaml.dump(owner)), /Independent Linux producers/);
   }
 });
 test("native workflow rejects a missing terminal dependency", () => {
@@ -457,7 +565,7 @@ for (const [name, before, after] of [
   ["missing aggregate", "  gate:", "  renamed:"],
   [
     "conditional aggregate",
-    "    if: always() && !inputs.diagnostic_core_only\n    needs:",
+    "    if: \"!cancelled() && !inputs.diagnostic_core_only\"\n    needs:",
     "    if: success()\n    needs:",
   ],
   ["automatic expensive PR", "on:\n", "on:\n  pull_request:\n"],
@@ -482,107 +590,45 @@ for (const [name, before, after] of [
 test("current cadence resolves to actual jobs and required workload/verification steps", async () => {
   await check();
 });
-for (const [name, mutate] of [
-  [
-    "dangling reference",
-    (files) => {
-      delete files["adaptive-closeout.yml"];
-    },
-  ],
-  [
-    "renamed job",
-    (files) => {
-      files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
-        "name: compiler-closeout",
-        "name: silently-renamed",
-      );
-    },
-  ],
-  [
-    "missing native command",
-    (files) => {
-      files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
-        "Build full native objc3c closeout surface",
-        "Tooling mocks only",
-      );
-    },
-  ],
-  [
-    "mutable source ref",
-    (files) => {
-      files["adaptive-maintenance.yml"] = files["adaptive-maintenance.yml"].replace(
-        "source_sha: ${{ needs.decide.outputs.source_sha }}",
-        "source_sha: main",
-      );
-    },
-  ],
-  [
-    "new cadence",
-    (files) => {
-      files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
-        "  workflow_call:",
-        "  schedule: []\n  workflow_call:",
-      );
-    },
-  ],
-  [
-    "conditional workload",
-    (files) => {
-      files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
-        "    timeout-minutes: 360",
-        "    if: false\n    timeout-minutes: 360",
-      );
-    },
-  ],
-  [
-    "failure normalized",
-    (files) => {
-      files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
-        "    timeout-minutes: 360",
-        "    continue-on-error: true\n    timeout-minutes: 360",
-      );
-    },
-  ],
-  [
-    "missing final verifier",
-    (files) => {
-      files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
-        "scripts.objc3c_assurance verify",
-        "echo pretending-to-verify",
-      );
-    },
-  ],
-  [
-    "missing coverage shard",
-    (files) => {
-      files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
-        "shard: [core, frontend-fuzz, source-coverage]",
-        "shard: [core, frontend-fuzz]",
-      );
-    },
-  ],
-  [
-    "duplicate matrix names",
-    (files) => {
-      files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
-        "shard: [core, frontend-fuzz, source-coverage]",
-        "shard: [core, core, source-coverage]",
-      );
-    },
-  ],
-  [
-    "periodic aggregate without prerequisites",
-    (files) => {
-      files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
-        "needs: compiler-closeout",
-        "needs: nonexistent",
-      );
-    },
-  ],
+const closeout = "adaptive-closeout.yml";
+const dispatcher = "adaptive-maintenance.yml";
+const canonical = "native-assurance.yml";
+for (const [name, target, mutate] of [
+  ["dangling closeout", closeout, null],
+  ["dangling native owner", canonical, null],
+  ["renamed terminal job", closeout, (workflow) => { workflow.jobs.gate.name = "renamed"; }],
+  ["missing source check", closeout, (workflow) => { workflow.jobs.source.steps[0].run = "true"; }],
+  ["mutable source ref", dispatcher, (workflow) => { workflow.jobs["run-closeout"].with.source_sha = "main"; }],
+  ["new dispatcher cadence", dispatcher, (workflow) => { workflow.on.schedule.push({ cron: "3 4 * * *" }); }],
+  ["dangling dispatcher cadence", dispatcher, (workflow) => { workflow.on.schedule = []; }],
+  ["new reusable cadence", closeout, (workflow) => { workflow.on.schedule = []; }],
+  ["conditional native owner", closeout, (workflow) => { workflow.jobs.native.if = "false"; }],
+  ["release-only work", closeout, (workflow) => { workflow.jobs.native.with.archive_install = true; }],
+  ["failure normalized", closeout, (workflow) => { workflow.jobs.gate["continue-on-error"] = true; }],
+  ["missing final verifier", closeout, (workflow) => { workflow.jobs.gate.steps[0].run = "true"; }],
+  ["substituted native result", closeout, (workflow) => { workflow.jobs.gate.steps[0].env.NATIVE_RESULT = "success"; }],
+  ["missing canonical coverage outcome", canonical, (workflow) => {
+    workflow.jobs.gate.needs = workflow.jobs.gate.needs.filter((job) => job !== "coverage-aggregate");
+  }],
+  ["wrong canonical periodic revision", canonical, (workflow) => {
+    const plan = workflow.jobs.plan.steps.find(({ run }) => run?.includes("--periodic-sha"));
+    plan.run = plan.run.replace('--periodic-sha "$GITHUB_SHA"', '--periodic-sha main');
+  }],
+  ["periodic aggregate without prerequisites", closeout, (workflow) => { workflow.jobs.gate.needs = ["source"]; }],
 ]) {
   test(`workflow contract rejects ${name}`, async () => {
     const files = { ...workflows };
-    mutate(files);
+    if (mutate === null) delete files[target];
+    else {
+      const value = yaml.load(files[target]);
+      mutate(value);
+      files[target] = yaml.dump(value);
+    }
     await assert.rejects(check(files));
   });
 }
+
+test("unreviewed PR callers cannot reach adaptive native work", () => {
+  const extra = `on: pull_request\njobs:\n  heavy:\n    uses: ./.github/workflows/adaptive-closeout.yml\n`;
+  assert.throws(() => validateNativeRelease(native, release, { "extra.yml": extra }), /admitted adaptive closeout/);
+});

@@ -27,6 +27,15 @@ inline constexpr const char *kNativeOwnershipContractSemantic =
 inline constexpr const char *kNativeIsolationContractSemantic =
     "objc3.isolation-contracts.v1";
 
+template <class ParameterInfo>
+inline bool IsCanonicalBorrowedParameter(ParameterInfo info) {
+  // Published preview foundations still expose borrowed data-pointer sugar.
+  // The new callable permission is available through the canonical parameter.
+  if constexpr (requires { info.isObjC3Borrowed(); })
+    return info.isObjC3Borrowed();
+  return false;
+}
+
 inline bool HasNativeConsumedCallable(const clang::Decl *declaration) {
   const auto *type = clang::getObjC3CallableFunctionType(declaration);
   if (type)
@@ -298,7 +307,8 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
                                       const clang::ASTContext &context,
                                       const std::string &position,
                                       unsigned depth = 0,
-                                      bool skip_retained_result = false) {
+                                      bool skip_retained_result = false,
+                                      bool borrowed_parameter = false) {
   if (type.isNull())
     return;
   if (depth > 256) {
@@ -309,6 +319,8 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
     AppendNativeContractField(out, position + ":nsobject-storage");
     AppendNativeContractField(out, ";nsobject-storage:v1;");
   }
+  // Record effective qualifiers before stripping sugar. An unannotated
+  // position contributes no field. Explicit _Null_unspecified remains visible.
   if (const auto nullability = type->getNullability()) {
     AppendNativeContractField(out, position + ":nullability");
     AppendNativeContractField(out, std::to_string(static_cast<unsigned>(*nullability)));
@@ -355,7 +367,7 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
                                     resource.Invalid->getInvalid(), context)
                               : "");
   }
-  if (clang::isObjC3BorrowedType(context, type))
+  if ((borrowed_parameter && !type->isReferenceType()) || clang::isObjC3BorrowedType(context, type))
     AppendNativeContractField(out, position + ":borrowed");
   type = type.getDesugaredType(context);
   if (const auto *optional =
@@ -373,7 +385,8 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
     if(type->isBlockPointerType() && HasNativeCppCarrierRuntimeType(type))
       AppendNativeContractField(out,";cxx-carrier-runtime:v2;");
     AppendNativeTypeContracts(out, type->getPointeeType(), context,
-                              position + ".pointee", depth + 1);
+                              position + ".pointee", depth + 1, false,
+                              borrowed_parameter && type->isReferenceType());
   } else if (const auto *member = type->getAs<clang::MemberPointerType>()) {
     AppendNativeTypeContracts(out, member->getPointeeType(), context,
                               position + ".pointee", depth + 1);
@@ -417,21 +430,24 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
       for (unsigned index = 0; index < prototype->getNumParams(); ++index) {
         const auto parameter =
             position + ".parameter[" + std::to_string(index) + "]";
+        const auto info = prototype->getExtParameterInfo(index);
+        const bool borrowed = IsCanonicalBorrowedParameter(info);
+        if (borrowed)
+          AppendNativeContractField(out, kBorrowedCallableParametersMarker);
         if (prototype->getObjC3FunctionEffects().Async &&
-            (prototype->isParamConsumed(index) ||
-             prototype->getExtParameterInfo(index).isCFConsumed()))
+            (prototype->isParamConsumed(index) || info.isCFConsumed()))
           AppendNativeContractField(out, ";async-consuming-ownership:v3;");
         AppendNativeTypeContracts(out, prototype->getParamType(index), context,
-                                  parameter, depth + 1);
-        const auto abi=prototype->getExtParameterInfo(index).getABI();
+                                  parameter, depth + 1, false, borrowed);
+        const auto abi=info.getABI();
         if (abi!=clang::ParameterABI::Ordinary) {
           AppendNativeContractField(out,";native-declaration-attributes:v6;");
           AppendNativeContractField(out,parameter+":parameter-abi:"+
               std::to_string(static_cast<unsigned>(abi)));
         }
-        if (prototype->getExtParameterInfo(index).isNoEscape())
+        if (info.isNoEscape())
           AppendNativeContractField(out, parameter + ":noescape");
-        if (prototype->getExtParameterInfo(index).isCFConsumed())
+        if (info.isCFConsumed())
           AppendNativeContractField(out, parameter + ":cf-consumed");
         if (prototype->isParamConsumed(index))
           AppendNativeContractField(out, parameter + ":ns-consumed");
@@ -468,9 +484,14 @@ inline void ReadNativeDeclarationContracts(const clang::NamedDecl *declaration,
   if (const auto *type = llvm::dyn_cast<clang::TypeDecl>(declaration))
     AppendNativeTypeContracts(ownership, context.getTypeDeclType(type), context,
                               "type");
-  if (const auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration))
-    AppendNativeTypeContracts(ownership, method->getObjC3FunctionType(),
-                              context, "type", 0, true);
+  if (const auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration)) {
+    const auto callable = method->getObjC3FunctionType();
+    if (callable.isNull())
+      AppendNativeTypeContracts(ownership, method->getReturnType(), context,
+                                "type.return");
+    else
+      AppendNativeTypeContracts(ownership, callable, context, "type", 0, true);
+  }
   if (const auto *property =
           llvm::dyn_cast<clang::ObjCPropertyDecl>(declaration))
     AppendNativeTypeContracts(ownership, property->getType(), context, "type");
@@ -499,9 +520,12 @@ inline void ReadNativeDeclarationContracts(const clang::NamedDecl *declaration,
     AppendNativeContractField(ownership, ";borrowed-receiver-results:v1;");
   if (declaration->hasAttr<clang::NSConsumesSelfAttr>())
     AppendNativeContractField(ownership, "ns-consumes-self");
+  const auto *prototype = clang::getObjC3CallableFunctionType(declaration);
   auto parameter = [&](const clang::ParmVarDecl *value, unsigned index) {
+    const bool borrowed = prototype && index < prototype->getNumParams() &&
+        IsCanonicalBorrowedParameter(prototype->getExtParameterInfo(index));
     AppendNativeTypeContracts(ownership, value->getType(), context,
-                              "parameter[" + std::to_string(index) + "]");
+                              "parameter[" + std::to_string(index) + "]", 0, false, borrowed);
     if (value->hasAttr<clang::NoEscapeAttr>())
       AppendNativeContractField(
           ownership, "parameter[" + std::to_string(index) + "]:noescape");

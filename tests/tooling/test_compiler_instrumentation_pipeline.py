@@ -1,9 +1,27 @@
 """A cached ordinary SDK cannot stand in for compiler-process qualification."""
+import json
 from pathlib import Path
 
 import pytest
 
 from scripts.objc3c_toolchain import compiler_instrumentation as compiler, linux_sdk
+
+
+def test_full_instrumentation_admission_requires_foundation_followup_tests(tmp_path, monkeypatch):
+    paths = {key: str(tmp_path / key) for key in ('build', 'stage', 'source')}
+    for path in paths.values():
+        Path(path).mkdir()
+    plan = {key: {} for key in ('configure', 'build', 'test', 'stage')}
+    plan['configure'].update(paths=paths, source_build_id='current')
+    plan['test']['follow_up_commands'] = [['native-unit-test']]
+    monkeypatch.setattr(compiler, 'build_plans', lambda *a, **kw: plan)
+    receipt = Path(paths['build']) / 'foundation-build-report.json'
+    receipt.write_text(json.dumps({'status': 'passed', 'source_identity': 'current',
+        'phases': [{'phase': phase, 'exit_code': 0} for phase in plan]}))
+    output = tmp_path / 'evidence'
+    with pytest.raises(ValueError, match='complete foundation'):
+        compiler.qualify(tmp_path, output)
+    assert not output.exists()
 
 
 def test_optional_sdk_profile_precedes_even_cached_ordinary_delivery(tmp_path, monkeypatch):

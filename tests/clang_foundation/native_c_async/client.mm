@@ -32,7 +32,23 @@ int recover_frame(id<NativeCError> error) __objc3_async {
 int nil_frame() __objc3_async {
   return __objc3_await [(NativeCAsyncWorker *)0 value:1];
 }
-int pool_frames(int *destroyed) __objc3_async { return __objc3_await native_c_pools(destroyed); }
+struct PoolGuard {
+  int &live;
+  int &finished;
+  PoolGuard(int &live, int &finished) : live(live), finished(finished) { ++live; }
+  PoolGuard(const PoolGuard &other) : PoolGuard(other.live, other.finished) {}
+  ~PoolGuard() { if (--live == 0) ++finished; }
+};
+int pool_frames(int *destroyed, int *live, int *finished, bool unwind) __objc3_async {
+  @autoreleasepool {
+    guard let local = Some(PoolGuard, PoolGuard(*live, *finished)) else { return -1; }
+    __objc3_defer { assert(local.live > 0 && local.finished == 0); }
+    int answer = __objc3_await native_c_pools(destroyed);
+    assert(local.live > 0 && local.finished == 0);
+    if (unwind) throw answer;
+    return answer;
+  }
+}
 int allocation_error() __objc3_async { return __objc3_await native_c_oom_parent(); }
 int foreign_error() __objc3_async { return __objc3_await native_c_roundtrip(-1); }
 struct native_c_pair pair_frame() __objc3_async {
@@ -83,10 +99,33 @@ int main() {
     // An unchecked message returning a zeroable scalar keeps Objective-C nil
     // semantics even when it is awaited through a native task.
     assert(nil_task.result() == 0);
-    int pool_destructions = 0;
-    auto pools = pool_frames(&pool_destructions).start(executor);
-    pools.wait();
-    assert(pools.result() == 42 && pool_destructions == 4);
+    for (bool unwind : {false, true}) {
+      int pool_destructions = 0, guard_live = 0, guard_finished = 0;
+      auto pools = pool_frames(&pool_destructions, &guard_live, &guard_finished,
+                              unwind).start(executor);
+      pools.wait();
+      bool caught = false;
+      try { assert(pools.result() == 42 && !unwind); }
+      catch (int value) { caught = value == 42; }
+      assert(caught == unwind && pool_destructions == 6);
+      assert(guard_live == 0 && guard_finished == 1);
+    }
+    int pool_destructions = 0, guard_live = 0, guard_finished = 0;
+    objc3_executor_t *manual = nullptr;
+    assert(objc3_executor_create(1, &manual) == OBJC3_SERVICE_OK);
+    auto cancelled = pool_frames(&pool_destructions, &guard_live, &guard_finished,
+                                 false).start(manual);
+    uint32_t pumped = 0;
+    assert(objc3_executor_pump(manual, 1, &pumped) == OBJC3_SERVICE_OK && pumped == 1);
+    assert(guard_live > 0 && guard_finished == 0);
+    cancelled.cancel();
+    assert(objc3_executor_pump(manual, 10000, &pumped) == OBJC3_SERVICE_OK);
+    cancelled.wait();
+    bool was_cancelled = false;
+    try { (void)cancelled.result(); }
+    catch (const objc3::task_cancelled &) { was_cancelled = true; }
+    assert(was_cancelled && guard_live == 0 && guard_finished == 1);
+    objc3_executor_release(manual);
     auto oom = allocation_error().start(executor);
     oom.wait();
     bool allocation_status = false;

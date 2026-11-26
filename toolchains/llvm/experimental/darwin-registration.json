@@ -1,0 +1,10 @@
+{
+  "schema": "objc3c.experimental-darwin-registration.v1",
+  "profile": "macos-arm64-registration-experimental",
+  "target": "arm64-apple-macos15.0",
+  "compiler_runtime_flag": "-fobjc-runtime=gnustep-2.99",
+  "runtime_abi": "objc3-darwin-registration-v1",
+  "inheritance": "stateless-super-v1",
+  "patch_sha256": "500c43e3d284826a8012d1081f393e3e15c8a353f8d579514ecd8a75c7332fd6",
+  "layout": "fixed-root-int-v1"
+}

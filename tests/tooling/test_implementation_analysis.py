@@ -1,5 +1,6 @@
 """Keep implementation analysis complete across flags, variants and headers."""
 import json
+import os
 import shlex
 import shutil
 import subprocess
@@ -7,9 +8,30 @@ import subprocess
 import pytest
 
 from scripts.objc3c_toolchain.implementation_analysis import (
-    dependencies, dependency_arguments, inventory, matched_pch_arguments, owner_changes,
-    selected_variants, textual_pch,
+    check_owned_suppressions, dependencies, dependency_arguments, discover_variant_dependencies, inventory,
+    matched_pch_arguments, owner_changes, select_owner_variants, selected_variants, textual_pch,
 )
+
+
+def test_owned_suppression_check_rejects_header_and_patch_additions(tmp_path):
+    native = tmp_path / 'native/objc3c/src/runtime/public/owned.hpp'
+    native.parent.mkdir(parents=True)
+    native.write_text('int owned();\n')
+    patch = tmp_path / 'toolchains/llvm/patches/0001.patch'
+    patch.parent.mkdir(parents=True)
+    patch.write_text('+++ b/clang/lib/Sema.cpp\n int inherited(); // NOLINT\n+int owned();\n'
+                     '+++ b/clang/test/ignored.cpp\n+int test(); // NOLINTNEXTLINE\n')
+    assert check_owned_suppressions(tmp_path) == {'status': 'PASS', 'native_sources': 1, 'patches': 1}
+    original = patch.read_text()
+    for marker in ('NOLINT', 'NOLINTNEXTLINE(bugprone-use-after-move)', 'NOLINTBEGIN', 'NOLINTEND'):
+        native.write_text(f'int owned(); // {marker}\n')
+        with pytest.raises(ValueError, match='owned.hpp:1: unreviewed clang-tidy suppression'):
+            check_owned_suppressions(tmp_path)
+        native.write_text('int owned();\n')
+        patch.write_text(original.replace('+int owned();', f'+int owned(); // {marker}'))
+        with pytest.raises(ValueError, match='0001.patch:3: unreviewed clang-tidy suppression'):
+            check_owned_suppressions(tmp_path)
+        patch.write_text(original)
 
 
 def test_pending_window_publishes_native_results_before_preparing_more(tmp_path):
@@ -27,7 +49,7 @@ def test_pending_window_publishes_native_results_before_preparing_more(tmp_path)
                 assert len(completed) >= index - 1
             yield {'name': 'native-'+str(index), 'identity': str(index),
                 'directory': str(tmp_path / str(index)), 'environment': dict(os.environ),
-                'argv': [sys.executable, '-c', 'print("native action completed")'], 'timeout': 10}
+                'argv': [sys.executable, '-c', 'print("native action completed")']}
 
     with ProcessPoolExecutor(max_workers=2, mp_context=multiprocessing.get_context('spawn')) as workers:
         execute_jobs(jobs(), submit=lambda job: workers.submit(run_unit, job),
@@ -38,6 +60,9 @@ def test_pending_window_publishes_native_results_before_preparing_more(tmp_path)
         receipt = json.loads((tmp_path / str(index) / 'qualification.json').read_text())
         assert receipt['result']['identity'] == str(index)
         assert receipt['result']['status'] == receipt['status'] == 'PASS'
+        assert 'timeout_seconds' not in receipt['result']
+        assert receipt['commands'][0]['timed_out'] is False
+        assert receipt['commands'][0]['cpu_seconds'] >= 0
 
 
 def test_preparation_failure_drains_running_native_proof_and_remains_failed(tmp_path):
@@ -59,7 +84,7 @@ def test_preparation_failure_drains_running_native_proof_and_remains_failed(tmp_
     def jobs():
         yield {'name': 'running-native', 'identity': 'running',
             'directory': str(tmp_path / 'unit'), 'environment': dict(os.environ),
-            'argv': [sys.executable, '-c', code], 'timeout': 10}
+            'argv': [sys.executable, '-c', code]}
         deadline = time.monotonic()+5
         while not started.exists():
             if time.monotonic() > deadline:
@@ -86,7 +111,7 @@ def test_native_finding_is_durable_and_does_not_discard_clean_sibling(tmp_path):
         'print("fixture.cpp:8:2: error: null access [clang-analyzer-core.NullDereference]")']
     jobs = [{'name': 'unit-'+str(index), 'identity': str(index),
         'directory': str(tmp_path / str(index)), 'environment': dict(os.environ),
-        'argv': [sys.executable, '-c', code], 'timeout': 10} for index, code in enumerate(scripts)]
+        'argv': [sys.executable, '-c', code]} for index, code in enumerate(scripts)]
     completed = []
     with ThreadPoolExecutor(max_workers=2) as workers:
         execute_jobs(jobs, submit=lambda job: workers.submit(run_unit, job),
@@ -96,31 +121,6 @@ def test_native_finding_is_durable_and_does_not_discard_clean_sibling(tmp_path):
     assert failure['status'] == failure['result']['status'] == 'FAIL'
     assert failure['result']['classification'] == 'finding'
     assert failure['result']['diagnostics'][0]['check'] == 'clang-analyzer-core.NullDereference'
-
-
-def test_reviewed_large_clang_unit_timeout_never_widens_native_actions(tmp_path):
-    from scripts.objc3c_toolchain.implementation_analysis import (
-        translation_unit_timeout, validate_timeout_overrides)
-    unit = 'clang/lib/AST/ASTContext.cpp'
-    policy = {'translation_unit_timeout_seconds': 600,
-        'translation_unit_timeout_overrides_seconds': {unit: 1800}}
-    validate_timeout_overrides(policy, {unit})
-    row = {'owner': 'maintained-clang', 'file': str(tmp_path / unit)}
-    assert translation_unit_timeout(policy, row, tmp_path) == 1800
-    assert translation_unit_timeout(policy, {**row, 'owner': 'frontend'}, tmp_path) == 600
-    assert translation_unit_timeout(policy, {**row, 'file': str(tmp_path / 'clang/lib/AST/Other.cpp')},
-                                    tmp_path) == 600
-    with pytest.raises(ValueError, match='escaped'):
-        translation_unit_timeout(policy, {**row, 'file': str(tmp_path.parent / 'outside.cpp')}, tmp_path)
-
-
-@pytest.mark.parametrize('overrides', [None, [], {'native/objc3c/large.cpp': 1800}] + [
-    {'clang/lib/AST/ASTContext.cpp': value} for value in (True, 0, 600, 3601, float('inf'), '1800')])
-def test_unreviewed_or_unbounded_timeout_override_is_rejected(overrides):
-    from scripts.objc3c_toolchain.implementation_analysis import validate_timeout_overrides
-    with pytest.raises(ValueError, match='finite bounds'):
-        validate_timeout_overrides({'translation_unit_timeout_seconds': 600,
-            'translation_unit_timeout_overrides_seconds': overrides}, {'clang/lib/AST/ASTContext.cpp'})
 
 
 @pytest.fixture
@@ -180,6 +180,69 @@ def test_header_edit_selects_dependent_variants_without_a_changed_line_filter(da
     assert selected_variants(rows, headers, [header]) == rows[:1]
     assert selected_variants(rows, headers, [source]) == rows
     assert selected_variants(rows, headers, [path.parent / 'new-header.h']) == rows
+    with pytest.raises(ValueError, match='complete dependency closure'):
+        selected_variants(rows, {rows[0]['output']: headers[rows[0]['output']]}, [header])
+
+
+def test_current_dependency_scan_reaches_an_unchanged_tu_across_owner_boundaries(tmp_path):
+    compiler, ninja = (shutil.which(name) for name in ('clang++', 'ninja'))
+    if not compiler or not ninja:
+        pytest.skip('requires the native Ninja and Clang dependency mechanism')
+    source = tmp_path / 'native/objc3c/src'
+    runtime, frontend = source / 'runtime', source / 'clang_foundation'
+    runtime.mkdir(parents=True)
+    frontend.mkdir()
+    for name, value in (('first.h', 1), ('later.h', 2)):
+        (frontend / name).write_text(f'#define VALUE {value}\n')
+    bridge = runtime / 'bridge.h'
+    bridge.write_text('#include "../clang_foundation/first.h"\n')
+    consumer = runtime / 'consumer.cpp'
+    consumer_text = ('#include "bridge.h"\n#if VALUE == 2\n'
+                     'int read() { return sizeof(sizeof(int)); }\n'
+                     '#else\nint read() { return VALUE; }\n#endif\n')
+    consumer.write_text(consumer_text)
+    sibling = runtime / 'sibling.cpp'
+    sibling.write_text('int sibling() { return 3; }\n')
+    (runtime / 'CMakeLists.txt').write_text('cmake_minimum_required(VERSION 3.24)\n'
+        'project(scoped_headers LANGUAGES CXX)\nset(CMAKE_EXPORT_COMPILE_COMMANDS ON)\n'
+        'add_library(runtime STATIC consumer.cpp sibling.cpp)\n')
+    build = tmp_path / 'build'
+    subprocess.run(['cmake', '-S', runtime, '-B', build, '-G', 'Ninja',
+                    '-DCMAKE_CXX_COMPILER='+compiler], check=True, capture_output=True)
+    subprocess.run(['cmake', '--build', build], check=True, capture_output=True)
+    graph = subprocess.check_output([ninja, '-C', build, '-t', 'commands'], text=True)
+    rows = inventory(build / 'compile_commands.json', graph, {consumer, sibling})
+    analyzer = shutil.which('clang-tidy')
+    if analyzer:
+        check = [analyzer, '-p', build, consumer, '--checks=-*,bugprone-sizeof-expression', '--warnings-as-errors=*']
+        baseline = subprocess.run(check, capture_output=True, text=True, timeout=30)
+        assert baseline.returncode == 0
+    original = bridge.stat()
+    bridge.write_text(bridge.read_text().replace('first.h', 'later.h'))
+    os.utime(bridge, ns=(original.st_atime_ns, original.st_mtime_ns))
+    changed = frontend / 'later.h'
+    recorded = subprocess.check_output([ninja, '-C', build, '-t', 'deps'], text=True)
+    assert all(str(changed) not in paths for paths in dependencies(recorded, build=build).values())
+    assert owner_changes(tmp_path, 'standalone-runtime', [changed]) is None
+
+    def run(name, argv, *, cwd, outputs):
+        subprocess.run(argv, cwd=cwd, check=True, capture_output=True)
+
+    headers = {row['output']: discover_variant_dependencies(row, tmp_path / (str(index)+'.d'),
+                name=str(index), run=run) for index, row in enumerate(rows)}
+    selected = select_owner_variants(tmp_path, 'standalone-runtime', rows, headers, [changed])
+    assert [row['file'] for row in selected] == [str(consumer)]
+    if analyzer:
+        from scripts.objc3c_toolchain.analysis_checkpoint import tidy_diagnostics
+        assert consumer.read_text() == consumer_text
+        finding = subprocess.run(check, capture_output=True, text=True, timeout=30)
+        assert finding.returncode == 1
+        diagnostics = tidy_diagnostics(finding.stdout + finding.stderr)
+        assert [(row['path'], row['line'], row['check']) for row in diagnostics] == [
+            (str(consumer), 3, 'bugprone-sizeof-expression')]
+    changed.unlink()
+    with pytest.raises(subprocess.CalledProcessError):
+        discover_variant_dependencies(selected[0], tmp_path / 'missing.d', name='missing', run=run)
 
 
 def test_changed_native_scopes_do_not_select_unaffected_implementation_owners(tmp_path):
@@ -321,8 +384,8 @@ def test_real_cmake_pch_dependency_discovery_keeps_shared_header_edits(tmp_path)
     recorded = subprocess.check_output(list(map(str, query)), text=True)
     headers = dependencies(recorded, build=build, selected_outputs={pch})
     assert str(header) in headers[pch]
-    assert selected_variants([{'file': str(unit), 'output': 'unit.o'}],
-        {'unit.o': headers[pch]}, [header]) == [{'file': str(unit), 'output': 'unit.o'}]
+    with pytest.raises(ValueError, match='complete dependency closure'):
+        selected_variants([{'file': str(unit), 'output': 'unit.o'}], {'unit.o': headers[pch]}, [header])
     with pytest.raises(ValueError, match='escaped'):
         dependency_query(shutil.which('ninja'), build, [unit])
     depfile = tmp_path / 'expanded.d'

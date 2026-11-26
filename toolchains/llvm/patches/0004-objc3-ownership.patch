@@ -1860,9 +1860,10 @@ index 000000000..0e4277c34
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
+index 000000000..8890be020
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,7321 @@
+@@ -0,0 +1,7309 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -2272,11 +2273,6 @@ new file mode 100644
 +  bool Invalid = false;
 +  bool MightBorrow = false;
 +
-+  const Expr *statementResult(const StmtExpr *Expression) const {
-+    const CompoundStmt *Body = Expression->getSubStmt();
-+    if (Body->body_empty()) return nullptr;
-+    return dyn_cast<Expr>(Body->body_back()->stripLabelLikeStatements());
-+  }
 +  bool carriesBorrowedValue(QualType Type) const {
 +    return carriesObjC3BorrowedValue(Context, Type);
 +  }
@@ -2526,7 +2522,7 @@ new file mode 100644
 +    if (const auto *Cast = dyn_cast<CastExpr>(E))
 +      return adjustBaseStorage(storage(Cast->getSubExpr(), State), Cast);
 +    if (const auto *Statement = dyn_cast<StmtExpr>(E))
-+      return storage(statementResult(Statement), State);
++      return storage(getObjC3StatementExpressionResult(*Statement), State);
 +    // Built-in prefix and assignment expressions designate the same object in
 +    // C++. Their pointer value is separately snapshotted at evaluation time.
 +    if (const auto *Unary = dyn_cast<UnaryOperator>(E);
@@ -2596,7 +2592,7 @@ new file mode 100644
 +      if (Variable->getType()->isReferenceType() && E->getType()->isRecordType())
 +        return storage(E, State);
 +    if (const auto *Statement = dyn_cast<StmtExpr>(E))
-+      return referent(statementResult(Statement), State, Depth + 1);
++      return referent(getObjC3StatementExpressionResult(*Statement), State, Depth + 1);
 +    if (const auto *Address = dyn_cast<UnaryOperator>(E))
 +      if (Address->getOpcode() == UO_AddrOf)
 +        return storage(Address->getSubExpr(), State);
@@ -2830,7 +2826,9 @@ new file mode 100644
 +    E = E->IgnoreParenCasts();
 +    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E)) return ownerExpressions(Cleanups->getSubExpr(), Owners);
 +    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(E)) return ownerExpressions(Opaque->getSourceExpr(), Owners);
-+    if (const auto *Statement = dyn_cast<StmtExpr>(E)) return ownerExpressions(statementResult(Statement), Owners);
++    if (const auto *Statement = dyn_cast<StmtExpr>(E))
++      return ownerExpressions(getObjC3StatementExpressionResult(*Statement),
++                              Owners);
 +    if (const auto *Binary = dyn_cast<BinaryOperator>(E); Binary && Binary->getOpcode() == BO_Comma)
 +      return ownerExpressions(Binary->getRHS(), Owners);
 +    if (const auto *Conditional = dyn_cast<AbstractConditionalOperator>(E)) {
@@ -4138,7 +4136,7 @@ new file mode 100644
 +      return Result;
 +    E = E->IgnoreParenCasts();
 +    if (const auto *Statement = dyn_cast<StmtExpr>(E))
-+      return evaluatedOwnerIdentity(statementResult(Statement), State);
++      return evaluatedOwnerIdentity(getObjC3StatementExpressionResult(*Statement), State);
 +    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E))
 +      return ownerIdentity(Cleanups->getSubExpr(), State);
 +    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(E))
@@ -4188,7 +4186,7 @@ new file mode 100644
 +    if (!E) return false;
 +    E = E->IgnoreParenCasts();
 +    if (const auto *Statement = dyn_cast<StmtExpr>(E))
-+      return ownerIsUnowned(statementResult(Statement), State);
++      return ownerIsUnowned(getObjC3StatementExpressionResult(*Statement), State);
 +    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E))
 +      return ownerIsUnowned(Cleanups->getSubExpr(), State);
 +    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(E))
@@ -4469,7 +4467,7 @@ new file mode 100644
 +      }
 +    E = E->IgnoreParenCasts();
 +    if (const auto *Statement = dyn_cast<StmtExpr>(E))
-+      return effects(statementResult(Statement), State);
++      return effects(getObjC3StatementExpressionResult(*Statement), State);
 +    if (const auto *Writeback = dyn_cast<ObjCIndirectCopyRestoreExpr>(E))
 +      return Writeback->shouldCopy() ? effects(Writeback->getSubExpr(), State) : empty();
 +    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E)) return effects(Cleanups->getSubExpr(), State);
@@ -4684,7 +4682,7 @@ new file mode 100644
 +      return Targets;
 +    }
 +    if (const auto *Statement = dyn_cast<StmtExpr>(E))
-+      return possibleTargets(statementResult(Statement), State);
++      return possibleTargets(getObjC3StatementExpressionResult(*Statement), State);
 +    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E))
 +      return possibleTargets(Cleanups->getSubExpr(), State);
 +    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(E))
@@ -4758,7 +4756,7 @@ new file mode 100644
 +    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(E))
 +      return closedTargets(Opaque->getSourceExpr(), State, Depth + 1);
 +    if (const auto *Statement = dyn_cast<StmtExpr>(E))
-+      return closedTargets(statementResult(Statement), State, Depth + 1);
++      return closedTargets(getObjC3StatementExpressionResult(*Statement), State, Depth + 1);
 +    if (const auto *Conditional = dyn_cast<AbstractConditionalOperator>(E)) {
 +      bool Truth;
 +      if (!Conditional->getCond()->HasSideEffects(Context) &&
@@ -4806,7 +4804,7 @@ new file mode 100644
 +             (Cast->getSubExpr()->getType()->isPointerType() || Cast->getSubExpr()->getType()->isArrayType()) &&
 +             nonNullAddress(Cast->getSubExpr(), State, Depth + 1);
 +    if (const auto *Statement = dyn_cast<StmtExpr>(E))
-+      return nonNullAddress(statementResult(Statement), State, Depth + 1);
++      return nonNullAddress(getObjC3StatementExpressionResult(*Statement), State, Depth + 1);
 +    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E))
 +      return nonNullAddress(Cleanups->getSubExpr(), State, Depth + 1);
 +    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(E))
@@ -4969,7 +4967,7 @@ new file mode 100644
 +    if (const auto *Call = dyn_cast<CallExpr>(E); Call && addressBuiltin(Call->getDirectCallee()) && Call->getNumArgs() == 1)
 +      return addressValue(Call->getArg(0), State);
 +    if (const auto *Statement = dyn_cast<StmtExpr>(E))
-+      return value(statementResult(Statement), State);
++      return value(getObjC3StatementExpressionResult(*Statement), State);
 +    if (const auto *Cast = dyn_cast<CastExpr>(E)) {
 +      if (Cast->getCastKind() == CK_ArrayToPointerDecay) return addressValue(Cast->getSubExpr(), State);
 +      if (Cast->getType()->isBooleanType())
@@ -5946,7 +5944,7 @@ new file mode 100644
 +    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(Expression))
 +      return memoryBytePositions(Cleanups->getSubExpr(), State, Positions, Depth + 1);
 +    if (const auto *Statement = dyn_cast<StmtExpr>(Expression))
-+      return memoryBytePositions(statementResult(Statement), State, Positions, Depth + 1);
++      return memoryBytePositions(getObjC3StatementExpressionResult(*Statement), State, Positions, Depth + 1);
 +    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(Expression))
 +      return memoryBytePositions(Opaque->getSourceExpr(), State, Positions, Depth + 1);
 +    if (const auto *Conditional = dyn_cast<AbstractConditionalOperator>(Expression)) {
@@ -6389,7 +6387,7 @@ new file mode 100644
 +    if (const auto *Prototype = callPrototype(Call))
 +      if (Index < Prototype->getNumParams())
 +        return Prototype->getExtParameterInfo(Index).isNoEscape() ||
-+               isObjC3BorrowedType(Context, Prototype->getParamType(Index).getNonReferenceType());
++               Prototype->getExtParameterInfo(Index).isObjC3Borrowed();
 +    return false;
 +  }
 +  bool stableStaticStorageType(QualType Type, unsigned &Budget, unsigned Depth = 0) const {
@@ -9078,17 +9076,8 @@ new file mode 100644
 +      Destination->isVoidType() || Destination->isBooleanType() ||
 +      Source->isNullPointerConstant(S.Context, Expr::NPC_ValueDependentIsNotNull))
 +    return false;
-+  auto Function = [&](QualType Type) -> const FunctionType * {
-+    for (;;) {
-+      if (const auto *F = Type->getAs<FunctionType>()) return F;
-+      if (const auto *P = Type->getAs<PointerType>()) Type = P->getPointeeType();
-+      else if (const auto *P = Type->getAs<BlockPointerType>()) Type = P->getPointeeType();
-+      else if (const auto *P = Type->getAs<MemberPointerType>()) Type = P->getPointeeType();
-+      else if (const auto *R = Type->getAs<ReferenceType>()) Type = R->getPointeeType();
-+      else if (const auto *A = S.Context.getAsArrayType(Type)) Type = A->getElementType();
-+      else return nullptr;
-+    }
-+    return nullptr;
++  auto Function = [&](QualType Type) {
++    return getObjC3CallableFunctionType(S.Context, Type);
 +  };
 +  const auto *From = Function(Source->getType());
 +  const auto *To = Function(Destination);
@@ -9107,7 +9096,7 @@ new file mode 100644
 +        if (P->isParamConsumed(I) || P->getExtParameterInfo(I).isCFConsumed() ||
 +            Self(Self, Function(P->getParamType(I)), true) ||
 +            (Permissions && (P->getExtParameterInfo(I).isNoEscape() ||
-+              isObjC3BorrowedType(S.Context, P->getParamType(I).getNonReferenceType()))))
++              P->getExtParameterInfo(I).isObjC3Borrowed())))
 +          return true;
 +    }
 +    return false;
@@ -9136,9 +9125,9 @@ new file mode 100644
 +      const bool ConsumedA = HasA && PA->isParamConsumed(I);
 +      const bool ConsumedB = HasB && PB->isParamConsumed(I);
 +      const bool NoEscapeA = HasA && (PA->getExtParameterInfo(I).isNoEscape() ||
-+          isObjC3BorrowedType(S.Context, PA->getParamType(I).getNonReferenceType()));
++          PA->getExtParameterInfo(I).isObjC3Borrowed());
 +      const bool NoEscapeB = HasB && (PB->getExtParameterInfo(I).isNoEscape() ||
-+          isObjC3BorrowedType(S.Context, PB->getParamType(I).getNonReferenceType()));
++          PB->getExtParameterInfo(I).isObjC3Borrowed());
 +      const bool ForeignA = HasA && PA->getExtParameterInfo(I).isCFConsumed();
 +      const bool ForeignB = HasB && PB->getExtParameterInfo(I).isCFConsumed();
 +      if ((ExplicitCast && (ConsumedA != ConsumedB || ForeignA != ForeignB)) ||
@@ -9186,10 +9175,10 @@ new file mode 100644
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.h b/clang/lib/Sema/SemaObjC3Borrowed.h
 new file mode 100644
-index 000000000..d78d0e4c0
+index 000000000..a924a7a05
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.h
-@@ -0,0 +1,23 @@
+@@ -0,0 +1,26 @@
 +//===--- SemaObjC3Borrowed.h - Mandatory borrowed pointer checking -*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_LIB_SEMA_SEMAOBJC3BORROWED_H
@@ -9207,6 +9196,9 @@ index 000000000..d78d0e4c0
 +QualType preserveObjC3BorrowedType(Sema &, QualType Composite, QualType Source);
 +void handleObjC3ReturnsBorrowedAttr(Sema &, Decl *, const ParsedAttr &);
 +bool checkObjC3BorrowedRedeclaration(Sema &, FunctionDecl *, FunctionDecl *);
++/// Find the common callable type when a top-level permission can be dropped.
++QualType findObjC3BorrowedCompositeType(Sema &S, QualType Left, QualType Right);
++
 +bool checkObjC3CallableOwnershipCast(Sema &, const Expr *, QualType, SourceLocation,
 +                                    bool ExplicitCast = true, bool Diagnose = true);
 +bool checkObjC3BorrowedFlow(Sema &, Decl *, Stmt *);

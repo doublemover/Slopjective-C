@@ -10,6 +10,7 @@ import subprocess
 import time
 
 from scripts.objc3c_toolchain.linux_host import llvm_trap_signal
+from scripts.objc3c_cross_lane_execution import validate_node_timeout
 
 
 def run_linux_fixture_node(repo: Path, node: dict, output: Path, toolchain: dict) -> dict:
@@ -28,7 +29,8 @@ def run_linux_fixture_node(repo: Path, node: dict, output: Path, toolchain: dict
               "started_utc": datetime.now(timezone.utc).isoformat(), "commands": records}
     environment = dict(os.environ)
     environment.update(toolchain["environment"])
-    timeout = float(node.get("timeout_seconds", 1200))
+    timeout = node.get("timeout_seconds")
+    validate_node_timeout(timeout)
     base = ["--target=" + toolchain["target_triple"], "-fobjc-runtime=gnustep-2.2", "-fblocks",
             "-resource-dir", toolchain["resource_dir"], "-I", str(inputs)]
     for path in toolchain["runtime"]["include_dirs"]:

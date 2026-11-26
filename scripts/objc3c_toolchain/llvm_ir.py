@@ -13,7 +13,6 @@ import json
 from pathlib import Path
 import re
 import shutil
-import sys
 import time
 
 from .binary_packages import digest, installed_shared_library, write_json
@@ -140,7 +139,7 @@ def capability_controls(repo: Path, output: Path, tools: dict, run) -> dict:
 
 
 def qualify(repo: Path, output: Path, *, runtime: Path, objc_runtime: Path,
-            facade: Path, timeout=180, tools_receipt: Path | None = None) -> dict:
+            facade: Path, timeout: float | None = None, tools_receipt: Path | None = None) -> dict:
     repo, output = repo.resolve(strict=True), output.resolve()
     if output.exists() or not output.is_relative_to(repo / 'out'):
         raise ValueError('native IR assurance requires a fresh repository out evidence directory')
@@ -268,8 +267,7 @@ def qualify(repo: Path, output: Path, *, runtime: Path, objc_runtime: Path,
                     run(unit_name+'-baseline-dis', [tools['llvm-dis'], baseline, '-o', base_text], outputs=[base_text])
                     optimized, opt_text = unit / 'optimized.bc', unit / 'optimized.ll'
                     run(unit_name+'-optimizer', [tools['opt'], *pipeline_options(optimization, case['ownership']),
-                        baseline, '-o', optimized], outputs=[optimized], stage='pass-verifier',
-                        timeout=case.get('optimizer_timeout_seconds', timeout))
+                        baseline, '-o', optimized], outputs=[optimized], stage='pass-verifier')
                     run(unit_name+'-optimized-dis', [tools['llvm-dis'], optimized, '-o', opt_text], outputs=[opt_text])
                     split = unit / 'split.o'
                     backend_level = 'O2' if optimization == 'Os' else optimization
@@ -362,11 +360,11 @@ def main(argv=None):
     parser.add_argument('--runtime', type=Path, required=True)
     parser.add_argument('--objc-runtime', type=Path, required=True)
     parser.add_argument('--facade', type=Path, required=True)
-    parser.add_argument('--timeout', type=float, default=180)
+    parser.add_argument('--timeout', type=float, help='Optional deadline in seconds for each command')
     parser.add_argument('--tools-receipt', type=Path)
     args = parser.parse_args(argv)
-    if args.timeout <= 0:
-        parser.error('timeout must be positive')
+    if args.timeout is not None and not 0 < args.timeout < float('inf'):
+        parser.error('timeout must be positive and finite')
     result = qualify(args.repo, args.output, runtime=args.runtime, objc_runtime=args.objc_runtime,
                      facade=args.facade, timeout=args.timeout, tools_receipt=args.tools_receipt)
     print(json.dumps({'status': result['status'], 'cases': result['executed_cases'],

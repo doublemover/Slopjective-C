@@ -11,6 +11,80 @@ import sys
 import time
 
 
+def qualify_result_lock(sdk: Path, output: Path, compiler: Path, run) -> dict:
+    output.mkdir()
+    module, package = 'ResultLock', 'result-lock-v1'
+    options = ['--objc3', '--objcxx', '--arc', '--sdk-root', sdk]
+    fingerprints = []
+    for name, qualifier in (('original', '_Nullable'), ('current', '_Nonnull')):
+        lane = output / name
+        lane.mkdir()
+        source = lane / 'provider.mm'
+        source.write_text(f'''typedef Result(int * {qualifier}, int) Payload;
+Payload readValue(int *value) {{
+    if (value == nullptr) return Err(int * {qualifier}, int, 1);
+    return Ok(int * {qualifier}, int, value);
+}}
+''')
+        interface = lane / (module + '.objc3i')
+        provider = lane / 'provider.o'
+        run('result-lock-' + name + '-interface', [compiler, source, *options, '--module', module,
+            '--package', package, '--module-owned-names', '--emit-interface', interface,
+            *(['--emit-object', provider] if name == 'current' else []), '--', '-std=c++20', '-O2'])
+        identity = json.loads(interface.with_suffix('.objc3i.json').read_text())['module']
+        fingerprints.append(identity['semantic_fingerprint'])
+        source.rename(lane / 'retained-provider.mm')
+    old, current = fingerprints
+    if old == current:
+        raise ValueError('Result success payload qualifier change preserved the semantic fingerprint')
+
+    modules = output / 'relocated-interfaces'
+    modules.mkdir()
+    for name in (module + '.objc3i', module + '.objc3i.json'):
+        shutil.move(output / 'current' / name, modules / name)
+    consumer = output / 'consumer.mm'
+    consumer.write_text('''@import ResultLock;
+int main() {
+    int value = 42;
+    auto result = @ResultLock.readValue(&value);
+    match(result) {
+        case .Ok(let pointer): { return pointer != nullptr && *pointer == 42 ? 0 : 2; }
+        case .Err(let error): { return error; }
+    }
+}
+''')
+    def compile_consumer(name, fingerprint, obj, *, rejected=False):
+        return run('result-lock-' + name + '-consumer', [compiler, consumer, *options, '--source-imports',
+            '--module-search-path', modules, '--import-module', module, fingerprint, package,
+            '--emit-object', obj, '--emit-dependency-record', obj.with_suffix('.json'), '--diagnostics-json',
+            '--', '-std=c++20', '-O2',
+            '-fmodules', '-fmodules-cache-path=' + str(output / (name + '-module-cache'))],
+            expected=int(rejected), diagnostic='O3IFC134' if rejected else None)
+
+    stale_obj = output / 'stale-consumer.o'
+    log = compile_consumer('stale', old, stale_obj, rejected=True)
+    diagnostic = next((json.loads(line) for line in log.splitlines() if line.startswith('{')), {})
+    if not any(row['code'] == 'O3IFC134' and row['subject'] == module and row['stage'] == 'import'
+               for row in diagnostic.get('interface_diagnostics', [])):
+        raise ValueError('stale Result lock did not diagnose the selected module')
+    if stale_obj.exists() or stale_obj.with_suffix('.json').exists():
+        raise ValueError('stale Result lock published consumer output')
+    obj = output / 'current-consumer.o'
+    compile_consumer('current', current, obj)
+    dependencies = json.loads(obj.with_suffix('.json').read_text())
+    driver = sdk / 'bin/clang'
+    if (Path(dependencies['toolchain']['driver_path']).resolve() != driver.resolve() or
+            [(row['name'], row['fingerprint']) for row in dependencies['modules']] != [(module, current)]):
+        raise ValueError('Result consumer did not use the relocated SDK and current locked interface')
+    executable = output / 'application'
+    run('result-lock-current-link', [sdk / 'bin/clang++', '--no-default-config', '-fuse-ld=lld',
+        output / 'current/provider.o', obj, '-L' + str(sdk / 'lib'), '-lobjc',
+        '-Wl,-rpath,' + str(sdk / 'lib'), '-o', executable])
+    run('result-lock-current-execute', [executable])
+    return {'stale_fingerprint': old, 'current_fingerprint': current, 'driver': str(driver),
+            'diagnostic': 'O3IFC134', 'executable_sha256': hashlib.sha256(executable.read_bytes()).hexdigest()}
+
+
 def qualify(sdk: Path, output: Path) -> dict:
     sdk, output = sdk.resolve(), output.resolve()
     if output == sdk or sdk in output.parents or output in sdk.parents:
@@ -56,6 +130,7 @@ def qualify(sdk: Path, output: Path) -> dict:
             if diagnostic and diagnostic not in text:
                 raise ValueError(name + ' failed without its required diagnostic '+diagnostic)
             report['rejections'].append({'name': name, 'diagnostic': diagnostic})
+            return text
 
     def import_command(standard, directory, identity, source, obj, *, arc=True):
         return [compiler, source, '--objc3', '--objcxx', *(['--arc'] if arc else []),
@@ -225,9 +300,10 @@ def qualify(sdk: Path, output: Path) -> dict:
             obj = output / ('rejected-visibility-' + str(case) + '.o')
             run('rejected-visibility-' + str(case), [*import_command('c++20', directory, identity,
                 'cpp-data-import-rejected.mm', obj), '-DCASE=' + str(case)], expected=1)
-        if len(report['executions']) != 16 or len(report['rejections']) != 6 or len(report['admissions']) != 10:
+        report['result_locks'] = [qualify_result_lock(sdk, output / 'result-lock', compiler, run)]
+        if len(report['executions']) != 16 or len(report['rejections']) != 7 or len(report['admissions']) != 10:
             raise ValueError('C++ interface execution/rejection inventory is incomplete')
-        if len(report['commands']) != 123:
+        if len(report['commands']) != 129:
             raise ValueError('C++ interface command inventory is incomplete')
         for language in ('c++', 'objective-c++'):
             for standard in ('c++20', 'c++23'):

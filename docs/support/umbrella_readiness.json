@@ -904,7 +904,7 @@
       "current_state": "internal",
       "target_state": "implemented",
       "readiness_state": "blocked",
-      "intended_public_meaning": "Objective-C 3.0 platform expansion can become a public platform-support claim only when Linux x64, macOS arm64, and native object emission all have replayable support evidence rather than fail-closed contracts. The current #8206 truth boundary is source-owned and fail-closed: Windows x64 is the only supported projection, Linux/macOS stay rejected, hosted evidence is review-only, and ASan/UBSan package variants are evidence-bound for Windows x64 only through the checked sanitizer runtime promotion gate.",
+      "intended_public_meaning": "The #8206 production umbrella tracks the tiered runnable workflow and native object emission contracts. Windows x64 retains Tier 1. The published Linux SDK has exact native x86-64 and AArch64 preview evidence. The Apple Silicon bootstrap and experimental Mach-O SDK route produce review evidence for a limited profile. Production macOS arm64 remains unsupported. ASan and UBSan package variants are evidence-bound for Windows x64 through the checked sanitizer runtime promotion gate.",
       "forbidden_overclaims": [
         "Linux x64 support from source-owned fail-closed rows alone.",
         "macOS arm64 support from source-owned fail-closed rows alone.",
@@ -917,17 +917,17 @@
         {
           "capability_id": "platform.windows-x64.tier1",
           "required_state": "implemented",
-          "reason": "Windows x64 is the only currently supported platform row and must remain evidence-backed."
+          "reason": "Windows x64 is the supported Tier 1 row in the tiered runnable workflow and remains evidence-backed."
         },
         {
           "capability_id": "platform.linux-x64.unsupported",
           "required_state": "rejected",
-          "reason": "Linux x64 remains fail-closed until build, package, install, installed-root execution, and native execution evidence exists, and the host-promotion contract refuses generated-only hosted evidence as support truth."
+          "reason": "The tiered runnable workflow Linux x64 row remains fail-closed pending its own source promotion. The public Linux preview independently records native x86-64 and AArch64 build, package, install, installed-root execution, and native execution evidence."
         },
         {
           "capability_id": "platform.darwin-arm64.unsupported",
           "required_state": "rejected",
-          "reason": "macOS arm64 remains fail-closed until build, package, install, installed-root execution, Mach-O/load-path, and native execution evidence exists, and the host-promotion contract refuses generated-only hosted evidence as support truth."
+          "reason": "Production macOS arm64 remains fail-closed pending reviewed build, package, install, installed-root execution, Mach-O/load-path, and native execution evidence for the shipping profile. Experimental receipts keep support_truth false."
         },
         {
           "capability_id": "toolchain.llvm.current-probed-executable",
@@ -1207,7 +1207,7 @@
       "required_negative_fixtures": [
         {
           "id": "linux-x64-fail-closed",
-          "description": "Linux x64 remains an unsupported fail-closed row with no support claim.",
+          "description": "The tiered runnable workflow Linux x64 row fails closed. The published preview install scope is recorded in the Linux release manifest.",
           "status": "satisfied",
           "capability_id": "platform.linux-x64.unsupported"
         },
@@ -1299,7 +1299,7 @@
       "required_docs": [
         {
           "id": "capability-matrix",
-          "description": "Capability matrix keeps #8206 internal, Linux/macOS rejected, sanitizer variants Windows x64 evidence-bound, and Windows x64 as the only supported host row.",
+          "description": "The capability matrix keeps #8206 internal, distinguishes published Linux preview delivery and experimental Apple Silicon work from tiered workflow support, and records the scope of Windows x64 sanitizer evidence.",
           "status": "satisfied",
           "path": "docs/support/capability_matrix.json"
         },
@@ -1317,9 +1317,15 @@
         },
         {
           "id": "platform-runbook",
-          "description": "Platform hardening runbook states the llc/no-clang-fallback policy, Linux/macOS fail-closed boundaries, and sanitizer generated-only rejection boundary.",
+          "description": "The platform hardening runbook states the llc requirement, tiered workflow support boundaries, Linux preview and macOS experimental scopes, and sanitizer evidence admission policy.",
           "status": "satisfied",
           "path": "docs/runbooks/objc3c_platform_hardening.md"
+        },
+        {
+          "id": "release-status",
+          "description": "The release status links exact native Linux preview receipts and the optional Apple Silicon package route.",
+          "status": "satisfied",
+          "path": "docs/releases/status.md"
         },
         {
           "id": "packaging-channels-runbook",
@@ -1343,21 +1349,18 @@
       "promotion_blockers": [
         {
           "blocker_id": "linux-x64-native-evidence",
-          "summary": "Linux x64 remains unsupported.",
+          "summary": "The Linux x64 row in the tiered runnable workflow requires its own promotion.",
           "missing_work": [
-            "Linux x64 build evidence through the public workflow path.",
-            "Linux x64 package, install, and installed-root execution evidence.",
-            "Linux x64 native execution evidence with runtime library availability."
+            "Bind Linux x64 build, package, install, and installed-root native execution to reviewed source evidence for the tiered workflow row."
           ],
           "tracking_issue": "#8228"
         },
         {
           "blocker_id": "darwin-arm64-native-evidence",
-          "summary": "macOS arm64 remains unsupported.",
+          "summary": "Production macOS arm64 remains unsupported.",
           "missing_work": [
-            "macOS arm64 package, install, and installed-root execution evidence.",
-            "Mach-O and load-path evidence.",
-            "macOS arm64 native execution evidence."
+            "Qualify a production macOS arm64 package, install, and installed-root execution.",
+            "Review Mach-O, load-path, and native execution evidence for that shipping profile."
           ],
           "tracking_issue": "#8229"
         },
@@ -1367,7 +1370,7 @@
           "missing_work": [
             "Promote Linux x64 and macOS arm64 only from checked source rows and public replay evidence.",
             "Keep coherent llc object emission as a fail-closed no-clang-substitute guardrail inside platform promotion.",
-            "Keep Windows x64 as the only supported projection until every promoted child row has matching source and evidence-map truth."
+            "Keep the tiered workflow projection linked to checked source and evidence-map rows for every promoted host."
           ],
           "tracking_issue": "#8206"
         }

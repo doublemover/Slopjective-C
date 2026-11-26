@@ -30,6 +30,9 @@ def _parser():
     sdk.add_argument("--compiler-instrumentation-profile", choices=("compiler-asan-ubsan",),
                      help="qualify the isolated compiler implementation before ordinary SDK delivery")
     sdk.add_argument("--foundation-sdk", type=Path, help="reuse a fully verified sealed SDK with the same LLVM source/build identity")
+    darwin = commands.add_parser("darwin", help="build or manage an experimental Apple Silicon SDK")
+    darwin.add_argument("action", choices=("bootstrap", "build-sdk", "install", "qualify", "uninstall"))
+    darwin.add_argument("arguments", nargs=argparse.REMAINDER)
     compile_command = commands.add_parser("compile", help="invoke the installed public compiler")
     compile_command.add_argument("arguments", nargs=argparse.REMAINDER)
     package = commands.add_parser("package-sdk", help="seal and cache an installed, fully qualified Linux SDK")
@@ -97,6 +100,15 @@ def main(argv: list[str] | None = None) -> int:
             from .linux_sdk import build_sdk
             result = build_sdk(args.repo, fetch=args.fetch, install_root=args.install_root, foundation_sdk=args.foundation_sdk,
                                compiler_instrumentation_profile=args.compiler_instrumentation_profile)
+        elif args.command == "darwin":
+            if args.action == "bootstrap":
+                from .darwin_bootstrap import main as bootstrap_main
+                return bootstrap_main(args.arguments, prog=f"{parser.prog} darwin bootstrap")
+            if args.action == "build-sdk":
+                from .darwin_registration import main as registration_main
+                return registration_main(args.arguments, prog=f"{parser.prog} darwin build-sdk", package=True)
+            from .darwin_sdk import main as sdk_main
+            return sdk_main([args.action, *args.arguments], prog=f"{parser.prog} darwin")
         elif args.command == "compile":
             import os
             root = Path(os.environ.get('OBJC3C_SDK_ROOT', str(Path.cwd() / 'out/toolchains/linux-sdk/current')))

@@ -4284,8 +4284,8 @@ index 000000000..77ea93898
 +@interface Object @end
 +typedef __objc3_optional(Object *) MaybeObject;
 +void query_after_rejected_lifetime(void) {
-+  MaybeObject value; // expected-error {{ObjC3 carrier operation 'local lifetime'}}
-+  (void)__objc3_has_value(value); // expected-error {{ObjC3 carrier operation 'hasValue query'}}
++  MaybeObject value;
++  (void)__objc3_has_value(value); // expected-error {{is used before definite initialization}}
 +}
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-indirect-call-abi.c b/clang/test/ObjC3/CodeGen/carrier-indirect-call-abi.c
@@ -4701,8 +4701,8 @@ index 000000000..e989707ab
 +@end
 +typedef __objc3_optional(Object *) MaybeObject;
 +void read_after_rejected_lifetime(void) {
-+  MaybeObject value; // expected-error {{ObjC3 carrier operation 'local lifetime'}}
-+  (void)value; // CodeGen must not synthesize an ARC lifetime after rejecting it.
++  MaybeObject value;
++  (void)__objc3_has_value(value); // expected-error {{is used before definite initialization}}
 +}
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-unsupported-operations.cpp b/clang/test/ObjC3/CodeGen/carrier-unsupported-operations.cpp
@@ -4759,7 +4759,7 @@ index 000000000..7cf8f2480
 +}
 +#elif defined(TEST_CARRIER_ARC)
 +void arc_lifetime(void) {
-+  MaybeObject value; // expected-error-re {{ObjC3 carrier operation 'local lifetime' for type {{.*}} has no qualified lowering: {{.*}}}}
++  volatile MaybeObject value; // expected-error {{requires an initializer at its declaration}}
 +}
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-variadic-call-abi.c b/clang/test/ObjC3/CodeGen/carrier-variadic-call-abi.c
@@ -6941,7 +6941,7 @@ index 000000000..120df1f31
 +
 +#ifdef UNINITIALIZED
 +void reject_uninitialized(void) {
-+  Strong copy; // expected-error {{ObjC3 carrier operation 'local lifetime'}}
++  volatile Strong copy; // expected-error {{requires an initializer at its declaration}}
 +}
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-arc-assignment.m b/clang/test/ObjC3/CodeGen/carrier-arc-assignment.m
@@ -16478,3 +16478,343 @@ index 000000000..5a4a1a83b
 +- (int)update:(int)amount { return value += amount; }
 +- (int)plain { return 17; }
 +@end
+diff --git a/clang/test/ObjC3/CodeGen/managed-record-helper-alignment.m b/clang/test/ObjC3/CodeGen/managed-record-helper-alignment.m
+new file mode 100644
+index 000000000..ee4ed3527
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/managed-record-helper-alignment.m
+@@ -0,0 +1,117 @@
++// REQUIRES: x86-registered-target
++// RUN: %clang_cc1 -x objective-c-header -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -O0 -emit-pch %s -o %t.O0.pch
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -O0 -include %s -emit-llvm -o - %s | FileCheck %s --check-prefixes=O0,FIRST
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -O0 -include %s -DPACKED_FIRST -emit-llvm -o - %s | FileCheck %s --check-prefixes=O0,LAST
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -O0 -include-pch %t.O0.pch -emit-llvm -o - %s | FileCheck %s --check-prefixes=O0,FIRST
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -O0 -include-pch %t.O0.pch -DPACKED_FIRST -emit-llvm -o - %s | FileCheck %s --check-prefixes=O0,LAST
++// RUN: %clang_cc1 -x objective-c-header -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -O2 -emit-pch %s -o %t.O2.pch
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -O2 -include %s -emit-llvm -o - %s | FileCheck %s --check-prefixes=O2,O2FIRST
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -O2 -include %s -DPACKED_FIRST -emit-llvm -o - %s | FileCheck %s --check-prefixes=O2,O2LAST
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -O2 -include-pch %t.O2.pch -emit-llvm -o - %s | FileCheck %s --check-prefixes=O2,O2FIRST
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -O2 -include-pch %t.O2.pch -DPACKED_FIRST -emit-llvm -o - %s | FileCheck %s --check-prefixes=O2,O2LAST
++
++#ifndef ALIGNMENT_PCH
++#define ALIGNMENT_PCH
++typedef Optional(id) Managed;
++struct Inner { Managed object; };
++#pragma pack(push, 1)
++struct Envelope {
++  char prefix;
++  struct Inner inner;
++};
++struct Array {
++  char prefix;
++  Managed values[2];
++};
++#pragma pack(pop)
++struct Field {
++  char prefix;
++  struct Inner inner __attribute__((packed));
++};
++#else
++#ifndef PACKED_FIRST
++void ordinary(struct Inner *out, const struct Inner *in) { *out = *in; }
++#endif
++void replace_inner(struct Envelope *out, const struct Inner *in) {
++  out->inner = *in;
++}
++void read_inner(struct Inner *out, const struct Envelope *in) {
++  *out = in->inner;
++}
++void replace_array(struct Array *out, const struct Array *in) {
++  *out = *in;
++}
++void replace_field(struct Field *out, const struct Inner *in) {
++  out->inner = *in;
++}
++#ifdef PACKED_FIRST
++void ordinary(struct Inner *out, const struct Inner *in) { *out = *in; }
++#endif
++#endif
++
++// Check the actual helper used at each call site. A single align-1 access
++// somewhere in the module would also pass if a different helper overstated
++// its alignment or a previously emitted specialization was reused.
++// FIRST-LABEL: define{{.*}} void @ordinary(
++// FIRST: call void @[[FIRSTCOPY:__objc3_v12_storage_2_[0-9A-F]+]](
++// FIRST: define internal void @[[FIRSTCOPY]](
++// FIRST: load ptr, ptr %objc3.carrier.payload.addr, align 8
++// FIRST: store ptr {{.*}}, ptr %objc3.carrier.payload.addr2, align 8
++
++// O0-LABEL: define{{.*}} void @replace_inner(
++// LAST: call void @[[LASTCOPY:__objc3_v12_storage_2_[0-9A-F]+]](
++// O0: call void @[[WRITE:__objc3_v12_storage_5_[0-9A-F]+]](ptr %inner,
++// LAST: define internal void @[[LASTCOPY]](
++// LAST: load ptr, ptr %objc3.carrier.payload.addr, align 8
++// LAST: store ptr {{.*}}, ptr %objc3.carrier.payload.addr2, align 8
++// O0: define internal void @[[WRITE]](
++// O0: load ptr, ptr %[[OLD:objc3.carrier.payload.addr[0-9]+]], align 1
++// O0-NEXT: store ptr null, ptr %[[OLD]], align 1
++// O0: store ptr {{.*}}, ptr %objc3.carrier.payload.addr{{[0-9]+}}, align 1
++
++// O0-LABEL: define{{.*}} void @read_inner(
++// O0: call void @[[READ:__objc3_v12_storage_2_[0-9A-F]+]](ptr %objc3.record.assign.snapshot, ptr %inner)
++// LAST: call void @[[LASTMOVE:__objc3_v12_storage_5_[0-9A-F]+]](ptr %{{[0-9]+}}, ptr %objc3.record.assign.snapshot)
++// O0: define internal void @[[READ]](
++// O0: load ptr, ptr %objc3.carrier.payload.addr, align 1
++// O0: store ptr {{.*}}, ptr %objc3.carrier.payload.addr2, align 8
++
++// O0-LABEL: define{{.*}} void @replace_array(
++// O0: call void @[[ARRAYCOPY:__objc3_v12_storage_2_[0-9A-F]+]](
++// O0: call void @[[ARRAYMOVE:__objc3_v12_storage_5_[0-9A-F]+]](
++// O0: define internal void @[[ARRAYCOPY]](
++// O0: objc3.storage.array.body:
++// O0: load ptr, ptr %objc3.carrier.payload.addr, align 1
++// O0: store ptr {{.*}}, ptr %objc3.carrier.payload.addr4, align 1
++// O0: define internal void @[[ARRAYMOVE]](
++// O0: arraydestroy.body:
++// O0: load ptr, ptr %[[ARRAYOLD:objc3.carrier.payload.addr[0-9]+]], align 1
++// O0-NEXT: store ptr null, ptr %[[ARRAYOLD]], align 1
++
++// O0-LABEL: define{{.*}} void @replace_field(
++// LAST: call void @[[LASTCOPY:__objc3_v12_storage_2_[0-9A-F]+]](
++// O0: call void @[[WRITE]](ptr %inner,
++// LAST-LABEL: define{{.*}} void @ordinary(
++// LAST: call void @[[LASTCOPY]](
++// LAST: call void @[[LASTMOVE]](
++
++// O2FIRST-LABEL: define{{.*}} void @ordinary(
++// O2FIRST: load ptr, ptr %objc3.carrier.payload.addr.i, align 8
++// O2FIRST: store ptr {{.*}}, ptr %objc3.carrier.payload.addr15.i, align 8
++// O2-LABEL: define{{.*}} void @replace_inner(
++// O2: load ptr, ptr %objc3.carrier.payload.addr8.i, align 1
++// O2: store ptr {{.*}}, ptr %objc3.carrier.payload.addr15.i, align 1
++// O2-LABEL: define{{.*}} void @read_inner(
++// O2: load ptr, ptr %objc3.carrier.payload.addr.i, align 1
++// O2: store ptr {{.*}}, ptr %objc3.carrier.payload.addr15.i, align 8
++// O2-LABEL: define{{.*}} void @replace_array(
++// O2: load ptr, ptr %objc3.carrier.payload.addr.i, align 1
++// O2: load ptr, ptr %objc3.carrier.payload.addr.1.i, align 1
++// O2: store ptr {{.*}}, ptr %objc3.carrier.payload.addr28.i, align 1
++// O2: store ptr {{.*}}, ptr %objc3.carrier.payload.addr28.1.i, align 1
++// O2-LABEL: define{{.*}} void @replace_field(
++// O2: load ptr, ptr %objc3.carrier.payload.addr8.i, align 1
++// O2: store ptr {{.*}}, ptr %objc3.carrier.payload.addr15.i, align 1
++// O2LAST-LABEL: define{{.*}} void @ordinary(
++// O2LAST: load ptr, ptr %objc3.carrier.payload.addr.i, align 8
++// O2LAST: store ptr {{.*}}, ptr %objc3.carrier.payload.addr15.i, align 8
+diff --git a/clang/test/ObjC3/CodeGen/managed-weak-storage-alignment.m b/clang/test/ObjC3/CodeGen/managed-weak-storage-alignment.m
+new file mode 100644
+index 000000000..471aa830a
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/managed-weak-storage-alignment.m
+@@ -0,0 +1,69 @@
++// REQUIRES: x86-registered-target, aarch64-registered-target
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -emit-llvm -o - %s | FileCheck %s --check-prefix=ALIGNED
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -DCASE=1 -emit-obj -o %t.x86_64.1.o -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -DCASE=2 -emit-obj -o %t.x86_64.2.o -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -DCASE=3 -emit-obj -o %t.x86_64.3.o -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -DCASE=4 -emit-obj -o %t.x86_64.4.o -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -DCASE=5 -emit-obj -o %t.x86_64.5.o -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -DCASE=6 -emit-obj -o %t.x86_64.6.o -verify %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -emit-llvm -o - %s | FileCheck %s --check-prefix=ALIGNED
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -DCASE=1 -emit-obj -o %t.aarch64.1.o -verify %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -DCASE=2 -emit-obj -o %t.aarch64.2.o -verify %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -DCASE=3 -emit-obj -o %t.aarch64.3.o -verify %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -DCASE=4 -emit-obj -o %t.aarch64.4.o -verify %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -DCASE=5 -emit-obj -o %t.aarch64.5.o -verify %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include %s -DCASE=6 -emit-obj -o %t.aarch64.6.o -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -O2 -emit-pch %s -o %t.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -O2 -include-pch %t.pch -DCASE=3 -emit-obj -o %t.pch.o -verify %s
++
++#ifndef WEAK_STORAGE_DECLARATIONS
++#define WEAK_STORAGE_DECLARATIONS
++typedef Optional(id __weak) ManagedWeak;
++struct Inner { ManagedWeak object; };
++struct Plain { id __weak object; };
++#pragma pack(push, 1)
++struct Envelope { char prefix; struct Inner member; };
++struct Array { char prefix; ManagedWeak values[2]; };
++struct PlainEnvelope { char prefix; struct Plain member; };
++#pragma pack(pop)
++struct Field {
++  char prefix;
++  struct Inner member __attribute__((packed));
++};
++#else
++#if CASE
++// expected-error@* 1+ {{ObjC3 managed weak storage requires native pointer alignment}}
++#endif
++#if CASE == 1
++void read_packed(struct Inner *out, const struct Envelope *in) {
++  *out = in->member;
++}
++#elif CASE == 2
++void write_packed(struct Field *out, const struct Inner *in) {
++  out->member = *in;
++}
++#elif CASE == 3
++void copy_array(struct Array *out, const struct Array *in) {
++  *out = *in;
++}
++#elif CASE == 4
++id read_native_weak(const struct PlainEnvelope *in) {
++  return in->member.object;
++}
++#elif CASE == 5
++void write_native_weak(struct PlainEnvelope *out, id value) {
++  out->member.object = value;
++}
++#elif CASE == 6
++void initialize_packed(id value) {
++  struct Envelope packed = {0, {Some(id __weak, value)}};
++  (void)packed;
++}
++#else
++// ALIGNED-LABEL: define{{.*}} void @copy_aligned(
++// ALIGNED: call void @llvm.objc.copyWeak(
++void copy_aligned(struct Inner *out, const struct Inner *in) {
++  *out = *in;
++}
++#endif
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/callable-borrowed-template-identity.mm b/clang/test/ObjC3/CodeGen/callable-borrowed-template-identity.mm
+new file mode 100644
+index 000000000..16cd11da6
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/callable-borrowed-template-identity.mm
+@@ -0,0 +1,36 @@
++// REQUIRES: x86-registered-target, aarch64-registered-target
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -emit-llvm -o - %s | FileCheck %s
++
++typedef borrowed const char *Bytes;
++typedef void (*BorrowedCallback)(Bytes);
++typedef void (*RawCallback)(const char *);
++
++template<class Callback>
++__attribute__((noinline)) int next(Callback) {
++  static int invocation;
++  return ++invocation;
++}
++
++int separate_specializations(BorrowedCallback borrowed, RawCallback raw) {
++  return next(borrowed) + next(raw);
++}
++
++// CHECK-DAG: @_ZZ4nextIPFvU14objc3_borrowedPKcEEiT_E10invocation = {{.*}}global i32 0
++// CHECK-DAG: @_ZZ4nextIPFvPKcEEiT_E10invocation = {{.*}}global i32 0
++// CHECK-LABEL: define {{.*}} @_Z24separate_specializations
++// CHECK: call {{.*}} @_Z4nextIPFvU14objc3_borrowedPKcEEiT_
++// CHECK: call {{.*}} @_Z4nextIPFvPKcEEiT_
++
++void swift_callback(Bytes __attribute__((swift_context)))
++    __attribute__((swiftcall));
++void swift_raw_callback(const char * __attribute__((swift_context)))
++    __attribute__((swiftcall));
++
++void retain_swift_context(decltype(&swift_callback) callback, const char *value) {
++  decltype(&swift_raw_callback) weakened = callback;
++  weakened(value);
++}
++
++// CHECK-LABEL: define {{.*}} @{{.*}}retain_swift_context
++// CHECK: call swiftcc void %{{[^ ]+}}(ptr noundef swiftself
+diff --git a/clang/test/ObjC3/CodeGen/managed-record-alignment-operations.m b/clang/test/ObjC3/CodeGen/managed-record-alignment-operations.m
+new file mode 100644
+index 000000000..fa7d6e128
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/managed-record-alignment-operations.m
+@@ -0,0 +1,94 @@
++// REQUIRES: x86-registered-target, aarch64-registered-target
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -O0 -x objective-c-header -emit-pch %s -o %t.x86_64.O0.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -O0 -x objective-c -include %s -emit-llvm -o - %s | FileCheck %s --check-prefixes=O0,EH
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -O0 -x objective-c -include-pch %t.x86_64.O0.pch -emit-llvm -o - %s | FileCheck %s --check-prefixes=O0,EH
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -O2 -x objective-c-header -emit-pch %s -o %t.x86_64.O2.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -O2 -x objective-c -include %s -emit-llvm -o - %s | FileCheck %s --check-prefixes=O2,EH
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -O2 -x objective-c -include-pch %t.x86_64.O2.pch -emit-llvm -o - %s | FileCheck %s --check-prefixes=O2,EH
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -O0 -x objective-c-header -emit-pch %s -o %t.aarch64.O0.pch
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -O0 -x objective-c -include %s -emit-llvm -o - %s | FileCheck %s --check-prefixes=O0,EH
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -O0 -x objective-c -include-pch %t.aarch64.O0.pch -emit-llvm -o - %s | FileCheck %s --check-prefixes=O0,EH
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -O2 -x objective-c-header -emit-pch %s -o %t.aarch64.O2.pch
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -O2 -x objective-c -include %s -emit-llvm -o - %s | FileCheck %s --check-prefixes=O2,EH
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -O2 -x objective-c -include-pch %t.aarch64.O2.pch -emit-llvm -o - %s | FileCheck %s --check-prefixes=O2,EH
++
++#ifndef MANAGED_OPERATION_DECLARATIONS
++#define MANAGED_OPERATION_DECLARATIONS
++typedef Optional(id) Strong;
++typedef Result(id, id) StrongResult;
++struct Pair {
++  Strong option;
++  StrongResult result;
++};
++#pragma pack(push, 1)
++struct Packed {
++  char marker;
++  struct Pair first;
++  struct Pair others[2];
++};
++#pragma pack(pop)
++_Static_assert(__builtin_offsetof(struct Packed, first) == 1, "packed offset");
++void examine(const struct Packed *);
++void examine_pair(const struct Pair *);
++struct Packed make(void);
++StrongResult produce(void);
++#else
++void default_initialize(void) {
++  struct Packed value;
++  examine(&value);
++}
++void copy_initialize(const struct Packed *in) {
++  struct Packed copied = *in;
++  examine(&copied);
++}
++void move_initialize(void) {
++  struct Pair moved = make().first;
++  examine_pair(&moved);
++}
++void initialize_with_throw(id object) {
++  struct Packed value = {42, {None(id), Err(id, id, object)}, {
++    {Some(id, object), Ok(id, id, object)},
++    {Some(id, object), produce()}
++  }};
++  examine(&value);
++}
++#endif
++
++// Select the storage helper at each call site and check its actual accesses.
++// O0-LABEL: define{{.*}} void @default_initialize(
++// O0: invoke void @[[DEFAULT:__objc3_v12_storage_0_[0-9A-F]+]](ptr %value)
++// O0: call void @[[DESTROY:__objc3_v12_storage_1_[0-9A-F]+]](ptr %value)
++// O0: define internal void @[[DEFAULT]](
++// O0: @llvm.memset.p0.i64(ptr align 1 %option,
++// O0: @llvm.memset.p0.i64(ptr align 1 %result,
++// O0: define internal void @[[DESTROY]](
++// O0: load ptr, ptr %[[OLD:objc3.carrier.payload.addr[0-9]*]], align 1
++// O0-NEXT: store ptr null, ptr %[[OLD]], align 1
++// O0-LABEL: define{{.*}} void @copy_initialize(
++// O0: invoke void @[[COPY:__objc3_v12_storage_2_[0-9A-F]+]](ptr %copied,
++// O0: define internal void @[[COPY]](
++// O0: objc3.storage.array.body:
++// O0: load ptr, ptr %objc3.carrier.payload.addr{{[0-9]*}}, align 1
++// O0: store ptr {{.*}}, ptr %objc3.carrier.payload.addr{{[0-9]*}}, align 1
++// O0-LABEL: define{{.*}} void @move_initialize(
++// O0: invoke void @[[MOVE:__objc3_v12_storage_3_[0-9A-F]+]](ptr %moved, ptr %first)
++// O0: define internal void @[[MOVE]](
++// O0: [[MOVED:%.*]] = load ptr, ptr %[[SOURCE:objc3.carrier.payload.addr]], align 1
++// O0-NEXT: store ptr null, ptr %[[SOURCE]], align 1
++// O0-NEXT: store ptr [[MOVED]], ptr %objc3.carrier.payload.addr2, align 8
++
++// O2-LABEL: define{{.*}} void @default_initialize(
++// O2: @llvm.memset.p0.i64(ptr noundef nonnull align 1
++// O2: load ptr, ptr %objc3.carrier.payload.addr{{.*}}, align 1
++// O2-LABEL: define{{.*}} void @copy_initialize(
++// O2: [[COPYVALUE:%.*]] = load ptr, ptr %objc3.carrier.payload.addr{{.*}}, align 1
++// O2: store ptr [[COPYVALUE]], ptr %objc3.carrier.payload.addr{{.*}}, align 1
++// O2-LABEL: define{{.*}} void @move_initialize(
++// O2: [[MOVED:%.*]] = load ptr, ptr %[[SOURCE:objc3.carrier.payload.addr[^,]*]], align 1
++// O2-NEXT: store ptr null, ptr %[[SOURCE]], align 1
++// O2-NEXT: store ptr [[MOVED]], ptr %objc3.carrier.payload.addr{{.*}}, align 8
++
++// EH-LABEL: define{{.*}} void @initialize_with_throw(
++// EH: invoke void @produce(
++// EH: landingpad {
++// EH: load ptr, ptr %objc3.carrier.payload.addr{{.*}}, align 1

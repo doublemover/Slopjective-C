@@ -1,6 +1,5 @@
 """Run the real regressions with one deliberately broken test-only variant."""
 from pathlib import Path
-import shutil
 import os
 import signal
 import subprocess
@@ -8,8 +7,12 @@ import subprocess
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
-COMPILER = ROOT / 'out/toolchains/objc3-development/stage-linux-x86_64/bin/clang++'
-LIBRARY = ROOT / 'out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/runtime/libobjc3_runtime_services.a'
+COMPILER = Path(os.environ.get(
+    'OBJC3_NATIVE_TEST_COMPILER',
+    ROOT / 'out/toolchains/objc3-development/stage-linux-x86_64/bin/clang++')).absolute()
+LIBRARY = Path(os.environ.get(
+    'OBJC3_NATIVE_TEST_LIBRARY',
+    ROOT / 'out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/runtime/libobjc3_runtime_services.a')).resolve()
 pytestmark = pytest.mark.skipif(not COMPILER.is_file() or not LIBRARY.is_file(),
                                 reason='requires a built native runtime and qualified foundation')
 
@@ -50,7 +53,9 @@ def test_semantic_oracle_detects_mutant(tmp_path, mutant):
             assert expected in result.stderr
 
 
-@pytest.mark.parametrize('mutant', ['index-rollback', 'index-repair', 'index-collisions'])
+@pytest.mark.parametrize('mutant', [
+    'index-rollback', 'index-repair', 'index-collisions', 'index-linear-contains',
+])
 def test_i32_index_oracle_detects_mutant(tmp_path, mutant):
     source = ROOT / 'native/objc3c/src/runtime/stdlib/collections_service.cpp'
     original = source.read_text()
@@ -58,6 +63,9 @@ def test_i32_index_oracle_detects_mutant(tmp_path, mutant):
         'index-rollback': ('catch (...) { values.pop_back(); throw; }', 'catch (...) { throw; }'),
         'index-repair': ('index.find(key(values[i]))->second = i;', '(void)key;'),
         'index-collisions': ('return std::hash<std::int32_t>{}(value);', 'return 0;'),
+        'index-linear-contains': (
+            '*out_found = record.key_index->find(value) != record.key_index->end();',
+            '*out_found = std::find(record.values.begin(), record.values.end(), value) != record.values.end();'),
     }
     before, after = replacements[mutant]
     assert before in original
@@ -238,8 +246,11 @@ def test_collection_ownership_ledger_rejects_cleanup_mutants(tmp_path, owner, mu
             assert 'owned_payload_ledger.h' in result.stderr
 
 
-@pytest.mark.parametrize('mutant', ['whole-array-copy', 'partial-associative-clone'])
-def test_collection_copy_bounds_reject_reconstruction_mutants(tmp_path, mutant):
+@pytest.mark.parametrize('mutant', [
+    'whole-array-copy', 'partial-associative-clone',
+    'associative-prepublication', 'null-replacement-sentinel',
+])
+def test_collection_oracle_rejects_construction_mutants(tmp_path, mutant):
     runtime = ROOT / 'native/objc3c/src/runtime'
     source = runtime / 'stdlib' / ('generic_collection_service.cpp' if mutant == 'whole-array-copy'
                                  else 'generic_associative_service.cpp')
@@ -255,7 +266,7 @@ def test_collection_copy_bounds_reject_reconstruction_mutants(tmp_path, mutant):
             ': ((append && target == source->count) || (!append && target == replacement_index)) '
             '? replacement : source->At(target);', 1)
         expected = 'append_copies <= 32 * count'
-    else:
+    elif mutant == 'partial-associative-clone':
         before = '  snapshot->entries.reserve(count);\n  for (std::size_t i = 0; i < count; ++i) {'
         assert before in original
         changed = original.replace(before, before + '''
@@ -269,6 +280,26 @@ def test_collection_copy_bounds_reject_reconstruction_mutants(tmp_path, mutant):
     snapshot = std::move(clone);
 ''', 1)
         expected = 'ledger.key_copies == count'
+    elif mutant == 'associative-prepublication':
+        before = ('  if (status != OBJC3_GENERIC_COLLECTION_OK) return status;\n'
+                  '  void *handle = nullptr;\n'
+                  '  status = StoreRecord(std::move(record), kMapKind, &handle);')
+        assert before in original
+        changed = original.replace(before, '''
+  if (status != OBJC3_GENERIC_COLLECTION_OK) {
+    void *pending = nullptr;
+    if (CreateEmpty(*descriptor, kMapKind, false, &pending) == OBJC3_GENERIC_COLLECTION_OK)
+      AssociativeStorage().Release(pending, kMapKind);
+    return status;
+  }
+  void *handle = nullptr;
+  status = StoreRecord(std::move(record), kMapKind, &handle);''', 1)
+        expected = 'objc3_test_associative_token_count() == initial_tokens + 1'
+    else:
+        before = 'replace_value ? replacement_value : source.value.data()'
+        assert before in original
+        changed = original.replace(before, 'replacement_value ? replacement_value : source.value.data()', 1)
+        expected = 'source != previous_zero_value'
     broken = tmp_path / source.name
     broken.write_text(changed)
     for failure in (False, True):
@@ -278,6 +309,7 @@ def test_collection_copy_bounds_reject_reconstruction_mutants(tmp_path, mutant):
             owners = [broken if path == source else path for path in owners]
         binary = tmp_path / ('bad' if failure else 'good')
         command = [str(COMPILER), '--no-default-config', '-std=c++20', '-O2', '-UNDEBUG',
+                   '-DOBJC3_GENERIC_ASSOCIATIVE_STORAGE_TESTING',
                    '-I'+str(ROOT / 'native/objc3c/src'),
                    str(ROOT / 'native/objc3c/tests/generic_collection_ownership_test.cpp'),
                    *map(str, owners), str(LIBRARY), '-Wl,--wrap=_Znwm',

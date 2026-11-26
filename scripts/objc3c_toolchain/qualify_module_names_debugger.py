@@ -36,7 +36,7 @@ def qualify(sdk: Path, output: Path, *, compiler: Path | None = None,
         log = output / (label + '.log')
         with log.open('w') as stream:
             result = subprocess.run(list(map(str, argv)), cwd=cwd, env=env,
-                                    stdout=stream, stderr=subprocess.STDOUT, timeout=90)
+                                    stdout=stream, stderr=subprocess.STDOUT)
         commands.append({'name': label, 'exit_code': result.returncode, 'log_sha256': packages.digest(log)})
         if result.returncode: raise ValueError('owned-name debugger failed: ' + label)
         return log

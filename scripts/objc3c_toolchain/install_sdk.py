@@ -8,9 +8,11 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import shlex
 import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
 import time
@@ -18,21 +20,89 @@ import types
 import uuid
 
 
+# Keep the downloaded installer self-contained so it can admit the archive
+# without loading modules from an existing or newly extracted SDK.
+MACHINES = {'x86_64': ('x86_64-unknown-linux-gnu', 62),
+            'amd64': ('x86_64-unknown-linux-gnu', 62),
+            'aarch64': ('aarch64-unknown-linux-gnu', 183),
+            'arm64': ('aarch64-unknown-linux-gnu', 183)}
+
+LIBSTDCXX_PROBE = '''
+import ctypes
+import sys
+
+try:
+    library = ctypes.CDLL('libstdc++.so.6')
+    libc = ctypes.CDLL(None)
+    libc.dlvsym.argtypes = (ctypes.c_void_p, ctypes.c_char_p, ctypes.c_char_p)
+    libc.dlvsym.restype = ctypes.c_void_p
+    libc.dlerror.restype = ctypes.c_char_p
+    symbol = sys.argv[1].encode('ascii')
+    libc.dlerror()
+    libc.dlvsym(library._handle, symbol, symbol)
+    # The linker emits each version node as an absolute symbol at address zero.
+    error = libc.dlerror()
+    if error is not None:
+        raise OSError(error.decode(errors='replace'))
+except (AttributeError, OSError) as error:
+    sys.exit(str(error))
+'''
+
+
 def file_hash(path: Path) -> str:
+    # The standalone installer also reads ABI metadata on distributions with
+    # Python older than the Python 3.11 required to verify an admitted SDK.
+    digest = hashlib.sha256()
     with path.open('rb') as stream:
-        return hashlib.file_digest(stream, 'sha256').hexdigest()
+        for block in iter(lambda: stream.read(1024 * 1024), b''):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def admit_target(data: dict) -> int:
+    target, machine = MACHINES[platform.machine().lower()]
+    if data.get('target') != target:
+        raise ValueError(f'SDK target {data.get("target")!r} differs from the native Linux target '
+                         f'{target}. Download the SDK for this architecture.')
+    return machine
+
+
+def admit_host_abi(data: dict) -> dict:
+    abi = data.get('linux_abi')
+    if not isinstance(abi, dict):
+        raise ValueError('SDK manifest is missing Linux ABI requirements')
+    glibc = abi.get('glibc_minimum')
+    libstdcxx = abi.get('libstdcxx_symbol_minimum')
+    if (not isinstance(glibc, str) or not re.fullmatch(r'[0-9]{1,3}\.[0-9]{1,3}', glibc) or
+            not isinstance(libstdcxx, str) or not re.fullmatch(r'GLIBCXX_[0-9]{1,3}(?:\.[0-9]{1,3}){1,2}', libstdcxx)):
+        raise ValueError('SDK manifest contains invalid Linux ABI requirements')
+    try:
+        libc = os.confstr('CS_GNU_LIBC_VERSION') or ''
+    except (OSError, ValueError):
+        libc = ''
+    host_glibc = re.fullmatch(r'glibc ([0-9]+\.[0-9]+)', libc)
+    if host_glibc is None or tuple(map(int, host_glibc[1].split('.'))) < tuple(map(int, glibc.split('.'))):
+        detected = libc or 'GNU libc unavailable'
+        raise ValueError(f'SDK requires glibc >= {glibc} (detected {detected}). '
+                         'Use an SDK-supported Linux distribution or container.')
+    # Resolve the system libstdc++ in a fresh process. A previously activated
+    # SDK, loader override, or a library already loaded into Python cannot
+    # supply the host ABI for the new installation.
+    env = {key: value for key, value in os.environ.items() if not key.startswith('LD_')}
+    try:
+        probe = subprocess.run([sys.executable, '-I', '-S', '-c', LIBSTDCXX_PROBE, libstdcxx],
+                               env=env, capture_output=True, text=True, timeout=10)
+        if probe.returncode:
+            raise ValueError(probe.stderr.strip() or f'host loader probe exited {probe.returncode}')
+    except (OSError, ValueError, subprocess.SubprocessError) as error:
+        raise ValueError(f'SDK requires system libstdc++.so.6 with {libstdcxx} ({error}). '
+                         'Install or upgrade the distribution libstdc++ package, or use an '
+                         'SDK-supported Linux distribution or container.') from None
+    return {'glibc': host_glibc[1], 'glibc_minimum': glibc, 'libstdcxx_symbol_verified': libstdcxx}
 
 
 def admit_native_sdk(prefix: Path, data: dict) -> None:
-    # Keep the downloaded installer self-contained: no checkout or product
-    # module may be imported before its archive/seal has been admitted.
-    machines = {'x86_64': ('x86_64-unknown-linux-gnu', 62),
-                'amd64': ('x86_64-unknown-linux-gnu', 62),
-                'aarch64': ('aarch64-unknown-linux-gnu', 183),
-                'arm64': ('aarch64-unknown-linux-gnu', 183)}
-    selected = machines.get(platform.machine().lower())
-    if platform.system() != 'Linux' or selected is None or data.get('target') != selected[0]:
-        raise ValueError('SDK target differs from the native Linux architecture')
+    machine = admit_target(data)
     for name, row in data['files'].items():
         if row['kind'] != 'file':
             continue
@@ -40,7 +110,7 @@ def admit_native_sdk(prefix: Path, data: dict) -> None:
             header = stream.read(64)
         if header[:4] == b'\x7fELF' and (len(header) != 64 or
                 header[:6] != b'\x7fELF\x02\x01' or
-                int.from_bytes(header[18:20], 'little') != selected[1]):
+                int.from_bytes(header[18:20], 'little') != machine):
             raise ValueError('SDK ELF member differs from the native Linux architecture: ' + name)
 
 
@@ -55,10 +125,7 @@ def verify(prefix: Path, *, verifier: Path | None = None, verifier_bytes: bytes 
     return module.verify_sdk(prefix)
 
 
-def existing_generation(root: Path, archive: Path, decoder_path: Path) -> tuple[Path, str, bytes] | None:
-    generations = root / 'sdks'
-    if not generations.is_dir() or generations.is_symlink():
-        return None
+def read_archive_admission(archive: Path, decoder_path: Path) -> tuple[dict, bytes] | None:
     # New archives put the seal and standalone verifier before the bulk data.
     # Read them from the hash-verified archive, never from the mutable prefix.
     with subprocess.Popen([str(decoder_path), '-dc', str(archive)], stdout=subprocess.PIPE) as decoder:
@@ -75,11 +142,11 @@ def existing_generation(root: Path, archive: Path, decoder_path: Path) -> tuple[
         finally:
             decoder.terminate()
             decoder.stdout.close()
-    seal = json.loads(admission[0])['seal_sha256']
-    if len(seal) != 64 or any(character not in '0123456789abcdef' for character in seal):
+    data = json.loads(admission[0])
+    seal = data['seal_sha256']
+    if not isinstance(seal, str) or not re.fullmatch('[0-9a-f]{64}', seal):
         raise ValueError('SDK archive contains an invalid generation seal')
-    prefix = generations / seal
-    return (prefix, seal, admission[1]) if prefix.is_dir() and not prefix.is_symlink() else None
+    return data, admission[1]
 
 
 def create_install_directory(path: Path, *, parents: bool = False) -> None:
@@ -156,21 +223,38 @@ export LD_LIBRARY_PATH="$OBJC3C_SDK_ROOT/lib"
         raise
 
 
-def install(archive: Path, expected_sha256: str, root: Path) -> dict:
+def admit_release(data: dict, *, expected_seal_sha256: str | None, expected_source_build_id: str | None) -> None:
+    if expected_seal_sha256 is not None and data.get('seal_sha256') != expected_seal_sha256:
+        raise ValueError('SDK seal differs from the release manifest')
+    if expected_source_build_id is not None and data.get('source_build_id') != expected_source_build_id:
+        raise ValueError('SDK source build differs from the release manifest')
+
+
+def install(archive: Path, expected_sha256: str, root: Path, *, reuse_existing: bool = False,
+            expected_seal_sha256: str | None = None, expected_source_build_id: str | None = None) -> dict:
     started = time.monotonic()
     costs = {}
-    if platform.system() != 'Linux' or platform.machine().lower() not in ('x86_64', 'amd64', 'aarch64', 'arm64'):
+    if platform.system() != 'Linux' or platform.machine().lower() not in MACHINES:
         raise ValueError('this SDK requires native Linux x86-64 or AArch64')
     archive = archive.resolve(strict=True)
     root = root.expanduser().resolve()
     if len(expected_sha256) != 64 or file_hash(archive) != expected_sha256.lower():
         raise ValueError('archive SHA-256 does not match the release receipt')
-    costs['archive_admission'] = time.monotonic()-started
     archive_bytes = archive.stat().st_size
     decoder_name = shutil.which('zstd')
     if not decoder_name: raise ValueError('SDK installation requires zstd')
     decoder_path = Path(decoder_name).resolve(strict=True)
     decoder_sha256 = file_hash(decoder_path)
+    admission = read_archive_admission(archive, decoder_path)
+    host_abi = None
+    if admission is not None:
+        admit_release(admission[0], expected_seal_sha256=expected_seal_sha256,
+                      expected_source_build_id=expected_source_build_id)
+        admit_target(admission[0])
+        host_abi = admit_host_abi(admission[0])
+    if sys.version_info < (3, 11) or not hasattr(tarfile, 'data_filter'):
+        raise ValueError('SDK installation requires distribution Python 3.11 or newer with tarfile data filtering')
+    costs['archive_admission'] = time.monotonic()-started
     measurement_host = {'system': '-'.join((platform.system(), platform.release(), platform.version())), 'machine': platform.machine(),
         'python_version': platform.python_version(),
         'decoder': {'path': str(decoder_path), 'sha256': decoder_sha256},
@@ -189,8 +273,15 @@ def install(archive: Path, expected_sha256: str, root: Path) -> dict:
         committed = False
         try:
             phase_started = time.monotonic()
-            existing = existing_generation(root, archive, decoder_path)
+            existing = None
+            generations = root / 'sdks'
+            if admission is not None and generations.is_dir() and not generations.is_symlink():
+                prefix = generations / admission[0]['seal_sha256']
+                if prefix.is_dir() and not prefix.is_symlink():
+                    existing = prefix
             if existing is None:
+                if reuse_existing:
+                    raise ValueError('exact release reuse requires an existing sealed prefix and archive admission')
                 destination = Path(temporary.name)
                 with subprocess.Popen([str(decoder_path), '-dc', str(archive)], stdout=subprocess.PIPE) as decoder:
                     try:
@@ -208,12 +299,8 @@ def install(archive: Path, expected_sha256: str, root: Path) -> dict:
             if file_hash(decoder_path) != decoder_sha256:
                 raise ValueError('SDK archive decoder changed during installation')
             if existing is not None:
-                prefix, seal, verifier_bytes = existing
-                data = verify(prefix, verifier_bytes=verifier_bytes)
-                if data['seal_sha256'] != seal:
-                    raise ValueError('existing SDK prefix differs from the release seal')
-                admit_native_sdk(prefix, data)
-                reused = True
+                candidate = existing
+                data = verify(candidate, verifier_bytes=admission[1])
             else:
                 if {path.name for path in destination.iterdir()} != {'objc3-sdk'}:
                     raise ValueError('SDK archive must contain exactly one objc3-sdk directory')
@@ -224,7 +311,16 @@ def install(archive: Path, expected_sha256: str, root: Path) -> dict:
                     if not directory.is_symlink() and directory.is_dir():
                         directory.chmod(0o755)
                 data = verify(candidate)
-                admit_native_sdk(candidate, data)
+            if admission is not None and data['seal_sha256'] != admission[0]['seal_sha256']:
+                raise ValueError('verified SDK prefix differs from the archive admission seal')
+            admit_release(data, expected_seal_sha256=expected_seal_sha256,
+                          expected_source_build_id=expected_source_build_id)
+            admit_native_sdk(candidate, data)
+            if host_abi is None:
+                host_abi = admit_host_abi(data)
+            if existing is not None:
+                reused = True
+            else:
                 prefix = root / 'sdks' / data['seal_sha256']
                 create_install_directory(prefix.parent)
                 reused = prefix.exists()
@@ -252,7 +348,7 @@ def install(archive: Path, expected_sha256: str, root: Path) -> dict:
             'cleanup_warnings': cleanup_warnings,
             'cost': {'schema': 'objc3c.sdk-install-cost.v1', 'archive_sha256': expected_sha256.lower(),
                 'source_build_id': data['source_build_id'], 'seal_sha256': data['seal_sha256'],
-                'host': measurement_host,
+                'host': {**measurement_host, 'linux_abi': host_abi},
                 'archive_bytes': archive_bytes, 'prefix_reused': reused,
                 'phases_seconds': costs, 'elapsed_seconds': time.monotonic()-started}}
 

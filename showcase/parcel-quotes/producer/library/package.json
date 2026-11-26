@@ -1,0 +1,17 @@
+{
+  "schema": "objc3c.source-package.v4",
+  "name": "Parcel.Quotes",
+  "package": "parcel-quotes-v1",
+  "source": "quotes.mm",
+  "language": "objective-c++",
+  "standard": "c++20",
+  "ownership": "arc",
+  "provider_ownership": "arc",
+  "exports": [
+    "Quote",
+    "QuoteError",
+    "QuoteResult",
+    "quote_shipment"
+  ],
+  "dependencies": []
+}

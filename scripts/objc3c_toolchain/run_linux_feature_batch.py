@@ -134,13 +134,8 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
             products.record(policy, label, command, report['commands'], cwd=cwd, log=log)
             return
         with log.open("w", encoding="utf-8") as stream:
-            try:
-                completed = subprocess.run(command, cwd=cwd, env=env, stdout=stream,
-                    stderr=subprocess.STDOUT, timeout=180, check=False)
-                code = completed.returncode
-            except subprocess.TimeoutExpired:
-                stream.write("\nCommand timed out after 180 seconds.\n")
-                code = 124
+            code = subprocess.run(command, cwd=cwd, env=env, stdout=stream,
+                                  stderr=subprocess.STDOUT, check=False).returncode
         report["commands"].append({"name": label, "argv": command,
                                    "exit_code": code, "log": log.name})
         if code:
@@ -200,14 +195,15 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
     try:
         if policy:
             products = ProductCommands(output / 'product-evidence',
-                sources=(fixtures, headers, include_root, Path(__file__)))
+                sources=(fixtures, headers, include_root, Path(__file__)), checkpoint_commands=False)
         selected = [case for case in configurations(features, transports) if case.optimization in optimizations]
         if not selected:
             raise ValueError('feature execution selected no supported configurations')
+        if policy:
+            for optimization in dict.fromkeys(case.optimization for case in selected):
+                policy.ensure_controls(optimization)
+            report["sanitizer_policy"] = policy.receipt()
         for case in selected:
-            if policy:
-                policy.ensure_controls(case.optimization)
-                report["sanitizer_policy"] = policy.receipt()
             with tempfile.TemporaryDirectory(prefix="objc3-feature-") as temporary:
                 work = Path(temporary)
                 (work / "include/objc3c").mkdir(parents=True)
@@ -387,6 +383,8 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                         returns = compile_source(case, work / "return_failures.m", work)
                         execute(case, [returns], work, "-return-cleanup")
                 report["cases"].append({"name": case.name, "status": "pass"})
+            if products:
+                products.save()
             write_json(report_path, report, compact=True)
         if policy:
             report['product_evidence'] = products.finalize()

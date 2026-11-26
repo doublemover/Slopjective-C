@@ -1,0 +1,68 @@
+diff --git a/llvm/lib/Analysis/MemoryBuiltins.cpp b/llvm/lib/Analysis/MemoryBuiltins.cpp
+index 0364a8bff9e53077e2b9954825929c3d26d49dcf..843f0c1c0fa00187a46d708364c65ccc53e74de4 100644
+--- a/llvm/lib/Analysis/MemoryBuiltins.cpp
++++ b/llvm/lib/Analysis/MemoryBuiltins.cpp
+@@ -22,6 +22,7 @@
+ #include "llvm/Analysis/ValueTracking.h"
+ #include "llvm/IR/Argument.h"
+ #include "llvm/IR/Attributes.h"
++#include "llvm/IR/CallingConv.h"
+ #include "llvm/IR/Constants.h"
+ #include "llvm/IR/DataLayout.h"
+ #include "llvm/IR/DerivedTypes.h"
+@@ -971,6 +972,16 @@ OffsetSpan ObjectSizeOffsetVisitor::visitAllocaInst(AllocaInst &I) {
+ 
+ OffsetSpan ObjectSizeOffsetVisitor::visitArgument(Argument &A) {
+   Type *MemoryTy = A.getPointeeInMemoryValueType();
++  // Clang uses a zero-length byte array as an ABI marker for an erased Swift
++  // indirect result. The caller supplies the storage; the marker supplies no
++  // size information and must not become a zero-byte object-size bound.
++  const auto Convention = A.getParent()->getCallingConv();
++  if ((Convention == CallingConv::Swift || Convention == CallingConv::SwiftTail) &&
++      A.getParamStructRetType() == MemoryTy)
++    if (const auto *Array = dyn_cast_or_null<ArrayType>(MemoryTy);
++        Array && Array->getNumElements() == 0 &&
++        Array->getElementType()->isIntegerTy(8))
++      MemoryTy = nullptr;
+   // No interprocedural analysis is done at the moment.
+   if (!MemoryTy || !MemoryTy->isSized()) {
+     ++ObjectVisitorArgument;
+diff --git a/llvm/test/Transforms/InstCombine/objsize-swift-erased-sret.ll b/llvm/test/Transforms/InstCombine/objsize-swift-erased-sret.ll
+new file mode 100644
+index 0000000000000000000000000000000000000000..6fbb67a0f93828f5f686678a6cb04138cd9b1be8
+--- /dev/null
++++ b/llvm/test/Transforms/InstCombine/objsize-swift-erased-sret.ll
+@@ -0,0 +1,33 @@
++; RUN: opt -passes=lower-constant-intrinsics -S %s | FileCheck %s
++
++target datalayout = "e-p:64:64-i64:64-n8:16:32:64"
++
++%Pair = type { i64, i64 }
++
++; The caller may supply a nonempty result buffer even though the callee has
++; erased its type. The registers still follow the Swift indirect-result ABI.
++define swiftcc void @erased_result(ptr sret([0 x i8]) %out) {
++; CHECK-LABEL: define swiftcc void @erased_result(
++; CHECK: call void @consume_size(i64 -1)
++  %size = call i64 @llvm.objectsize.i64.p0(ptr %out, i1 false, i1 false, i1 false)
++  call void @consume_size(i64 %size)
++  ret void
++}
++
++define swiftcc void @typed_result(ptr sret(%Pair) %out) {
++; CHECK-LABEL: define swiftcc void @typed_result(
++; CHECK: call void @consume_size(i64 16)
++  %size = call i64 @llvm.objectsize.i64.p0(ptr %out, i1 false, i1 false, i1 false)
++  call void @consume_size(i64 %size)
++  ret void
++}
++
++define void @empty_c_result(ptr sret([0 x i8]) %out) {
++; CHECK-LABEL: define void @empty_c_result(
++; CHECK: call void @consume_size(i64 0)
++  %size = call i64 @llvm.objectsize.i64.p0(ptr %out, i1 false, i1 false, i1 false)
++  call void @consume_size(i64 %size)
++  ret void
++}
++
++declare void @consume_size(i64)

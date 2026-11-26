@@ -211,7 +211,20 @@ inline bool IsNativeObjectExpressionOwner(const InterfaceDeclarationIdentity &d)
 inline constexpr const char *kObjCGenericSignaturesSemantic = "objc3.objc-generic-signatures.v1";
 inline bool HasObjCGenericSignatureIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";objc-generics:v1;") != std::string::npos ||
+         d.canonical_type_identity.find(";objc-specialized-superclass:v1;") != std::string::npos ||
          d.canonical_type_identity.find(";objc-generic-parameter-refs:v1;") != std::string::npos;
+}
+inline constexpr const char *kObjCPropertySemantic = "objc3.objc-property-contracts.v1";
+inline constexpr const char *kObjCPropertyContractMarker = ";objc-property-contract:v2;";
+inline bool HasObjCPropertyContractIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.kind == "ObjCProperty" &&
+         d.canonical_type_identity.find(kObjCPropertyContractMarker) != std::string::npos;
+}
+inline constexpr const char *kObjCCategoryProtocolsSemantic = "objc3.objc-category-protocols.v1";
+inline constexpr const char *kObjCCategoryProtocolsMarker = ";objc-category-protocols:v1;";
+inline bool HasObjCCategoryProtocolsIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.kind == "ObjCCategory" &&
+         d.canonical_type_identity.find(kObjCCategoryProtocolsMarker) != std::string::npos;
 }
 inline constexpr const char *kNativeExternalBindingSemantic = "objc3.native-external-bindings.v1";
 inline constexpr const char *kNativeExternalBindingMarker = ";native-external-binding:v1;symbol=";
@@ -390,6 +403,12 @@ inline constexpr const char *kBorrowedCallableOwnerSemantic = "objc3.borrowed-ca
 inline bool HasBorrowedCallableOwnerIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";borrowed-callable-owners:v1;") != std::string::npos ||
          d.effects.ownership_identity.find(";borrowed-callable-owners:v1;") != std::string::npos;
+}
+inline constexpr const char *kBorrowedCallableParametersSemantic = "objc3.borrowed-callable-parameters.v1";
+inline constexpr const char *kBorrowedCallableParametersMarker = ";borrowed-callable-parameters:v1;";
+inline bool HasBorrowedCallableParametersIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(kBorrowedCallableParametersMarker) != std::string::npos ||
+         d.effects.ownership_identity.find(kBorrowedCallableParametersMarker) != std::string::npos;
 }
 inline constexpr const char *kAsyncConsumedOwnershipSemantic = "objc3.async-consuming-ownership.v3";
 inline bool HasAsyncConsumedOwnershipIdentity(const InterfaceDeclarationIdentity &d) {

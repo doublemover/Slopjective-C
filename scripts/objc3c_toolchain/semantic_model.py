@@ -16,6 +16,7 @@ RELATIONS = {'rename': 'local-alpha-rename-reserved-prefix.v1',
 OPERATIONS = ('some', 'none', 'copy_optional', 'alias_optional', 'self_optional',
               'ok', 'err', 'step', 'copy_result', 'new', 'copy_object', 'clear',
               'scope', 'partial_throw')
+OWNERSHIP_OPERATIONS = ('new', 'copy_object', 'clear')
 
 
 @dataclass(frozen=True)
@@ -99,6 +100,29 @@ def generate(seed: int, length=24) -> list[Operation]:
         program.append(Operation(rng.choice(OPERATIONS), rng.randrange(2), rng.randint(-20, 20), rng.randrange(2)))
     validate(program)
     return program
+
+
+def transition_witnesses():
+    """Small reviewed programs for the transitions rare in random tails."""
+    return {
+        'owner-transitions': [
+            Operation('clear'), Operation('clear', slot=1),
+            Operation('new'), Operation('new'),
+            Operation('copy_object', other=0), Operation('copy_object', slot=1, other=0),
+            Operation('copy_object'), Operation('new'), Operation('copy_object'),
+            Operation('clear', slot=1), Operation('copy_object'),
+            Operation('new', slot=1), Operation('clear', slot=1), Operation('copy_object'),
+        ],
+        'carrier-transitions': [
+            Operation('self_optional'), Operation('none'), Operation('copy_optional'),
+            Operation('some', value=5), Operation('some', value=8),
+            Operation('alias_optional', value=-3), Operation('copy_optional', other=0),
+            Operation('copy_optional'),
+            Operation('copy_result'), Operation('ok', value=2), Operation('ok', value=13),
+            Operation('err', value=-5), Operation('ok', slot=1, value=7), Operation('copy_result'),
+            Operation('ok', slot=1, value=11), Operation('copy_result'),
+        ],
+    }
 
 
 def interpret(program: list[Operation], *, bias=0) -> dict:
@@ -198,7 +222,7 @@ def mismatch(expected: dict, actual: dict) -> str | None:
     return None
 
 
-def coverage(programs: list[list[Operation]]) -> dict:
+def coverage(programs: list[list[Operation]], *, qualification=False) -> dict:
     optional, result, pairs, covered = set(), set(), set(), set()
     for program in programs:
         states = interpret(program)['states']
@@ -216,7 +240,7 @@ def coverage(programs: list[list[Operation]]) -> dict:
             if op.kind in ('ok', 'err', 'step', 'copy_result'):
                 offset = 4+2*op.slot
                 covered.add(f'result:{op.kind}:{before[offset]}>{state[offset]}')
-            if op.kind in ('new', 'copy_object', 'clear'):
+            if op.kind in OWNERSHIP_OPERATIONS:
                 dead = sum(state[11::2])-sum(before[11::2])
                 covered.add(owner_transition(op.kind, before[8:10], state[8:10], op.slot, dead))
             if op.kind in ('scope', 'partial_throw'):
@@ -229,6 +253,9 @@ def coverage(programs: list[list[Operation]]) -> dict:
     domain = transition_domain()
     if not covered <= domain:
         raise ValueError('semantic transition escaped its declared supported domain')
+    ownership_pairs = set(itertools.product(OWNERSHIP_OPERATIONS, repeat=2))
+    if qualification and (covered != domain or not ownership_pairs <= pairs):
+        raise ValueError('semantic qualification lost reviewed transition or ownership pair coverage')
     return {'scope': 'Bounded model transitions; compiler source coverage is measured separately.',
             'operations': sorted({op.kind for program in programs for op in program}),
             'optional_tag_transitions': sorted(optional), 'result_tag_transitions': sorted(result),
@@ -236,7 +263,9 @@ def coverage(programs: list[list[Operation]]) -> dict:
             'transition_ids': sorted(covered), 'transition_domain': sorted(domain),
             'transitions_covered': len(covered), 'transitions_supported': len(domain),
             'pair_ids': sorted(left+'>'+right for left, right in pairs),
-            'pairs_covered': len(pairs), 'pairs_supported': len(OPERATIONS)**2}
+            'pairs_covered': len(pairs), 'pairs_supported': len(OPERATIONS)**2,
+            'ownership_pairs_covered': len(ownership_pairs & pairs),
+            'ownership_pairs_supported': len(ownership_pairs)}
 
 
 def owner_transition(kind, before, after, slot, destroyed):
@@ -255,7 +284,7 @@ def transition_domain():
         for kind, outcomes in operations.items():
             domain.update(f'{family}:{kind}:{before}>{after}' for before in (0, 1)
                           for after in outcomes or (before,))
-    for kind in ('new', 'copy_object', 'clear'):
+    for kind in OWNERSHIP_OPERATIONS:
         for values in itertools.product(range(3), repeat=2):
             for slot, other in itertools.product(range(2), repeat=2):
                 after = list(values)

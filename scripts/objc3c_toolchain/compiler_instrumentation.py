@@ -5,6 +5,7 @@ from .linux_host import native_linux_host, native_target
 
 
 import argparse
+from collections import Counter
 import hashlib
 from datetime import datetime, timezone
 import json
@@ -397,73 +398,97 @@ def verify_owned_shared_libraries(build: Path, libraries: list[Path], records: l
     return evidence
 
 
-def elf_gnu_build_id(path: Path) -> str:
+def elf_gnu_build_id(path: Path, *, allow_missing: bool = False) -> str | None:
     """Read one canonical SHA-1 NT_GNU_BUILD_ID without executing the ELF."""
-    data = path.read_bytes()
-    if data[:6] != b'\x7fELF\x02\x01' or len(data) < 64:
-        raise ValueError('loaded dependency is not a little-endian ELF64 image: '+str(path))
-    program_offset = struct.unpack_from('<Q', data, 32)[0]
-    program_size, program_count = struct.unpack_from('<HH', data, 54)
-    if (program_size != 56 or not program_count or
-            program_offset+program_size*program_count > len(data)):
-        raise ValueError('loaded dependency has an invalid ELF program inventory: '+str(path))
     identities = []
-    for index in range(program_count):
-        header = struct.unpack_from('<IIQQQQQQ', data, program_offset+program_size*index)
-        if header[0] != 4:  # PT_NOTE
-            continue
-        offset, size = header[2], header[5]
-        if offset+size > len(data):
-            raise ValueError('loaded dependency has a truncated ELF note: '+str(path))
-        cursor, end = offset, offset+size
-        while cursor < end:
-            if cursor+12 > end:
-                raise ValueError('loaded dependency has a malformed ELF note: '+str(path))
-            name_size, value_size, note_type = struct.unpack_from('<III', data, cursor)
-            cursor += 12
-            name_end = cursor+name_size
-            value_start = (name_end+3) & ~3
-            value_end = value_start+value_size
-            next_note = (value_end+3) & ~3
-            if name_end > end or value_end > end or next_note > end:
-                raise ValueError('loaded dependency has a malformed ELF note: '+str(path))
-            if note_type == 3 and data[cursor:name_end] == b'GNU\0':
+    with path.open('rb') as stream:
+        file_size = os.fstat(stream.fileno()).st_size
+        header = stream.read(64)
+        if header[:6] != b'\x7fELF\x02\x01' or len(header) != 64:
+            raise ValueError('loaded dependency is not a little-endian ELF64 image: '+str(path))
+        program_offset = struct.unpack_from('<Q', header, 32)[0]
+        program_size, program_count = struct.unpack_from('<HH', header, 54)
+        inventory_bytes = program_size * program_count
+        if program_size != 56 or not program_count or program_offset + inventory_bytes > file_size:
+            raise ValueError('loaded dependency has an invalid ELF program inventory: '+str(path))
+        stream.seek(program_offset)
+        inventory = stream.read(inventory_bytes)
+        if len(inventory) != inventory_bytes:
+            raise ValueError('loaded dependency has a truncated ELF program inventory: '+str(path))
+        malformed = 'loaded dependency has a malformed ELF note: '+str(path)
+        for kind, _, offset, _, _, size, _, _ in struct.iter_unpack('<IIQQQQQQ', inventory):
+            if kind != 4:  # PT_NOTE
+                continue
+            cursor, end = offset, offset + size
+            if end > file_size:
+                raise ValueError('loaded dependency has a truncated ELF note: '+str(path))
+            while cursor < end:
+                stream.seek(cursor)
+                note_header = stream.read(min(12, end-cursor))
+                if len(note_header) != 12:
+                    raise ValueError(malformed)
+                name_size, value_size, note_type = struct.unpack('<III', note_header)
+                value_start = (cursor + 12 + name_size + 3) & ~3
+                cursor = (value_start + value_size + 3) & ~3
+                if cursor > end:
+                    raise ValueError(malformed)
+                if note_type != 3 or name_size != 4:
+                    continue
+                name = stream.read(4)
+                if len(name) != 4:
+                    raise ValueError(malformed)
+                if name != b'GNU\0':
+                    continue
                 if value_size != 20:
                     raise ValueError('loaded dependency lacks a canonical SHA-1 build identity: '+str(path))
-                identities.append(data[value_start:value_end].hex())
-            cursor = next_note
+                stream.seek(value_start)
+                identity = stream.read(value_size)
+                if len(identity) != value_size:
+                    raise ValueError(malformed)
+                identities.append(identity.hex())
+    if not identities and allow_missing:
+        return None
     if len(identities) != 1:
         raise ValueError('loaded dependency lacks one GNU build identity: '+str(path))
     return identities[0]
 
 
-def loaded_graph(binary: Path, loader: Path, libraries: list[Path], *, required=(), run) -> dict:
-    """Admit the loader's real graph and bind every resolved DSO to its build ID."""
+def loaded_graph(binary: Path, loader: Path, libraries: list[Path], *, required=(),
+                 sha256_pins: dict[Path, str] | None = None, run) -> dict:
+    """Admit resolved ELF images by GNU build ID or explicitly pinned vendor SHA-256."""
     owned = {path.resolve(strict=True) for path in libraries}
+    required = {path.resolve(strict=True) for path in required}
+    pins = {path.resolve(strict=True): value for path, value in (sha256_pins or {}).items()}
+    if not pins.keys() <= owned & required or any(
+            path.name.startswith(('libLLVM', 'libclang-cpp')) or digest(path) != value
+            for path, value in pins.items()):
+        raise ValueError('loaded dependency differs from its required vendor SHA-256 pin')
     # Snapshot selection before asking the loader to resolve the graph. Exact
     # paths alone cannot detect replacement at the admitted pathname between
     # selection and resolution.
-    expected_build_ids = {str(path): elf_gnu_build_id(path) for path in sorted(owned)}
+    expected_build_ids = {str(path): elf_gnu_build_id(path, allow_missing=path in pins) for path in sorted(owned)}
     output = run('loader', [loader, '--list', binary])
     paths = set()
     for line in output.splitlines():
         value = line.split(' => ', 1)[-1].strip().rsplit(' (0x', 1)[0]
         if value.startswith('/'):
             paths.add(Path(value).resolve(strict=True))
-    if not paths or 'not found' in output or not set(required).issubset(paths):
+    if not paths or 'not found' in output or not required.issubset(paths):
         raise ValueError('compiler executable did not load its required instrumented libraries')
     for path in paths:
         if path.name.startswith(('libLLVM', 'libclang-cpp')) and path not in owned:
             raise ValueError('compiler executable loaded an unselected LLVM/Clang library')
-    build_ids = {str(path): elf_gnu_build_id(path) for path in sorted(paths)}
+    build_ids = {str(path): elf_gnu_build_id(path, allow_missing=path in pins) for path in sorted(paths)}
     # Exact paths prevent same-SONAME substitution. The pre-resolution build-ID
     # snapshot also rejects replacement at an otherwise admitted pathname.
-    selected_build_ids = {str(path): elf_gnu_build_id(path) for path in sorted(paths & owned)}
-    if any(build_ids[path] != identity or expected_build_ids[path] != identity
-           for path, identity in selected_build_ids.items()):
+    selected_build_ids = {str(path): build_ids[str(path)] for path in sorted(paths & owned)}
+    if any(expected_build_ids[path] != identity for path, identity in selected_build_ids.items()):
         raise ValueError('loaded LLVM/Clang build identity differs from its selected build')
+    observed_sha256 = {str(path): digest(path) for path in sorted(paths)}
+    if any(observed_sha256[str(path)] != value for path, value in pins.items()):
+        raise ValueError('resolved dependency differs from its required vendor SHA-256 pin')
     return {'binary': str(binary), 'sha256': digest(binary),
-            'libraries': {str(path): digest(path) for path in sorted(paths)},
+            'libraries': observed_sha256, 'sha256_pins': {str(path): value for path, value in pins.items()},
             'build_ids': build_ids, 'expected_build_ids': expected_build_ids,
             'selected_build_ids': selected_build_ids}
 
@@ -486,7 +511,10 @@ def borrowed_base_pch_matrix(compiler: Path, source: Path, output: Path, *, run)
             pch.unlink()
 
 
-def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = None) -> dict:
+def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = None,
+            measure_costs=False) -> dict:
+    from .semantic_benchmarks import sample
+
     if jobs < 1:
         raise ValueError('compiler qualification requires positive build parallelism')
     repo = repo.resolve(strict=True)
@@ -502,10 +530,14 @@ def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = 
         raise ValueError('compiler evidence must be disjoint from implementation inputs')
     foundation_report = build / 'foundation-build-report.json'
     completed = json.loads(foundation_report.read_text())
+    expected_phases = {phase: 1 + len(plans[phase].get('follow_up_commands', []))
+                       for phase in ('configure', 'build', 'test', 'stage')}
     if (completed.get('status') != 'passed' or completed.get('source_identity') != plan['source_build_id'] or
-            {phase['phase'] for phase in completed['phases']} != {'configure', 'build', 'test', 'stage'} or
-            any(phase['exit_code'] for phase in completed['phases'])):
+            Counter(phase.get('phase') for phase in completed.get('phases', [])) != expected_phases or
+            any(phase.get('exit_code') != 0 for phase in completed['phases'])):
         raise ValueError('compiler instrumentation requires a current complete foundation build/test/stage')
+    from .build import verify_effective_configuration
+    verify_effective_configuration(plan)
     bootstrap = Path(plan['host_environment']['bootstrap_root'])
     facade = output / 'facade'
     if embedding_build is not None:
@@ -527,17 +559,9 @@ def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = 
             raise ValueError('reused embedding foundation/profile/bootstrap differs: host_environment')
     libraries = [installed_shared_library(stage / 'lib', name)
                  for name in ('libclang-cpp.so', 'libLLVM.so')]
-    policy = SanitizerQualification(bootstrap / 'bin/clang++', bootstrap / 'lib/clang/23',
-        output / 'detectors', 'address,undefined', libraries=libraries,
-        additional_inputs=[foundation_report, Path(__file__),
-            *(repo / name for name in plan['configuration_inputs']),
-            *(path for tree in ('native/objc3c', 'tests/clang_foundation', 'tests/tooling/fixtures/clang_foundation')
-              for path in (repo / tree).rglob('*')
-              if path.is_file() and (path.suffix in ('.cpp', '.h', '.hpp', '.cmake', '.in') or path.name == 'CMakeLists.txt'))])
-    environment = dict(policy.environment)
-    for key in ('cmake_path', 'ninja_path'):
-        environment['PATH'] = str(Path(plan['host_environment'][key]).parent)+os.pathsep+environment['PATH']
     output.mkdir(parents=True)
+    started = time.monotonic()
+    initial_free = shutil.disk_usage(output).free
     receipt = output / 'qualification.json'
     report = {'schema': 'objc3c.compiler-implementation-instrumentation.v1', 'status': 'running',
               'subject': 'compiler-implementation', 'profile': PROFILE,
@@ -565,20 +589,13 @@ def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = 
 
     def run(name, command, *, expected=0, detector_source=None):
         log = output / (name+'.log')
-        started = time.monotonic()
-        argv = list(map(str, command))
-        try:
-            with log.open('w') as stream:
-                result = subprocess.run(argv, cwd=repo, env=environment,
-                    stdout=stream, stderr=subprocess.STDOUT, timeout=900)
-            code = result.returncode
-        except subprocess.TimeoutExpired:
-            code = 124
-        report['commands'].append({'name': name, 'argv': argv, 'exit_code': code,
-            'seconds': round(time.monotonic()-started, 6), 'log': str(log), 'log_sha256': digest(log)})
+        action = sample(command, cwd=repo, environment=environment, log=log, timeout=None)
+        code = action['exit_code']
+        action.update(name=name, seconds=round(action['wall_seconds'], 6))
+        report['commands'].append(action)
         write_json(receipt, report)
         diagnostic = log.read_text(errors='replace')
-        if code != expected:
+        if action['timed_out'] or code != expected:
             raise ValueError('compiler instrumentation command failed: '+name)
         if detector_source is None:
             require_clean_diagnostic(diagnostic)
@@ -587,15 +604,35 @@ def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = 
         return diagnostic
 
     try:
+        if measure_costs:
+            from .semantic_build_costs import foundation_record
+
+            report['foundation_cost'] = foundation_record(foundation_report)
+            phases = output / 'foundation'
+            phases.mkdir()
+            shutil.copyfile(foundation_report, phases / 'foundation.json')
+            for index, phase in enumerate(completed['phases']):
+                log = Path(phase['log']).resolve(strict=True)
+                shutil.copyfile(log, phases / f'phase-{index}.log')
+            if foundation_record(phases / 'foundation.json') != report['foundation_cost']:
+                raise ValueError('retained compiler cost evidence differs from the actual build')
         from .test_runtime import prepare as prepare_runtime
         dependency = prepare_runtime(repo, bootstrap, output / 'objc-runtime', fetch=True, jobs=jobs)
         report['test_objc_runtime'] = dependency
-        policy.inputs[dependency['library']] = dependency['library_sha256']
-        policy.inputs[dependency['receipt']] = dependency['receipt_sha256']
-        policy.inputs[str(Path(__file__).with_name('test_runtime.py'))] = digest(Path(__file__).with_name('test_runtime.py'))
-        for selected_environment in (environment, policy.environment):
-            selected_environment['LD_LIBRARY_PATH'] = os.pathsep.join(filter(None, (
-                selected_environment.get('LD_LIBRARY_PATH'), str(Path(dependency['root']) / 'lib'))))
+        policy = SanitizerQualification(bootstrap / 'bin/clang++', bootstrap / 'lib/clang/23',
+            output / 'detectors', 'address,undefined', libraries=libraries,
+            runtime_library_dirs=(Path(dependency['root']) / 'lib',),
+            additional_inputs=[foundation_report, Path(__file__), Path(__file__).with_name('test_runtime.py'),
+                Path(dependency['library']), Path(dependency['receipt']),
+                *(repo / name for name in plan['configuration_inputs']),
+                *(path for tree in ('native/objc3c', 'tests/clang_foundation', 'tests/tooling/fixtures/clang_foundation')
+                  for path in (repo / tree).rglob('*')
+                  if path.is_file() and (path.suffix in ('.cpp', '.h', '.hpp', '.cmake', '.in') or path.name == 'CMakeLists.txt'))])
+        if any(policy.inputs[dependency[key]] != dependency[key+'_sha256'] for key in ('library', 'receipt')):
+            raise ValueError('compiler instrumentation runtime inputs changed during admission')
+        environment = dict(policy.environment)
+        for key in ('cmake_path', 'ninja_path'):
+            environment['PATH'] = str(Path(plan['host_environment'][key]).parent)+os.pathsep+environment['PATH']
         policy.ensure_controls('O1')
         llvm_library = libraries[1].resolve(strict=True)
         report['loaded_graphs']['foundation-clang'] = loaded_graph(stage / 'bin/clang',
@@ -604,6 +641,16 @@ def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = 
         borrowed_base_pch_matrix(stage / 'bin/clang', source, output, run=run)
         ninja = Path(plan['host_environment']['ninja_path'])
         targets = [target for group in plan['instrumentation']['build_target_groups'] for target in group['targets']] + ['install-distribution']
+        if measure_costs:
+            build_targets = list(dict.fromkeys(target for target in targets if target != 'install-distribution'))
+            command = [ninja, '-C', build, *build_targets]
+            forecast = run('foundation-warm-forecast', [*command[:3], '-n', *command[3:]])
+            report['foundation_warm_targets'] = {'forecast_log_sha256': report['commands'][-1]['log_sha256'],
+                                                 'state': 'rebuild-needed'}
+            if 'ninja: no work to do.' in forecast:
+                if 'ninja: no work to do.' not in run('foundation-warm-target-reuse', command):
+                    raise ValueError('instrumented foundation changed during warm measurement')
+                report['foundation_warm_targets'].update(state='no-op', measurement=report['commands'][-1])
         report['foundation_objects'] = graph_records(build, source, targets, ninja, environment,
             foundation=True, run=lambda name, cmd: run('foundation-'+name, cmd))
         verify_symbols(report['foundation_objects'], bootstrap / 'bin/llvm-nm',
@@ -692,6 +739,13 @@ def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = 
         report.update(status='FAIL', error=str(error))
         raise
     finally:
+        report['cost'] = {'qualification_seconds': round(time.monotonic()-started, 6),
+                          'peak_sampled_process_rss_kib': max(
+                              (row['peak_process_rss_kib'] for row in report['commands']), default=None),
+                          'disk_free_begin_bytes': initial_free, 'disk_free_end_bytes': shutil.disk_usage(output).free,
+                          'qualification_output_bytes': sum(path.stat().st_size for path in output.rglob('*')
+                                                            if path != receipt and path.is_file()),
+                          'filesystem_scope': 'Free space snapshots while qualifying can include other activity.'}
         write_json(receipt, report)
     return report
 
@@ -718,10 +772,13 @@ def main(argv=None):
     parser.add_argument('--jobs', type=int, default=2)
     parser.add_argument('--embedding-build', type=Path,
                         help='incrementally rebuild a matching isolated compiler-profile embedding tree')
+    parser.add_argument('--measure-costs', action='store_true',
+                        help='retain foundation phase logs and sample the admitted unchanged Ninja targets')
     args = parser.parse_args(argv)
     if args.jobs < 1:
         parser.error('--jobs must be positive')
-    qualify(args.repo, args.output, jobs=args.jobs, embedding_build=args.embedding_build)
+    qualify(args.repo, args.output, jobs=args.jobs, embedding_build=args.embedding_build,
+            measure_costs=args.measure_costs)
     return 0
 
 

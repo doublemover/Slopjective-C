@@ -5,7 +5,6 @@ import argparse
 import copy
 import hashlib
 import json
-import math
 import os
 import sys
 import tempfile
@@ -15,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.objc3c_cross_lane_execution import (
-    compute_node_identities, execute_node_plan, validate_reuse_report,
+    compute_node_identities, execute_node_plan, validate_node_timeout, validate_reuse_report,
 )
 from scripts.objc3c_cross_lane_selection import safe_run_id
 from scripts.objc3c_native_validation.artifacts import (
@@ -82,7 +81,7 @@ def prepare_reuse(report: dict[str, Any], *, repo: Path, plan: dict[str, Any],
 
 
 def run_validation(*, repo: Path, plan: dict[str, Any], output_root: Path,
-                   run_id: str, timeout_seconds: float, reuse_path: Path | None = None,
+                   run_id: str, timeout_seconds: float | None = None, reuse_path: Path | None = None,
                    pinned_build_identity: str | None = None) -> dict[str, Any]:
     started = time.monotonic()
     repo = repo.resolve(strict=True)
@@ -90,8 +89,7 @@ def run_validation(*, repo: Path, plan: dict[str, Any], output_root: Path,
     if output_root == repo or not output_root.is_relative_to(repo):
         raise ValueError("output root must be a dedicated directory within the repository")
     safe_run_id(run_id)
-    if not math.isfinite(timeout_seconds) or timeout_seconds <= 0 or timeout_seconds > 86400:
-        raise ValueError("node timeout must be finite, positive and at most 24 hours")
+    validate_node_timeout(timeout_seconds)
     run_dir = output_root / run_id
     if run_dir.exists():
         raise ValueError(f"run directory already exists: {run_dir}")
@@ -201,7 +199,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--list", action="store_true", help="show the exact plan without requiring built tools")
     parser.add_argument("--output-root", type=Path)
     parser.add_argument("--run-id", default=datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + f"-{os.getpid()}")
-    parser.add_argument("--timeout-seconds", type=float, default=300)
+    parser.add_argument("--timeout-seconds", type=float, default=None,
+                        help="optional positive per-node deadline in seconds (default: host/job cancellation)")
     parser.add_argument("--reuse-report", type=Path)
     parser.add_argument("--pinned-build-identity")
     args = parser.parse_args(argv)

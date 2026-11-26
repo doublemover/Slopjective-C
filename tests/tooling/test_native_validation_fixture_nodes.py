@@ -147,7 +147,7 @@ def test_complete_runner_schemas_retain_independent_artifacts(tmp_path, monkeypa
     assert result["data"]["count"] == 2 * len(fixtures._CASES[suite])
     assert result["data"]["runtime_count"] == result["data"]["count"]
     assert result["data"]["build_identity"] == "sdk-test"
-    assert run.calls[0][-1] == 300
+    assert run.calls[0][-1] is None
     assert all(isinstance(path, Path) and path.is_file() and path.is_relative_to(run.output)
                for path in result["artifacts"].values())
     assert result["artifacts"]["report"].read_bytes() == run.report_path.read_bytes()

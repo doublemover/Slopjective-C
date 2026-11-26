@@ -96,6 +96,32 @@ python3 -B -m scripts.objc3c_toolchain.semantic_benchmarks \
   --output out/semantic-workload-measurement --repetitions 3
 ```
 
+Add `--collection-scaling` to retain per-phase samples and timing summaries for
+collections and text. Each phase checks completed work, values or byte samples,
+and lifetime balance where its API exposes ownership callbacks.
+
+- Concrete i32 maps and sets cover build, mixed hit/miss lookup, duplicate
+  insertion or replacement, ordered iteration, removal and teardown at 1, 32,
+  128, 512 and 2,048 entries.
+- Generic maps and sets cover distinct, duplicate-heavy, and colliding keys at
+  the same scales with integer or owned-string payloads. Construct and release
+  have separate timings and a combined summary. Mid-input callback rejection
+  checks rollback, and copy, equality, and destructor counts describe the work.
+- Generic arrays cover append, repeated middle replacement, indexed reads,
+  iteration and teardown for both payloads. A contiguous bulk-create route
+  supplies the corresponding read and teardown measurements.
+- ASCII and mixed-width UTF-8 with embedded NUL run at 1 KiB, 64 KiB, one byte
+  below 1 MiB and exactly 1 MiB. The phases cover raw create, concat including
+  equal operands, scalar slicing, builder append and repeated finish, teardown,
+  and rejected imported scalar counts.
+
+An independent executable linked to the same SDK archive tracks cumulative
+allocation requests and requested bytes. A separate diagnostic build uses
+candidate compiler and checkout service sources to measure live index requests,
+array metadata copying, and text decoder and byte-copy work. Live index bytes
+include the index object, nodes, and buckets, with allocator overhead outside
+that total. Those independent diagnostics accompany the advisory archive timings.
+
 A bounded same-input delay control must preserve semantic results and show its
 minimum intended timing effect. Zero/partial work, incorrect checksums, absent
 samples, process failure/timeout and concurrent SDK mutation fail. Distribution
@@ -134,6 +160,25 @@ python3 -B -m scripts.objc3c_toolchain.semantic_benchmark_calibration \
   --output out/semantic-workload-calibration
 ```
 
+The [Calibrate Linux preview workloads](../../.github/workflows/linux-preview-calibration.yml)
+workflow installs the published SDK on a native x86-64 or AArch64 runner,
+takes two complete observations on the same host, and retains the raw and pooled
+receipts. Select the `collection_scaling` dispatch input to include the
+collection and text phases in both observations. On a pull request, apply
+the `calibrate preview` label to run the full calibration, including collection
+and text phases, on both architectures. Each deliberate delay is measured
+alongside a same-input control, in alternating order. The delay is ten
+milliseconds per workload round. Ordinary samples retain separate timing and
+memory observations. Calibration remains advisory until a performance budget
+is reviewed.
+
+For collection-enabled artifacts, keep each observation's raw `.log` files
+beside its `qualification.json` when pooling across runs. Calibration verifies
+their digests, phase results, and monotonic command order before pooling. The
+optional pooled section retains per-receipt phase medians and raw timeline,
+allocation, retained index, and other diagnostic samples. Compatible runs use
+the same workload sources, executable bytes, loaded libraries and SDK.
+
 Calibration rejects duplicate receipts and different host, SDK, workload,
 instrumentation or repetition contexts. It recomputes every summary from raw
 samples, rechecks runtime semantic work, then retains pooled and per-receipt
@@ -168,6 +213,24 @@ seconds and 83.21 CPU seconds. The largest between-run median range was
 qualification receipts totaled 694,664 bytes. Review-tool verification passes
 185 focused Python tests covering timing, memory, throughput, review scope
 and the surrounding assurance admission checks.
+
+The labeled hosted run on `af41a499ec66bc83ca068553762bcc6e666a4eee`
+passed on both Linux architectures with the published SDK. Each host admitted
+two independent observations, 39 standard workloads, 48 additional collection
+and text cases, and six measured repetitions per case. Both artifact digests
+matched GitHub and both pooled receipts reproduced byte-for-byte from the raw
+logs. [Hosted run](https://github.com/doublemover/Slopjective-C/actions/runs/45289421716)
+
+| Host    | Job seconds | Command wall / CPU seconds | Artifact bytes | Artifact SHA-256                                                                                                                                                          |
+| ------- | ----------: | -------------------------: | -------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| x86-64  |         146 |              86.25 / 76.94 |      1,141,415 | `091b0b7c568058976ae03584ca5e39f18cc9ca6ce07234ffa547a1fd7d032f89` [Archive](https://github.com/doublemover/Slopjective-C/actions/runs/45289421716/artifacts/14874250531) |
+| AArch64 |         196 |            133.16 / 124.31 |      1,141,714 | `b035e172a59e25ed133c951d8abe81e5e3ac57984122c84c91f035b74edb5294` [Archive](https://github.com/doublemover/Slopjective-C/actions/runs/45289421716/artifacts/14873521687) |
+
+Each host recorded 1,510 commands and 992 raw collection samples. Timings retain
+the advisory decision. The largest between-observation median spread among
+standard workloads was 64.0 ms on x86-64 and 48.8 ms on AArch64. Any timing gate
+requires a reviewed choice of workloads and runner-specific latency, throughput,
+memory and noise limits.
 
 ## Import and incremental-build pilot
 

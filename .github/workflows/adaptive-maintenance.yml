@@ -13,7 +13,6 @@ jobs:
   decide:
     name: Evaluate cadence
     runs-on: ubuntu-24.04
-    timeout-minutes: 3
     outputs:
       run_closeout: ${{ steps.cadence.outputs.run_closeout }}
       source_sha: ${{ steps.cadence.outputs.source_sha }}

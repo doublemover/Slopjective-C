@@ -91,7 +91,7 @@ def qualify_case(sdk: Path, output: Path, language: str, standard: str,
             if CAPABILITY not in metadata['required_semantics']:
                 raise ValueError('source package omitted its owned-name capability')
             symbols = subprocess.run([str(sdk / 'bin/llvm-readobj'), '--symbols', str(directory / 'module.o')],
-                                     check=True, capture_output=True, text=True, timeout=30).stdout
+                                     check=True, capture_output=True, text=True).stdout
             if any(d.get('native_symbol_name', '') not in symbols for d in metadata['declarations']
                    if d.get('kind') != 'TypeAliasTemplate'):
                 raise ValueError('native object omitted its exported module binding')

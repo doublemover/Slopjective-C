@@ -1,0 +1,139 @@
+name: Native Linux PR checks
+on:
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: native-linux-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+env:
+  PR_HEAD: ${{ github.event.pull_request.head.sha }}
+  PR_BASE: ${{ github.event.pull_request.base.sha }}
+  TESTED_SHA: ${{ github.sha }}
+jobs:
+  native-pr:
+    runs-on: ubuntu-26.04
+    container: debian:13
+    timeout-minutes: 360
+    env:
+      OBJC3C_CLOUD_SETUP_ROOT: /opt/objc3c-host
+    steps:
+      - name: Install host prerequisites
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git ca-certificates curl gnupg python3 python3-venv xz-utils zstd g++ zlib1g-dev libzstd-dev libssl-dev libxml2 libcurl4 libedit2 libsqlite3-0 libncurses6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Classify exact tested source
+        id: plan
+        shell: bash
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          python3 -B - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from scripts.objc3c_assurance.plan import from_checkout
+          from scripts.objc3c_assurance.pr_native import needs_install_witness
+          plan = from_checkout(Path.cwd(), head=os.environ['PR_HEAD'], base=os.environ['PR_BASE'],
+                               tested=os.environ['TESTED_SHA'])
+          directory = Path('out/native-pr')
+          directory.mkdir(parents=True, exist_ok=True)
+          (directory / 'selection.json').write_text(json.dumps(plan, indent=2) + '\n')
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              print('native=' + str(plan['classification'] == 'native').lower(), file=output)
+              print('reuse=' + str(plan['foundation_policy'] != 'rebuild-required').lower(), file=output)
+              print('install=' + str(needs_install_witness(plan)).lower(), file=output)
+          PY
+      - name: Check source-owned analyzer suppression policy
+        if: steps.plan.outputs.native == 'true'
+        shell: bash
+        run: |
+          python3 -B - <<'PY' | tee out/native-pr/suppression-policy.json
+          import json
+          from pathlib import Path
+          from scripts.objc3c_toolchain.implementation_analysis import check_owned_suppressions
+          print(json.dumps(check_owned_suppressions(Path.cwd()), indent=2))
+          PY
+      - uses: ./.github/actions/linux-host-tools
+        if: steps.plan.outputs.native == 'true'
+        with:
+          output: out/native-pr/startup
+      - name: Select the base revision's published foundation candidate
+        id: preview-manifest
+        if: steps.plan.outputs.native == 'true' && (steps.plan.outputs.reuse == 'true' || steps.plan.outputs.install == 'true')
+        shell: bash
+        env:
+          INSTALL_WITNESS: ${{ steps.plan.outputs.install }}
+        run: |
+          if ! git cat-file -e "$PR_BASE:docs/releases/preview-manifest.json"; then
+            if [[ "$INSTALL_WITNESS" == true ]]; then
+              echo 'Package changes require the base revision to identify a published archive.' >&2
+              exit 1
+            fi
+            echo 'No published foundation is recorded at the base revision. Build current source.'
+            exit 0
+          fi
+          mkdir -p "$RUNNER_TEMP/native-pr-preview"
+          git show "$PR_BASE:docs/releases/preview-manifest.json" > "$RUNNER_TEMP/native-pr-preview/manifest.json"
+          printf 'path=%s\n' "$RUNNER_TEMP/native-pr-preview/manifest.json" >> "$GITHUB_OUTPUT"
+      - uses: ./.github/actions/linux-preview-archive-cache
+        id: preview-cache
+        if: steps.preview-manifest.outputs.path != ''
+        with:
+          manifest: ${{ steps.preview-manifest.outputs.path }}
+      - name: Install the exact base SDK and execute the selected relocation witness
+        if: steps.preview-manifest.outputs.path != ''
+        shell: bash
+        env:
+          PREVIEW_MANIFEST: ${{ steps.preview-manifest.outputs.path }}
+          PREVIEW_CACHE: ${{ steps.preview-cache.outputs.directory }}
+          PREVIEW_ARCHIVE: ${{ steps.preview-cache.outputs.archive }}
+          INSTALL_WITNESS: ${{ steps.plan.outputs.install }}
+        run: |
+          witness=()
+          if [[ "$INSTALL_WITNESS" == true ]]; then
+            witness=(--witness-log out/native-pr/install-witness.log)
+          fi
+          python3 -B -m scripts.objc3c_assurance.preview_download \
+            --manifest "$PREVIEW_MANIFEST" --directory "$RUNNER_TEMP/native-pr-preview" \
+            --archive-cache "$PREVIEW_CACHE" \
+            "${witness[@]}" > out/native-pr/preview-install.json
+          unlink "$PREVIEW_ARCHIVE"
+      - name: Execute the native source suites and implementation analysis
+        id: run
+        shell: bash
+        run: |
+          sdk=()
+          if [[ -d "$RUNNER_TEMP/native-pr-preview/sdk/current" ]]; then
+            sdk=(--sdk "$RUNNER_TEMP/native-pr-preview/sdk/current")
+          fi
+          if [[ -f "$OBJC3C_CLOUD_SETUP_ROOT/activate.sh" ]]; then
+            source "$OBJC3C_CLOUD_SETUP_ROOT/activate.sh"
+          fi
+          python3 -B -m scripts.objc3c_assurance.pr_native \
+            --head "$PR_HEAD" --base "$PR_BASE" --tested "$TESTED_SHA" \
+            --output out/native-pr/checked "${sdk[@]}"
+      - name: Preserve exact PR selection and native evidence
+        if: always() && steps.plan.outcome == 'success'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-pr-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/native-pr/
+          if-no-files-found: error
+          retention-days: 7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: native-pr-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/native-pr-evidence
+      - name: Verify the exact tested source and retained native and analysis evidence
+        shell: bash
+        run: |
+          if [[ -f "$OBJC3C_CLOUD_SETUP_ROOT/activate.sh" ]]; then
+            source "$OBJC3C_CLOUD_SETUP_ROOT/activate.sh"
+          fi
+          python3 -B -m scripts.objc3c_assurance.pr_native \
+            --head "$PR_HEAD" --base "$PR_BASE" --tested "$TESTED_SHA" \
+            --verify-evidence out/native-pr-evidence --execution "${{ steps.run.outcome }}"

@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
+import { fileURLToPath } from 'node:url';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-import { resolveSource, calendarDaysSince, collectSnapshot, decide, localDate, relevantPath, summarizeAttempt, validateConfig } from './adaptive-ci.mjs';
+import { run as dispatch, resolveSource, calendarDaysSince, collectSnapshot, decide, localDate, relevantPath, summarizeAttempt, validateConfig } from './adaptive-ci.mjs';
 
 const suite = {
   id: 'full', monthlyDay: 3, paths: ['**'],
@@ -93,6 +95,12 @@ const run = { created_at: '2026-11-03T12:00:00Z', head_sha: 'abc', status: 'comp
 test('completed workload and required step establish full coverage', () => {
   assert.equal(summarizeAttempt(run, [job()], suite).complete, true);
 });
+test('an unsuccessful or active workflow cannot establish coverage from child successes', () => {
+  for (const conclusion of ['failure', 'cancelled', 'skipped', null]) {
+    assert.equal(summarizeAttempt({ ...run, conclusion }, [job()], suite).complete, false);
+  }
+  assert.equal(summarizeAttempt({ ...run, status: 'in_progress' }, [job()], suite).complete, false);
+});
 test('green no-op, skipped work and absent step records cannot establish coverage', () => {
   for (const item of [job({ steps: [] }), job({ runner_id: 0 }), job({ conclusion: 'skipped' }), job({ steps: [{ name: 'Run tests', conclusion: 'skipped' }] })]) {
     assert.equal(summarizeAttempt(run, [item], suite).complete, false);
@@ -108,27 +116,68 @@ test('queued caller counts as inflight even before reusable jobs appear', () => 
   assert.equal(summarizeAttempt({ ...run, status: 'queued' }, [], suite).inProgress, true);
 });
 test('collector avoids all activity API work when a monthly pass is already due', async () => {
-  const github = { rest: { actions: { listWorkflowRuns: async () => ({ data: { workflow_runs: [] } }) } } };
-  const result = await collectSnapshot({ github, context: { repo: { owner: 'owner', repo: 'repo' }, runId: 1 }, suite, now: '2026-11-03T12:00:00Z', defaultBranch: 'trunk' });
+  const now = '2026-11-03T12:00:00Z';
+  const github = { rest: { actions: { listWorkflowRuns: async (request) => {
+    assert.equal(request.branch, 'trunk');
+    assert.equal(request.created, '2025-10-29T12:00:00.000Z..2026-11-03T12:00:00.000Z');
+    const queued = { id: 2, display_title: 'Adaptive maintenance / full', head_branch: 'other',
+      created_at: now, status: 'queued' };
+    return { data: { workflow_runs: [queued, { ...queued, id: 1, head_branch: 'trunk' },
+      { ...queued, id: 3, head_branch: 'trunk', created_at: '2025-10-28T12:00:00Z' }] } };
+  } } } };
+  const result = await collectSnapshot({ github, context: { repo: { owner: 'owner', repo: 'repo' }, runId: 1 }, suite, now, defaultBranch: 'trunk' });
   assert.equal(result.changes.length, 0);
+  assert.equal(result.history.length, 0);
+  assert.equal(decide(result).due, true);
 });
 test('collector failure is surfaced, not changed into a successful skip', async () => {
   const github = { rest: { actions: { listWorkflowRuns: async () => { throw new Error('denied'); } } } };
   await assert.rejects(collectSnapshot({ github, context: { repo: { owner: 'owner', repo: 'repo' }, runId: 1 }, suite, now: '2026-11-03T12:00:00Z', defaultBranch: 'trunk' }), /denied/);
 });
 
-test('source resolution uses trusted config and returns one immutable commit', async () => {
+test('source resolution binds the workflow and evidence to the dispatcher commit', () => {
   const sourceSha = 'a'.repeat(40);
-  let called;
-  const github = { rest: { repos: { getCommit: async (args) => { called = args; return { data: { sha: sourceSha } }; } } } };
-  const result = await resolveSource({ github, context: { repo: { owner: 'o', repo: 'r' } }, sourceRef: 'neon-vector-horizon' });
+  const context = { ref: 'refs/heads/neon-vector-horizon', sha: sourceSha };
+  const result = resolveSource({ context, sourceRef: 'neon-vector-horizon', defaultBranch: 'neon-vector-horizon' });
   assert.deepEqual(result, { sourceRef: 'neon-vector-horizon', sourceSha });
-  assert.equal(called.ref, 'neon-vector-horizon');
 });
-test('source resolution rejects invalid refs and nonimmutable API results', async () => {
-  await assert.rejects(resolveSource({ github: {}, context: {}, sourceRef: '../untrusted' }), /trusted/);
-  const github = { rest: { repos: { getCommit: async () => ({ data: { sha: 'main' } }) } } };
-  await assert.rejects(resolveSource({ github, context: { repo: {} }, sourceRef: 'main' }), /immutable/);
+test('source resolution rejects another branch, mutable and zero revisions', () => {
+  const exact = { context: { ref: 'refs/heads/main', sha: 'a'.repeat(40) }, sourceRef: 'main', defaultBranch: 'main' };
+  assert.throws(() => resolveSource({ ...exact, sourceRef: 'other' }), /configured default branch/);
+  assert.throws(() => resolveSource({ ...exact, context: { ...exact.context, ref: 'refs/tags/main' } }), /configured default branch/);
+  for (const sha of ['main', '0'.repeat(40), undefined]) {
+    assert.throws(() => resolveSource({ ...exact, context: { ...exact.context, sha } }), /immutable/);
+  }
+});
+
+test('the configured Saturday dispatcher keeps the exact unchanged source idle after a recent attempt', async () => {
+  const config = JSON.parse(await readFile(new URL('./adaptive-ci.json', import.meta.url), 'utf8'));
+  const closeout = config.suites.find(({ id }) => id === 'closeout');
+  const previous = process.env.GITHUB_WORKSPACE;
+  process.env.GITHUB_WORKSPACE = fileURLToPath(new URL('../../', import.meta.url));
+  const exact = 'a'.repeat(40);
+  const context = { ref: 'refs/heads/main', sha: exact, eventName: 'schedule', payload: { schedule: closeout.cron },
+    repo: { owner: 'o', repo: 'r' }, runId: 2 };
+  const outputs = new Map();
+  const info = [];
+  const summary = { addHeading: () => summary, addCodeBlock: () => summary, write: async () => {} };
+  const core = { setOutput: (key, value) => outputs.set(key, value), info: (line) => info.push(line), summary };
+  const github = { rest: { repos: { get: async () => ({ data: { default_branch: 'main' } }) }, actions: {
+    listWorkflowRuns: async () => ({ data: { workflow_runs: [{ id: 1, display_title: 'Adaptive maintenance / closeout',
+      created_at: '2026-11-21T15:37:57Z', head_branch: 'main', head_sha: exact, status: 'completed', conclusion: 'success' }] } }),
+    listJobsForWorkflowRun: async () => ({ data: { jobs: closeout.expectedJobs.map(({ name, requiredSteps }) =>
+      job({ name: `run-closeout / ${name}`, steps: requiredSteps.map((pattern) =>
+        ({ name: pattern.slice(1, -1), conclusion: 'success' })) })) } }),
+  } } };
+  try {
+    await dispatch({ github, context, core, now: '2026-11-28T15:37:57Z' });
+  } finally {
+    if (previous === undefined) delete process.env.GITHUB_WORKSPACE;
+    else process.env.GITHUB_WORKSPACE = previous;
+  }
+  assert.equal(outputs.get('source_sha'), exact);
+  assert.equal(outputs.get('run_closeout'), 'false');
+  assert.match(info.at(-1), /Last attempt was 7 local calendar days ago/);
 });
 
 test('default-branch success does not claim an open PR head was tested', () => {

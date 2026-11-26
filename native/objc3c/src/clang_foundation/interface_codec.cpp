@@ -49,6 +49,8 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     kNativeObjectPolicySemantic,
     kNativeObjectExpressionSemantic,
     kObjCGenericSignaturesSemantic,
+    kObjCPropertySemantic,
+    kObjCCategoryProtocolsSemantic,
     kNativeFunctionEffectSemantic,
     kNativeUnnamedEnumSemantic,
     kNativeStorageLifetimeSemantic,
@@ -85,6 +87,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     kBorrowedReceiverResultSemantic,
     kBorrowedInteriorStorageSemantic,
     kBorrowedCallableOwnerSemantic,
+    kBorrowedCallableParametersSemantic,
     kDependentKeyPathTypeSemantic,
     "objc3.async-entry-abi.v5",
     "objc3.direct-dispatch.v1",
@@ -689,6 +692,11 @@ llvm::Error ValidateForEncoding(
   const bool borrowed_callable_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kBorrowedCallableOwnerSemantic) != sidecar.required_semantics.end();
   if (borrowed_callables != borrowed_callable_capability)
     return Invalid("borrowed callable owner identity and required capability must agree");
+  const bool borrowed_parameters = std::ranges::any_of(sidecar.declarations, HasBorrowedCallableParametersIdentity);
+  const bool borrowed_parameters_capability = std::ranges::find(sidecar.required_semantics, kBorrowedCallableParametersSemantic) !=
+                                             sidecar.required_semantics.end();
+  if (borrowed_parameters != borrowed_parameters_capability)
+    return Invalid("borrowed callable parameter identity and required capability must agree");
   const bool consuming = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasAsyncConsumedOwnershipIdentity);
   const bool consuming_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kAsyncConsumedOwnershipSemantic) != sidecar.required_semantics.end();
   if (consuming != consuming_capability)
@@ -810,6 +818,13 @@ llvm::Error ValidateForEncoding(
                                       sidecar.required_semantics.end();
   if (objc_generic_signatures != objc_generic_capability)
     return Invalid("Objective-C generic signature identity and required capability must agree");
+  for (const auto &[capability, has_identity] : {
+           std::pair{kObjCPropertySemantic, &HasObjCPropertyContractIdentity},
+           std::pair{kObjCCategoryProtocolsSemantic, &HasObjCCategoryProtocolsIdentity}})
+    if (std::ranges::any_of(sidecar.declarations, has_identity) !=
+        (std::ranges::find(sidecar.required_semantics, capability) != sidecar.required_semantics.end()))
+      return Invalid("Objective-C declaration identity and required capability must agree: " +
+                     std::string(capability));
   const bool external_bindings=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeExternalBindingIdentity);
   const bool external_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeExternalBindingSemantic)!=sidecar.required_semantics.end();
   const bool external_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),

@@ -10,7 +10,6 @@ concurrency:
   cancel-in-progress: true
 jobs:
   tooling:
-    timeout-minutes: 15
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -31,7 +30,9 @@ jobs:
           BASE_REVISION: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
           if git cat-file -e "$BASE_REVISION^{commit}" 2>/dev/null &&
-            git diff --quiet "$BASE_REVISION" HEAD -- toolchains/llvm/manifest.json toolchains/llvm/patches scripts/objc3c_toolchain/check_llvm_patch_application.py; then
+            git diff --quiet "$BASE_REVISION" HEAD -- toolchains/llvm/manifest.json toolchains/llvm/patches \
+              toolchains/llvm/experimental/darwin-registration.{json,patch} \
+              scripts/objc3c_toolchain/check_llvm_patch_application.py; then
             exit 0
           fi
           uv run python -m scripts.objc3c_toolchain.check_llvm_patch_application
@@ -44,6 +45,7 @@ jobs:
           --execution-inventory=out/tooling/inventory.json
           --junitxml=out/tooling/results.xml
           tests/tooling/test_native_assurance.py
+          tests/tooling/test_native_pr.py
           tests/tooling/test_assurance_workflow_revision_modes.py
           tests/tooling/test_qualification_integrity.py
           tests/tooling/test_native_assurance_bootstrap.py
@@ -65,6 +67,7 @@ jobs:
           tests/tooling/test_analysis_partitions.py
           tests/tooling/test_analysis_checkpoint.py
           tests/tooling/test_source_coverage.py
+          tests/tooling/test_compiler_source_coverage.py
           tests/tooling/test_source_coverage_profile_merging.py
           tests/tooling/test_emitter_coverage_shards.py
           tests/tooling/test_upstream_test_tools.py
@@ -75,6 +78,7 @@ jobs:
           tests/tooling/test_semantic_oracles.py
           tests/tooling/test_semantic_source_feedback.py
           tests/tooling/test_semantic_benchmarks.py
+          tests/tooling/test_collection_scaling.py
           tests/tooling/test_semantic_runtime_workloads.py
           tests/tooling/test_semantic_ownership_workloads.py
           tests/tooling/test_semantic_task_frame_workloads.py
@@ -89,11 +93,19 @@ jobs:
           tests/tooling/test_development_patch_export.py
           tests/tooling/test_toolchain_package.py
           tests/tooling/test_toolchain_install.py
+          tests/tooling/test_darwin_bootstrap.py
+          tests/tooling/test_darwin_evidence.py
+          tests/tooling/test_darwin_registration.py
+          tests/tooling/test_darwin_sdk.py
+          tests/tooling/test_darwin_sdk_portable_services.py
+          tests/tooling/test_darwin_sdk_sanitizers.py
           tests/tooling/test_linux_archive_debugger_gate.py
           tests/tooling/test_stage_linux_release.py
           tests/tooling/test_workspace_cleanup.py
           tests/tooling/test_linux_sdk_reuse.py
+          tests/tooling/test_release_archive_reuse.py
           tests/tooling/test_frontend_serial_tests.py
+          tests/tooling/test_native_assertion_policy.py
           tests/tooling/test_frontend_runtime_dependency.py
           tests/tooling/test_isolated_frontend_cases.py
           tests/tooling/test_artifact_transport.py

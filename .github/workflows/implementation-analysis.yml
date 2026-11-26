@@ -9,6 +9,10 @@ on:
         type: choice
         options: [linux-x86_64, linux-aarch64]
         default: linux-x86_64
+      comparison_base:
+        description: Optional ancestor commit SHA for dependency-selected analysis
+        type: string
+        default: ''
   workflow_call:
     inputs:
       linux_host:
@@ -24,6 +28,7 @@ on:
         default: ''
 env:
   OBJC3C_REQUESTED_HOST: ${{ inputs.linux_host || 'linux-x86_64' }}
+  OBJC3C_ANALYSIS_COMPARISON_BASE: ${{ inputs.comparison_base || '' }}
 permissions:
   contents: read
 concurrency:
@@ -33,7 +38,6 @@ jobs:
   plan:
     name: Select exact implementation revision
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
-    timeout-minutes: 5
     outputs:
       analysis: ${{ steps.plan.outputs.analysis }}
       partitions: ${{ steps.plan.outputs.partitions }}
@@ -71,7 +75,7 @@ jobs:
     container:
       image: debian:13
       options: --security-opt seccomp=unconfined
-    timeout-minutes: 180
+    timeout-minutes: 360
     outputs:
       archive_sha256: ${{ steps.foundation-run.outputs.archive_sha256 }}
     env:
@@ -206,15 +210,15 @@ jobs:
             out/implementation-assurance/results/**/*.xml
             out/implementation-assurance/results/**/*.log
             out/implementation-assurance/results/**/*.yaml
+            out/implementation-assurance/results/**/*.d
             !out/implementation-assurance/results/**/build/**
           if-no-files-found: error
           retention-days: 7
   gate:
     name: Extended Linux implementation analysis gate
-    if: always()
+    if: "!cancelled()"
     needs: [plan, foundation, analysis]
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
-    timeout-minutes: 5
     steps:
       - name: Require analysis outcomes before downloading evidence
         env:

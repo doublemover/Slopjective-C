@@ -7,6 +7,21 @@ import pytest
 from scripts.objc3c_toolchain import binary_packages, sdk_example
 
 
+def test_full_sdk_audit_leaves_its_deadline_to_the_runner(monkeypatch, tmp_path):
+    calls = []
+
+    def run(argv, **kwargs):
+        calls.append((argv, kwargs))
+
+    monkeypatch.setattr(sdk_example.subprocess, 'run', run)
+    sdk_example.verify_installed_sdk(tmp_path, env={})
+    argv, options = calls.pop()
+    assert argv[1:] == ['-B', str(tmp_path / 'share/objc3c/verify-sdk.py'), str(tmp_path)]
+    assert options['check'] and options['capture_output']
+    assert options.get('timeout') is None
+    assert not calls
+
+
 @pytest.fixture
 def sdk(tmp_path, monkeypatch):
     root = tmp_path / "sdk"

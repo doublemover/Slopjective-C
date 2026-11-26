@@ -7,7 +7,7 @@ import sys
 import pytest
 
 from scripts.objc3c_toolchain.analysis_checkpoint import (
-    load_checkpoints, reusable_action, run_unit, successful_action, tidy_diagnostics)
+    ANALYSIS_SCHEMA, load_checkpoints, reusable_action, run_unit, successful_action, tidy_diagnostics)
 from scripts.objc3c_toolchain.binary_packages import digest
 
 
@@ -33,11 +33,14 @@ def checkpoint(tmp_path):
         '--warnings-as-errors=*', '--enable-check-profile', '--extra-arg=-resource-dir=/matched/resources',
         '--export-fixes='+str(directory / 'diagnostics.yaml')], 'exit_code': 0, 'expected_exit_code': 0,
         'timed_out': False, 'status': 'PASS', 'log': str(log), 'log_sha256': digest(log)}
-    previous = {'schema': 'objc3c.implementation-analysis.v1', 'status': 'FAIL', 'policy': {'checks': ['reviewed-check']},
+    previous = {'schema': ANALYSIS_SCHEMA, 'status': 'FAIL',
+        'policy': {'checks': ['reviewed-check'], 'deadline_owner': 'host-job'},
+        'source_build_id': 'matched-fork', 'build_config_digest': 'matched-configuration',
         'tool': {'path': str(tool), 'sha256': digest(tool)}, 'tool_graph': {'libraries': {}},
         'inventory': [copy.deepcopy(row)], 'results': [{'identity': identity, 'status': 'PASS'}],
         'commands': [command], 'inputs': {str(path): digest(path) for path in (source, header, tool, config)}}
-    current = {key: copy.deepcopy(previous[key]) for key in ('policy', 'tool', 'tool_graph')}
+    current = {key: copy.deepcopy(previous[key])
+               for key in ('policy', 'tool', 'tool_graph', 'source_build_id', 'build_config_digest')}
     current.update(configuration=str(current_config), resource_directory='/matched/resources', repository_output=str(tmp_path))
     receipt = root / 'qualification.json';receipt.write_text(json.dumps(previous))
     return receipt, previous, current, row, args, header, log
@@ -70,13 +73,15 @@ def test_corrupt_earlier_action_is_rejected_before_trying_a_later_good_checkpoin
                         current, row, arguments=args)
 
 
-@pytest.mark.parametrize('fault', ['running', 'outside', 'linked', 'duplicate', 'excessive', 'not-object'])
+@pytest.mark.parametrize('fault', ['obsolete-schema', 'running', 'outside', 'linked', 'duplicate', 'excessive', 'not-object'])
 def test_checkpoint_collection_rejects_mutable_unowned_duplicate_or_unbounded_inputs(tmp_path, fault):
     root = tmp_path / 'out';root.mkdir()
     receipt = root / 'qualification.json'
-    receipt.write_text(json.dumps({'schema': 'objc3c.implementation-analysis.v1', 'status': 'FAIL'}))
+    receipt.write_text(json.dumps({'schema': ANALYSIS_SCHEMA, 'status': 'FAIL'}))
     paths = [receipt]
-    if fault == 'running': receipt.write_text(receipt.read_text().replace('FAIL', 'running'))
+    if fault == 'obsolete-schema':
+        receipt.write_text(json.dumps({'schema': 'objc3c.implementation-analysis.v1', 'status': 'FAIL'}))
+    elif fault == 'running': receipt.write_text(receipt.read_text().replace('FAIL', 'running'))
     elif fault == 'outside':
         outside = tmp_path / 'outside.json';outside.write_bytes(receipt.read_bytes());paths = [outside]
     elif fault == 'linked':
@@ -91,7 +96,7 @@ def test_multiple_terminal_checkpoint_selection_retains_requested_order(tmp_path
     root = tmp_path / 'out';root.mkdir()
     paths = [root / (str(index)+'.json') for index in range(2)]
     for path, status in zip(paths, ('FAIL', 'PASS')):
-        path.write_text(json.dumps({'schema': 'objc3c.implementation-analysis.v1', 'status': status}))
+        path.write_text(json.dumps({'schema': ANALYSIS_SCHEMA, 'status': status}))
     admitted = load_checkpoints(tmp_path, paths)
     assert [path for path, _, _ in admitted] == paths
     assert [signature for path, _, signature in admitted] == list(map(digest, paths))
@@ -100,19 +105,24 @@ def test_multiple_terminal_checkpoint_selection_retains_requested_order(tmp_path
         reusable_action(admitted, {}, {}, arguments=[])
 
 
-@pytest.mark.parametrize('mutation', ['header', 'flags', 'checker', 'tool', 'failed', 'missing-result'])
+@pytest.mark.parametrize('mutation', [
+    'header', 'flags', 'checker', 'tool', 'policy-deadline', 'fork', 'configuration', 'failed', 'missing-result'])
 def test_changed_action_inputs_or_unfinished_work_are_cache_misses(checkpoint, mutation):
     receipt, previous, current, row, args, header, _ = checkpoint
     if mutation == 'header': header.write_text('changed header')
     elif mutation == 'flags': args = [*args, '-DWRONG_FLAG=1']
     elif mutation == 'checker': current['policy']['checks'].append('new-check')
     elif mutation == 'tool': current['tool']['sha256'] = 'b'*64
+    elif mutation == 'policy-deadline': previous['policy']['deadline_owner'] = 'unit'
+    elif mutation == 'fork': previous['source_build_id'] = 'changed-fork'
+    elif mutation == 'configuration': previous['build_config_digest'] = 'changed-configuration'
     elif mutation == 'failed': previous['results'][0]['status'] = 'FAIL'
     else: previous['results'] = []
     assert successful_action(receipt, previous, current, row, arguments=args) is None
 
 
-@pytest.mark.parametrize('mutation', ['log', 'argv', 'database', 'timeout', 'duplicate', 'config', 'running'])
+@pytest.mark.parametrize('mutation', [
+    'log', 'argv', 'database', 'timeout', 'obsolete-limit', 'duplicate', 'config', 'running'])
 def test_corrupt_checkpoint_proof_cannot_pass(checkpoint, mutation):
     receipt, previous, current, row, args, _, log = checkpoint
     if mutation == 'log': log.write_text('changed diagnostic')
@@ -120,6 +130,7 @@ def test_corrupt_checkpoint_proof_cannot_pass(checkpoint, mutation):
     elif mutation == 'database':
         path = receipt.parent / ('frontend-'+'a'*16) / 'compile_commands.json';path.write_text('[]')
     elif mutation == 'timeout': previous['commands'][0]['timed_out'] = True
+    elif mutation == 'obsolete-limit': previous['results'][0]['timeout_seconds'] = 600
     elif mutation == 'duplicate': previous['commands'].append(previous['commands'][0])
     elif mutation == 'config': (receipt.parent / 'checks.json').write_text('different checks')
     else: previous['status'] = 'running'
@@ -128,7 +139,7 @@ def test_corrupt_checkpoint_proof_cannot_pass(checkpoint, mutation):
 
 def test_spawned_unit_process_retains_actual_command_failure(tmp_path):
     result, commands = run_unit({'directory': str(tmp_path), 'environment': {}, 'identity': 'unit',
-        'name': 'native-control', 'timeout': 10, 'argv': [sys.executable, '-c', 'print("forced failure");raise SystemExit(1)']})
+        'name': 'native-control', 'argv': [sys.executable, '-c', 'print("forced failure");raise SystemExit(1)']})
     assert result['status'] == 'FAIL' and commands[0]['exit_code'] == 1
     assert result['diagnostics'] == []
     assert json.loads((tmp_path / 'qualification.json').read_text())['status'] == 'FAIL'
@@ -137,7 +148,7 @@ def test_spawned_unit_process_retains_actual_command_failure(tmp_path):
 def test_spawned_unit_process_rejects_zero_exit_blocker_diagnostic(tmp_path):
     diagnostic = '/source/Lexer.cpp:9:2: warning: preprocessor may be null [clang-analyzer-core.CallAndMessage]'
     result, commands = run_unit({'directory': str(tmp_path), 'environment': {}, 'identity': 'unit',
-        'name': 'native-control', 'timeout': 10,
+        'name': 'native-control',
         'argv': [sys.executable, '-c', 'print('+repr(diagnostic)+')']})
     assert commands[0]['exit_code'] == 0
     assert result['status'] == 'FAIL' and result['classification'] == 'finding'

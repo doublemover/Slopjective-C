@@ -45,7 +45,11 @@ def test_detection_requires_its_class_site_and_exact_failure_exit(detector):
     for bad_code, bad_diagnostic in [(0, diagnostic), (-11, diagnostic), (124, diagnostic),
             (127, 'loader error'), (1, 'Assertion failed'), (code, 'unrelated finding'),
             (code, diagnostic.replace(site, 'other_function')),
-            (code, diagnostic.replace(str(source), '/other/source.cpp'))]:
+            (code, diagnostic.replace(str(source), '/other/source.cpp')),
+            (code, f'{marker}\n{site} at /other/source.cpp:1\nhelper at {source}:7:3\n'),
+            (code, f'{marker}\n{site}\n{source}:7:3\n'),
+            (code, f'{marker}\n{site} at {source}\n'),
+            (code, f'{marker}\n{site} at /different{source}:7:3\n')]:
         with pytest.raises(ValueError):
             policy.validate_detection(detector, source, bad_code, bad_diagnostic, bad=True)
     with pytest.raises(ValueError):
@@ -95,14 +99,19 @@ def test_explicit_qualified_dso_precedes_inferred_compiler_support(tmp_path, mon
     (resource / 'libclang_rt.asan.a').write_bytes(b'runtime')
     stage = tmp_path / 'instrumented-stage/lib'; stage.mkdir(parents=True)
     llvm = stage / 'libLLVM.so.23.1'; llvm.write_bytes(b'instrumented')
+    runtime = tmp_path / 'owned-runtime/lib'; runtime.mkdir(parents=True)
     monkeypatch.setattr(policy.subprocess, 'check_output',
                         lambda *args, **kwargs: 'x86_64-unknown-linux-gnu\n')
 
     gate = policy.SanitizerQualification(compiler, resource, tmp_path / 'output',
-        'address', libraries=(llvm,), symbolizer=symbolizer)
+        'address', libraries=(llvm,), runtime_library_dirs=(runtime,), symbolizer=symbolizer)
 
     assert gate.environment['LD_LIBRARY_PATH'].split(os.pathsep) == [
-        str(stage), str(bootstrap / 'lib')]
+        str(stage), str(bootstrap / 'lib'), str(runtime)]
+    assert gate.receipt()['environment']['LD_LIBRARY_PATH'] == gate.environment['LD_LIBRARY_PATH']
+    gate.environment['LD_LIBRARY_PATH'] = str(bootstrap / 'lib')
+    with pytest.raises(ValueError, match='configuration changed'):
+        gate.receipt()
 
 
 @pytest.mark.skipif(not NATIVE_READY, reason='requires native Clang and explicit sanitizer resources/symbolizer')

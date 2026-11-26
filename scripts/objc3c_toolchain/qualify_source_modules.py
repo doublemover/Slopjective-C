@@ -47,7 +47,7 @@ def qualify(sdk: Path, output: Path) -> dict:
                         subprocess.run([os.sys.executable, '-B', str(example / 'build.py'),
                             '--source-dir', str(sources), '--output-dir', str(build),
                             '--optimization', optimization], cwd=client, stdout=log,
-                            stderr=subprocess.STDOUT, check=True, timeout=180)
+                            stderr=subprocess.STDOUT, check=True)
                 except subprocess.SubprocessError:
                     lookup = build / 'lookup.log'
                     if lookup.is_file():
@@ -118,7 +118,7 @@ def qualify(sdk: Path, output: Path) -> dict:
                     command.append('--arc')
                 command += ['--', '--no-default-config', '-fblocks', '-' + optimization]
                 result = subprocess.run(command, cwd=client, stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT, text=True, errors='replace', timeout=180)
+                    stderr=subprocess.STDOUT, text=True, errors='replace')
                 log = output / f'{optimization}-reject-{case}.log'
                 log.write_text(result.stdout)
                 try:

@@ -2384,12 +2384,21 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
   }
   if (const auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration))
     return ObjCMethodIdentity(method, context);
-  if (const auto *property = llvm::dyn_cast<clang::ObjCPropertyDecl>(declaration))
+  if (const auto *property = llvm::dyn_cast<clang::ObjCPropertyDecl>(declaration)) {
+    // The resolved selectors below distinguish custom accessors. The source
+    // bits alone distinguish spelling, including an explicitly named default.
+    const unsigned attributes = property->getPropertyAttributes() &
+        ~(clang::ObjCPropertyAttribute::kind_getter | clang::ObjCPropertyAttribute::kind_setter);
+    auto implementation = property->getPropertyImplementation();
+    if (implementation == clang::ObjCPropertyDecl::None &&
+        llvm::isa<clang::ObjCProtocolDecl>(property->getDeclContext()))
+      implementation = clang::ObjCPropertyDecl::Required;
     return CanonicalType(property->getType(), context) + ";objc-property-attributes=" +
-           std::to_string(static_cast<unsigned>(property->getPropertyAttributes())) +
-           ";objc-property-contract:v1;getter=" + property->getGetterName().getAsString() +
+           std::to_string(attributes) + kObjCPropertyContractMarker +
+           "getter=" + property->getGetterName().getAsString() +
            ";setter=" + (property->isReadOnly() ? std::string() : property->getSetterName().getAsString()) +
-           ";implementation=" + std::to_string(static_cast<unsigned>(property->getPropertyImplementation()));
+           ";implementation=" + std::to_string(static_cast<unsigned>(implementation));
+  }
   if (const auto *using_enum=llvm::dyn_cast<clang::UsingEnumDecl>(declaration))
     return "using-enum{target="+ReadInterfaceDeclarationStableId(using_enum->getEnumDecl())+
            ";access="+CxxAccessName(using_enum->getAccess())+"};cxx-using:v2;";
@@ -2684,17 +2693,15 @@ std::string ReadInterfaceLanguageProfile(const clang::LangOptions &lang,
         ";threadsafe-statics=" + std::to_string(lang.ThreadsafeStatics);
   if (lang.CPlusPlus20)
     profile += std::string(";coroutine-aligned-allocation=") + (lang.CoroAlignedAllocation ? "true" : "false");
-  profile += ";primitive-target-abi:v1;layout=" + std::string(target.getDataLayoutString()) +
+  profile += ";primitive-target-abi:v2;layout=" + std::string(target.getDataLayoutString()) +
       ";abi=" + target.getABI().str() +
       ";cxx-abi=" + std::to_string(static_cast<unsigned>(target.getCXXABI().getKind())) +
       ";short-enums=" + std::to_string(lang.ShortEnums) +
       ";char-signed=" + std::to_string(lang.CharIsSigned) +
-      ";wchar-size=" + std::to_string(lang.WCharSize) +
-      ";wchar-signed=" + std::to_string(lang.WCharIsSigned) +
+      ";wchar-type=" + std::to_string(static_cast<unsigned>(target.getWCharType())) +
       ";pack-struct=" + std::to_string(lang.PackStruct) +
       ";max-type-align=" + std::to_string(lang.MaxTypeAlign) +
       ";align-double=" + std::to_string(lang.AlignDouble) +
-      ";long-double-size=" + std::to_string(lang.LongDoubleSize) +
       ";long-double-format=" + std::to_string(static_cast<unsigned>(
           llvm::APFloat::SemanticsToEnum(target.getLongDoubleFormat()))) +
       ";clang-abi-compat=" + std::to_string(static_cast<unsigned>(lang.getClangABICompat()));
@@ -3412,8 +3419,11 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity += ";borrowed-receiver-results:v1;";
   if (HasDeclarationBorrowedInteriorStorage(representative))
     identity.canonical_type_identity += ";borrowed-interior-storage:v1;";
-  if (HasDeclarationBorrowedCallableOwner(representative))
+  const auto borrowed_callables = ReadPublishedBorrowedCallableContracts(representative);
+  if (borrowed_callables.result)
     identity.canonical_type_identity += ";borrowed-callable-owners:v1;";
+  if (borrowed_callables.parameters)
+    identity.canonical_type_identity += kBorrowedCallableParametersMarker;
   if (HasDeclarationAsyncConsumedOwnership(representative))
     identity.canonical_type_identity += ";async-consuming-ownership:v3;";
   if (HasDeclarationDependentKeyPathTypeBody(representative))

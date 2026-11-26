@@ -53,7 +53,7 @@ def _matching_objc_runtime(path: Path, sanitizer: str, nm: Path, *, environment:
             (Path(report['stage']) / 'lib/libobjc.so').resolve(strict=True) != path):
         raise ValueError('GNUstep dependency does not have the matching qualified instrumentation profile')
     symbols = subprocess.check_output([nm, '-D', '--undefined-only', path],
-                                      env=environment, text=True, timeout=30)
+                                      env=environment, text=True)
     prefix = '__tsan_' if sanitizer == 'thread' else '__asan_'
     if prefix not in symbols or (sanitizer == 'address,undefined' and '__ubsan_' not in symbols):
         raise ValueError('GNUstep dependency has no evidence of the requested instrumentation')
@@ -139,7 +139,7 @@ class RuntimeProfiles:
                     'scripts.objc3c_toolchain_runtime.build_linux', '--repo', self.repo,
                     '--compiler-root', self.resource.parents[2], '--sanitizer', sanitizer,
                     '--jobs', str(self.jobs), '--report-file', report], cwd=self.repo,
-                    env=self.environment, stdout=stream, stderr=subprocess.STDOUT, timeout=600)
+                    env=self.environment, stdout=stream, stderr=subprocess.STDOUT)
             if result.returncode:
                 raise ValueError('matching GNUstep instrumentation build failed; inspect '+str(log))
             dependency = Path(json.loads(report.read_text())['stage']) / 'lib/libobjc.so'
@@ -201,7 +201,7 @@ class RuntimeProfiles:
             started = time.monotonic()
             with log.open('w') as stream:
                 result = subprocess.run(list(map(str, command)), env=self.environment,
-                    stdout=stream, stderr=subprocess.STDOUT, timeout=600)
+                    stdout=stream, stderr=subprocess.STDOUT)
             report['commands'].append({'name': name, 'argv': list(map(str, command)),
                 'exit_code': result.returncode, 'elapsed_seconds': round(time.monotonic()-started, 6),
                 'log': str(log), 'log_sha256': digest(log)})
@@ -262,7 +262,7 @@ class RuntimeProfiles:
                 command = [self.tools['ar'], 'p', archive, member]
                 started = time.monotonic()
                 extracted = subprocess.run(command, env=self.environment, stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE, timeout=30)
+                    stderr=subprocess.PIPE)
                 actual = hashlib.sha256(extracted.stdout).hexdigest()
                 report['commands'].append({'name': 'verify-member-'+member, 'argv': list(map(str, command)),
                     'exit_code': extracted.returncode, 'elapsed_seconds': round(time.monotonic()-started, 6),

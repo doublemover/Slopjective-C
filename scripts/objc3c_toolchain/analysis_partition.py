@@ -37,8 +37,8 @@ def partition_rows(rows, partition=None, *, seconds=None):
     if seconds is None:
         seconds = {'default': 1}
     if (not isinstance(seconds, dict) or 'default' not in seconds or
-            any(type(value) is not int or not 1 <= value <= 3600 for value in seconds.values())):
-        raise ValueError('analysis partition costs must be positive bounded seconds')
+            any(type(value) is not int or value <= 0 for value in seconds.values())):
+        raise ValueError('analysis partition costs must be positive seconds')
     if partition['count'] == 1:
         return rows
     canonical = sorted(rows, key=lambda row: row['identity'])

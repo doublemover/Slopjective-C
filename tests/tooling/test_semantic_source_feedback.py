@@ -119,22 +119,43 @@ def test_source_feedback_requires_the_matching_full_model_baseline(tmp_path, mon
         feedback.admit_baseline(tmp_path, prior, services, runtime)
 
 
-def test_every_strategy_command_obeys_one_shared_cpu_and_wall_deadline(monkeypatch):
-    clock = {'wall': 10, 'cpu': 20}
-    monkeypatch.setattr(feedback.time, 'monotonic', lambda: clock['wall'])
-    monkeypatch.setattr(feedback, 'cpu_seconds', lambda: clock['cpu'])
-    calls = []
-    campaign = SimpleNamespace(run=lambda *args, **kwargs: calls.append(kwargs['timeout']),
-                               executor=SimpleNamespace(timeout=180))
-    window = feedback.Window(campaign, 30)
-    window.run('first', [])
-    clock['cpu'] += 27
-    window.run('second', [], timeout=20)
-    assert calls == [30, 3]
-    clock['wall'] += 31
-    with pytest.raises(ValueError, match='budget'):
-        window.run('third', [])
-    assert calls == [30, 3]
+def test_existing_coverage_product_requires_exact_source_object_and_binary_identity():
+    owner = SimpleNamespace(plan={'source_build_id': 'current', 'build_config_digest': 'config',
+                                  'instrumentation': {'test_binaries': ['tools/NativeTests']}},
+        eligible={'clang/lib/AST/Types.cpp': 'source-bytes'},
+        objects=[{'object': 'Types.o', 'sha256': 'object-bytes'}], owner_id='shared-clang-build-id')
+    revision = 'a'*40
+    prior = {'schema': compiler.SCHEMA, 'status': 'PASS', 'profile': compiler.PROFILE, 'revision': revision,
+        'source_build_id': 'current', 'build_config_digest': 'config',
+        'coverage_owner': 'shared-clang-cpp-patched-implementation',
+        'suites': [{'name': name, 'status': 'PASS'} for name in ('ObjC3-lit', 'NativeTests')],
+        'eligible': owner.eligible, 'objects': owner.objects,
+        'source_coverage': {'clang/lib/AST/Types.cpp': {'state': 'executed'}},
+        'covered_binary_ids': {'/sdk/lib/libclang-cpp.so': owner.owner_id}}
+    feedback.admit_coverage_qualification(prior, owner, revision)
+    for key in ('status', 'revision', 'source_build_id', 'objects', 'suites', 'covered_binary_ids', 'source_coverage'):
+        changed = {**prior, key: {}}
+        with pytest.raises(ValueError, match='current compiler source coverage qualification'):
+            feedback.admit_coverage_qualification(changed, owner, revision)
+
+
+def test_measure_uses_no_internal_deadline(tmp_path, monkeypatch):
+    runtime = tmp_path / 'runtime.so'
+    runtime.touch()
+    qualification = tmp_path / 'coverage.json'
+    qualification.write_text('{}')
+    monkeypatch.setattr(feedback.subprocess, 'check_output', lambda *args, **kwargs: 'a'*40)
+
+    def campaign(*args, **kwargs):
+        assert kwargs == {'compiler_profile': feedback.PROFILE, 'command_timeout': None}
+        raise ValueError('intentional setup failure')
+
+    monkeypatch.setattr(feedback, 'Campaign', campaign)
+    output = tmp_path / 'out/feedback'
+    with pytest.raises(ValueError, match='intentional setup failure'):
+        feedback.measure(tmp_path, output, runtime=runtime, services=runtime,
+                         coverage_qualification=qualification)
+    assert json.loads((output / 'qualification.json').read_bytes())['status'] == 'FAIL'
 
 
 def test_pair_union_requires_every_seed_and_both_strategies_once():
@@ -158,6 +179,42 @@ def test_foreign_profile_identity_fails_before_merge_and_is_reclaimed(tmp_path):
     owner.campaign = SimpleNamespace(executor=SimpleNamespace(environment={}))
     with pytest.raises(ValueError, match='binary identities'):
         owner.collect('foreign', directory)
+    assert not directory.exists()
+
+
+def test_case_profiles_use_one_owned_pool_without_a_tool_deadline(tmp_path, monkeypatch):
+    owner = feedback.Feedback.__new__(feedback.Feedback)
+    owner.root = owner.source = owner.build = tmp_path
+    owner.owner, owner.owner_id, owner.mapping = tmp_path / 'libclang-cpp.so', 'a'*40, None
+    owner.eligible = {'clang/lib/Sema/ObjC3.cpp': 'digest'}
+    owner.identities = {str(owner.owner): owner.owner_id}
+    owner.campaign = SimpleNamespace(executor=SimpleNamespace(environment={}), output=tmp_path,
+        tools={tool: tool for tool in ('llvm-profdata', 'llvm-cov')},
+        report={'compiler_source_coverage': {}, 'commands': []})
+    calls = {}
+
+    def run(name, args, *, timeout=None):
+        calls[name] = timeout
+        if name.endswith('-merge'):
+            Path(args[-1]).write_bytes(b'indexed profile')
+            return ''
+        if name.endswith('-profile-ids'):
+            return owner.owner_id
+        log = tmp_path / 'export.log'
+        log.write_text(export(tmp_path))
+        owner.campaign.report['commands'].append({'name': name, 'log': str(log), 'log_sha256': digest(log)})
+        return log.read_text()
+
+    owner.campaign.run = run
+    monkeypatch.setattr(feedback, 'binary_ids', lambda text: {text})
+    directory = owner.begin('case')
+    pattern = str(directory / '%b-%m.profraw')
+    assert owner.campaign.executor.environment['LLVM_PROFILE_FILE'] == pattern
+    (directory / (owner.owner_id+'-identifier_0.profraw')).write_bytes(b'pooled profile')
+    points, receipt = owner.collect('case', directory)
+    assert points == {('clang/lib/Sema/ObjC3.cpp', 2, 1)}
+    assert receipt['profile_pattern'] == pattern and receipt['raw_profiles']['count'] == 1
+    assert calls == {'case-merge': None, 'case-profile-ids': None, 'case-export': None}
     assert not directory.exists()
 
 

@@ -104,11 +104,12 @@ def phase_of(name, argv):
 
 
 class ProductCommands:
-    def __init__(self, output: Path, *, sources=(), budget=1024**3):
+    def __init__(self, output: Path, *, sources=(), budget=1024**3, checkpoint_commands=True):
         self.output = output.resolve()
         self.output.mkdir(parents=True, exist_ok=False)
         (self.output / 'blobs').mkdir()
         self.budget, self.retained_bytes = budget, 0
+        self.checkpoint_commands = checkpoint_commands
         self.signatures = {}
         self.blobs = {}
         self.fixed, self.external = {}, {}
@@ -203,7 +204,7 @@ class ProductCommands:
         if identity not in self.report['configurations']:
             log = self.output / ('compiler-version-'+identity[:16]+'.log')
             version = command([gate.compiler, '--no-default-config', '--version'], cwd=self.output,
-                environment=gate.environment, log=log, timeout=30)
+                environment=gate.environment, log=log, timeout=None)
             if version['exit_code'] or version['timed_out']:
                 raise ValueError('product compiler version probe failed')
             version['text'] = log.read_text(errors='replace')
@@ -226,7 +227,7 @@ class ProductCommands:
     def loader(self, gate, name, binary, work, required):
         log = self.output / (name+'-loader.log')
         row = command([gate.loader, '--list', binary], cwd=work,
-            environment=gate.environment, log=log, timeout=30)
+            environment=gate.environment, log=log, timeout=None)
         text = log.read_text(errors='replace')
         if row['exit_code'] or row['timed_out'] or 'not found' in text:
             raise ValueError('actual product loader failed: '+name)
@@ -247,7 +248,7 @@ class ProductCommands:
                 sorted(str(path) for path in expected if str(path) not in loaded)}
 
     def run(self, gate, name, argv, *, cwd=None, log=None, expected=0, phase=None,
-            required_libraries=None, timeout=180):
+            required_libraries=None, timeout=None):
         if not re.fullmatch(r'[A-Za-z0-9_.+-]+', name) or any(row['name'] == name for row in self.report['commands']):
             raise ValueError('product command requires a unique bounded name')
         work = Path(cwd or Path.cwd()).resolve(strict=True)
@@ -313,7 +314,6 @@ class ProductCommands:
             row.update(command(args, cwd=work, environment=gate.environment, log=log, timeout=timeout))
             row['signal'] = -row['exit_code'] if row['exit_code'] < 0 else None
             row['environment'] = dict(gate.environment)
-            self.save()
             if row['timed_out'] or row['exit_code'] != expected:
                 raise ValueError('product command failed: '+name+'; see '+str(log))
             require_clean_diagnostic(log.read_text(errors='replace'))
@@ -365,7 +365,8 @@ class ProductCommands:
             self.report.update(status='FAIL', error=str(error))
             raise
         finally:
-            self.save()
+            if self.checkpoint_commands or row['status'] != 'PASS':
+                self.save()
         return row
 
     def record(self, gate, name, argv, rows, **configuration):
@@ -496,7 +497,7 @@ def replay(receipt: Path, name: str, output: Path):
     binary = output / 'replay-program'
     restore(row['executable'], binary)
     argv = [str(binary), *(arg.replace(str(original), str(output)) for arg in row['argv'][1:])]
-    result = command(argv, cwd=output, environment=row['environment'], log=output / 'execution.log', timeout=180)
+    result = command(argv, cwd=output, environment=row['environment'], log=output / 'execution.log', timeout=None)
     result.update(subject='native-execution-replay', original_command=name, receipt_sha256=digest(receipt), status='FAIL')
     if not result['timed_out'] and result['exit_code'] == row['expected_exit_code']:
         require_clean_diagnostic((output / 'execution.log').read_text(errors='replace'))

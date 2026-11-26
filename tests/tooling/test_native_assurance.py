@@ -15,9 +15,21 @@ import pytest
 from scripts.objc3c_assurance import evidence
 from scripts.objc3c_assurance.execution import checked_command, execute_ctest
 from scripts.objc3c_assurance.plan import from_checkout, select, validate
-from scripts.objc3c_assurance.runner import package_execution
+from scripts.objc3c_assurance.runner import package_execution, retain_foundation
 
 REV = dict(head='a'*40, base='b'*40, tested='c'*40)
+
+
+def test_retained_foundation_keeps_producer_receipt_bytes_for_pr_analysis(tmp_path):
+    producer = tmp_path / 'foundation-build-report.json'
+    log = tmp_path / 'test-0.log'
+    log.write_text('native tests passed\n')
+    producer.write_text(json.dumps({'status': 'passed', 'phases': [{'log': str(log)}]}, indent=2) + '\n')
+    output = tmp_path / 'retained'
+    output.mkdir()
+    retain_foundation(producer, output)
+    assert (output / 'foundation.json').read_bytes() == producer.read_bytes()
+    assert (output / 'phase-0.log').read_bytes() == log.read_bytes()
 
 
 @pytest.mark.parametrize('interrupted', [False, True])
@@ -68,6 +80,42 @@ def test_native_commands_reject_previous_log_and_ctest_results(tmp_path, filenam
                         directory=tmp_path, records=[])
 
 
+def test_native_command_can_run_under_the_job_deadline(tmp_path, monkeypatch):
+    original_wait, deadlines = subprocess.Popen.wait, []
+
+    def wait(process, timeout=None):
+        deadlines.append(timeout)
+        return original_wait(process, timeout=timeout)
+
+    monkeypatch.setattr(subprocess.Popen, 'wait', wait)
+    records = []
+    checked_command('native-build', [sys.executable, '-c', 'print("complete")'],
+                    repo=tmp_path, environment=dict(os.environ), directory=tmp_path, records=records)
+    assert deadlines and all(timeout is None for timeout in deadlines)
+    assert records[0]['exit_code'] == 0 and not records[0]['timed_out']
+    assert Path(records[0]['log']).read_text() == 'complete\n'
+
+
+@pytest.mark.skipif(shutil.which('ctest') is None, reason='requires native CTest')
+def test_native_ctest_preserves_only_registered_test_deadlines(tmp_path):
+    build, output = tmp_path / 'build', tmp_path / 'evidence'
+    build.mkdir()
+    output.mkdir()
+    (build / 'CTestTestfile.cmake').write_text(
+        'add_test(ordinary echo ordinary)\n'
+        'add_test(explicit echo explicit)\n'
+        'set_tests_properties(explicit PROPERTIES TIMEOUT 17)\n')
+
+    def command(label, argv):
+        checked_command(label, [*argv, '-V'], repo=tmp_path, environment=dict(os.environ),
+                        directory=output, records=[])
+
+    execute_ctest(build, 'registered', output, command)
+    log = (output / 'registered.log').read_text()
+    waits = [int(line.rsplit(' ', 1)[-1]) for line in log.splitlines() if 'Test timeout computed to be:' in line]
+    assert len(waits) == 2 and waits[0] > 360 * 60 and waits[1] == 17
+
+
 def test_native_package_uses_the_sdk_pipeline_install_without_requalifying_the_archive():
     result = {'status': 'PASS', 'archive_sha256': 'a' * 64,
               'installed': {'prefix': '/content-addressed/sdk'},
@@ -82,32 +130,59 @@ def test_native_package_uses_the_sdk_pipeline_install_without_requalifying_the_a
 
 
 def test_runtime_schedule_gate_requires_each_scenario_in_each_configuration(tmp_path):
-    from scripts.objc3c_toolchain.runtime_schedules import SCENARIO_INVENTORY
+    from scripts.objc3c_toolchain.runtime_schedule_model import coverage_domain, generate, signature
+    from scripts.objc3c_toolchain.runtime_schedules import (BACKENDS, DEFAULT_SEEDS, OPTIMIZATIONS,
+        SANITIZERS, SCENARIO_INVENTORY, SCHEMA, SEMANTIC_CONTROLS)
 
+    histories = [generate(seed) for seed in DEFAULT_SEEDS]
+    signatures = list(map(signature, histories))
+    configurations = [(sanitizer, optimization) for sanitizer in SANITIZERS for optimization in OPTIMIZATIONS]
     scenarios = [{
         'fixture': fixture, 'status': 'PASS', 'service_optimization': 'O1',
         'client_optimization': optimization, 'sanitizer': sanitizer,
         'scenarios': sorted(name for name, owner in SCENARIO_INVENTORY.items() if owner == fixture),
-    } for sanitizer in ('address,undefined', 'thread') for optimization in ('O0', 'O2')
+    } for sanitizer, optimization in configurations
        for fixture in sorted(set(SCENARIO_INVENTORY.values()))]
-    report = {'status': 'PASS', 'histories': [{}]*8, 'cases': [{}]*96,
+    cases = [{
+        'history': key, 'status': 'PASS', 'service_optimization': 'O1', 'backend': backend,
+        'client_optimization': optimization, 'sanitizer': sanitizer,
+        'observation_sha256': 'a' * 64, 'operations': len(history['operations']),
+    } for sanitizer, optimization in configurations for backend in BACKENDS
+       for key, history in zip(signatures, histories)]
+    transitions, pairs = coverage_domain()
+    report = {'schema': SCHEMA, 'status': 'PASS', 'histories': histories,
+        'history_hashes': signatures, 'control_history_hash': signatures[0], 'cases': cases,
         'scenario_inventory': SCENARIO_INVENTORY, 'scenario_cases': scenarios,
-        'controls': [{'name': name} for name in ('missing-frame-destruction',
-            'duplicate-waiter-delivery', 'premature-quiescence-publication',
-            'overlapping-actor-jobs', 'type-mismatched-next-consumption')],
-        'reduction': {'status': 'PASS'}, 'sanitizer_policy': dict.fromkeys(range(4))}
+        'controls': [{'name': name, 'status': 'PASS', 'classification': 'semantic-mismatch',
+                      'native_exit': 0, 'sanitizer_clean': True, 'diagnostic': diagnostic}
+                     for name, diagnostic in SEMANTIC_CONTROLS.values()],
+        'reduction': {'status': 'PASS', 'fresh_native_replay': True, 'original': histories[0]},
+        'model_coverage': {'transition_domain': sorted(transitions), 'pair_domain': sorted(map(list, pairs)),
+                           'missing_transitions': [], 'missing_pairs': []},
+        'sanitizer_policy': {sanitizer.replace(',', '-')+'-'+optimization: {}
+                             for sanitizer, optimization in configurations}}
     receipt = tmp_path / 'runtime-schedules/campaign/qualification.json'
     receipt.parent.mkdir(parents=True)
     receipt.write_text(json.dumps(report))
-    assert len(evidence.suite_results(tmp_path, 'runtime-schedules')) == 113
-    for mutation in ('scenario', 'configuration', 'inventory'):
+    assert len(evidence.suite_results(tmp_path, 'runtime-schedules')) == len(cases) + len(scenarios) + len(SEMANTIC_CONTROLS)
+    for mutation in ('scenario', 'configuration', 'inventory', 'case', 'replay', 'control', 'diagnostic', 'coverage'):
         broken = deepcopy(report)
         if mutation == 'configuration':
             broken['scenario_cases'][-1] = broken['scenario_cases'][0]
         elif mutation == 'scenario':
             broken['scenario_cases'][0]['scenarios'].pop()
-        else:
+        elif mutation == 'inventory':
             del broken['scenario_inventory']['interrupted-group-waiter-registration-retirement']
+        elif mutation == 'case':
+            broken['cases'][-1] = broken['cases'][0]
+        elif mutation == 'replay':
+            broken['cases'][0]['observation_sha256'] = 'b' * 64
+        elif mutation == 'control':
+            broken['controls'][0]['sanitizer_clean'] = False
+        elif mutation == 'diagnostic':
+            broken['controls'][0]['diagnostic'] = 'runtime trace omitted operations'
+        else:
+            del broken['model_coverage']['missing_transitions']
         receipt.write_text(json.dumps(broken))
         with pytest.raises(ValueError, match='runtime schedule matrix'):
             evidence.suite_results(tmp_path, 'runtime-schedules')
@@ -124,6 +199,8 @@ def test_product_consumers_keep_the_exact_sdk_immutable_and_skip_development_sca
 
 def test_source_coverage_reader_derives_current_compiler_suite_inventory(tmp_path, monkeypatch):
     from scripts.objc3c_assurance import emitter_shards
+    from scripts.objc3c_toolchain.llvm_tools import identity
+    from scripts.objc3c_toolchain.source_coverage import first_party_inventory
     root = tmp_path / 'source-coverage'
     root.mkdir()
     suite = ET.Element('testsuite', tests='4', failures='0')
@@ -133,14 +210,18 @@ def test_source_coverage_reader_derives_current_compiler_suite_inventory(tmp_pat
     (root / 'controls').mkdir();(root / 'first-party').mkdir();(root / 'compiler').mkdir()
     (root / 'controls/qualification.json').write_text(json.dumps({
         'status': 'PASS', 'controls': [{'status': 'PASS'} for _ in range(5)]}))
-    policy = json.loads((Path(__file__).resolve().parents[2] /
-                         'toolchains/llvm/source-coverage.json').read_text())
+    repo = Path(__file__).resolve().parents[2]
+    policy = json.loads((repo / 'toolchains/llvm/source-coverage.json').read_text())
+    eligible, ownership = first_party_inventory(repo)
+    mapped = {name: {'state': 'executed', 'compiled_mapping_summary': {'regions': {'count': 1}}}
+              for name in eligible}
     native_suites = [{'name': name, 'component': component, 'status': 'PASS',
-                      'source_coverage': {'source.cpp': {'state': 'executed'}}}
+                      'source_coverage': mapped}
                      for component in ('frontend', 'runtime') for name in policy[component + '_tests']]
     native_receipt = root / 'first-party/qualification.json'
     native_report = {
         'status': 'PASS', 'emitter_partition': {'proof': 'exact'}, 'suites': native_suites,
+        'eligible': eligible, 'eligible_digest': identity(eligible), 'ownership': ownership,
         'temporary_build_reclaimed': True, 'policy': policy}
     native_receipt.write_text(json.dumps(native_report))
     units = {'/build/bin/unit-'+str(index): 'a'*40 for index in range(5)}
@@ -153,6 +234,17 @@ def test_source_coverage_reader_derives_current_compiler_suite_inventory(tmp_pat
         'binary_ids': ['b'*40]}))
     monkeypatch.setattr(emitter_shards, 'emitter_partition', lambda *_: {'proof': 'exact'})
     assert len(evidence.suite_results(tmp_path, 'source-coverage')) == 2 + len(native_suites) + 6
+    incomplete = dict(mapped)
+    del incomplete['stdlib/include/objc3/collections.h']
+    native_receipt.write_text(json.dumps({**native_report, 'suites': [
+        *native_suites[:-1], {**native_suites[-1], 'source_coverage': incomplete}]}))
+    with pytest.raises(ValueError, match='suite omitted owned source'):
+        evidence.suite_results(tmp_path, 'source-coverage')
+    incomplete = {**mapped, ownership['required_translation_units']['runtime'][0]: {'state': 'no-emitted-mapping'}}
+    native_receipt.write_text(json.dumps({**native_report, 'suites': [
+        *native_suites[:-1], {**native_suites[-1], 'source_coverage': incomplete}]}))
+    with pytest.raises(ValueError, match='has no compiled mapping'):
+        evidence.suite_results(tmp_path, 'source-coverage')
     native_receipt.write_text(json.dumps({**native_report, 'suites': [
         *native_suites[:-1], {**native_suites[-1], 'name': 'substituted-runtime-test'}]}))
     with pytest.raises(ValueError, match='source coverage is incomplete'):
@@ -384,6 +476,8 @@ def test_periodic_and_owner_selection_include_new_native_qualification_suites():
     assert 'frontend-fuzz' in {row['id'] for row in select(['native/fuzz/FrontendTarget.cpp'], **REV)['suites']}
     assert 'runtime-schedules' in {row['id'] for row in select([
         'tests/clang_foundation/runtime_schedules/history.cpp'], **REV)['suites']}
+    assert 'runtime-schedules' in {row['id'] for row in select([
+        'native/objc3c/tests/runtime_lifetime_test.cpp'], **REV)['suites']}
     assert 'source-coverage' in {row['id'] for row in select([
         'scripts/objc3c_toolchain/compiler_source_coverage.py'], **REV)['suites']}
 
@@ -395,9 +489,12 @@ def test_native_assurance_workflow_has_exact_periodic_and_dispatch_revision_gate
     assert '--periodic-sha "$GITHUB_SHA"' in workflow
     assert 'objc3c_assurance plan' in workflow and 'objc3c_assurance verify' in workflow
     dependencies = {'gnupg', 'libxml2', 'libcurl4', 'libedit2', 'libsqlite3-0', 'libncurses6'}
-    for path in ('native-assurance.yml', 'adaptive-closeout.yml'):
-        text = (root / '.github/workflows' / path).read_text()
-        assert all(name in text for name in dependencies)
+    assert all(name in workflow for name in dependencies)
+    closeout = (root / '.github/workflows/adaptive-closeout.yml').read_text()
+    assert 'uses: ./.github/workflows/native-assurance.yml' in closeout
+    assert 'needs: [source, native]' in closeout and 'archive_install: false' in closeout
+    assert '"$SOURCE_SHA" != "$GITHUB_SHA"' in closeout
+    assert all(name not in closeout for name in dependencies)
 
 
 def test_frontend_fuzz_evidence_requires_patched_frontend_feedback(tmp_path):
@@ -549,9 +646,7 @@ def release_consumer_fixture(tmp_path, monkeypatch):
     release = tmp_path / 'release.json'
     release.write_text(json.dumps({'status': 'PASS', 'seal_sha256': seal,
                                     'archive_sha256': archive}))
-    plan = {'revision': dict(REV), 'periodic': True, 'sha256': 'p'*64,
-            'cache_policy': 'fixture', 'suites': [{'id': 'installed'}]}
-    monkeypatch.setattr(runner, 'validate', lambda _: None)
+    plan = select(['native/objc3c/src/clang_foundation/interface_codec.cpp'], **REV, periodic=True)
     monkeypatch.setattr(runner, 'from_checkout', lambda *args, **kwargs: plan)
     monkeypatch.setattr(runner, 'execute_suites', lambda *args, **kwargs: None)
     return runner, repo, sdk, release, plan, {'source_build_id': source,
@@ -812,7 +907,7 @@ def test_orchestration_edits_select_every_affected_native_owner(path):
     assert {row['id'] for row in select([path], **REV)['suites']} == full
 
 
-def test_sharded_published_bundle_retains_exact_native_evidence(tmp_path):
+def test_sharded_published_bundle_retains_exact_native_evidence(tmp_path, monkeypatch):
     from scripts.objc3c_assurance.plan import foundation_receipts, selected_suites
     producer = tmp_path / 'producer';producer.mkdir()
     plan, receipt = passing_bundle(producer)
@@ -830,9 +925,14 @@ def test_sharded_published_bundle_retains_exact_native_evidence(tmp_path):
     assert not (destination / 'frontend/build').exists()
     assert not (destination / 'unselected').exists()
     assert (destination / 'result.json').read_bytes() == (producer / 'result.json').read_bytes()
+    sizes = [sum(row['bytes'] for row in suite['artifacts']) for suite in receipt['suites']]
+    sizes.append(receipt['operational_costs']['bytes'])
+    assert sum(sizes) > max(sizes)
+    monkeypatch.setattr(evidence, 'MAX_BYTES', max(sizes))
     result = evidence.aggregate_shards(plan, destination.parent,
         outcomes={'plan': 'success', 'native': 'success'}, tested=REV['tested'])
     assert result['status'] == 'PASS' and result['shards'] == ['core']
+    assert result['artifact_bytes'] == sum(sizes)
     assert set(result['suites']) == {row['id'] for row in plan['suites']}
     assert foundation_receipts(destination, selected_suites(plan, 'core')) == [
         destination / 'foundation/foundation.json']
@@ -986,6 +1086,24 @@ def test_real_native_commands_and_ctest_fail_closed(tmp_path, fault):
     else:
         with pytest.raises(ValueError):
             execute_ctest(build, 'actual', output, command)
+    discovery = json.loads((output / 'actual-discovery.json').read_bytes())
+    assert discovery['status'] == ('FAIL' if fault == 'empty' else 'PASS')
+    assert discovery['argv'] == ['ctest', '--test-dir', str(build), '--show-only=json-v1']
+    assert discovery['stdout']
+
+
+def test_runtime_ctest_refuses_to_mix_a_new_inventory_with_old_junit(tmp_path):
+    output = tmp_path / 'evidence'
+    output.mkdir()
+    inventory = output / 'runtime-ctest-inventory.json'
+    result = output / 'runtime-ctest.xml'
+    inventory.write_text('["stale-witness"]\n')
+    result.write_bytes(b'<testsuite><testcase name="stale-witness"/></testsuite>')
+    prior = {path.name: path.read_bytes() for path in output.iterdir()}
+    with pytest.raises(ValueError, match='fresh discovery and execution evidence'):
+        execute_ctest(tmp_path / 'unavailable-build', 'runtime-ctest', output,
+                      lambda *_: pytest.fail('stale evidence must be rejected before execution'))
+    assert {path.name: path.read_bytes() for path in output.iterdir()} == prior
 
 
 @pytest.mark.parametrize('fault', ['missing-cost', 'changed-cost', 'false-decision', 'false-timing'])
@@ -1026,12 +1144,6 @@ def test_release_partial_staging_excludes_builds_and_linked_blob_aliases(tmp_pat
     assert sum(path.stat().st_size for path in destination.rglob('*.zst')) == len(b'exact replay bytes')
 
 
-def test_sanitizer_replay_has_a_separate_bounded_evidence_allowance():
-    assert evidence.evidence_budget(['frontend']) == 256 * 1024**2
-    assert evidence.evidence_budget(['source-coverage']) == 256 * 1024**2
-    assert evidence.evidence_budget(['sanitizer-products']) == 256 * 1024**2 + 3 * 1024**3
-
-
 def test_debugger_parser_header_matches_the_locked_production_patch_without_checkout(tmp_path):
     from scripts.objc3c_toolchain.debugger_test_header import HEADER, materialize
     repo = Path(__file__).resolve().parents[2]
@@ -1052,12 +1164,14 @@ def test_debugger_parser_header_matches_the_locked_production_patch_without_chec
 def test_replay_budget_does_not_expand_other_suite_limits():
     ordinary = {'id': 'frontend', 'artifacts': [{'bytes': evidence.MAX_BYTES + 1}]}
     replay = {'id': 'sanitizer-products', 'artifacts': [{'bytes': 2 * 1024**3}]}
-    evidence.validate_evidence_sizes([replay])
-    with pytest.raises(ValueError, match='suite artifact budget'):
+    assert evidence.validate_evidence_sizes([replay]) == 2 * 1024**3
+    with pytest.raises(ValueError, match='suite artifact budget for frontend'):
         evidence.validate_evidence_sizes([ordinary, replay])
     replay['artifacts'][0]['bytes'] = evidence.SANITIZER_PRODUCT_BYTES + 1
-    with pytest.raises(ValueError, match='suite artifact budget'):
+    with pytest.raises(ValueError, match='suite artifact budget for sanitizer-products'):
         evidence.validate_evidence_sizes([replay])
+    with pytest.raises(ValueError, match='operational evidence exceeds its artifact budget'):
+        evidence.validate_evidence_sizes([], evidence.MAX_BYTES + 1)
 
 
 @pytest.mark.parametrize('failure', [None, 'command', 'inventory', 'no-pass'])

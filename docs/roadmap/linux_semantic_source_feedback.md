@@ -5,14 +5,18 @@ uniform-versus-source-feedback experiment. The older pair-balanced comparison
 continues to report semantic coverage only. Neither experiment changes default
 generation or qualifies an SDK by itself.
 
+The optional `source-feedback` LLVM assurance workflow qualifies one coverage
+compiler and then runs both generation strategies on that same compiler.
+`--coverage-qualification` binds the current revision, coverage object bytes,
+shared Clang ELF identity, source inventory, and complete regression inventory.
+The uniform programs and independent semantic model provide the comparison
+reference. The optional `--baseline` adds a completed independent semantic
+campaign, with matching model/runtime bytes and compiler source tree.
+
 `python3 -B -m scripts.objc3c_toolchain.semantic_source_feedback --help` exposes the
-entry point. It requires a current complete semantic-oracle baseline, matching
-model/runtime bytes, and the completed `compiler-source-coverage` foundation for
-the same compiler source tree. Supply the baseline's runtime services archive
-and GNUstep library explicitly. The coverage profile is reused; the driver does
-not download, rebuild or substitute a compiler. Run it while the coverage
-producer's complete build tree still exists: the installed prefix alone omits
-the compiled-object evidence needed to bind the denominator.
+entry point for reuse. Supply the runtime services archive and GNUstep library
+explicitly. Run it while the qualified coverage producer's complete build tree
+still exists because that tree provides the compiled-object evidence.
 
 The baseline's source-build/configuration IDs must match the normal sanitizer
 profile; the experiment separately records the coverage profile's IDs. Full
@@ -52,9 +56,8 @@ ARC C++20 direct-source transport; the complete PCH/interface, optimization,
 ownership and language dimensions keep their independent qualification owners.
 
 The implementation has focused generator, profile-admission, baseline,
-compressed-artifact, deadline, cleanup and comparison tests. Current-source
-execution with the full qualified coverage build remains an SDK/CI consolidation
-item; no target-source coverage improvement is claimed by these unit controls.
+compressed-artifact, deadline, cleanup and comparison tests. Hosted execution of
+the new paired measurement remains pending.
 
 The focused checkpoint passes 285 related tooling tests and CLI/compile checks.
 The quick policy suite also passes all 124 controls after its independent repair

@@ -9,6 +9,23 @@
 | Earlier SDK evidence | SDK 2.62 / extension ABI 21 is recorded in the [development history](../roadmap/linux_development_history.md).                                                        |
 | Language support     | Follow the [capability schema](../../schemas/objc3-language-capabilities.json). The preview claim list remains empty until profile evidence and reviews are complete. |
 
+## Platform delivery
+
+| Platform                 | Delivery                                                                                                                                                                                          | Evidence                                                                                                                                                                                                                                                                                        |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Linux x86-64 and AArch64 | Published native preview archives with the patched LLVM 23.1.5 compiler, ELF/DWARF output, and GNUstep 2.2 plus libobjc2.                                                                         | [Release assets](https://github.com/doublemover/Slopjective-C/releases/tag/v0.1.0-preview.1) · [Exact archive and clean-install identities](preview-manifest.json)                                                                                                                              |
+| Apple Silicon macOS      | The opt-in `macos-arm64-registration-experimental` route passed the native compiler, runtime, package, relocation, installed ARC and portable service checks, including ASan and UBSan consumers. | [Native package qualification](https://github.com/doublemover/Slopjective-C/actions/runs/45299864475) · [Verified two-package update](https://github.com/doublemover/Slopjective-C/actions/runs/45312431420) · [Experimental replay instructions](../runbooks/objc3c_darwin_arm64_bootstrap.md) |
+| Production macOS arm64   | Unsupported. The experimental package records `support_truth: false`.                                                                                                                             | [Production capability matrix](../support/capability_matrix.md#macos-arm64-platform-support)                                                                                                                                                                                                    |
+
+The Linux version is the exact base of the published patched compiler. Source
+builds admit the pinned host LLVM toolchain. The experimental Apple Silicon
+package uses that LLVM release as bootstrap and requires an arm64 host with
+Xcode 16.4 build `16F6` and macOS SDK 15.5. These checks identify specific tool
+combinations. [Linux host pins](../../toolchains/linux-hosts.json) · [Darwin package admission](../../scripts/objc3c_toolchain/darwin_sdk.py)
+
+The capability matrix tracks the reviewed production profiles. The Linux
+preview manifest defines the published Linux install scope. [Platform hardening runbook](../runbooks/objc3c_platform_hardening.md#8206-umbrella-closure-boundary)
+
 ## Release evidence
 
 - The ordinary SDK, instrumented, coverage, native analysis, and clean install

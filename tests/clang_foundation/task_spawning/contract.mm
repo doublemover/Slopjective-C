@@ -485,6 +485,44 @@ struct __attribute__((objc_unsafe_sendable)) ThrowingCallableWork:OwnedCallableW
   using OwnedCallableWork::OwnedCallableWork;
   objc3::task<int> operator()(){throw 73;}
 };
+struct __attribute__((objc_unsafe_sendable)) RawFrameAdmissionWork {
+  objc3_async_frame frame;
+  objc3_async_frame operator()() const { return frame; }
+};
+
+void public_callable_frame_admission() {
+  unsigned resumed = 0, destroyed = 0;
+  struct Ledger { unsigned &resumed, &destroyed; } ledger{resumed, destroyed};
+  const objc3_async_frame valid{sizeof(valid), OBJC3_ASYNC_ABI_VERSION, &ledger,
+      [](objc3_task_t *, void *context) { ++static_cast<Ledger *>(context)->resumed; },
+      [](void *context) { ++static_cast<Ledger *>(context)->destroyed; },
+      objc3::task_detail::result_type<int>()};
+  auto group = objc3::task_group_handle::create();
+  for (bool unsupported_version : {false, true}) {
+    auto frame = valid;
+    if (unsupported_version) ++frame.version;
+    else frame.resume = nullptr;
+    const auto expected = objc3_async_frame_validate(&frame);
+    assert(expected == (unsupported_version ? OBJC3_SERVICE_UNSUPPORTED_VERSION : OBJC3_SERVICE_INVALID_ARGUMENT));
+    const RawFrameAdmissionWork work{frame};
+    auto rejected = [&](auto operation) {
+      try { operation(); }
+      catch (const objc3::service_failure &error) {
+        assert(error.status() == expected);
+        return;
+      }
+      assert(false && "malformed callable frame was admitted");
+    };
+    rejected([&] { (void)objc3_task_spawn<int>(work); });
+    rejected([&] { (void)objc3_task_detached<int>(work); });
+    rejected([&] { (void)group.spawn<int>(work); });
+    rejected([&] { (void)objc3_task_spawn_in_group<int>(group, work); });
+  }
+  assert(resumed == 0 && destroyed == 0);
+  group.close();
+  group.wait();
+}
+
 int owned_callable_parent(std::atomic<int> *live) __objc3_async
     __attribute__((objc_task_group)) {
   auto scope=objc3::task_group_handle::current_scope();
@@ -608,6 +646,7 @@ int main() {
   assert(objc3_executor_get_global(&global) == OBJC3_SERVICE_OK);
   dynamic_frame_storage_contract(source);
   assert(objc3_actor_create(source, &actor) == OBJC3_SERVICE_OK);
+  public_callable_frame_admission();
   owned_callable_spawn_contract(source);
   rvalue_factories::contract(source);
   task_transfers::contract(source);

@@ -44,6 +44,22 @@ class ClangFoundationRuntimeProfileTests(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertIn("pinned libobjc2 source unavailable", result.stderr)
 
+    def test_darwin_runtime_requires_its_own_profile_and_native_qualification(self):
+        manifest = json.loads(PROFILE.read_text(encoding="utf-8"))
+        profile = manifest["profiles"]["macos-arm64"]
+        self.assertEqual(profile["status"], "blocked")
+        self.assertNotIn("runtime_family", profile)
+        result = subprocess.run(
+            [sys.executable, str(VERIFIER), "--profile", "macos-arm64", "--source", str(RUNTIME_SOURCE)],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn(profile["reason"], result.stderr)
+        self.assertEqual(result.stdout, "")
+
     @unittest.skipUnless(RUNTIME_SOURCE.is_dir() and ROBIN_MAP_SOURCE.is_dir(),
                          "pinned runtime dependency checkouts are not present")
     def test_pinned_checkouts_and_public_runtime_headers_are_accepted(self):

@@ -21,16 +21,21 @@ def main(argv=None):
     parser.add_argument('--plan', type=Path, required=True)
     parser.add_argument('--output', type=Path)
     parser.add_argument('--periodic-sha')
+    parser.add_argument('--comparison-base', default=os.environ.get('OBJC3C_ANALYSIS_COMPARISON_BASE'))
     parser.add_argument('--partition-index', type=int, default=0)
     parser.add_argument('--foundation-bundle', type=Path)
     parser.add_argument('--foundation-archive-sha256')
     parser.add_argument('--sanitizer-producer', type=Path)
     args = parser.parse_args(argv)
     repo = args.repo.resolve()
-    revisions = (dict.fromkeys(('head', 'base', 'tested'), sha(args.periodic_sha))
-                 if args.periodic_sha else event_revisions(repo))
     try:
-        expected = from_checkout(repo, **revisions, periodic=bool(args.periodic_sha))
+        if args.comparison_base and not args.periodic_sha:
+            raise ValueError('an explicit comparison base requires the exact tested SHA')
+        revisions = (dict.fromkeys(('head', 'base', 'tested'), sha(args.periodic_sha))
+                     if args.periodic_sha else event_revisions(repo))
+        if args.comparison_base:
+            revisions['base'] = sha(args.comparison_base)
+        expected = from_checkout(repo, **revisions, periodic=bool(args.periodic_sha and not args.comparison_base))
         if args.command == 'plan':
             args.plan.parent.mkdir(parents=True, exist_ok=True)
             args.plan.write_text(json.dumps(expected, indent=2)+'\n')

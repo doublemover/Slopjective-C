@@ -68,9 +68,41 @@ template<class T> static int guard_template(T source) {
   guard let value = source else { return -1; }
   return value + 2;
 }
+struct GuardConditionTemporary {
+  GuardConditionTemporary() { guard_events = guard_events * 10 + 1; }
+  ~GuardConditionTemporary() { guard_events = guard_events * 10 + 3; }
+};
+struct GuardCondition {
+  bool passes;
+  bool test(const GuardConditionTemporary &, int value) const {
+    guard_events = guard_events * 10 + 2;
+    return passes && value == 40;
+  }
+};
+template<class Condition, int Delta>
+static int guard_if_dependent(Optional(int) source, Condition condition) {
+  if var value = source, condition.test(GuardConditionTemporary{}, value),
+       ((guard_events = guard_events * 10 + 4), Delta > 0) {
+    value += Delta;
+    guard_events = guard_events * 10 + 5;
+    return value;
+  } else {
+    guard_events = guard_events * 10 + 6;
+    return -1;
+  }
+}
 static void guard_cpp(void) {
   GUARD_CHECK(guard_template(Some(int, 40)) == 42);
   GUARD_CHECK(guard_template(None(int)) == -1);
+  guard_events = 0;
+  GUARD_CHECK((guard_if_dependent<GuardCondition, 2>(Some(int, 40), {true}) == 42));
+  GUARD_CHECK(guard_events == 12345);
+  guard_events = 0;
+  GUARD_CHECK((guard_if_dependent<GuardCondition, 2>(Some(int, 40), {false}) == -1));
+  GUARD_CHECK(guard_events == 1236);
+  guard_events = 0;
+  GUARD_CHECK((guard_if_dependent<GuardCondition, 2>(None(int), {true}) == -1));
+  GUARD_CHECK(guard_events == 6);
   int counter = 0;
   auto next = [&counter]() { ++counter; return Some(int, counter); };
   guard let first = next(), second = next() else { ++guard_failures; return; }
@@ -107,6 +139,16 @@ static GuardObject *guard_pool_new(void) {
   guard_pool_observed = object;
   return object;
 }
+typedef void (^GuardConsumedBlock)(GuardObject * __attribute__((ns_consumed)));
+static void guard_consumed_block(void) {
+  GuardConsumedBlock original = ^(GuardObject *object __attribute__((ns_consumed))) {
+    GUARD_CHECK(object->number == 42 && guard_pool_observed != (id)0);
+  };
+  GuardConsumedBlock same = (GuardConsumedBlock)original;
+  int destroyed = guard_destroyed;
+  same(guard_pool_new());
+  GUARD_CHECK(guard_destroyed == destroyed + 1 && guard_pool_observed == (id)0);
+}
 static int guard_pool_binding(void) {
   @autoreleasepool {
     guard let held = guard_pool_new() else { return -1; }
@@ -128,6 +170,46 @@ static void guard_pool_source_order(void) {
   }
   GUARD_CHECK(guard_pool_observed == (id)0);
 }
+#ifdef __cplusplus
+struct GuardPoolLocal {
+  int *destructions;
+  ~GuardPoolLocal() { ++*destructions; }
+};
+static int guard_pool_nested(bool present, bool unwind) {
+  int destructions = 0;
+  int created = guard_created;
+  int result = -1;
+  try {
+    @autoreleasepool {
+      guard let outer = guard_pool_new() else { return -2; }
+      defer { GUARD_CHECK(outer->number == 42); }
+      {
+        @autoreleasepool {
+          GuardObject * __weak witness = outer;
+          guard let inner = guard_pool_new(), value = guard_next(42, present)
+          else { return -1; }
+          GuardPoolLocal local{&destructions};
+          defer {
+            GUARD_CHECK(destructions == 0);
+            GUARD_CHECK(witness != (id)0 && inner->number == 42);
+          }
+          GUARD_CHECK(witness != (id)0 && value == 42);
+          if (unwind) throw value;
+          result = value;
+        }
+      }
+      GUARD_CHECK(destructions == 1 && guard_pool_observed == (id)0);
+      GUARD_CHECK(outer->number == 42);
+    }
+  } catch (int value) {
+    GUARD_CHECK(value == 42);
+    GUARD_CHECK(destructions == 1 && guard_pool_observed == (id)0);
+    result = value;
+  }
+  GUARD_CHECK(guard_created == created + 2 && guard_created == guard_destroyed);
+  return result;
+}
+#endif
 struct GuardManagedRecord {
   Optional(id) object;
   unsigned : 0;
@@ -167,9 +249,16 @@ static void guard_managed_record_storage(void) {
   GUARD_CHECK(witness == (id)0);
 }
 static void guard_managed(void) {
+  guard_consumed_block();
   GUARD_CHECK(guard_pool_binding() == 42);
   GUARD_CHECK(guard_pool_observed == (id)0);
   guard_pool_source_order();
+#ifdef __cplusplus
+  GUARD_CHECK(guard_pool_nested(true, false) == 42);
+  GUARD_CHECK(guard_pool_nested(true, true) == 42);
+  GUARD_CHECK(guard_pool_nested(false, false) == -1);
+  GUARD_CHECK(guard_created == guard_destroyed && guard_pool_observed == (id)0);
+#endif
   guard_managed_record_storage();
   GuardObject * __weak witness;
   {

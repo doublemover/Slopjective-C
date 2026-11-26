@@ -12,12 +12,21 @@ on:
         type: choice
         options: [compiler, any, warm]
         default: compiler
+      assurance_mode:
+        description: Development IR, sealed preview IR, source feedback, or compiler instrumentation
+        type: choice
+        options: [development, installed-preview, source-feedback, compiler-instrumentation]
+        default: development
+      verify_compiler_graph:
+        description: Reuse the development build for full compiler instrumentation qualification
+        type: boolean
+        default: false
 env:
   OBJC3C_REQUESTED_HOST: ${{ inputs.linux_host || 'linux-x86_64' }}
 permissions:
   contents: read
 concurrency:
-  group: ${{ inputs.linux_host || 'linux-x86_64' }}-linux-llvm-assurance-${{ github.event.pull_request.number || github.ref }}-${{ inputs.dependency_cache || 'compiler' }}
+  group: ${{ inputs.linux_host || 'linux-x86_64' }}-linux-llvm-assurance-${{ github.event.pull_request.number || github.ref }}-${{ inputs.dependency_cache || 'compiler' }}-${{ inputs.assurance_mode || 'development' }}
   cancel-in-progress: false
 jobs:
   dependency-cache:
@@ -27,7 +36,7 @@ jobs:
       expectation: ${{ inputs.dependency_cache }}
       linux_host: ${{ inputs.linux_host }}
   llvm-assurance:
-    if: inputs.dependency_cache != 'any' && inputs.dependency_cache != 'warm'
+    if: inputs.dependency_cache != 'any' && inputs.dependency_cache != 'warm' && inputs.assurance_mode != 'installed-preview'
     name: Execute matched LLVM IR and optimized debug controls
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container:
@@ -55,13 +64,21 @@ jobs:
           g++ tests/tooling/fixtures/native_container/personality.c -o out/native-container-control
           out/native-container-control
       - name: Execute real IR, reduction and optimized debugger campaign
+        if: inputs.assurance_mode == 'development'
+        env:
+          VERIFY_COMPILER_GRAPH: ${{ inputs.verify_compiler_graph }}
         shell: bash
         run: |
           source /opt/objc3c-host/activate.sh
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           ulimit -c 0
-          python3 -B -m scripts.objc3c_toolchain.llvm_campaign --fetch --output out/llvm-assurance
+          graph=()
+          if [[ "$VERIFY_COMPILER_GRAPH" == true ]]; then
+            graph=(--verify-compiler-graph)
+          fi
+          python3 -B -m scripts.objc3c_toolchain.llvm_campaign --fetch --output out/llvm-assurance "${graph[@]}"
       - name: Execute independent generated semantic oracles
+        if: inputs.assurance_mode == 'development'
         shell: bash
         run: |
           source /opt/objc3c-host/activate.sh
@@ -71,6 +88,45 @@ jobs:
             seeds=(--seed-rotation "$GITHUB_SHA")
           fi
           python3 -B -m scripts.objc3c_toolchain.semantic_oracles --ir-receipt out/llvm-assurance/ir/qualification.json --output out/llvm-assurance/semantic-oracles "${seeds[@]}"
+      - name: Qualify the compiler source coverage product
+        if: inputs.assurance_mode == 'source-feedback'
+        shell: bash
+        run: |
+          source /opt/objc3c-host/activate.sh
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          ulimit -c 0
+          python3 -B -m scripts.objc3c_toolchain build --host "$OBJC3C_NATIVE_HOST" --fetch --stage \
+            --instrumentation-profile compiler-source-coverage
+          python3 -B -m scripts.objc3c_toolchain.compiler_source_coverage --output out/llvm-assurance/compiler-coverage
+      - name: Compare generated semantic programs on the same covered compiler
+        if: inputs.assurance_mode == 'source-feedback'
+        shell: bash
+        run: |
+          source /opt/objc3c-host/activate.sh
+          ulimit -c 0
+          cmake -S native/objc3c/src/runtime -B out/llvm-assurance/runtime -G Ninja \
+            -DCMAKE_CXX_COMPILER="$OBJC3C_BOOTSTRAP_LLVM_ROOT/bin/clang++" \
+            -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+          cmake --build out/llvm-assurance/runtime --target objc3_runtime_services --parallel 2
+          python3 -B -m scripts.objc3c_toolchain_runtime.build_linux --repo . \
+            --compiler-root "$OBJC3C_BOOTSTRAP_LLVM_ROOT" --jobs 2 --fetch \
+            --report-file out/llvm-assurance/objc-runtime.json
+          runtime=$(python3 -c 'from pathlib import Path; import json; print(Path(json.load(open("out/llvm-assurance/objc-runtime.json"))["stage"]) / "lib/libobjc.so")')
+          python3 -B -m scripts.objc3c_toolchain.semantic_source_feedback \
+            --coverage-qualification out/llvm-assurance/compiler-coverage/qualification.json \
+            --services out/llvm-assurance/runtime/libobjc3_runtime_services.a --runtime "$runtime" \
+            --output out/llvm-assurance/source-feedback
+      - name: Verify actual instrumented compiler and frontend link graphs
+        if: inputs.assurance_mode == 'compiler-instrumentation'
+        shell: bash
+        run: |
+          source /opt/objc3c-host/activate.sh
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          ulimit -c 0
+          python3 -B -m scripts.objc3c_toolchain build --host "$OBJC3C_NATIVE_HOST" --fetch --stage \
+            --instrumentation-profile compiler-asan-ubsan
+          python3 -B -m scripts.objc3c_toolchain.compiler_instrumentation \
+            --measure-costs --output out/llvm-assurance/instrumentation
       - name: Retain LLVM diagnostics and reproducible inputs
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -79,6 +135,7 @@ jobs:
           path: |
             out/llvm-startup/
             out/llvm-assurance/**/*.json
+            out/llvm-assurance/**/*.json.gz
             out/llvm-assurance/**/*.log
             out/llvm-assurance/**/*.ll
             out/llvm-assurance/**/*.bc
@@ -92,5 +149,56 @@ jobs:
             out/llvm-assurance/**/*.cpp
             out/llvm-assurance/**/*.h
             out/llvm-assurance/**/*.hpp
+          if-no-files-found: error
+          retention-days: 7
+  installed-preview:
+    if: inputs.dependency_cache != 'any' && inputs.dependency_cache != 'warm' && inputs.assurance_mode == 'installed-preview'
+    name: Verify native IR and behavior with the published preview
+    runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
+    container: debian:13
+    steps:
+      - name: Install distribution prerequisites
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git ca-certificates curl python3 zstd g++ libc6-dev libzstd-dev zlib1g-dev libssl-dev
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/linux-preview-archive-cache
+        id: preview-cache
+        with:
+          manifest: docs/releases/preview-manifest.json
+      - name: Install the exact preview and verify its compiler output
+        shell: bash
+        env:
+          PREVIEW_CACHE: ${{ steps.preview-cache.outputs.directory }}
+        run: |
+          mkdir -p out/installed-ir
+          python3 -B scripts/objc3c_toolchain/linux_host.py --expect-host "$OBJC3C_REQUESTED_HOST" --field host
+          python3 -B -m scripts.objc3c_assurance.preview_download \
+            --manifest docs/releases/preview-manifest.json --directory "$RUNNER_TEMP/objc3-ir" \
+            --archive-cache "$PREVIEW_CACHE" \
+            > out/installed-ir/install.json
+          seal=$(python3 -c 'import json; print(json.load(open("out/installed-ir/install.json"))["seal_sha256"])')
+          python3 -B -m scripts.objc3c_toolchain.llvm_installed_ir \
+            --sdk "$RUNNER_TEMP/objc3-ir/sdk/current" --seal-sha256 "$seal" --output out/installed-ir/verification
+      - name: Save the admitted preview archive on manual runs
+        if: github.event_name == 'workflow_dispatch' && steps.preview-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.preview-cache.outputs.archive }}
+          key: ${{ steps.preview-cache.outputs.key }}
+      - name: Retain optimizer, machine, DWARF and native execution evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: installed-ir-assurance-${{ inputs.linux_host }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            out/installed-ir/**/*.json
+            out/installed-ir/**/*.log
+            out/installed-ir/**/*.ll
+            out/installed-ir/**/*.mm
+            out/installed-ir/**/*.h
+            out/installed-ir/**/*.objc3i
           if-no-files-found: error
           retention-days: 7

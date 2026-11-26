@@ -58,7 +58,7 @@ def validate_editor_toolchain(report: dict[str, Any], toolchain: dict[str, Any])
 
 
 def run_editor_node(repo: Path, output_dir: Path, toolchain: dict[str, Any],
-                    timeout: float) -> dict[str, Any]:
+                    timeout: float | None) -> dict[str, Any]:
     from scripts.objc3c_cross_lane_execution import run_node_command
     work = output_dir / "editor"
     report_path = work / "results.json"
@@ -94,7 +94,7 @@ def execute_worker(context_path: Path, node_id: str) -> None:
     if node_id not in context["plan"]["selected_node_ids"]:
         raise ValueError("worker node is not selected")
     node = dict(nodes[node_id])
-    node["timeout_seconds"] = context["timeout_seconds"]
+    node.setdefault("timeout_seconds", context["timeout_seconds"])
     output_dir = node_directory(run_dir, node_id)
     output_dir.mkdir(parents=True, exist_ok=False)
     toolchain = context["toolchain"]
@@ -117,7 +117,7 @@ def execute_worker(context_path: Path, node_id: str) -> None:
         from scripts.objc3c_native_validation.package_nodes import run_package_node
         result = run_package_node(repo, node, output_dir, toolchain, dependencies)
     elif operation == "editor":
-        result = run_editor_node(repo, output_dir, toolchain, context["timeout_seconds"])
+        result = run_editor_node(repo, output_dir, toolchain, node["timeout_seconds"])
     else:
         raise ValueError(f"unknown native validation operation: {operation}")
     write_node_result(result_path(run_dir, node_id), node_id=node_id,

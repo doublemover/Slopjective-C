@@ -1489,7 +1489,7 @@ diff --git a/clang/lib/Sema/SemaDecl.cpp b/clang/lib/Sema/SemaDecl.cpp
        } else if (PointerAuthQualifier Q = FT.getPointerAuth();
 
 diff --git a/clang/lib/Sema/SemaDeclCXX.cpp b/clang/lib/Sema/SemaDeclCXX.cpp
-index b0669c602..3b5c9bf01 100644
+index b0669c602..90cc20480 100644
 --- a/clang/lib/Sema/SemaDeclCXX.cpp
 +++ b/clang/lib/Sema/SemaDeclCXX.cpp
 @@ -11,8 +11,11 @@
@@ -1592,7 +1592,45 @@ index b0669c602..3b5c9bf01 100644
    auto *FieldClassDecl = FieldType->getAsCXXRecordDecl();
    if (!FieldClassDecl)
      return;
-@@ -7471,6 +7511,13 @@ void Sema::CheckCompletedCXXClass(Scope *S, CXXRecordDecl *Record) {
+@@ -7110,6 +7150,37 @@ void Sema::CheckCompletedCXXClass(Scope *S, CXXRecordDecl *Record) {
+   if (!Record)
+     return;
+ 
++  const auto &Runtime = getLangOpts().ObjCRuntime;
++  if (getLangOpts().ObjC3 && getLangOpts().ObjCAutoRefCount &&
++      Context.getTargetInfo().getTriple().isOSLinux() &&
++      Runtime.getKind() == ObjCRuntime::GNUstep &&
++      Runtime.getVersion() == VersionTuple(2, 2) &&
++      !Record->isInvalidDecl() && !Record->isDependentType()) {
++    // The native C++ member's this pointer requires its declared alignment.
++    // Direct carrier fields do not form a C++ this pointer.
++    for (const FieldDecl *Field : Record->fields()) {
++      QualType Element = Context.getBaseElementType(Field->getType());
++      if (!Element->isRecordType() ||
++          !containsObjC3CarrierManagedStorage(Element))
++        continue;
++      const ASTRecordLayout &Layout = Context.getASTRecordLayout(Record);
++      CharUnits Offset = Context.toCharUnitsFromBits(
++          Layout.getFieldOffset(Field->getFieldIndex()));
++      CharUnits Available = Layout.getAlignment().alignmentAtOffset(Offset);
++      CharUnits Required =
++          Context.getTypeAlignInChars(Element.getCanonicalType());
++      if (Available >= Required)
++        continue;
++      Diag(Field->getLocation(),
++           getDiagnostics().getCustomDiagID(
++               DiagnosticsEngine::Error,
++               "ObjC3 nested managed C++ record %0 requires %1-byte alignment "
++               "at field %2 (actual alignment %3)"))
++          << Element << Required.getQuantity() << Field->getDeclName()
++          << Available.getQuantity();
++    }
++  }
++
+   if (Record->isAbstract() && !Record->isInvalidDecl()) {
+     AbstractUsageInfo Info(*this, Record);
+     CheckAbstractClassUsage(Info, Record);
+@@ -7471,6 +7542,13 @@ void Sema::CheckCompletedCXXClass(Scope *S, CXXRecordDecl *Record) {
    else if (Record->hasNonTrivialDestructor())
      Record->setParamDestroyedInCallee(CanPass);
  
@@ -1606,7 +1644,7 @@ index b0669c602..3b5c9bf01 100644
    if (getLangOpts().ForceEmitVTables) {
      // If we want to emit all the vtables, we need to mark it as used.  This
      // is especially required for cases like vtable assumption loads.
-@@ -7685,6 +7732,12 @@ static bool defaultedSpecialMemberIsConstexpr(
+@@ -7685,6 +7763,12 @@ static bool defaultedSpecialMemberIsConstexpr(
    if (!S.getLangOpts().CPlusPlus11)
      return false;
  
@@ -1619,7 +1657,7 @@ index b0669c602..3b5c9bf01 100644
    // C++11 [dcl.constexpr]p4:
    // In the definition of a constexpr constructor [...]
    bool Ctor = true;
-@@ -9809,7 +9862,8 @@ bool SpecialMemberDeletionInfo::shouldDeleteForVariantObjCPtrMember(
+@@ -9809,7 +9893,8 @@ bool SpecialMemberDeletionInfo::shouldDeleteForVariantObjCPtrMember(
    // The defaulted special functions are defined as deleted if this is a variant
    // member with a non-trivial ownership type, e.g., ObjC __strong or __weak
    // type under ARC.
@@ -1629,7 +1667,7 @@ index b0669c602..3b5c9bf01 100644
      return false;
  
    // Don't make the defaulted default constructor defined as deleted if the
-@@ -9887,6 +9941,35 @@ bool SpecialMemberDeletionInfo::shouldDeleteForField(FieldDecl *FD) {
+@@ -9887,6 +9972,35 @@ bool SpecialMemberDeletionInfo::shouldDeleteForField(FieldDecl *FD) {
    QualType FieldType = S.Context.getBaseElementType(FD->getType());
    CXXRecordDecl *FieldRecord = FieldType->getAsCXXRecordDecl();
  
@@ -1665,7 +1703,7 @@ index b0669c602..3b5c9bf01 100644
    if (inUnion() && shouldDeleteForVariantObjCPtrMember(FD, FieldType))
      return true;
  
-@@ -10426,6 +10509,17 @@ static bool checkTrivialClassMembers(Sema &S, CXXRecordDecl *RD,
+@@ -10426,6 +10540,17 @@ static bool checkTrivialClassMembers(Sema &S, CXXRecordDecl *RD,
        return false;
      }
  
@@ -1683,7 +1721,7 @@ index b0669c602..3b5c9bf01 100644
      bool ConstRHS = ConstArg && !FI->isMutable();
      if (!checkTrivialSubobjectCall(S, FI->getLocation(), FieldType, ConstRHS,
                                     CSM, TSK_Field, TAH, Diagnose))
-@@ -10765,6 +10859,20 @@ void Sema::checkIllFormedTrivialABIStruct(CXXRecordDecl &RD) {
+@@ -10765,6 +10890,20 @@ void Sema::checkIllFormedTrivialABIStruct(CXXRecordDecl &RD) {
      // Ill-formed if the field is an ObjectiveC pointer or of a type that is
      // non-trivial for the purpose of calls.
      QualType FT = FD->getType();
@@ -1704,7 +1742,7 @@ index b0669c602..3b5c9bf01 100644
      if (FT.getObjCLifetime() == Qualifiers::OCL_Weak) {
        PrintDiagAndRemoveAttr(4);
        return;
-@@ -11172,6 +11280,13 @@ static void diagnoseInvalidDeclaratorChunks(Sema &S, Declarator &D,
+@@ -11172,6 +11311,13 @@ static void diagnoseInvalidDeclaratorChunks(Sema &S, Declarator &D,
  
  QualType Sema::CheckConstructorDeclarator(Declarator &D, QualType R,
                                            StorageClass &SC) {
@@ -1718,7 +1756,7 @@ index b0669c602..3b5c9bf01 100644
    bool isVirtual = D.getDeclSpec().isVirtualSpecified();
  
    // C++ [class.ctor]p3:
-@@ -11371,6 +11486,13 @@ bool Sema::CheckDestructor(CXXDestructorDecl *Destructor) {
+@@ -11371,6 +11517,13 @@ bool Sema::CheckDestructor(CXXDestructorDecl *Destructor) {
  
  QualType Sema::CheckDestructorDeclarator(Declarator &D, QualType R,
                                           StorageClass& SC) {
@@ -1732,7 +1770,7 @@ index b0669c602..3b5c9bf01 100644
    // C++ [class.dtor]p1:
    //   [...] A typedef-name that names a class is a class-name
    //   (7.1.3); however, a typedef-name that names a class shall not
-@@ -14149,6 +14271,32 @@ bool SpecialMemberExceptionSpecInfo::visitBase(CXXBaseSpecifier *Base) {
+@@ -14149,6 +14302,32 @@ bool SpecialMemberExceptionSpecInfo::visitBase(CXXBaseSpecifier *Base) {
  }
  
  bool SpecialMemberExceptionSpecInfo::visitField(FieldDecl *FD) {
@@ -1765,7 +1803,7 @@ index b0669c602..3b5c9bf01 100644
    if (CSM == CXXSpecialMemberKind::DefaultConstructor &&
        FD->hasInClassInitializer()) {
      Expr *E = FD->getInClassInitializer();
-@@ -14218,6 +14366,11 @@ ComputeDefaultedSpecialMemberExceptionSpec(
+@@ -14218,6 +14397,11 @@ ComputeDefaultedSpecialMemberExceptionSpec(
    //   An implicitly declared special member function (Clause 12) shall have an
    //   exception-specification. [...]
    SpecialMemberExceptionSpecInfo Info(S, MD, CSM, ICI, MD->getLocation());
@@ -1777,7 +1815,7 @@ index b0669c602..3b5c9bf01 100644
    if (ClassDecl->isInvalidDecl())
      return Info.ExceptSpec;
  
-@@ -16442,6 +16595,7 @@ ExprResult Sema::BuildCXXConstructExpr(
+@@ -16442,6 +16626,7 @@ ExprResult Sema::BuildCXXConstructExpr(
      bool HadMultipleCandidates, bool IsListInitialization,
      bool IsStdInitListInitialization, bool RequiresZeroInit,
      CXXConstructionKind ConstructKind, SourceRange ParenRange) {
@@ -1785,7 +1823,7 @@ index b0669c602..3b5c9bf01 100644
    bool Elidable = false;
  
    // C++0x [class.copy]p34:
-@@ -16507,6 +16661,7 @@ ExprResult Sema::BuildCXXConstructExpr(
+@@ -16507,6 +16692,7 @@ ExprResult Sema::BuildCXXConstructExpr(
      bool HadMultipleCandidates, bool IsListInitialization,
      bool IsStdInitListInitialization, bool RequiresZeroInit,
      CXXConstructionKind ConstructKind, SourceRange ParenRange) {
@@ -1793,7 +1831,7 @@ index b0669c602..3b5c9bf01 100644
    assert(declaresSameEntity(
               Constructor->getParent(),
               DeclInitType->getBaseElementTypeUnsafe()->getAsCXXRecordDecl()) &&
-@@ -18571,7 +18726,7 @@ NamedDecl *Sema::ActOnFriendFunctionDecl(Scope *S, Declarator &D,
+@@ -18571,7 +18757,7 @@ NamedDecl *Sema::ActOnFriendFunctionDecl(Scope *S, Declarator &D,
        return nullptr;
      }
    } else {
@@ -1802,7 +1840,7 @@ index b0669c602..3b5c9bf01 100644
      if (RC->isLambda()) {
        Diag(NameInfo.getBeginLoc(), diag::err_friend_lambda_decl);
      }
-@@ -18882,6 +19037,37 @@ bool Sema::CheckOverridingFunctionAttributes(CXXMethodDecl *New,
+@@ -18882,6 +19068,37 @@ bool Sema::CheckOverridingFunctionAttributes(CXXMethodDecl *New,
    const auto *NewFT = New->getType()->castAs<FunctionProtoType>();
    const auto *OldFT = Old->getType()->castAs<FunctionProtoType>();
  
@@ -1840,7 +1878,7 @@ index b0669c602..3b5c9bf01 100644
    if (OldFT->hasExtParameterInfos()) {
      for (unsigned I = 0, E = OldFT->getNumParams(); I != E; ++I)
        // A parameter of the overriding method should be annotated with noescape
-@@ -19001,6 +19187,17 @@ bool Sema::CheckOverridingFunctionReturnType(const CXXMethodDecl *New,
+@@ -19001,6 +19218,17 @@ bool Sema::CheckOverridingFunctionReturnType(const CXXMethodDecl *New,
        NewTy->isDependentType() || OldTy->isDependentType())
      return false;
  
@@ -2070,18 +2108,19 @@ diff --git a/clang/lib/Sema/SemaDeclObjC.cpp b/clang/lib/Sema/SemaDeclObjC.cpp
  
 
 diff --git a/clang/lib/Sema/SemaExpr.cpp b/clang/lib/Sema/SemaExpr.cpp
-index 5d4c5ff7d..e87d5b454 100644
+index 5d4c5ff7d..8f33315a5 100644
 --- a/clang/lib/Sema/SemaExpr.cpp
 +++ b/clang/lib/Sema/SemaExpr.cpp
-@@ -1,3 +1,7 @@
+@@ -1,3 +1,8 @@
 +#include "SemaObjC3Borrowed.h"
++#include "clang/AST/ObjC3Borrowed.h"
 +#include "clang/AST/ObjC3Async.h"
 +#include "SemaObjC3Effects.h"
 +#include "SemaObjC3Isolation.h"
  //===--- SemaExpr.cpp - Semantic Analysis for Expressions -----------------===//
  //
  // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
-@@ -10,11 +14,15 @@
+@@ -10,11 +15,15 @@
  //
  //===----------------------------------------------------------------------===//
  
@@ -2097,7 +2136,7 @@ index 5d4c5ff7d..e87d5b454 100644
  #include "clang/AST/ASTDiagnostic.h"
  #include "clang/AST/ASTLambda.h"
  #include "clang/AST/ASTMutationListener.h"
-@@ -69,6 +77,7 @@
+@@ -69,6 +78,7 @@
  #include "llvm/Support/SaveAndRestore.h"
  #include "llvm/Support/TimeProfiler.h"
  #include "llvm/Support/TypeSize.h"
@@ -2105,7 +2144,7 @@ index 5d4c5ff7d..e87d5b454 100644
  #include <limits>
  #include <optional>
  
-@@ -1871,9 +1880,11 @@ ExprResult Sema::CreateGenericSelectionExpr(
+@@ -1871,9 +1881,11 @@ ExprResult Sema::CreateGenericSelectionExpr(
          *this, Sema::ExpressionEvaluationContext::Unevaluated);
      ExprResult R = DefaultFunctionArrayLvalueConversion(
          reinterpret_cast<Expr *>(ControllingExprOrType));
@@ -2118,7 +2157,7 @@ index 5d4c5ff7d..e87d5b454 100644
    } else {
      // The extension form uses the type directly rather than converting it.
      ControllingType = reinterpret_cast<TypeSourceInfo *>(ControllingExprOrType);
-@@ -4701,6 +4712,20 @@ static void captureVariablyModifiedType(ASTContext &Context, QualType T,
+@@ -4701,6 +4713,20 @@ static void captureVariablyModifiedType(ASTContext &Context, QualType T,
      case Type::Atomic:
        T = cast<AtomicType>(Ty)->getValueType();
        break;
@@ -2139,7 +2178,7 @@ index 5d4c5ff7d..e87d5b454 100644
      case Type::PredefinedSugar:
        T = cast<PredefinedSugarType>(Ty)->desugar();
        break;
-@@ -5037,6 +5062,8 @@ ExprResult Sema::ActOnArraySubscriptExpr(Scope *S, Expr *base,
+@@ -5037,6 +5063,8 @@ ExprResult Sema::ActOnArraySubscriptExpr(Scope *S, Expr *base,
                                           SourceLocation lbLoc,
                                           MultiExprArg ArgExprs,
                                           SourceLocation rbLoc) {
@@ -2148,7 +2187,7 @@ index 5d4c5ff7d..e87d5b454 100644
  
    if (base && !base->getType().isNull() &&
        base->hasPlaceholderType(BuiltinType::ArraySection)) {
-@@ -5058,6 +5085,8 @@ ExprResult Sema::ActOnArraySubscriptExpr(Scope *S, Expr *base,
+@@ -5058,6 +5086,8 @@ ExprResult Sema::ActOnArraySubscriptExpr(Scope *S, Expr *base,
      if (result.isInvalid())
        return ExprError();
      base = result.get();
@@ -2157,7 +2196,7 @@ index 5d4c5ff7d..e87d5b454 100644
    }
  
    // Check if base and idx form a MatrixSubscriptExpr.
-@@ -5272,7 +5301,7 @@ ExprResult Sema::CreateBuiltinMatrixSingleSubscriptExpr(Expr *Base,
+@@ -5272,7 +5302,7 @@ ExprResult Sema::CreateBuiltinMatrixSingleSubscriptExpr(Expr *Base,
      return ConvExpr.get();
    };
  
@@ -2166,7 +2205,7 @@ index 5d4c5ff7d..e87d5b454 100644
    RowIdx = IsIndexValid(RowIdx, MTy->getNumRows(), false);
    if (!RowIdx)
      return ExprError();
-@@ -5338,7 +5367,7 @@ ExprResult Sema::CreateBuiltinMatrixSubscriptExpr(Expr *Base, Expr *RowIdx,
+@@ -5338,7 +5368,7 @@ ExprResult Sema::CreateBuiltinMatrixSubscriptExpr(Expr *Base, Expr *RowIdx,
      return ConvExpr.get();
    };
  
@@ -2175,7 +2214,7 @@ index 5d4c5ff7d..e87d5b454 100644
    RowIdx = IsIndexValid(RowIdx, MTy->getNumRows(), false);
    ColumnIdx = IsIndexValid(ColumnIdx, MTy->getNumColumns(), true);
    if (!RowIdx || !ColumnIdx)
-@@ -5473,16 +5502,15 @@ Sema::CreateBuiltinArraySubscriptExpr(Expr *Base, SourceLocation LLoc,
+@@ -5473,16 +5503,15 @@ Sema::CreateBuiltinArraySubscriptExpr(Expr *Base, SourceLocation LLoc,
        return ExprError();
      }
    } else if (LHSTy->isSubscriptableVectorType()) {
@@ -2195,7 +2234,7 @@ index 5d4c5ff7d..e87d5b454 100644
        ResultType = VTy->getElementType();
      }
      BaseExpr = LHSExp; // vectors: V[123]
-@@ -6271,7 +6299,11 @@ bool Sema::GatherArgumentsForCall(SourceLocation CallLoc, FunctionDecl *FDecl,
+@@ -6271,7 +6300,11 @@ bool Sema::GatherArgumentsForCall(SourceLocation CallLoc, FunctionDecl *FDecl,
        if (Proto->getExtParameterInfo(i).isNoEscape() &&
            ProtoArgType->isBlockPointerType())
          if (auto *BE = dyn_cast<BlockExpr>(Arg->IgnoreParenNoopCasts(Context)))
@@ -2208,7 +2247,7 @@ index 5d4c5ff7d..e87d5b454 100644
        if ((Proto->getExtParameterInfo(i).getABI() == ParameterABI::HLSLOut ||
             Proto->getExtParameterInfo(i).getABI() == ParameterABI::HLSLInOut)) {
          ExprResult ArgExpr = HLSL().ActOnOutParamExpr(Param, Arg);
-@@ -7182,8 +7214,10 @@ ExprResult Sema::BuildResolvedCallExpr(Expr *Fn, NamedDecl *NDecl,
+@@ -7182,8 +7215,10 @@ ExprResult Sema::BuildResolvedCallExpr(Expr *Fn, NamedDecl *NDecl,
    // Check for a valid function type, but only if it is not a builtin which
    // requires custom type checking. These will be handled by
    // CheckBuiltinFunctionCall below just after creation of the call expression.
@@ -2220,7 +2259,7 @@ index 5d4c5ff7d..e87d5b454 100644
    retry:
      if (const PointerType *PT = Fn->getType()->getAs<PointerType>()) {
        // C99 6.5.2.2p1 - "The expression that denotes the called function shall
-@@ -7230,7 +7264,7 @@ ExprResult Sema::BuildResolvedCallExpr(Expr *Fn, NamedDecl *NDecl,
+@@ -7230,7 +7265,7 @@ ExprResult Sema::BuildResolvedCallExpr(Expr *Fn, NamedDecl *NDecl,
    }
  
    // Bail out early if calling a builtin with custom type checking.
@@ -2229,7 +2268,7 @@ index 5d4c5ff7d..e87d5b454 100644
      // For HLSL builtin aliases, the call was resolved via overload resolution
      // which may have selected a conversion sequence (e.g., vector-to-scalar
      // truncation). Convert arguments to match the declared prototype before
-@@ -7249,6 +7283,8 @@ ExprResult Sema::BuildResolvedCallExpr(Expr *Fn, NamedDecl *NDecl,
+@@ -7249,6 +7284,8 @@ ExprResult Sema::BuildResolvedCallExpr(Expr *Fn, NamedDecl *NDecl,
      return E;
    }
  
@@ -2238,7 +2277,7 @@ index 5d4c5ff7d..e87d5b454 100644
    if (getLangOpts().CUDA) {
      if (Config) {
        // CUDA: Kernel calls must be to global functions
-@@ -7276,7 +7312,21 @@ ExprResult Sema::BuildResolvedCallExpr(Expr *Fn, NamedDecl *NDecl,
+@@ -7276,7 +7313,21 @@ ExprResult Sema::BuildResolvedCallExpr(Expr *Fn, NamedDecl *NDecl,
      return ExprError();
  
    // We know the result type of the call, set it.
@@ -2261,7 +2300,7 @@ index 5d4c5ff7d..e87d5b454 100644
    TheCall->setValueKind(Expr::getValueKindForType(FuncT->getReturnType()));
  
    // WebAssembly tables can't be used as arguments.
-@@ -7929,7 +7979,8 @@ bool Sema::areMatrixTypesOfTheSameDimension(QualType srcTy, QualType destTy) {
+@@ -7929,7 +7980,8 @@ bool Sema::areMatrixTypesOfTheSameDimension(QualType srcTy, QualType destTy) {
    const ConstantMatrixType *matSrcType = srcTy->getAs<ConstantMatrixType>();
    const ConstantMatrixType *matDestType = destTy->getAs<ConstantMatrixType>();
  
@@ -2271,7 +2310,21 @@ index 5d4c5ff7d..e87d5b454 100644
           matSrcType->getNumColumns() == matDestType->getNumColumns();
  }
  
-@@ -9422,7 +9473,87 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -9013,6 +9065,13 @@ QualType Sema::CheckConditionalOperands(ExprResult &Cond, ExprResult &LHS,
+   if (!checkConditionalNullPointer(*this, RHS, LHSTy)) return LHSTy;
+   if (!checkConditionalNullPointer(*this, LHS, RHSTy)) return RHSTy;
+ 
++  if (QualType Composite = findObjC3BorrowedCompositeType(*this, LHSTy, RHSTy);
++      !Composite.isNull()) {
++    LHS = ImpCastExprToType(LHS.get(), Composite, CK_NoOp);
++    RHS = ImpCastExprToType(RHS.get(), Composite, CK_NoOp);
++    return Composite;
++  }
++
+   // All objective-c pointer type analysis is done here.
+   QualType compositeType =
+       ObjC().FindCompositeObjCPointerType(LHS, RHS, QuestionLoc);
+@@ -9422,16 +9481,101 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
      return AssignConvertType::FunctionVoidPointer;
    }
  
@@ -2360,15 +2413,22 @@ index 5d4c5ff7d..e87d5b454 100644
            diag::warn_typecheck_convert_incompatible_function_pointer_strict,
            Loc) &&
        RHSType->isFunctionPointerType() && LHSType->isFunctionPointerType() &&
-@@ -9431,7 +9562,6 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+       !S.TryFunctionConversion(RHSType, LHSType, RHSType))
+     return AssignConvertType::IncompatibleFunctionPointerStrict;
  
++  if (S.getLangOpts().ObjC3 &&
++      (hasObjC3BorrowedParameters(dyn_cast<FunctionProtoType>(lhptee)) ||
++       hasObjC3BorrowedParameters(dyn_cast<FunctionProtoType>(rhptee))) &&
++      S.IsFunctionConversion(RHSType, LHSType))
++    return ConvTy;
++
    // C99 6.5.16.1p1 (constraint 3): both operands are pointers to qualified or
    // unqualified versions of compatible types, ...
 -  QualType ltrans = QualType(lhptee, 0), rtrans = QualType(rhptee, 0);
  
    if (ltrans->isOverflowBehaviorType() || rtrans->isOverflowBehaviorType()) {
      if (!S.Context.hasSameType(ltrans, rtrans)) {
-@@ -9452,7 +9582,22 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -9452,7 +9596,22 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
      }
    }
  
@@ -2392,7 +2452,7 @@ index 5d4c5ff7d..e87d5b454 100644
      // Check if the pointee types are compatible ignoring the sign.
      // We explicitly check for char so that we catch "char" vs
      // "unsigned char" on systems where "char" is unsigned.
-@@ -9524,12 +9669,20 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -9524,12 +9683,20 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
      const auto *LFPT = dyn_cast<FunctionProtoType>(LFT);
      const auto *RFPT = dyn_cast<FunctionProtoType>(RFT);
      if (LFPT && RFPT) {
@@ -2415,7 +2475,20 @@ index 5d4c5ff7d..e87d5b454 100644
        rtrans = S.Context.getFunctionType(LFPT->getReturnType(),
                                           LFPT->getParamTypes(), EPI);
      } else if (RFPT) {
-@@ -9592,12 +9745,61 @@ static AssignConvertType checkBlockPointerTypesForAssignment(Sema &S,
+@@ -9582,6 +9749,12 @@ static AssignConvertType checkBlockPointerTypesForAssignment(Sema &S,
+   if (LQuals != RQuals)
+     ConvTy = AssignConvertType::CompatiblePointerDiscardsQualifiers;
+ 
++  if (S.getLangOpts().ObjC3 &&
++      (hasObjC3BorrowedParameters(lhptee->getAs<FunctionProtoType>()) ||
++       hasObjC3BorrowedParameters(rhptee->getAs<FunctionProtoType>())) &&
++      S.IsFunctionConversion(RHSType, LHSType))
++    return ConvTy;
++
+   // FIXME: OpenCL doesn't define the exact compile time semantics for a block
+   // assignment.
+   // The current behavior is similar to C++ lambdas. A block might be
+@@ -9592,12 +9765,61 @@ static AssignConvertType checkBlockPointerTypesForAssignment(Sema &S,
    //  * CVR and address space of LHS should be a superset of CVR and address
    //  space of RHS.
    //  * unqualified types should be compatible.
@@ -2479,7 +2552,7 @@ index 5d4c5ff7d..e87d5b454 100644
      return AssignConvertType::IncompatibleBlockPointer;
  
    return ConvTy;
-@@ -9921,10 +10123,10 @@ AssignConvertType Sema::CheckAssignmentConstraints(QualType LHSType,
+@@ -9921,10 +10143,10 @@ AssignConvertType Sema::CheckAssignmentConstraints(QualType LHSType,
      }
  
      // U^ -> void*
@@ -2492,7 +2565,7 @@ index 5d4c5ff7d..e87d5b454 100644
                                  ->getPointeeType()
                                  .getAddressSpace();
          Kind =
-@@ -9940,10 +10142,10 @@ AssignConvertType Sema::CheckAssignmentConstraints(QualType LHSType,
+@@ -9940,10 +10162,10 @@ AssignConvertType Sema::CheckAssignmentConstraints(QualType LHSType,
    if (isa<BlockPointerType>(LHSType)) {
      // U^ -> T^
      if (RHSType->isBlockPointerType()) {
@@ -2505,7 +2578,7 @@ index 5d4c5ff7d..e87d5b454 100644
                                ->getPointeeType()
                                .getAddressSpace();
        Kind = AddrSpaceL != AddrSpaceR ? CK_AddressSpaceConversion : CK_BitCast;
-@@ -10173,6 +10375,25 @@ AssignConvertType Sema::CheckSingleAssignmentConstraints(QualType LHSType,
+@@ -10173,6 +10395,25 @@ AssignConvertType Sema::CheckSingleAssignmentConstraints(QualType LHSType,
    ExprResult LocalRHS = CallerRHS;
    ExprResult &RHS = ConvertRHS ? CallerRHS : LocalRHS;
  
@@ -2531,7 +2604,7 @@ index 5d4c5ff7d..e87d5b454 100644
    if (const auto *LHSPtrType = LHSType->getAs<PointerType>()) {
      if (const auto *RHSPtrType = RHS.get()->getType()->getAs<PointerType>()) {
        if (RHSPtrType->getPointeeType()->hasAttr(attr::NoDeref) &&
-@@ -10184,6 +10405,13 @@ AssignConvertType Sema::CheckSingleAssignmentConstraints(QualType LHSType,
+@@ -10184,6 +10425,13 @@ AssignConvertType Sema::CheckSingleAssignmentConstraints(QualType LHSType,
      }
    }
  
@@ -2545,7 +2618,7 @@ index 5d4c5ff7d..e87d5b454 100644
    if (getLangOpts().CPlusPlus) {
      if (!LHSType->isRecordType() && !LHSType->isAtomicType()) {
        // C++ 5.17p3: If the left operand is not of class type, the
-@@ -11299,21 +11527,13 @@ QualType Sema::CheckRemainderOperands(
+@@ -11299,21 +11547,13 @@ QualType Sema::CheckRemainderOperands(
    ExprResult &LHS, ExprResult &RHS, SourceLocation Loc, bool IsCompAssign) {
    checkArithmeticNull(*this, LHS, RHS, Loc, /*IsCompare=*/false);
  
@@ -2574,7 +2647,7 @@ index 5d4c5ff7d..e87d5b454 100644
      return InvalidOperands(Loc, LHS, RHS);
  
    if (LHS.get()->getType()->isVectorType() ||
-@@ -16922,6 +17142,216 @@ void Sema::ActOnBlockStart(SourceLocation CaretLoc, Scope *CurScope) {
+@@ -16922,6 +17162,216 @@ void Sema::ActOnBlockStart(SourceLocation CaretLoc, Scope *CurScope) {
        ExpressionEvaluationContext::PotentiallyEvaluated);
  }
  
@@ -2791,7 +2864,7 @@ index 5d4c5ff7d..e87d5b454 100644
  void Sema::ActOnBlockArguments(SourceLocation CaretLoc, Declarator &ParamInfo,
                                 Scope *CurScope) {
    assert(ParamInfo.getIdentifier() == nullptr &&
-@@ -17047,6 +17477,44 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17047,6 +17497,44 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
    if (!LangOpts.Blocks)
      Diag(CaretLoc, diag::err_blocks_disable) << LangOpts.OpenCL;
  
@@ -2836,7 +2909,7 @@ index 5d4c5ff7d..e87d5b454 100644
    // Leave the expression-evaluation context.
    if (hasAnyUnrecoverableErrorsInThisFunction())
      DiscardCleanupsInEvaluationContext();
-@@ -17054,9 +17522,6 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17054,9 +17542,6 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
           "cleanups within block not correctly bound!");
    PopExpressionEvaluationContext();
  
@@ -2846,7 +2919,7 @@ index 5d4c5ff7d..e87d5b454 100644
    maybeAddDeclWithEffects(BD);
  
    if (BSI->HasImplicitReturnType)
-@@ -17140,9 +17605,40 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17140,9 +17625,40 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
      // Cap.getVariable() is always a VarDecl because
      // blocks cannot capture structured bindings or other ValueDecl kinds.
      auto *Var = cast<VarDecl>(Cap.getVariable());
@@ -2888,7 +2961,7 @@ index 5d4c5ff7d..e87d5b454 100644
          // The capture logic needs the destructor, so make sure we mark it.
          // Usually this is unnecessary because most local variables have
          // their destructors marked at declaration time, but parameters are
-@@ -17161,6 +17657,31 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17161,6 +17677,31 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
  
          SourceLocation Loc = Cap.getLocation();
  
@@ -2920,7 +2993,7 @@ index 5d4c5ff7d..e87d5b454 100644
          ExprResult Result = BuildDeclarationNameExpr(
              CXXScopeSpec(), DeclarationNameInfo(Var->getDeclName(), Loc), Var);
  
-@@ -17193,12 +17714,22 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17193,12 +17734,22 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
        }
      }
  
@@ -2946,7 +3019,7 @@ index 5d4c5ff7d..e87d5b454 100644
    // Pop the block scope now but keep it alive to the end of this function.
    AnalysisBasedWarnings::Policy WP =
        AnalysisWarnings.getPolicyInEffectAt(Body->getEndLoc());
-@@ -17218,7 +17749,9 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17218,7 +17769,9 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
      // variables needs destruction.
      for (const auto &CI : Result->getBlockDecl()->captures()) {
        const VarDecl *var = CI.getVariable();
@@ -2957,7 +3030,7 @@ index 5d4c5ff7d..e87d5b454 100644
          setFunctionHasBranchProtectedScope();
          break;
        }
-@@ -19492,6 +20025,24 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
+@@ -19492,6 +20045,24 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
                             const bool Nested, Sema &S, bool Invalid) {
    bool ByRef = false;
  
@@ -2982,7 +3055,7 @@ index 5d4c5ff7d..e87d5b454 100644
    // Blocks are not allowed to capture arrays, excepting OpenCL.
    // OpenCL v2.0 s1.12.5 (revision 40): arrays are captured by reference
    // (decayed to pointers).
-@@ -19506,7 +20057,7 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
+@@ -19506,7 +20077,7 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
    }
  
    // Forbid the block-capture of autoreleasing variables.
@@ -4743,18 +4816,99 @@ new file mode 100644
 +  return ObjC3ThrowStmt::Create(Context, KeywordLoc, FullExpr.get(), SemiLoc);
 +}
 diff --git a/clang/lib/Sema/SemaOverload.cpp b/clang/lib/Sema/SemaOverload.cpp
-index eafda3219..e1a35e3d4 100644
+index eafda3219..d526a2e9b 100644
 --- a/clang/lib/Sema/SemaOverload.cpp
 +++ b/clang/lib/Sema/SemaOverload.cpp
-@@ -19,6 +19,7 @@
+@@ -11,6 +11,7 @@
+ //===----------------------------------------------------------------------===//
+ 
+ #include "CheckExprLifetime.h"
++#include "SemaObjC3Borrowed.h"
+ #include "clang/AST/ASTContext.h"
+ #include "clang/AST/CXXInheritance.h"
+ #include "clang/AST/Decl.h"
+@@ -19,6 +20,8 @@
  #include "clang/AST/Expr.h"
  #include "clang/AST/ExprCXX.h"
  #include "clang/AST/ExprObjC.h"
++#include "clang/AST/ObjC3Borrowed.h"
 +#include "clang/AST/ObjC3Isolation.h"
  #include "clang/AST/Type.h"
  #include "clang/Basic/Diagnostic.h"
  #include "clang/Basic/DiagnosticOptions.h"
-@@ -2036,6 +2037,36 @@ bool Sema::IsFunctionConversion(QualType FromType, QualType ToType) const {
+@@ -1939,6 +1942,56 @@ bool Sema::TryFunctionConversion(QualType FromType, QualType ToType,
+   return Changed;
+ }
+ 
++// A callable can lose its top-level borrowed parameter permission. A native
++// noescape parameter also proves the permission when the destination spells
++// it borrowed. Leave all other native parameter attributes to Clang's merge.
++static const FunctionProtoType *convertObjC3BorrowedParameters(
++    ASTContext &Context, const FunctionProtoType *From,
++    const FunctionProtoType *To) {
++  if ((!hasObjC3BorrowedParameters(From) && !hasObjC3BorrowedParameters(To)) ||
++      From->getNumParams() != To->getNumParams())
++    return From;
++
++  SmallVector<FunctionProtoType::ExtParameterInfo, 8> Infos;
++  bool Changed = false;
++  for (unsigned I = 0; I != From->getNumParams(); ++I) {
++    auto Source = From->getExtParameterInfo(I);
++    bool Borrowed = To->getExtParameterInfo(I).isObjC3Borrowed();
++    if (Borrowed && !Source.isObjC3Borrowed() && !Source.isNoEscape())
++      return From;
++    Changed |= Source.isObjC3Borrowed() != Borrowed;
++    Infos.push_back(Source.withIsObjC3Borrowed(Borrowed));
++  }
++  if (!Changed)
++    return From;
++
++  From = QualType(From, 0).getCanonicalType()->castAs<FunctionProtoType>();
++  auto EPI = From->getExtProtoInfo();
++  EPI.ExtParameterInfos =
++      llvm::any_of(Infos, [](auto Info) { return Info.getOpaqueValue() != 0; })
++          ? Infos.data()
++          : nullptr;
++  return Context.getFunctionType(From->getReturnType(), From->getParamTypes(), EPI)
++      ->castAs<FunctionProtoType>();
++}
++
++QualType clang::findObjC3BorrowedCompositeType(Sema &S, QualType Left,
++                                               QualType Right) {
++  if (!S.getLangOpts().ObjC3)
++    return {};
++  const auto *L = dyn_cast_or_null<FunctionProtoType>(
++      getObjC3CallableFunctionType(S.Context, Left));
++  const auto *R = dyn_cast_or_null<FunctionProtoType>(
++      getObjC3CallableFunctionType(S.Context, Right));
++  if (!hasObjC3BorrowedParameters(L) && !hasObjC3BorrowedParameters(R))
++    return {};
++  if (S.IsFunctionConversion(Left, Right))
++    return Right;
++  if (S.IsFunctionConversion(Right, Left))
++    return Left;
++  return {};
++}
++
+ bool Sema::IsFunctionConversion(QualType FromType, QualType ToType) const {
+   if (Context.hasSameUnqualifiedType(FromType, ToType))
+     return false;
+@@ -2019,6 +2072,14 @@ bool Sema::IsFunctionConversion(QualType FromType, QualType ToType) const {
+       Changed = true;
+     }
+ 
++    FromFPT = cast<FunctionProtoType>(FromFn);
++    const auto *WithBorrowed = convertObjC3BorrowedParameters(Context, FromFPT,
++                                                             ToFPT);
++    if (WithBorrowed != FromFPT) {
++      FromFn = FromFPT = WithBorrowed;
++      Changed = true;
++    }
++
+     // Convert FromFPT's ExtParameterInfo if necessary. The conversion is valid
+     // only if the ExtParameterInfo lists of the two function prototypes can be
+     // merged and the merged list is identical to ToFPT's ExtParameterInfo list.
+@@ -2036,6 +2097,36 @@ bool Sema::IsFunctionConversion(QualType FromType, QualType ToType) const {
        Changed = true;
      }
  
@@ -4791,7 +4945,7 @@ index eafda3219..e1a35e3d4 100644
      if (Context.hasAnyFunctionEffects()) {
        FromFPT = cast<FunctionProtoType>(FromFn); // in case FromFn changed above
  
-@@ -2794,7 +2825,8 @@ bool Sema::IsIntegralPromotion(Expr *From, QualType FromType, QualType ToType) {
+@@ -2794,7 +2885,8 @@ bool Sema::IsIntegralPromotion(Expr *From, QualType FromType, QualType ToType) {
  
      // We have already pre-calculated the promotion type, so this is trivial.
      if (ToType->isIntegerType() &&
@@ -4801,7 +4955,7 @@ index eafda3219..e1a35e3d4 100644
        return Context.hasSameUnqualifiedType(ToType, FromED->getPromotionType());
  
      // C++ [conv.prom]p5:
-@@ -3397,6 +3429,27 @@ bool Sema::IsBlockPointerConversion(QualType FromType, QualType ToType,
+@@ -3397,6 +3489,27 @@ bool Sema::IsBlockPointerConversion(QualType FromType, QualType ToType,
    if (Context.hasSameType(FromPointeeType, ToPointeeType))
      return true;
  
@@ -4829,7 +4983,18 @@ index eafda3219..e1a35e3d4 100644
    // Perform the quick checks that will tell us whether these
    // function types are obviously different.
    if (FromFunctionType->getNumParams() != ToFunctionType->getNumParams() ||
-@@ -6214,7 +6267,8 @@ static ImplicitConversionSequence TryObjectArgumentInitialization(
+@@ -3451,7 +3564,9 @@ bool Sema::IsBlockPointerConversion(QualType FromType, QualType ToType,
+ 
+    SmallVector<FunctionProtoType::ExtParameterInfo, 4> NewParamInfos;
+    bool CanUseToFPT, CanUseFromFPT;
+-   if (!Context.mergeExtParameterInfo(ToFunctionType, FromFunctionType,
++   const auto *Converted = convertObjC3BorrowedParameters(
++       Context, FromFunctionType, ToFunctionType);
++   if (!Context.mergeExtParameterInfo(ToFunctionType, Converted,
+                                       CanUseToFPT, CanUseFromFPT,
+                                       NewParamInfos))
+      return false;
+@@ -6214,7 +6329,8 @@ static ImplicitConversionSequence TryObjectArgumentInitialization(
      SecondKind = ICK_Identity;
    } else if (S.IsDerivedFrom(Loc, FromType, ClassType)) {
      SecondKind = ICK_Derived_To_Base;
@@ -4839,7 +5004,7 @@ index eafda3219..e1a35e3d4 100644
      ICS.setBad(BadConversionSequence::unrelated_class,
                 FromType, ImplicitParamType);
      return ICS;
-@@ -6268,6 +6322,8 @@ static ImplicitConversionSequence TryObjectArgumentInitialization(
+@@ -6268,6 +6384,8 @@ static ImplicitConversionSequence TryObjectArgumentInitialization(
  ExprResult Sema::PerformImplicitObjectArgumentInitialization(
      Expr *From, NestedNameSpecifier Qualifier, NamedDecl *FoundDecl,
      CXXMethodDecl *Method) {
@@ -4848,7 +5013,7 @@ index eafda3219..e1a35e3d4 100644
    QualType FromRecordType, DestType;
    QualType ImplicitParamRecordType = Method->getFunctionObjectParameterType();
  
-@@ -6347,6 +6403,7 @@ ExprResult Sema::PerformImplicitObjectArgumentInitialization(
+@@ -6347,6 +6465,7 @@ ExprResult Sema::PerformImplicitObjectArgumentInitialization(
             << From->getSourceRange();
    }
  
@@ -4856,7 +5021,7 @@ index eafda3219..e1a35e3d4 100644
    if (ICS.Standard.Second == ICK_Derived_To_Base) {
      ExprResult FromRes =
        PerformObjectMemberConversion(From, Qualifier, FoundDecl, Method);
-@@ -7853,7 +7910,9 @@ void Sema::AddFunctionCandidates(const UnresolvedSetImpl &Fns,
+@@ -7853,7 +7972,9 @@ void Sema::AddFunctionCandidates(const UnresolvedSetImpl &Fns,
  
      if (isa<CXXMethodDecl>(FD) && !cast<CXXMethodDecl>(FD)->isStatic()) {
        QualType ObjectType;
@@ -4867,7 +5032,7 @@ index eafda3219..e1a35e3d4 100644
        if (Args.size() > 0) {
          if (Expr *E = Args[0]) {
            // Use the explicit base to restrict the lookup:
-@@ -11234,6 +11293,8 @@ bool clang::isBetterOverloadCandidate(
+@@ -11234,6 +11355,8 @@ bool clang::isBetterOverloadCandidate(
      return Cand2IsInherited;
    else if (Cand1IsInherited) {
      assert(Cand2IsInherited);
@@ -4876,7 +5041,7 @@ index eafda3219..e1a35e3d4 100644
      auto *Cand1Class = cast<CXXRecordDecl>(Cand1.Function->getDeclContext());
      auto *Cand2Class = cast<CXXRecordDecl>(Cand2.Function->getDeclContext());
      if (Cand1Class->isDerivedFrom(Cand2Class))
-@@ -11808,6 +11869,15 @@ static bool checkAddressOfFunctionIsAvailable(Sema &S, const FunctionDecl *FD,
+@@ -11808,6 +11931,15 @@ static bool checkAddressOfFunctionIsAvailable(Sema &S, const FunctionDecl *FD,
                                                bool Complain,
                                                bool InOverloadResolution,
                                                SourceLocation Loc) {
@@ -4892,7 +5057,7 @@ index eafda3219..e1a35e3d4 100644
    if (!isFunctionAlwaysEnabled(S.Context, FD)) {
      if (Complain) {
        if (InOverloadResolution)
-@@ -15187,7 +15257,10 @@ ExprResult Sema::BuildCXXMemberCallExpr(Expr *E, NamedDecl *FoundDecl,
+@@ -15187,7 +15319,10 @@ ExprResult Sema::BuildCXXMemberCallExpr(Expr *E, NamedDecl *FoundDecl,
      }
    }
    CallExpr *CE;
@@ -4904,7 +5069,7 @@ index eafda3219..e1a35e3d4 100644
    ExprValueKind VK = Expr::getValueKindForType(ResultType);
    ResultType = ResultType.getNonLValueExprType(Context);
    if (Method->isExplicitObjectMemberFunction()) {
-@@ -15339,7 +15412,10 @@ Sema::CreateOverloadedUnaryOp(SourceLocation OpLoc, UnaryOperatorKind Opc,
+@@ -15339,7 +15474,10 @@ Sema::CreateOverloadedUnaryOp(SourceLocation OpLoc, UnaryOperatorKind Opc,
          return ExprError();
  
        // Determine the result type.
@@ -4916,7 +5081,7 @@ index eafda3219..e1a35e3d4 100644
        ExprValueKind VK = Expr::getValueKindForType(ResultTy);
        ResultTy = ResultTy.getNonLValueExprType(Context);
  
-@@ -15742,7 +15818,10 @@ ExprResult Sema::CreateOverloadedBinOp(SourceLocation OpLoc,
+@@ -15742,7 +15880,10 @@ ExprResult Sema::CreateOverloadedBinOp(SourceLocation OpLoc,
            return ExprError();
  
          // Determine the result type.
@@ -4928,7 +5093,7 @@ index eafda3219..e1a35e3d4 100644
          ExprValueKind VK = Expr::getValueKindForType(ResultTy);
          ResultTy = ResultTy.getNonLValueExprType(Context);
  
-@@ -16196,7 +16275,10 @@ ExprResult Sema::CreateOverloadedArraySubscriptExpr(SourceLocation LLoc,
+@@ -16196,7 +16337,10 @@ ExprResult Sema::CreateOverloadedArraySubscriptExpr(SourceLocation LLoc,
            return ExprError();
  
          // Determine the result type
@@ -4940,7 +5105,7 @@ index eafda3219..e1a35e3d4 100644
          ExprValueKind VK = Expr::getValueKindForType(ResultTy);
          ResultTy = ResultTy.getNonLValueExprType(Context);
  
-@@ -16308,6 +16390,11 @@ ExprResult Sema::BuildCallToMemberFunction(Scope *S, Expr *MemExprE,
+@@ -16308,6 +16452,11 @@ ExprResult Sema::BuildCallToMemberFunction(Scope *S, Expr *MemExprE,
  
      const FunctionProtoType *proto = fnType->castAs<FunctionProtoType>();
      QualType resultType = proto->getCallResultType(Context);
@@ -4952,7 +5117,7 @@ index eafda3219..e1a35e3d4 100644
      ExprValueKind valueKind = Expr::getValueKindForType(proto->getReturnType());
  
      // Check that the object type isn't more qualified than the
-@@ -16511,7 +16598,10 @@ ExprResult Sema::BuildCallToMemberFunction(Scope *S, Expr *MemExprE,
+@@ -16511,7 +16660,10 @@ ExprResult Sema::BuildCallToMemberFunction(Scope *S, Expr *MemExprE,
      MemExpr = cast<MemberExpr>(MemExprE->IgnoreParens());
    }
  
@@ -4964,7 +5129,7 @@ index eafda3219..e1a35e3d4 100644
    ExprValueKind VK = Expr::getValueKindForType(ResultType);
    ResultType = ResultType.getNonLValueExprType(Context);
  
-@@ -16863,7 +16953,10 @@ Sema::BuildCallToObjectOfClassType(Scope *S, Expr *Obj,
+@@ -16863,7 +17015,10 @@ Sema::BuildCallToObjectOfClassType(Scope *S, Expr *Obj,
    DiagnoseSentinelCalls(Method, LParenLoc, Args);
  
    // Once we've built TheCall, all of the expressions are properly owned.
@@ -4976,7 +5141,7 @@ index eafda3219..e1a35e3d4 100644
    ExprValueKind VK = Expr::getValueKindForType(ResultTy);
    ResultTy = ResultTy.getNonLValueExprType(Context);
  
-@@ -16992,7 +17085,10 @@ ExprResult Sema::BuildOverloadedArrowExpr(Scope *S, Expr *Base,
+@@ -16992,7 +17147,10 @@ ExprResult Sema::BuildOverloadedArrowExpr(Scope *S, Expr *Base,
    if (FnExpr.isInvalid())
      return ExprError();
  
@@ -5221,7 +5386,7 @@ index 7286a0c2f..69608d9b5 100644
          BestMethod = Method;
        }
 diff --git a/clang/lib/Sema/SemaTemplateDeduction.cpp b/clang/lib/Sema/SemaTemplateDeduction.cpp
-index 3c45806c4..f17d66714 100644
+index 3c45806c4..db27d26bc 100644
 --- a/clang/lib/Sema/SemaTemplateDeduction.cpp
 +++ b/clang/lib/Sema/SemaTemplateDeduction.cpp
 @@ -13,6 +13,7 @@
@@ -5290,7 +5455,7 @@ index 3c45806c4..f17d66714 100644
      //     _Complex T   [placeholder extension]
      case Type::Complex: {
        const auto *CP = P->castAs<ComplexType>(), *CA = A->getAs<ComplexType>();
-@@ -2038,11 +2090,43 @@ static TemplateDeductionResult DeduceTemplateArgumentsByTypeMatch(
+@@ -2038,11 +2090,56 @@ static TemplateDeductionResult DeduceTemplateArgumentsByTypeMatch(
        if (!FPA)
          return TemplateDeductionResult::NonDeducedMismatch;
  
@@ -5302,6 +5467,19 @@ index 3c45806c4..f17d66714 100644
            FPP->isVariadic() != FPA->isVariadic())
          return TemplateDeductionResult::NonDeducedMismatch;
  
++      // Exact deduction of a fixed callable shape includes its canonical
++      // borrowed parameter permissions. Call conversions still use the
++      // ordinary directional conversion check after substitution.
++      if (!(TDF & TDF_AllowCompatibleFunctionType) &&
++          FPP->getNumParams() == FPA->getNumParams() &&
++          llvm::none_of(FPP->param_types(), [](QualType Param) {
++            return Param->getAs<PackExpansionType>() != nullptr;
++          }))
++        for (unsigned I = 0; I != FPP->getNumParams(); ++I)
++          if (FPP->getExtParameterInfo(I).isObjC3Borrowed() !=
++              FPA->getExtParameterInfo(I).isObjC3Borrowed())
++            return TemplateDeductionResult::NonDeducedMismatch;
++
 +      // ObjC3 effects participate in callable deduction independently of C++
 +      // noexcept. In particular, neither logical async nor its physical frame
 +      // representation may disappear through a dependent callback signature.
@@ -5335,7 +5513,7 @@ index 3c45806c4..f17d66714 100644
        // Check return types.
        if (auto Result = DeduceTemplateArgumentsByTypeMatch(
                S, TemplateParams, FPP->getReturnType(), FPA->getReturnType(),
-@@ -3810,6 +3894,22 @@ CheckOriginalCallArgDeduction(Sema &S, TemplateDeductionInfo &Info,
+@@ -3810,6 +3907,22 @@ CheckOriginalCallArgDeduction(Sema &S, TemplateDeductionInfo &Info,
         S.IsFunctionConversion(A, DeducedA)))
      return TemplateDeductionResult::Success;
  
@@ -5358,7 +5536,7 @@ index 3c45806c4..f17d66714 100644
    //    - If P is a class and P has the form simple-template-id, then the
    //      transformed A can be a derived class of the deduced A. [...]
    //     [...] Likewise, if P is a pointer to a class of the form
-@@ -6940,6 +7040,9 @@ MarkUsedTemplateParameters(ASTContext &Ctx, QualType T,
+@@ -6940,6 +7053,9 @@ MarkUsedTemplateParameters(ASTContext &Ctx, QualType T,
      const FunctionProtoType *Proto = cast<FunctionProtoType>(T);
      MarkUsedTemplateParameters(Ctx, Proto->getReturnType(), OnlyDeduced, Depth,
                                 Used);
@@ -5368,7 +5546,7 @@ index 3c45806c4..f17d66714 100644
      for (unsigned I = 0, N = Proto->getNumParams(); I != N; ++I) {
        // C++17 [temp.deduct.type]p5:
        //   The non-deduced contexts are: [...]
-@@ -7014,6 +7117,26 @@ MarkUsedTemplateParameters(ASTContext &Ctx, QualType T,
+@@ -7014,6 +7130,26 @@ MarkUsedTemplateParameters(ASTContext &Ctx, QualType T,
      break;
    }
  
@@ -6433,7 +6611,7 @@ index 000000000..9dedbba25
 +      Old->getPatternLoc(), Old->getGuardLoc(), Old->getDelimiterLoc());
 +}
 diff --git a/clang/lib/Sema/SemaExprCXX.cpp b/clang/lib/Sema/SemaExprCXX.cpp
-index 7f6e0f54d..7f471b765 100644
+index 7f6e0f54d..df8ece6db 100644
 --- a/clang/lib/Sema/SemaExprCXX.cpp
 +++ b/clang/lib/Sema/SemaExprCXX.cpp
 @@ -11,9 +11,12 @@
@@ -6546,7 +6724,23 @@ index 7f6e0f54d..7f471b765 100644
  
    // Overall FIXME: we are recomputing too many types here and doing far too
    // much extra work. What this means is that we need to keep track of more
-@@ -6604,6 +6640,61 @@ ExprResult Sema::MaybeBindToTemporary(Expr *E) {
+@@ -6222,6 +6258,15 @@ QualType Sema::FindCompositePointerType(SourceLocation Loc,
+   //   and T2
+   QualType T1 = E1->getType(), T2 = E2->getType();
+ 
++  if (QualType Composite = findObjC3BorrowedCompositeType(*this, T1, T2);
++      !Composite.isNull()) {
++    if (ConvertArgs) {
++      E1 = ImpCastExprToType(E1, Composite, CK_NoOp).get();
++      E2 = ImpCastExprToType(E2, Composite, CK_NoOp).get();
++    }
++    return Composite;
++  }
++
+   //   where at least one is a pointer or pointer to member type or
+   //   std::nullptr_t is:
+   bool T1IsPointerLike = T1->isAnyPointerType() || T1->isMemberPointerType() ||
+@@ -6604,6 +6649,61 @@ ExprResult Sema::MaybeBindToTemporary(Expr *E) {
  
    assert(!isa<CXXBindTemporaryExpr>(E) && "Double-bound temporary?");
  
@@ -6608,7 +6802,7 @@ index 7f6e0f54d..7f471b765 100644
    // If the result is a glvalue, we shouldn't bind it.
    if (E->isGLValue())
      return E;
-@@ -7152,7 +7243,9 @@ canRecoverDotPseudoDestructorCallsOnPointerObjects(Sema &SemaRef,
+@@ -7152,7 +7252,9 @@ canRecoverDotPseudoDestructorCallsOnPointerObjects(Sema &SemaRef,
  
    // Otherwise, check if it's a type for which it's valid to use a pseudo-dtor.
    return DestructedType->isDependentType() || DestructedType->isScalarType() ||
@@ -6619,7 +6813,7 @@ index 7f6e0f54d..7f471b765 100644
  }
  
  ExprResult Sema::BuildPseudoDestructorExpr(Expr *Base,
-@@ -7169,7 +7262,9 @@ ExprResult Sema::BuildPseudoDestructorExpr(Expr *Base,
+@@ -7169,7 +7271,9 @@ ExprResult Sema::BuildPseudoDestructorExpr(Expr *Base,
    if (CheckArrow(*this, ObjectType, Base, OpKind, OpLoc))
      return ExprError();
  
@@ -6630,7 +6824,7 @@ index 7f6e0f54d..7f471b765 100644
        !ObjectType->isVectorType() && !ObjectType->isMatrixType()) {
      if (getLangOpts().MSVCCompat && ObjectType->isVoidType())
        Diag(OpLoc, diag::ext_pseudo_dtor_on_void) << Base->getSourceRange();
-@@ -7262,6 +7357,21 @@ ExprResult Sema::BuildPseudoDestructorExpr(Expr *Base,
+@@ -7262,6 +7366,21 @@ ExprResult Sema::BuildPseudoDestructorExpr(Expr *Base,
      }
    }
  
@@ -6652,7 +6846,7 @@ index 7f6e0f54d..7f471b765 100644
    Expr *Result
      = new (Context) CXXPseudoDestructorExpr(Context, Base,
                                              OpKind == tok::arrow, OpLoc,
-@@ -7781,6 +7891,9 @@ ExprResult Sema::ActOnFinishFullExpr(Expr *FE, SourceLocation CC,
+@@ -7781,6 +7900,9 @@ ExprResult Sema::ActOnFinishFullExpr(Expr *FE, SourceLocation CC,
    if (FullExpr.isInvalid())
      return ExprError();
  

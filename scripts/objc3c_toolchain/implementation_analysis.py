@@ -20,15 +20,13 @@ from .llvm_ir_execution import Execution, StageFailure
 from .llvm_tools import foundation, identity, verify_installation
 from .sanitizer_policy import strict_environment
 from .sdk_example import dependencies as header_dependencies
-from .analysis_checkpoint import analysis_argv, load_checkpoints, reusable_action, run_unit
+from .analysis_checkpoint import ANALYSIS_SCHEMA, analysis_argv, load_checkpoints, reusable_action, run_unit
 from .analysis_scheduling import execute_jobs
 from .analysis_partition import partition_spec, partition_rows
 
 SUFFIXES = {'.cpp', '.cc', '.c', '.mm', '.m'}
-NATIVE_TIMEOUT_UNITS = {
-    'native/objc3c/src/clang_foundation/interface_emission_features.cpp',
-    'native/objc3c/src/clang_foundation/interface_emission_identity.cpp',
-}
+HEADER_SUFFIXES = {'.h', '.hh', '.hpp', '.inc', '.def', '.tcc'}
+TIDY_SUPPRESSION = re.compile(r'\bNOLINT(?:NEXTLINE|BEGIN|END)?\b')
 
 
 def checker_configuration(repo, source, policy):
@@ -43,31 +41,27 @@ def patch_units(repo):
         for value in re.findall(r'^\+\+\+ b/(clang/lib/.*\.cpp)$', patch.read_text(), re.M)}
 
 
-def validate_timeout_overrides(policy, maintained_units):
-    overrides = policy.get('translation_unit_timeout_overrides_seconds', {})
-    if (not isinstance(overrides, dict) or len(overrides) > 48 or
-            any(path not in maintained_units | NATIVE_TIMEOUT_UNITS or type(seconds) is not int or
-                not policy['translation_unit_timeout_seconds'] < seconds <= 3600
-                for path, seconds in overrides.items())):
-        raise ValueError('analysis timeout overrides require reviewed maintained Clang units and finite bounds')
-
-
-def translation_unit_timeout(policy, row, source):
-    default = policy['translation_unit_timeout_seconds']
-    owner = row['owner']
-    if owner not in ('maintained-clang', 'frontend'):
-        return default
-    root = Path(source).resolve()
-    if owner == 'frontend':root = root.parents[3]
-    try:
-        relative = Path(row['file']).resolve().relative_to(root).as_posix()
-    except ValueError as error:
-        raise ValueError('maintained analysis timeout source escaped its admitted owner') from error
-    if owner == 'frontend' and relative not in NATIVE_TIMEOUT_UNITS:
-        return default
-    owner_default = (policy.get('maintained_translation_unit_timeout_seconds', default)
-                     if owner == 'maintained-clang' else default)
-    return policy.get('translation_unit_timeout_overrides_seconds', {}).get(relative, owner_default)
+def check_owned_suppressions(repo: Path) -> dict:
+    """Enforce the empty suppression baseline on maintained implementation text."""
+    native = sorted(path for path in (repo / 'native/objc3c/src').rglob('*')
+                    if path.is_file() and path.suffix in SUFFIXES | HEADER_SUFFIXES)
+    patches = sorted((repo / 'toolchains/llvm/patches').glob('*.patch'))
+    if not native or not patches:
+        raise ValueError('analysis suppression check requires the owned implementation and patch inventories')
+    for path in native:
+        for index, line in enumerate(path.read_text().splitlines(), 1):
+            if TIDY_SUPPRESSION.search(line):
+                raise ValueError(f'{path.relative_to(repo)}:{index}: unreviewed clang-tidy suppression')
+    for path in patches:
+        implementation = False
+        for index, line in enumerate(path.read_text().splitlines(), 1):
+            if line.startswith('diff --git '):
+                implementation = False
+            elif line.startswith('+++ '):
+                implementation = line.startswith(('+++ b/clang/lib/', '+++ b/clang/include/'))
+            elif implementation and line.startswith('+') and TIDY_SUPPRESSION.search(line):
+                raise ValueError(f'{path.relative_to(repo)}:{index}: unreviewed clang-tidy suppression')
+    return {'status': 'PASS', 'native_sources': len(native), 'patches': len(patches)}
 
 
 def arguments(row):
@@ -174,6 +168,11 @@ def dependency_query(ninja, build, outputs):
 
 def selected_variants(rows, headers, changed):
     """No changed-line filter: header edits select their complete dependent TUs."""
+    outputs = {row['output'] for row in rows}
+    if (len(outputs) != len(rows) or headers.keys() != outputs or
+            any(not isinstance(headers[row['output']], (list, tuple)) or
+                row['file'] not in headers[row['output']] for row in rows)):
+        raise ValueError('implementation analysis requires a complete dependency closure for every variant')
     if not changed:
         return rows
     paths = {str(Path(path).resolve()) for path in changed}
@@ -181,7 +180,21 @@ def selected_variants(rows, headers, changed):
     # Configuration/unknown/new/deleted inputs conservatively select everything.
     if not paths <= known:
         return rows
-    return [row for row in rows if row['file'] in paths or paths.intersection(headers.get(row['output'], []))]
+    return [row for row in rows if paths.intersection(headers[row['output']])]
+
+
+def select_owner_variants(repo, owner, rows, headers, changed):
+    """Use source ownership to scope unknown edits and actual dependencies for known edits."""
+    scoped = owner_changes(repo, owner, changed)
+    if scoped == ():
+        return selected_variants(rows, headers, ())
+    # An observed dependency can cross a directory boundary. An absent path
+    # still widens selection when it belongs to this owner's source scope.
+    observed = {path for values in headers.values() for path in values}
+    candidates = set(scoped or ()) | {Path(path).resolve() for path in changed
+                                        if str(Path(path).resolve()) in observed}
+    selected = selected_variants(rows, headers, candidates)
+    return selected if candidates else []
 
 
 def owner_changes(repo, owner, changed):
@@ -315,6 +328,19 @@ def dependency_arguments(row, depfile):
     return [*query, '-M', '-MF', str(depfile), '-MT', 'implementation-analysis']
 
 
+def discover_variant_dependencies(row, depfile, *, name, run):
+    """Read a fresh closure using the variant's original compiler and flags."""
+    directory = Path(row['directory'])
+    run(name, dependency_arguments(row, depfile), cwd=directory, outputs=[depfile])
+    paths = set(header_dependencies(depfile, directory))
+    if Path(row['file']) not in paths or any(not path.is_file() for path in paths):
+        raise ValueError('implementation variant lacks its actual header dependency closure')
+    _, projections = textual_pch(row, include_identity=False)
+    for projection in projections:
+        paths.update(Path(projection[key]) for key in ('bootstrap_pch', 'textual_wrapper'))
+    return sorted(map(str, paths))
+
+
 def tool_configuration(repo, tool_build, plan):
     bootstrap = Path(plan['host_environment']['bootstrap_root'])
     cmake, ninja = (Path(plan['host_environment'][name+'_path']) for name in ('cmake', 'ninja'))
@@ -345,19 +371,17 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
         raise ValueError('analysis tool build requires its own owned repository output')
     policy_path = repo / 'toolchains/llvm/implementation-analysis.json'
     policy = json.loads(policy_path.read_text())
-    if (policy.get('schema') != 'objc3c.implementation-analysis-policy.v2' or
+    if (policy.get('schema') != 'objc3c.implementation-analysis-policy.v3' or
             policy.get('hosts') != list(HOSTS) or policy.get('tool') != 'objc3-clang-tidy' or
             policy.get('warnings_as_errors') != '*' or policy.get('baseline') != [] or
             policy.get('profile_checks') is not True or
-            policy.get('translation_unit_timeout_seconds') != 600 or
-            policy.get('maintained_translation_unit_timeout_seconds') != 3600 or
+            policy.get('deadline_owner') != 'host-job' or
             not policy.get('checks') or len(set(policy['checks'])) != len(policy['checks']) or
             any(not re.fullmatch(r'[a-zA-Z0-9_.-]+', check) for check in policy['checks'])):
         raise ValueError('unreviewed implementation analysis policy/baseline')
-    validate_timeout_overrides(policy, patch_units(repo))
     output.mkdir(parents=True)
     tool_arguments, environment = tool_configuration(repo, tool_build, plan)
-    report = {'schema': 'objc3c.implementation-analysis.v1', 'status': 'running',
+    report = {'schema': ANALYSIS_SCHEMA, 'status': 'running',
         'subject': 'native-and-maintained-clang-implementation', 'policy': policy,
         'source_build_id': plan['source_build_id'], 'build_config_digest': plan['build_config_digest'],
         'environment': environment, 'inventory': [], 'results': [], 'exclusions': [], 'matched_pches': [],
@@ -371,9 +395,10 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
             repo / 'native/analysis/CMakeLists.txt', repo / 'native/analysis/SelectedChecks.cpp',
             repo / 'tests/tooling/fixtures/implementation_analysis/control.cpp')}}
     report['inputs'].update({str(path): signature for path, _, signature in checkpoints})
-    executor = Execution(output, environment, report, timeout=600)
+    executor = Execution(output, environment, report, timeout=None)
     run = executor.run
     try:
+        report['source_suppressions'] = check_owned_suppressions(repo)
         run('configure-tool', tool_arguments)
         run('build-tool', [plan['host_environment']['cmake_path'], '--build', tool_build, '--parallel', '2'])
         tool = tool_build / policy['tool']
@@ -498,11 +523,19 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
             # A CMake regeneration can update commands while generating maps.
             graph = run(label+'-effective-graph', [ninja, '-C', root, '-t', 'commands'])
             rows = inventory(database, graph, units)
-            deps = dependencies(run(label+'-headers', [ninja, '-C', root, '-t', 'deps',
+            fresh = bool(changed) and label != 'maintained-clang'
+            deps = {} if fresh else dependencies(run(label+'-headers', [ninja, '-C', root, '-t', 'deps',
                 *(str(Path(row['output']).relative_to(root)) for row in rows)]),
                 build=root, selected_outputs={row['output'] for row in rows})
             pch_headers = {}
             for row in rows:
+                if fresh:
+                    key = label+'-fresh-headers-'+identity(row['output'])[:16]
+                    depfile = output / (key+'.d')
+                    deps[row['output']] = discover_variant_dependencies(row, depfile, name=key, run=run)
+                    row['dependency_origin'] = 'fresh-original-compiler-preprocessing'
+                    row['dependency_scan'] = key
+                    continue
                 _, projections = textual_pch(row)
                 # Object dependency records may stop at the serialized PCH.
                 # Follow its separate Ninja record so a shared-header edit also
@@ -535,13 +568,10 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
                         pch, projection['textual_wrapper']]))
                 if row['file'] not in deps[row['output']]:
                     raise ValueError('implementation variant lacks its actual header dependency closure')
-            scoped_changes = owner_changes(repo, label, changed)
-            chosen = ([] if scoped_changes is None else
-                      selected_variants(rows, deps, scoped_changes))
+            chosen = select_owner_variants(repo, label, rows, deps, changed)
             report['inputs'][str(database)] = digest(database)
             for row in rows:
                 row['owner'] = label
-                row['analysis_timeout_seconds'] = translation_unit_timeout(policy, row, source)
                 row.update(identity=identity(row), dependencies=deps[row['output']])
                 report['inputs'].update({path: digest(Path(path)) for path in row['dependencies']})
                 report['inputs'].update(row['response_files'])
@@ -556,7 +586,6 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
                 'reason': ('Owned implementation TUs and every maintained Clang patch TU; '
                            'vendor/test/generated-only TUs excluded. Unaffected owners and variants '
                            'are omitted only by source ownership plus explicit dependency closure.')})
-            executor.timeout = policy['translation_unit_timeout_seconds']
             with ProcessPoolExecutor(max_workers=jobs, mp_context=multiprocessing.get_context('spawn')) as workers:
                 def prepared_jobs():
                     for row in chosen:
@@ -570,8 +599,7 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
                         else:
                             executor.save()
                             yield {'name': name, 'identity': row['identity'],
-                                'directory': str(output / name), 'environment': environment, 'argv': argv,
-                                'timeout': row['analysis_timeout_seconds']}
+                                'directory': str(output / name), 'environment': environment, 'argv': argv}
 
                 def completed(value):
                     result, commands = value
@@ -593,6 +621,8 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
             raise ValueError('implementation analysis contains findings or incomplete translation units')
         if any(digest(Path(path)) != value for path, value in report['inputs'].items()):
             raise ValueError('implementation analysis inputs changed')
+        if check_owned_suppressions(repo) != report['source_suppressions']:
+            raise ValueError('implementation analysis suppression inventory changed')
         report.update(status='PASS', analyzed_variants=len(report['results']), inventory_variants=len(report['inventory']))
         report['fresh_native_executions'] = sum(not row.get('execution_reused', False) for row in report['results'])
         report['verified_checkpoint_actions'] = sum(row.get('execution_reused', False) for row in report['results'])

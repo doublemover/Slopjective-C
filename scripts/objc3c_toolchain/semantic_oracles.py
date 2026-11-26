@@ -16,9 +16,11 @@ from .binary_packages import digest, installed_shared_library, write_json
 from .compiler_instrumentation import loaded_graph
 from .llvm_ir_execution import Execution, StageFailure
 from .llvm_tools import identity, selected, verify_receipt
+from .sanitizer_policy import OPTIONS
 from .sdk_example import dependencies
+from .semantic_interface_locks import exercise_reexport
 from .semantic_model import (VERSION, EligibilityFailure, Operation, candidates, coverage,
-                            eligibility, generate, interpret, mismatch, validate, verify_eligibility)
+                            eligibility, generate, interpret, mismatch, transition_witnesses, verify_eligibility)
 from .semantic_sources import HEADER, consumer, provider
 
 EXPORTS = ('OracleResult', 'oracle_make', 'oracle_value', 'oracle_alive', 'oracle_destroyed', 'oracle_step')
@@ -35,15 +37,18 @@ def seed_bank(seeds, rotation=''):
 
 
 def source_bundle(program, output: Path, *, transport='source', relation='', mutant='', bias=0,
-                  optimization='O2', standard='c++20', sanitized=False, expected_mismatch=None):
+                  optimization='O2', standard='c++20', sanitized=False, expected_mismatch=None, origin=None):
     manifest = eligibility(program, transport=transport, optimization=optimization, standard=standard,
         relation=relation, mutant=mutant, bias=bias, sanitized=sanitized, expected_mismatch=expected_mismatch)
     output.mkdir(parents=True, exist_ok=False)
-    write_json(output / 'program.json', {'model_version': VERSION, 'operations': [asdict(op) for op in program],
+    record = {'model_version': VERSION, 'operations': [asdict(op) for op in program],
         'expected': interpret(program, bias=bias), 'transform': relation, 'mutant': mutant, 'provider_bias': bias,
         'transport': transport, 'optimization': optimization, 'standard': standard,
         'sanitized': sanitized, 'expected_mismatch': expected_mismatch,
-        'eligibility': manifest})
+        'eligibility': manifest}
+    if origin is not None:
+        record['origin'] = origin
+    write_json(output / 'program.json', record)
     (output / 'oracle.h').write_text(HEADER)
     (output / 'provider.mm').write_text(provider(bias=bias, mutant=mutant if mutant in ('provider', 'error') else ''))
     (output / 'consumer.mm').write_text(consumer(program, transport=transport, relation=relation,
@@ -62,7 +67,7 @@ def shrink(program, predicate, expected_class: str):
 
 class Campaign:
     def __init__(self, repo: Path, output: Path, facade: Path | None, services: Path, runtime: Path,
-                 *, compiler_profile='compiler-asan-ubsan'):
+                 *, compiler_profile='compiler-asan-ubsan', command_timeout: float | None = 180):
         self.repo, self.output = repo, output
         if compiler_profile == 'compiler-source-coverage' and facade is None:
             from .compiler_source_coverage import selected_tools
@@ -79,7 +84,7 @@ class Campaign:
             'build_config_digest': self.foundation['build_config_digest'],
             'permitted_environment': environment,
             'bounds': {'operations': 64, 'logical_allocations': 32, 'seeds': 8,
-                       'process_timeout_seconds': 180,
+                       'process_timeout_seconds': command_timeout,
                        'shared_executor_limits': self.foundation['host_environment']['resource_limits']},
             'profile': {'host': native_linux_host(), 'language': 'objective-c++', 'standards': ['c++20', 'c++23'],
                         'ownership': 'arc', 'target': native_target()},
@@ -91,7 +96,7 @@ class Campaign:
                 'Exact logical survival/weak-zeroing/last destruction, not raw retain/release or copy counts.',
                 'C++ scope and partial-construction cleanup order is explicitly sequenced.',
                 'No move-from observations, signed overflow, unspecified effect order or floating-point equivalences.']}
-        self.executor = Execution(output, environment, self.report, timeout=180)
+        self.executor = Execution(output, environment, self.report, timeout=command_timeout)
         self.run = self.executor.run
         self.flags = ['--no-default-config', '--target='+native_target(), '-x', 'objective-c++',
             '-fobjc-version=3', '-fobjc-runtime=gnustep-2.2', '-fobjc-arc', '-fobjc-arc-exceptions',
@@ -104,6 +109,7 @@ class Campaign:
             *(installed_shared_library(stage / 'lib', name)
               for name in ('libLLVM.so', 'libclang-cpp.so'))]}
         for name in ('llvm_ir_execution.py', 'compiler_instrumentation.py', 'llvm_tools.py',
+                     'semantic_interface_locks.py',
                      'binary_packages.py', 'sanitizer_policy.py', 'linux_host.py', 'sdk_example.py'):
             path = Path(__file__).with_name(name)
             self.inputs[str(path)] = digest(path)
@@ -120,11 +126,55 @@ class Campaign:
             self.inputs.update(graph['libraries'])
 
     def bind_headers(self, depfile, work):
+        headers = {}
         for path in dependencies(depfile, work):
             if path.is_file() and not path.is_relative_to(self.output):
-                self.inputs[str(path)] = digest(path)
+                headers[str(path)] = self.inputs[str(path)] = digest(path)
+        return headers
 
-    def case(self, name, program, **configuration):
+    def native_context(self, sanitized):
+        contexts = getattr(self, '_native_contexts', None)
+        if contexts is None:
+            contexts = self._native_contexts = {}
+        if sanitized not in contexts:
+            root = Path(self.foundation['host_environment']['bootstrap_root'] if sanitized
+                        else self.foundation['paths']['stage']) / 'lib/clang/23'
+            resource_files = [path for path in (root / 'include').rglob('*') if path.is_file()]
+            if not resource_files:
+                raise ValueError('native semantic replay compiler resources are unavailable')
+            if sanitized:
+                resource_files.extend(path for path in root.rglob('libclang_rt.*')
+                    if path.is_file() and any(kind in path.name for kind in ('asan', 'ubsan')))
+            resources = {}
+            for path in resource_files:
+                resources[str(path.relative_to(root))] = self.inputs[str(path)] = digest(path)
+            artifacts = {**self.tools, 'services': self.services, 'runtime': self.runtime}
+            if self.facade is not None:
+                artifacts['facade'] = self.facade
+            contexts[sanitized] = {
+                'target': native_target(), 'compiler_profile': self.report['compiler_profile'],
+                'source_build_id': self.foundation['source_build_id'],
+                'source_tree': self.foundation['source_tree'],
+                'build_config_digest': self.foundation['build_config_digest'],
+                'patch_digest': self.foundation['patch_digest'],
+                'artifacts': {role: self.inputs.get(str(path)) or digest(path) for role, path in artifacts.items()},
+                'compiler_libraries': {role: graph['libraries']
+                    for role, graph in self.report.get('compiler_graphs', {}).items()},
+                'resource_sha256': identity(resources),
+                'semantic_sources': {name: digest(Path(__file__).with_name(name))
+                    for name in ('semantic_oracles.py', 'semantic_model.py', 'semantic_sources.py')},
+            }
+            if sanitized:
+                environment = self.executor.environment
+                symbolizer = Path(environment['ASAN_SYMBOLIZER_PATH']).resolve(strict=True)
+                self.inputs[str(symbolizer)] = digest(symbolizer)
+                contexts[sanitized]['sanitizer'] = {
+                    'options': {key: environment[key] for key in OPTIONS},
+                    'symbolizer_sha256': self.inputs[str(symbolizer)],
+                }
+        return contexts[sanitized]
+
+    def case(self, name, program, *, origin=None, **configuration):
         try:
             eligibility(program, **{key: value for key, value in configuration.items() if key != 'probe'})
         except EligibilityFailure as error:
@@ -133,7 +183,7 @@ class Campaign:
             raise
         self.report['eligibility_counts']['eligible'] += 1
         try:
-            result = self._case(name, program, **configuration)
+            result = self._case(name, program, origin=origin, **configuration)
         except (OSError, ValueError) as error:
             classification = getattr(error, 'classification', 'infrastructure')
             outcome = 'mismatch' if classification in ('value-or-lifetime', 'cleanup-order', 'output-schema') else (
@@ -148,12 +198,18 @@ class Campaign:
             self.executor.save()
 
     def _case(self, name, program, *, transport='source', optimization='O2', standard='c++20',
-             relation='', mutant='', bias=0, expected_mismatch=None, probe=False, sanitized=False):
+             relation='', mutant='', bias=0, expected_mismatch=None, probe=False, sanitized=False, origin=None):
         if self.facade is None and transport != 'source':
             raise ValueError('compiler source-feedback campaigns support only explicit source transport')
         work = self.output / name
         source_bundle(program, work, transport=transport, relation=relation, mutant=mutant, bias=bias,
-            optimization=optimization, standard=standard, sanitized=sanitized, expected_mismatch=expected_mismatch)
+            optimization=optimization, standard=standard, sanitized=sanitized, expected_mismatch=expected_mismatch,
+            origin=origin)
+        bind_native = not probe
+        generated = {name: digest(work / name) for name in ('oracle.h', 'provider.mm', 'consumer.mm')}
+        required = getattr(self, 'expected_provenance', None)
+        if required and required['generated_sources'] != generated:
+            raise EligibilityFailure('generated source differs from the retained native witness')
         flags = [*self.flags, '-std='+standard, '-O2' if optimization == 'thinlto' else '-'+optimization,
                  *(['-flto=thin'] if optimization == 'thinlto' else [])]
         sanitizer_flags = []
@@ -176,7 +232,7 @@ class Campaign:
                 *(part for item in EXPORTS for part in ('--export-declaration', item)),
                 '--', *flags, '-MD', '-MF', provider_dep],
                 outputs=[po, interface, interface.with_suffix('.objc3i.json')], stage='frontend-interface')
-            self.bind_headers(provider_dep, work)
+            provider_headers = self.bind_headers(provider_dep, work)
             module = json.loads(interface.with_suffix('.objc3i.json').read_text())['module']
             # Retain original evidence elsewhere; the consumer's physical input
             # directory contains no provider implementation or declaration header.
@@ -192,7 +248,7 @@ class Campaign:
         else:
             self.run(name+'-provider', [self.tools['clang++'], *flags, '-MD', '-MF', provider_dep,
                 '-c', work / 'provider.mm', '-o', po], outputs=[po])
-            self.bind_headers(provider_dep, work)
+            provider_headers = self.bind_headers(provider_dep, work)
             command = [self.tools['clang++'], *flags]
             if transport == 'pch':
                 pch = work / 'oracle.pch'
@@ -201,19 +257,37 @@ class Campaign:
                 command += ['-include-pch', pch]
             command += ['-MD', '-MF', consumer_dep, '-c', work / 'consumer.mm', '-o', co]
         self.run(name+'-consumer', command, outputs=[co], stage='frontend-lowering')
-        self.bind_headers(consumer_dep, work)
+        consumer_headers = self.bind_headers(consumer_dep, work)
+        if bind_native and required and required['external_headers'] != {
+                'provider': provider_headers, 'consumer': consumer_headers}:
+            raise EligibilityFailure('external headers differ from the retained native witness')
         self.run(name+'-link', [self.tools['clang++'], '--no-default-config', '-fuse-ld=lld',
             '-O2', *sanitizer_flags, *(['-flto=thin'] if optimization == 'thinlto' else []), po, co, self.services,
             self.runtime, '-pthread', '-Wl,-rpath,'+str(self.runtime.parent), '-o', binary], outputs=[binary])
         graph = loaded_graph(binary, native_loader(), [],
             run=lambda suffix, argv: self.run(name+'-'+suffix, argv))
         self.inputs.update(graph['libraries'])
+        if bind_native and required and required['runtime_libraries'] != graph['libraries']:
+            raise EligibilityFailure('loaded runtime libraries differ from the retained native witness')
         output = self.run(name+'-execute', [binary], stage='runtime-oracle')
         try:
             actual = json.loads(output)
         except ValueError as error:
             raise StageFailure(name, 'output-schema', 'generated program did not produce its state/event record') from error
         classification = mismatch(interpret(program, bias=bias), actual)
+        if bind_native and classification == expected_mismatch:
+            retained_sources = self.output / 'retained-provider' / name if transport == 'interface' else work
+            if generated != {'consumer.mm': digest(work / 'consumer.mm'),
+                             **{unit: digest(retained_sources / unit) for unit in ('oracle.h', 'provider.mm')}}:
+                raise StageFailure(name, 'infrastructure', 'generated sources changed during execution')
+            record = json.loads((work / 'program.json').read_text())
+            record['native_provenance'] = {
+                'schema': 'objc3c.semantic-native-witness.v1',
+                'execution': self.native_context(sanitized), 'generated_sources': generated,
+                'external_headers': {'provider': provider_headers, 'consumer': consumer_headers},
+                'runtime_libraries': graph['libraries'],
+            }
+            write_json(work / 'program.json', record)
         program_key = identity({'operations': [asdict(op) for op in program], 'bias': bias})
         reference = self.observations.setdefault(program_key, actual)
         row = {'name': name, 'transport': transport, 'optimization': optimization, 'standard': standard,
@@ -270,7 +344,14 @@ class Campaign:
             raise ValueError('stale ownership contract produced a consumer object')
         self.report['controls'].append({'name': name, 'status': 'PASS', 'old': old_fingerprint, 'changed': changed})
 
-    def reduce(self, program, *, mutant='', mismatch_class='value-or-lifetime',
+    def source_free_reexport(self, program, *, origin):
+        name = 'control-source-free-reexport'
+        cases = exercise_reexport(self.output / name, self.run, facade=self.facade,
+            clang=self.tools['clang++'], services=self.services, runtime=self.runtime, flags=self.flags,
+            program=program, origin=origin, prepare_bundle=source_bundle, exports=EXPORTS)
+        self.report['controls'].append({'name': name, 'status': 'PASS', 'cases': cases})
+
+    def reduce(self, program, *, origin=None, mutant='', mismatch_class='value-or-lifetime',
                transport='source', optimization='O2', standard='c++20', relation='', bias=0, sanitized=False):
         attempts = 0
         def interesting(trial):
@@ -291,20 +372,25 @@ class Campaign:
             transport=transport, optimization=optimization, standard=standard, relation=relation, bias=bias, sanitized=sanitized)
         configuration = dict(transport=transport, optimization=optimization, standard=standard,
             relation=relation, bias=bias, mutant=mutant, sanitized=sanitized, expected_mismatch=mismatch_class)
-        write_json(self.output / 'reduction.json', {'status': 'PASS', 'model_version': VERSION,
+        replayed = json.loads((self.output / 'reduction-replay/program.json').read_text())
+        record = {'status': 'PASS', 'model_version': VERSION,
             'original': [asdict(op) for op in program], 'reduced': [asdict(op) for op in reduced],
             'mismatch': mismatch_class, 'attempts': attempts, 'transport': transport,
             'optimization': optimization, 'standard': standard, 'mutant': mutant, 'provider_bias': bias,
-            'sanitized': sanitized, 'transform': relation,
+            'sanitized': sanitized, 'transform': relation, 'expected': replayed['expected'],
+            'original_expected': interpret(program, bias=bias), 'native_provenance': replayed['native_provenance'],
             'eligibility': eligibility(reduced, **configuration),
-            'original_eligibility': eligibility(program, **configuration)})
+            'original_eligibility': eligibility(program, **configuration)}
+        if origin is not None:
+            record['origin'] = origin
+        write_json(self.output / 'reduction.json', record)
 
-    def checked_case(self, name, program, **configuration):
+    def checked_case(self, name, program, *, origin=None, **configuration):
         try:
-            return self.case(name, program, **configuration)
+            return self.case(name, program, origin=origin, **configuration)
         except StageFailure as error:
             if error.classification in ('value-or-lifetime', 'cleanup-order'):
-                self.reduce(program, mismatch_class=error.classification, **configuration)
+                self.reduce(program, origin=origin, mismatch_class=error.classification, **configuration)
             raise
 
 
@@ -317,41 +403,50 @@ def qualify(repo: Path, output: Path, *, facade: Path, services: Path, runtime: 
     campaign = None
     try:
         campaign = Campaign(repo, output, facade, services, runtime)
+        generated = {seed: generate(seed) for seed in seeds}
+        witnesses = transition_witnesses()
+        semantic_coverage = coverage([*generated.values(), *witnesses.values()], qualification=True)
         expected = []
-        for seed in seeds:
-            program = generate(seed)
+        for seed, program in generated.items():
+            origin = {'seed': seed}
             for transport in ('source', 'pch', 'interface'):
                 for optimization in ('O0', 'O2'):
                     name = f'seed-{seed}-{transport}-{optimization}'
                     expected.append(name)
-                    campaign.checked_case(name, program, transport=transport, optimization=optimization)
+                    campaign.checked_case(name, program, origin=origin, transport=transport, optimization=optimization)
             for relation in ('rename', 'comments', 'pure-grouping'):
                 name = f'seed-{seed}-{relation}'
                 expected.append(name)
-                campaign.checked_case(name, program, relation=relation, standard='c++23')
+                campaign.checked_case(name, program, origin=origin, relation=relation, standard='c++23')
             name = f'seed-{seed}-thinlto'
             expected.append(name)
-            campaign.checked_case(name, program, optimization='thinlto')
+            campaign.checked_case(name, program, origin=origin, optimization='thinlto')
+        for witness, program in witnesses.items():
+            for optimization in ('O0', 'O2'):
+                name = f'witness-{witness}-{optimization}'
+                expected.append(name)
+                campaign.checked_case(name, program, origin={'reviewed_witness': witness}, optimization=optimization)
         for mutant in ('tag', 'defer', 'destructor', 'provider', 'error'):
-            campaign.case('control-'+mutant, generate(seeds[0]), mutant=mutant, sanitized=True,
+            campaign.case('control-'+mutant, generated[seeds[0]], origin={'seed': seeds[0]}, mutant=mutant, sanitized=True,
                 expected_mismatch='cleanup-order' if mutant in ('defer', 'destructor') else 'value-or-lifetime')
         expected.append('sanitizer-clean-control')
-        campaign.case('sanitizer-clean-control', generate(seeds[0]), sanitized=True)
+        campaign.case('sanitizer-clean-control', generated[seeds[0]], origin={'seed': seeds[0]}, sanitized=True)
         for bias in (0, 1):
             name = 'private-body-'+str(bias)
             expected.append(name)
-            campaign.case(name, generate(seeds[0]), transport='interface', bias=bias)
+            campaign.case(name, generated[seeds[0]], origin={'seed': seeds[0]}, transport='interface', bias=bias)
         base, changed = campaign.report['cases'][-2:]
         if base['module_identity'] != changed['module_identity']:
             raise ValueError('private implementation edit changed public interface identity')
-        campaign.stale_effect(generate(seeds[0]), base['module_identity']['semantic_fingerprint'])
-        campaign.reduce(generate(seeds[0]), mutant='tag')
+        campaign.stale_effect(generated[seeds[0]], base['module_identity']['semantic_fingerprint'])
+        campaign.source_free_reexport(generated[seeds[0]], origin={'seed': seeds[0]})
+        campaign.reduce(generated[seeds[0]], origin={'seed': seeds[0]}, mutant='tag', sanitized=True)
         if {row['name'] for row in campaign.report['cases']} != set(expected):
             raise ValueError('generated semantic execution inventory is incomplete')
         if any(digest(Path(path)) != signature for path, signature in campaign.inputs.items()):
             raise ValueError('semantic campaign input changed during execution')
         campaign.report.update(status='PASS', expected_cases=expected,
-            seeds=list(seeds), semantic_coverage=coverage([generate(seed) for seed in seeds]),
+            seeds=list(seeds), reviewed_witnesses=list(witnesses), semantic_coverage=semantic_coverage,
             metrics={'commands': len(campaign.report['commands']),
                 'native_compilations': sum(row['stage'].startswith('frontend') for row in campaign.report['commands']),
                 'command_seconds': round(sum(row['seconds'] for row in campaign.report['commands']), 6)})
@@ -383,9 +478,31 @@ def replay(repo: Path, output: Path, document: Path, *, facade: Path, services: 
     except (KeyError, TypeError) as error:
         raise EligibilityFailure('semantic replay has an incomplete typed witness/configuration') from error
     verify_eligibility(record, program, **configuration)
+    original = program
     if 'reduced' in record:
         original = [Operation(**item) for item in record['original']]
-        verify_eligibility({'eligibility': record.get('original_eligibility')}, original, **configuration)
+        original_record = {'eligibility': record.get('original_eligibility')}
+        if 'original_expected' in record:
+            original_record['expected'] = record['original_expected']
+        verify_eligibility(original_record, original, **configuration)
+    origin = record.get('origin')
+    if 'origin' in record:
+        regenerated = None
+        if isinstance(origin, dict):
+            seed, witness = origin.get('seed'), origin.get('reviewed_witness')
+            if set(origin) == {'seed'} and type(seed) is int and 0 <= seed < 2**32:
+                regenerated = generate(seed)
+            if set(origin) == {'reviewed_witness'} and isinstance(witness, str):
+                regenerated = transition_witnesses().get(witness)
+        if original != regenerated:
+            raise EligibilityFailure('semantic replay program differs from its retained seed or reviewed witness')
+    provenance = record.get('native_provenance')
+    provenance_fields = ('execution', 'generated_sources', 'external_headers', 'runtime_libraries')
+    if ('native_provenance' in record and
+            (not isinstance(provenance, dict) or provenance.get('schema') != 'objc3c.semantic-native-witness.v1' or
+             set(provenance) != {'schema', *provenance_fields} or
+             any(not isinstance(provenance[field], dict) for field in provenance_fields))):
+        raise EligibilityFailure('invalid native semantic replay provenance')
     repo, output = repo.resolve(strict=True), output.resolve()
     if output.exists() or not output.is_relative_to(repo / 'out'):
         raise ValueError('semantic replay needs fresh owned evidence')
@@ -393,8 +510,15 @@ def replay(repo: Path, output: Path, document: Path, *, facade: Path, services: 
     campaign = None
     try:
         campaign = Campaign(repo, output, facade, services, runtime)
-        campaign.report['subject'] = 'semantic-failure-replay'
-        campaign.case('replay', program, **configuration)
+        campaign.report['subject'] = ('semantic-program-replay' if configuration['expected_mismatch'] is None
+                                      else 'semantic-failure-replay')
+        campaign.report['replay_input_mode'] = 'matched-native' if provenance is not None else 'typed-source'
+        campaign.report['replay_document_sha256'] = digest(document)
+        if provenance is not None:
+            if campaign.native_context(configuration['sanitized']) != provenance['execution']:
+                raise EligibilityFailure('compiler or runtime differs from the retained native witness')
+            campaign.expected_provenance = provenance
+        campaign.case('replay', program, origin=origin if 'reduced' not in record else None, **configuration)
         if any(digest(Path(path)) != signature for path, signature in campaign.inputs.items()):
             raise ValueError('semantic replay input changed during execution')
         campaign.report.update(status='PASS', reproduced_mismatch=record.get('mismatch', record.get('expected_mismatch')))

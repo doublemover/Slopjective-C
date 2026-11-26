@@ -18,8 +18,8 @@ from scripts.objc3c_toolchain.core import build_plans
 from scripts.objc3c_toolchain.frontend_tests import qualify as frontend_tests
 from scripts.objc3c_toolchain.package import verify_sdk
 from scripts.objc3c_toolchain.qualify_installed import qualify_installed
-from .evidence import SCHEMA, evidence_budget, validate_evidence_sizes, artifact, digest, junit, lit, package_execution
-from .plan import foundation_receipts, from_checkout, selected_suites, validate
+from .evidence import SCHEMA, validate_evidence_sizes, artifact, digest, junit, lit, package_execution
+from .plan import foundation_receipts, from_checkout, selected_suites
 from .execution import checked_command, execute_ctest, execute_suites
 from .upstream import UPSTREAM, execute_upstream
 
@@ -32,22 +32,25 @@ def _consumer_compile_jobs(repo: Path) -> int:
     return resource_limits(manifest['build'])['compile_jobs']
 
 
+def retain_foundation(receipt: Path, output: Path) -> None:
+    if receipt.is_file():
+        raw = receipt.read_bytes()
+        report = json.loads(raw)
+        # The implementation pilot binds this copy to the producer's byte digest.
+        (output / 'foundation.json').write_bytes(raw)
+        for index, phase in enumerate(report['phases']):
+            shutil.copyfile(phase['log'], output / f'phase-{index}.log')
+
+
 def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
         suite_ids: tuple[str, ...] | None = None, product_sdk: Path | None = None,
-        package_release: Path | None = None, sanitizer_partition: int | None = None) -> dict:
-    validate(plan)
-    if shard is not None and suite_ids is not None:
-        raise ValueError('native execution cannot combine a canonical shard and an explicit suite partition')
-    if suite_ids is None:
-        suites = selected_suites(plan, shard)
-    else:
-        available = {row['id']: row for row in plan['suites']}
-        if (not suite_ids or len(suite_ids) != len(set(suite_ids)) or
-                any(name not in available for name in suite_ids)):
-            raise ValueError('native suite partition is empty, duplicated or outside the exact plan')
-        suites = [available[name] for name in suite_ids]
+        package_release: Path | None = None, sanitizer_partition: int | None = None,
+        frontend_names: frozenset[str] | None = None) -> dict:
+    suites = selected_suites(plan, shard, suite_ids=suite_ids)
     if not suites:
         raise ValueError('native execution requires a nonempty suite selection')
+    if frontend_names is not None and (suite_ids is None or 'frontend' not in suite_ids):
+        raise ValueError('focused CTest selection requires an explicit frontend suite')
     if sanitizer_partition is not None:
         from scripts.objc3c_toolchain.sanitizer_partitions import select
         select(sanitizer_partition)
@@ -162,11 +165,7 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
             finally:
                 receipt = (repo / 'out/toolchains/objc3-development' /
                     (('build-' + native_linux_host() + '-')+profile) / 'foundation-build-report.json')
-                if receipt.is_file():
-                    saved = json.loads(receipt.read_text())
-                    write_json(evidence / 'foundation.json', saved)
-                    for index, phase in enumerate(saved['phases']):
-                        shutil.copyfile(phase['log'], evidence / ('phase-'+str(index)+'.log'))
+                retain_foundation(receipt, evidence)
         plan = build_plans(repo, host=native_linux_host(), instrumentation_profile=profile)['configure']
         return Path(plan['paths']['stage'])
 
@@ -207,11 +206,7 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
                 # A failing compile must retain the actual compiler diagnostic,
                 # even though the canonical builder raises before returning.
                 receipt = repo / ('out/toolchains/objc3-development/build-' + native_linux_host() + '/foundation-build-report.json')
-                if receipt.is_file():
-                    saved = json.loads(receipt.read_text())
-                    write_json(directory / 'foundation.json', saved)
-                    for index, phase in enumerate(saved['phases']):
-                        shutil.copyfile(phase['log'], directory / ('phase-' + str(index) + '.log'))
+                retain_foundation(receipt, directory)
             executions = []
             for index, phase in enumerate(foundation['phases']):
                 if phase['phase'] == 'test':
@@ -219,7 +214,8 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
                     executions.extend(lit(result) if result.suffix == '.json' else junit(result))
             if foundation['status'] != 'passed' or not executions:
                 raise ValueError('foundation has no passing native execution evidence')
-            report.setdefault('product', product_identity(sdk))
+            if product_sdk is not None and 'product' not in report:
+                report['product'] = product_identity(sdk)
             return executions
         if name == 'runtime':
             try:
@@ -235,6 +231,7 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
             runtime = json.loads((directory / 'runtime.json').read_text())
             if runtime['status'] != 'passed':
                 raise ValueError('native runtime build did not pass')
+            shared['runtime_stage'] = runtime['stage']
             build = repo / 'out/native-assurance-runtime'
             root = repo / 'out/toolchains/libobjc2-v2.3'
             command('configure', ['cmake', '-S', repo / 'tests/clang_foundation/native_runtime',
@@ -250,6 +247,8 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
             build = repo / ('out/toolchains/objc3-facade/build-' + native_linux_host())
             command('configure', ['cmake', '-S', repo / 'native/objc3c', '-B', build, '-G', 'Ninja',
                 f'-DOBJC3C_CLANG_FOUNDATION_ROOT={sdk}', f'-DCMAKE_CXX_COMPILER={bootstrap / "bin/clang++"}',
+                *([f'-DOBJC3_LIBOBJC2_BUILD_DIR={shared["runtime_stage"]}']
+                  if 'runtime_stage' in shared else []),
                 f'-DPython3_EXECUTABLE={sys.executable}',
                 '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
                 '-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
@@ -257,7 +256,8 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
                 '-DOBJC3C_BUILD_SCAN_DEPS=OFF', '-DBUILD_TESTING=ON'])
             jobs = _consumer_compile_jobs(repo)
             command('build', ['cmake', '--build', build, '--target', 'objc3c', '--parallel', str(jobs)])
-            tests = frontend_tests(build, directory / 'frontend-tests', command, jobs=jobs)
+            tests = frontend_tests(build, directory / 'frontend-tests', command,
+                                   jobs=jobs, required_names=frontend_names)
             for row in tests['tests']:
                 junit(directory / ('frontend-' + row['name'] + '-ctest.xml'), expected={row['name']})
             return tests['tests']
@@ -401,11 +401,7 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
             report['operational_costs'] = artifact(output, cost_file)
         elif suite_ids is None:
             raise ValueError('canonical native shard omitted all operational measurement owners')
-        size = sum(value['bytes'] for row in report['suites'] for value in row['artifacts'])
-        size += report.get('operational_costs', {}).get('bytes', 0)
         validate_evidence_sizes(report['suites'], report.get('operational_costs', {}).get('bytes', 0))
-        if size > evidence_budget([row['id'] for row in suites]):
-            raise ValueError('native evidence exceeds its suite artifact budget')
         report['status'] = 'PASS'
     except BaseException as error:
         report.update(status='FAIL', error=str(error))

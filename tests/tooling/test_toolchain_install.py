@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 import shutil
+import subprocess
 import tarfile
 
 import pytest
@@ -16,7 +17,7 @@ from scripts.objc3c_toolchain.install_sdk import file_hash, install
 pytestmark = pytest.mark.skipif(not shutil.which('zstd'), reason='installer needs zstd')
 
 
-def release(tmp_path: Path, compiler='compiler', trailing_padding=0):
+def release(tmp_path: Path, compiler='compiler', trailing_padding=0, *, abi=None, admission=False):
     prefix = tmp_path / 'source'
     (prefix / 'bin').mkdir(parents=True)
     (prefix / 'bin/objc3c').write_text(compiler)
@@ -25,11 +26,17 @@ def release(tmp_path: Path, compiler='compiler', trailing_padding=0):
     verifier.parent.mkdir(parents=True)
     shutil.copyfile(package.__file__, verifier)
     package.normalize_permissions(prefix)
-    data = {'schema': package.SCHEMA, 'source_build_id': 'test-release', 'target': native_target(), 'files': package.inventory(prefix)}
+    if abi is None:
+        abi = {'glibc_minimum': '2.17', 'libstdcxx_symbol_minimum': 'GLIBCXX_3.4'}
+    data = {'schema': package.SCHEMA, 'source_build_id': 'test-release', 'target': native_target(),
+            'linux_abi': abi, 'files': package.inventory(prefix)}
     data['seal_sha256'] = package._digest(data)
     (prefix / package.MANIFEST).write_text(json.dumps(data))
     (prefix / package.MANIFEST).chmod(0o644)
     archive = tmp_path / 'sdk.tar.zst'
+    if admission:
+        receipt = package._archive_sdk(prefix, archive, {'seal_sha256': data['seal_sha256']})
+        return archive, receipt['archive_sha256']
     with zstd.ZstdFile(archive, 'wb') as stream:
         with tarfile.open(fileobj=stream, mode='w|') as tar:
             tar.add(prefix, arcname='objc3-sdk')
@@ -43,11 +50,87 @@ def test_install_reuse_and_relocation(tmp_path):
     first = install(archive, digest, root)
     prefix = Path(first['prefix'])
     assert prefix.name == first['seal_sha256']
+    assert first['cost']['host']['linux_abi']['libstdcxx_symbol_verified'] == 'GLIBCXX_3.4'
     assert (root / 'current').resolve() == prefix
     assert install(archive, digest, root)['prefix'] == first['prefix']
     moved = tmp_path / 'relocated'
     root.rename(moved)
     package.verify_sdk((moved / 'current').resolve(), first['seal_sha256'])
+
+
+@pytest.mark.parametrize('admission', [False, True])
+@pytest.mark.parametrize('field', ['seal_sha256', 'source_build_id'])
+def test_manifest_identity_mismatch_leaves_the_active_sdk_untouched(tmp_path, admission, field):
+    original, original_digest = release(tmp_path / 'original', 'first compiler', admission=True)
+    candidate, candidate_digest = release(tmp_path / 'candidate', 'second compiler', admission=admission)
+    root = tmp_path / 'installed'
+    current = install(original, original_digest, root)
+    manifest = json.loads((tmp_path / 'candidate/source' / package.MANIFEST).read_text())
+    identity = {'expected_seal_sha256': manifest['seal_sha256'],
+                'expected_source_build_id': manifest['source_build_id']}
+    wrong = {**identity, 'expected_' + field: '0' * 64}
+
+    with pytest.raises(ValueError, match='differs from the release manifest'):
+        install(candidate, candidate_digest, root, **wrong)
+
+    assert (root / 'current').resolve() == Path(current['prefix'])
+    assert list((root / 'sdks').iterdir()) == [Path(current['prefix'])]
+    assert not list(root.glob('.install-*'))
+    accepted = install(candidate, candidate_digest, root, **identity)
+    assert (root / 'current').resolve() == Path(accepted['prefix'])
+    assert accepted['seal_sha256'] == manifest['seal_sha256']
+
+
+@pytest.mark.parametrize(('abi', 'diagnostic'), [
+    ({'glibc_minimum': '999.0', 'libstdcxx_symbol_minimum': 'GLIBCXX_3.4'},
+     'requires glibc >= 999.0 (detected glibc '),
+    ({'glibc_minimum': '2.17', 'libstdcxx_symbol_minimum': 'GLIBCXX_999.999.999'},
+     'requires system libstdc++.so.6 with GLIBCXX_999.999.999'),
+    ({}, 'contains invalid Linux ABI requirements'),
+])
+def test_public_installer_rejects_incompatible_abi_without_creating_root(tmp_path, abi, diagnostic):
+    archive, digest = release(tmp_path, abi=abi, admission=True)
+    root = tmp_path / 'installed'
+    launcher = Path(__file__).resolve().parents[2] / 'scripts/install_objc3c_linux.sh'
+    result = subprocess.run(['sh', str(launcher), '--archive', str(archive), '--sha256', digest,
+                             '--root', str(root)], capture_output=True, text=True, timeout=15)
+    assert result.returncode == 2
+    assert result.stderr.startswith('objc3c install: SDK ') and diagnostic in result.stderr
+    assert not result.stdout
+    assert not root.exists()
+
+
+@pytest.mark.parametrize('admission', [False, True])
+def test_abi_is_readmitted_before_activation_of_existing_generation(tmp_path, monkeypatch, admission):
+    from scripts.objc3c_toolchain import install_sdk
+
+    archive_a, digest_a = release(tmp_path / 'a', 'compiler A', admission=admission)
+    archive_b, digest_b = release(tmp_path / 'b', 'compiler B', admission=admission)
+    root = tmp_path / 'installed'
+    install(archive_a, digest_a, root)
+    active = install(archive_b, digest_b, root)
+    monkeypatch.setattr(install_sdk.os, 'confstr', lambda name: 'glibc 2.16')
+    with pytest.raises(ValueError, match=r'glibc >= 2\.17 \(detected glibc 2\.16\)'):
+        install(archive_a, digest_a, root)
+    assert (root / 'current').resolve() == Path(active['prefix'])
+    assert not list(root.glob('.install-*'))
+
+
+def test_public_installer_updates_and_rolls_back_between_verified_archives(tmp_path):
+    context = [release(tmp_path / name, name, admission=True) for name in ('first', 'second')]
+    root = tmp_path / 'installed'
+    launcher = Path(__file__).resolve().parents[2] / 'scripts/install_objc3c_linux.sh'
+    admitted = []
+    for archive, digest in (*context, context[0]):
+        result = subprocess.run(['sh', str(launcher), '--archive', str(archive), '--sha256', digest,
+                                 '--root', str(root)], capture_output=True, text=True, timeout=15, check=True)
+        report = json.loads(result.stdout)
+        assert report['activated'] is True
+        assert selected_by_shell(root) == Path(report['prefix'])
+        admitted.append(report)
+    assert admitted[0]['seal_sha256'] != admitted[1]['seal_sha256']
+    assert admitted[2]['seal_sha256'] == admitted[0]['seal_sha256']
+    assert admitted[2]['cost']['prefix_reused'] is True
 
 
 def test_archive_publication_resumes_and_reuses_without_extraction(tmp_path, monkeypatch):

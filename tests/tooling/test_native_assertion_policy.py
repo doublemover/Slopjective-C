@@ -3,13 +3,14 @@ import json
 import os
 from pathlib import Path
 import shlex
-import shutil
 import subprocess
 
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
-STAGE = ROOT / 'out/toolchains/objc3-development/stage-linux-x86_64'
+STAGE = Path(os.environ.get(
+    'OBJC3_NATIVE_TEST_FOUNDATION',
+    ROOT / 'out/toolchains/objc3-development/stage-linux-x86_64')).resolve()
 pytestmark = pytest.mark.skipif(not (STAGE / 'bin/clang').is_file(),
                                 reason='requires a qualified native foundation')
 
@@ -20,6 +21,7 @@ def test_every_registered_test_retains_assertions(tmp_path, configuration):
     subprocess.run(['cmake', '-S', str(ROOT / 'native/objc3c'), '-B', str(build), '-G', 'Ninja',
                     '-DCMAKE_BUILD_TYPE='+configuration,
                     '-DOBJC3C_CLANG_FOUNDATION_ROOT='+str(STAGE),
+                    '-DOBJC3C_BUILD_SCAN_DEPS=OFF',
                     '-DCMAKE_CXX_COMPILER='+str(STAGE / 'bin/clang++')],
                    check=True, capture_output=True, text=True, timeout=120)
     manifest = json.loads((build / 'frontend-test-targets.json').read_text())
@@ -69,3 +71,18 @@ def test_every_registered_test_retains_assertions(tmp_path, configuration):
                             capture_output=True, text=True, timeout=30)
     assert result.returncode == 1
     assert 'Native regression tests require active assertions' in result.stderr
+
+
+def test_inventory_rejects_ctest_without_assertion_registration(tmp_path):
+    module = ROOT / 'native/objc3c/cmake/FrontendTests.cmake'
+    (tmp_path / 'CMakeLists.txt').write_text(f'''cmake_minimum_required(VERSION 4.4.5)
+project(UnregisteredTest NONE)
+enable_testing()
+include("{module.as_posix()}")
+add_test(NAME objc3_unowned COMMAND "${{CMAKE_COMMAND}}" -E true)
+objc3c_write_frontend_test_inventory()
+''')
+    result = subprocess.run(['cmake', '-S', str(tmp_path), '-B', str(tmp_path / 'build')],
+                            capture_output=True, text=True, timeout=30)
+    assert result.returncode == 1
+    assert 'Frontend CTest objc3_unowned has no registered executable owner' in result.stderr

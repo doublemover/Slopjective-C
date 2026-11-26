@@ -6,9 +6,9 @@ import json
 from pathlib import Path
 import re
 
-from scripts.objc3c_toolchain.analysis_checkpoint import analysis_argv, tidy_diagnostics
-from scripts.objc3c_toolchain.implementation_analysis import (
-    checker_configuration, owner_changes, selected_variants, translation_unit_timeout)
+from scripts.objc3c_toolchain.analysis_checkpoint import ANALYSIS_SCHEMA, analysis_argv, tidy_diagnostics
+from scripts.objc3c_toolchain.implementation_analysis import checker_configuration, select_owner_variants
+from scripts.objc3c_toolchain.llvm_tools import identity
 from scripts.objc3c_toolchain.sanitizer_policy import require_clean_diagnostic
 from scripts.objc3c_assurance.evidence import junit, lit
 
@@ -29,7 +29,7 @@ def evidence_files(root: Path) -> list[Path]:
     if root.is_symlink() or any(path.is_symlink() for path in root.rglob('*')):
         raise ValueError('implementation assurance evidence contains a symlink')
     return sorted(path for path in root.rglob('*') if path.is_file() and
-                  path != root / 'result.json' and path.suffix in ('.json', '.log', '.xml', '.yaml'))
+                  path != root / 'result.json' and path.suffix in ('.json', '.log', '.xml', '.yaml', '.d'))
 
 
 def artifact(root: Path, path: Path) -> dict:
@@ -51,7 +51,7 @@ def analysis_results(root: Path) -> list[dict]:
     inventory_ids = [row.get('identity') for row in inventory]
     result_ids = [row.get('identity') for row in results]
     exclusions = receipt.get('exclusions', [])
-    if (receipt.get('schema') != 'objc3c.implementation-analysis.v1' or
+    if (receipt.get('schema') != ANALYSIS_SCHEMA or
             receipt.get('status') != 'PASS' or receipt.get('policy') != policy or
             receipt.get('subject') != 'native-and-maintained-clang-implementation' or
             not receipt.get('source_build_id') or not receipt.get('build_config_digest') or
@@ -76,7 +76,7 @@ def analysis_results(root: Path) -> list[dict]:
             controls['control-corrected'].get('expected_exit_code') != 0 or
             controls['control-defective'].get('exit_code') != 1 or
             controls['control-defective'].get('expected_exit_code') != 1 or
-            any(row.get('status') != 'PASS' or row.get('timed_out') or
+            any(row.get('status') != 'PASS' or row.get('timed_out') is not False or
                 row.get('exit_code') != row.get('expected_exit_code') for row in commands)):
         raise ValueError('implementation analysis inventory, controls or clean result is incomplete')
     verify_analysis_proof(root / 'analysis', receipt)
@@ -131,8 +131,18 @@ def verify_analysis_proof(root: Path, receipt: dict) -> None:
     for owner in ('frontend', 'standalone-runtime', 'maintained-clang'):
         rows = [row for row in receipt['inventory'] if row['owner'] == owner]
         headers = {row['output']: row['dependencies'] for row in rows}
-        scoped = owner_changes(repo, owner, changed)
-        selected = [] if scoped is None else selected_variants(rows, headers, scoped)
+        if changed and owner != 'maintained-clang':
+            for row in rows:
+                name = owner+'-fresh-headers-'+identity(row['output'])[:16]
+                dependency_file = str(original_root / (name+'.d'))
+                command = by_name.get(name)
+                if (row.get('dependency_scan') != name or
+                        row.get('dependency_origin') != 'fresh-original-compiler-preprocessing' or
+                        not command or command.get('cwd') != row['directory'] or
+                        command.get('argv', [])[-5:] != ['-M', '-MF', dependency_file, '-MT', 'implementation-analysis'] or
+                        command.get('outputs') != {dependency_file: digest(retained_path(root, original_root, dependency_file))}):
+                    raise ValueError('implementation variant lacks fresh compiler dependency evidence')
+        selected = select_owner_variants(repo, owner, rows, headers, changed)
         selected = partition_rows(selected, receipt.get('partition'), seconds=receipt['policy']['partition_seconds'])
         ids = {row['identity'] for row in selected}
         expected_ids.update(ids)
@@ -150,16 +160,13 @@ def verify_analysis_proof(root: Path, receipt: dict) -> None:
             receipt.get('fresh_native_executions') != len(expected_ids) or
             any(row.get('execution_reused') is not False for row in receipt['results'])):
         raise ValueError('implementation CI requires fresh native analysis actions')
+    if (any('analysis_timeout_seconds' in row for row in receipt['inventory']) or
+            any('timeout_seconds' in row for row in receipt['results'])):
+        raise ValueError('implementation evidence contains retired translation-unit deadlines')
     for row in receipt['inventory']:
         if not row['selected']:
             continue
         name = row['owner']+'-'+row['identity'][:16]
-        timeout = translation_unit_timeout(receipt['policy'], row,
-            repo / 'out/toolchains/objc3-development/src')
-        result = next(value for value in receipt['results'] if value['identity'] == row['identity'])
-        if (row.get('analysis_timeout_seconds') != timeout or
-                result.get('timeout_seconds') != timeout):
-            raise ValueError('implementation action differs from its reviewed resource bound')
         command = by_name.get(name)
         expected = analysis_argv(receipt['tool']['path'], original_root / name,
                                   row['file'], configuration, receipt['resource_directory'])
@@ -311,9 +318,8 @@ def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str) -> dict:
             for owner in ('frontend','standalone-runtime','maintained-clang'):
                 rows = [row for row in common if row['owner']==owner]
                 headers = {row['output']:row['dependencies'] for row in rows}
-                scoped = owner_changes(repo, owner, inner['changed_paths'])
-                if scoped is not None:
-                    variants.extend(row['identity'] for row in selected_variants(rows,headers,scoped))
+                variants.extend(row['identity'] for row in
+                                select_owner_variants(repo, owner, rows, headers, inner['changed_paths']))
     if (indices != set(range(count)) or len(signatures)!=1 or
             len(results)!=len(set(results)) or set(results)!=set(variants)):
         raise ValueError('implementation partitions do not cover the complete selected inventory once')
