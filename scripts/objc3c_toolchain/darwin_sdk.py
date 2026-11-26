@@ -596,6 +596,11 @@ def _qualify_installer_controls(archive, expected_sha256, output, manifest, host
             'archive_sha256': expected_sha256, 'observations': observations}
 
 
+def relocated_clang_arguments(prefix: Path, sdk_path: Path, resource: Path) -> list[str | Path]:
+    return [prefix / 'bin/clang', '--no-default-config', '--target=' + TARGET,
+            '-isysroot', sdk_path, '-resource-dir', resource, '-I', prefix / 'include']
+
+
 def qualify(archive: Path, expected_sha256: str, output: Path) -> dict:
     require_apple_silicon()
     output = output.resolve()
@@ -618,8 +623,7 @@ def qualify(archive: Path, expected_sha256: str, output: Path) -> dict:
 
         if native(clang, '--no-default-config', '--version').split('\n', 1)[0] != manifest['compiler_version']:
             raise ValueError('relocated compiler source/configuration identity changed')
-        defaults = [clang, '--no-default-config', '--target=' + TARGET, '-isysroot', host['sdk_path'],
-                    '-resource-dir', resource]
+        defaults = relocated_clang_arguments(prefix, Path(host['sdk_path']), resource)
         objc = [*defaults, '-fobjc-version=3', RUNTIME_FLAG, '-fno-objc-arc', '-fno-objc-exceptions', '-O2', '-gdwarf-4']
         link = [*defaults, '--ld-path=' + host['tools']['ld']['path']]
         driver = prefix / DRIVER
