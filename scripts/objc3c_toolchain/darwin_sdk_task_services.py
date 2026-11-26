@@ -59,7 +59,10 @@ def toolchain(host, commands):
     apple = Path(_run('/usr/bin/xcrun', '--sdk', 'macosx', '--find', 'clang++', commands=commands)).resolve(strict=True)
     if not apple.is_relative_to(Path(host['developer_dir'])):
         raise ValueError('Darwin task services require the admitted Xcode C++ compiler')
-    return [apple, '--no-default-config', '--target=' + TARGET, '-isysroot', host['sdk_path']]
+    # Xcode's clang++ can resolve to clang. Object-only links still need the
+    # C++ driver to add the runtime used by the task-service archive.
+    return [apple, '--driver-mode=g++', '--no-default-config', '--target=' + TARGET,
+            '-isysroot', host['sdk_path']]
 
 
 def stage_payload(prefix, host, commands):

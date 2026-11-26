@@ -87,6 +87,31 @@ def test_relocated_compiler_finds_the_public_registration_header(tmp_path, entry
     assert public_header.resolve() in dependencies(depfile, consumer)
 
 
+def test_task_service_object_link_retains_cxx_driver_mode_after_resolving_symlink(tmp_path, monkeypatch):
+    clang = shutil.which('clang')
+    if clang is None:
+        pytest.skip('requires stock Clang')
+    developer = tmp_path / 'Xcode Developer'
+    apple = developer / 'bin/clang'
+    apple.parent.mkdir(parents=True)
+    apple.touch()
+    cxx = apple.with_name('clang++')
+    cxx.symlink_to(apple.name)
+    monkeypatch.setattr(sdk, '_run', lambda *args, **kwargs: str(cxx))
+    host = {'developer_dir': str(developer), 'sdk_path': str(tmp_path)}
+    resolved, *args = sdk.task_services.toolchain(host, [])
+    assert resolved == apple
+
+    obj = tmp_path / 'client.o'
+    library = tmp_path / 'libobjc3darwin_tasks.a'
+    obj.touch()
+    library.touch()
+    result = subprocess.run([clang, *args, '-###', obj, library, '-o', tmp_path / 'client'],
+                            capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert '"-lc++"' in result.stderr, result.stderr
+
+
 @pytest.fixture
 def structural_host(monkeypatch):
     host = {'xcode': sdk.XCODE, 'sdk_version': sdk.SDK_VERSION, 'sdk_settings_sha256': '1' * 64,
