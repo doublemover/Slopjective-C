@@ -23,7 +23,7 @@ from .darwin_registration import (
     file_digest, load_profile, verify_fixed_layout_dwarf, verify_int_method_ir,
 )
 from .darwin_sdk import (
-    API_HEADER, ARCHIVE_NAME, ARCHIVE_ROOT, DEMO, LIBRARY, PAYLOAD_SCHEMA, PROFILE, RECEIPT_SCHEMA, SDK_VERSION,
+    API_HEADER, ARCHIVE_NAME, ARCHIVE_ROOT, DEMO, DRIVER, LIBRARY, PAYLOAD_SCHEMA, PROFILE, RECEIPT_SCHEMA, SDK_VERSION,
     SYSTEM, WITNESS, XCODE,
 )
 from .package import MANIFEST, _digest
@@ -541,11 +541,17 @@ def package(root: Path, runtime: dict, revision: str, *, require_sanitizers: boo
             manifest['compiler_build'] != {key: compiler[key] for key in
                                            ('base_build_id', 'patch_digest', 'configuration_sha256')} or
             payload['bin/clang']['sha256'] != compiler['artifact']['sha256'] or
+            payload.get(DRIVER, {}).get('sha256') != file_digest(Path(__file__).with_name('darwin_sdk_driver.py')) or
             payload[API_HEADER]['sha256'] != runtime['runtime_header_sha256'] or
             any(payload['lib/' + name]['sha256'] != runtime['artifacts'][key]['sha256']
                 for name, key in (('libobjc3darwin.a', 'libobjc3darwin.a'),
                                   ('libobjc3darwin.dylib', 'lib/libobjc3darwin.dylib')))):
         raise ValueError('Darwin SDK seal does not represent the executed compiler and runtime')
+    driver = str(Path(installed['prefix']) / DRIVER)
+    if not any(row['argv'] == [driver, '--version'] and row['exit_status'] == 0 and
+               row['stdout'].splitlines()[:1] == [manifest['compiler_version']]
+               for row in qualified['commands']):
+        raise ValueError('Darwin SDK omitted execution of its installed objc3c driver')
     installed_arc(path, manifest, qualified)
     installed_services(path, manifest, runtime, packed, qualified)
     sanitizer_consumers(path, manifest, packed, qualified, selected=require_sanitizers)

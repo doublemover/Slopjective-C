@@ -28,6 +28,7 @@ on:
       - "scripts/objc3c_toolchain/darwin_registration.py"
       - "scripts/objc3c_toolchain/darwin_sdk.py"
       - "scripts/objc3c_toolchain/darwin_sdk_arc.py"
+      - "scripts/objc3c_toolchain/darwin_sdk_driver.py"
       - "scripts/objc3c_toolchain/darwin_sdk_portable_services.py"
       - "scripts/objc3c_toolchain/darwin_sdk_replay.py"
       - "scripts/objc3c_toolchain/darwin_sdk_sanitizers.py"
@@ -274,6 +275,7 @@ jobs:
           python3 -B -m scripts.objc3c_toolchain darwin install \
             --archive "$package/objc3-darwin-sdk.tar.gz" --archive-sha256 "$archive_sha" \
             --prefix "$sdk" | tee "$evidence/install.json"
+          test -x "$sdk/bin/objc3c"
           printf 'XSCOMIC_OBJC3_SDK=%s\n' "$sdk" >> "$GITHUB_ENV"
       - name: Compile and run the Objective-C 3 core suite
         shell: bash

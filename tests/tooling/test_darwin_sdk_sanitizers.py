@@ -64,12 +64,13 @@ def test_registration_requires_explicit_sdk_package_selection(tmp_path):
 
 
 def test_base_package_inventory_requires_opt_in_and_the_live_witness():
-    host = {'xcode': sdk.XCODE, 'sdk_version': sdk.SDK_VERSION, 'tools': {}}
+    host = {'xcode': sdk.XCODE, 'sdk_version': sdk.SDK_VERSION, 'sdk_settings_sha256': '1' * 64,
+            'libcxx': {'config_relative': 'config', 'config_sha256': '2' * 64, 'stub_sha256': '3' * 64}, 'tools': {}}
     data = manifest()
     data.update(payload_schema=sdk.PAYLOAD_SCHEMA, profile=sdk.PROFILE, target=sdk.TARGET,
                 runtime_abi=sdk.RUNTIME_ABI, compiler_runtime_flag=sdk.RUNTIME_FLAG, support_truth=False,
                 host_requirements=sdk._host_requirements(host), resource_dir=RESOURCE)
-    for path in ('bin/clang', 'bin/llvm-ar', 'bin/llvm-dwarfdump', f'lib/{sdk.LIBRARY}.a', sdk.API_HEADER,
+    for path in (sdk.DRIVER, 'bin/clang', 'bin/llvm-ar', 'bin/llvm-dwarfdump', f'lib/{sdk.LIBRARY}.a', sdk.API_HEADER,
                  f'lib/{sdk.LIBRARY}.dylib', RESOURCE + '/include/stddef.h',
                  RESOURCE + '/lib/darwin/libclang_rt.osx.a', 'share/licenses/slopjective-c/LICENSE',
                  *(sdk.DEMO + '/' + name for name in sdk.DEMO_FILES),

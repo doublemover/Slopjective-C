@@ -75,7 +75,8 @@ def test_relocated_compiler_finds_the_public_registration_header(tmp_path):
 
 @pytest.fixture
 def structural_host(monkeypatch):
-    host = {'xcode': sdk.XCODE, 'sdk_version': sdk.SDK_VERSION, 'tools': {
+    host = {'xcode': sdk.XCODE, 'sdk_version': sdk.SDK_VERSION, 'sdk_settings_sha256': '1' * 64,
+            'libcxx': {'config_relative': 'config', 'config_sha256': '2' * 64, 'stub_sha256': '3' * 64}, 'tools': {
         name: {'path': '/Xcode/bin/' + name, 'sha256': '0' * 64}
         for name in ('ld', 'lipo', 'otool', 'dsymutil')}}
     monkeypatch.setattr(sdk, '_host', lambda commands=None: host)
@@ -96,6 +97,7 @@ def structural_host(monkeypatch):
 def staged_product(path, host, *, wrong_arch=False, wrong_sdk=False, extra=None):
     for name in ('clang', 'llvm-ar', 'llvm-dwarfdump'):
         put(path, 'bin/' + name, macho(2, cpu=0x01000007 if wrong_arch else 0x0100000c), True)
+    put(path, sdk.DRIVER, Path(sdk.installed_driver.__file__).read_bytes(), True)
     put(path, 'lib/libobjc3darwin.a', thin_archive('runtime.o', macho(1)))
     put(path, 'lib/libobjc3darwin.dylib', macho(6))
     put(path, 'lib/clang/23/include/stddef.h', b'/* checked resource */\n')
@@ -129,6 +131,12 @@ def test_archive_replays_in_a_fresh_relocated_prefix(tmp_path, structural_host):
     assert receipt['seal_sha256'] == manifest['seal_sha256']
     assert (prefix / 'bin/clang').read_bytes() == macho(2)
     assert not (prefix / 'bin/clang').is_symlink()
+    driver = prefix / sdk.DRIVER
+    assert driver.stat().st_mode & 0o111
+    assert _file_hash(driver) == manifest['files'][sdk.DRIVER]['sha256']
+    args = sdk.installed_driver.driver_command(prefix, manifest, Path('/Apple SDK'), Path('/Xcode/bin/ld'),
+                                               ['unit.o', '-o', 'app'], 'dynamic')
+    assert args[-5:] == [str(prefix / 'lib/libobjc3darwin.dylib'), '-Xlinker', '-rpath', '-Xlinker', str(prefix / 'lib')]
     with pytest.raises(ValueError, match='fresh prefix'):
         sdk.install(archive, _file_hash(archive), prefix)
 

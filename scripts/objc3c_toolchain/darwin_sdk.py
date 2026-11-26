@@ -22,8 +22,10 @@ from .darwin_registration import (
     BLOCK_SOURCES, BLOCK_WITNESS, CARRIER_DISPATCH_SOURCES, CARRIER_DISPATCH_WITNESS,
     MANAGED_LAYOUT_SOURCES, MANAGED_LAYOUT_WITNESS,
     RUNTIME_HEADER, TYPED_ERROR_SOURCES, TYPED_ERROR_WITNESS, TYPED_METHOD_SOURCES, TYPED_METHOD_WITNESS,
+    xcode_cxx_headers,
 )
 from . import darwin_sdk_arc as arc_consumer
+from . import darwin_sdk_driver as installed_driver
 from . import darwin_sdk_portable_services as portable_services
 from . import darwin_sdk_sanitizers as sanitizers
 from .package import MANIFEST, SCHEMA, _digest, _file_hash, inventory, normalize_permissions, verify_sdk
@@ -32,12 +34,13 @@ PROFILE = 'macos-arm64-registration-experimental'
 TARGET = 'arm64-apple-macos' + DEPLOYMENT_TARGET
 RUNTIME_FLAG = '-fobjc-runtime=gnustep-2.99'
 RUNTIME_ABI = 'objc3-darwin-registration-v1'
-PAYLOAD_SCHEMA = 'objc3c.experimental-darwin-sdk-payload.v1'
+PAYLOAD_SCHEMA = 'objc3c.experimental-darwin-sdk-payload.v2'
 RECEIPT_SCHEMA = 'objc3c.experimental-darwin-sdk-package.v1'
 ARCHIVE_ROOT = 'objc3-darwin-sdk'
 ARCHIVE_NAME = ARCHIVE_ROOT + '.tar.gz'
 XCODE = 'Xcode 16.4\nBuild version 16F6'
 SDK_VERSION = '15.5'
+DRIVER = 'bin/objc3c'
 LIBRARY = 'libobjc3darwin'
 SYSTEM = '/usr/lib/libSystem.B.dylib'
 DEMO = 'share/objc3c/examples/registration'
@@ -58,7 +61,7 @@ def _environment():
     return env
 
 
-def _run(*args, cwd=None, commands=None, rejects=(), trace_libraries=False):
+def _run(*args, cwd=None, commands=None, rejects=(), trace_libraries=False, includes_stderr=False):
     argv = list(map(str, args))
     environment = _environment()
     if trace_libraries:
@@ -74,7 +77,7 @@ def _run(*args, cwd=None, commands=None, rejects=(), trace_libraries=False):
         raise ValueError(f'{argv[0]} did not issue the expected rejection: {result.stderr.strip()}')
     if not rejects and result.returncode:
         raise ValueError(f'{argv[0]} exited {result.returncode}: {result.stderr.strip() or result.stdout.strip()}')
-    return result.stdout.strip()
+    return (result.stdout + (result.stderr if includes_stderr else '')).strip()
 
 
 def _host(commands=None):
@@ -103,12 +106,22 @@ def _host(commands=None):
     for name, tool in tools.items():
         if not {'arm64', 'arm64e'}.intersection(apple(lipo, '-archs', tool['path']).split()):
             raise ValueError(f'Xcode {name} is missing native arm64 support')
+    clang = Path(apple('/usr/bin/xcrun', '--sdk', 'macosx', '--find', 'clang++')).resolve(strict=True)
+    if not clang.is_relative_to(developer):
+        raise ValueError('Apple Clang++ is outside the selected Xcode tree')
+    search = _run(clang, '--target=' + TARGET, '-isysroot', sdk, '-stdlib=libc++', '-E', '-v',
+                  '-x', 'c++', '/dev/null', '-o', '/dev/null', commands=commands, includes_stderr=True)
+    config = xcode_cxx_headers(search, developer) / '__config'
     return {'os': 'macOS', 'arch': 'arm64', 'version': macos, 'xcode': xcode,
-            'sdk_version': sdk_version, 'sdk_path': str(sdk), 'developer_dir': str(developer), 'tools': tools}
+            'sdk_version': sdk_version, 'sdk_path': str(sdk), 'developer_dir': str(developer), 'tools': tools,
+            'sdk_settings_sha256': _file_hash(sdk / 'SDKSettings.json'),
+            'libcxx': {'config_relative': config.relative_to(developer).as_posix(),
+                       'config_sha256': _file_hash(config), 'stub_sha256': _file_hash(sdk / 'usr/lib/libc++.tbd')}}
 
 
 def _host_requirements(host):
     return {'xcode': host['xcode'], 'sdk_version': host['sdk_version'], 'deployment_target': DEPLOYMENT_TARGET,
+            'row': 'xcode-16.4-sdk-15.5', 'sdk_settings_sha256': host['sdk_settings_sha256'], 'libcxx': host['libcxx'],
             'tools': {name: tool['sha256'] for name, tool in host['tools'].items()}}
 
 
@@ -228,7 +241,7 @@ def _validate_manifest(data, host):
     resource = data.get('resource_dir')
     if not isinstance(resource, str) or not re.fullmatch(r'lib/clang/[1-9][0-9]*', resource):
         raise ValueError('the package has an invalid Clang resource path')
-    required = {'bin/clang', 'bin/llvm-ar', 'bin/llvm-dwarfdump', f'lib/{LIBRARY}.a', f'lib/{LIBRARY}.dylib', API_HEADER,
+    required = {DRIVER, 'bin/clang', 'bin/llvm-ar', 'bin/llvm-dwarfdump', f'lib/{LIBRARY}.a', f'lib/{LIBRARY}.dylib', API_HEADER,
                 resource + '/include/stddef.h', resource + '/lib/darwin/libclang_rt.osx.a',
                 *(DEMO + '/' + name for name in DEMO_FILES), 'share/licenses/slopjective-c/LICENSE',
                 *(f'share/licenses/{name}/LICENSE.TXT' for name in ('llvm', 'clang', 'compiler-rt'))}
@@ -243,6 +256,8 @@ def _validate_manifest(data, host):
 def _validate_product(prefix, data, host, commands=None):
     resource = _validate_manifest(data, host)
     otool = host['tools']['otool']['path']
+    if not os.access(prefix / DRIVER, os.X_OK):
+        raise ValueError('installed Objective-C 3 driver must be executable')
     for tool in ('clang', 'llvm-ar', 'llvm-dwarfdump'):
         binary = prefix / 'bin' / tool
         if not os.access(binary, os.X_OK):
@@ -326,6 +341,8 @@ def package_registration(clang: Path, llvm_source: Path, bootstrap_report: Path,
     output.mkdir(parents=True)
     with tempfile.TemporaryDirectory(prefix='.stage-', dir=output) as directory:
         prefix = Path(directory) / ARCHIVE_ROOT
+        _copied_file(Path(installed_driver.__file__), prefix / DRIVER)
+        (prefix / DRIVER).chmod(0o755)
         _copied_file(compiler, prefix / 'bin/clang')
         _checked_file(prefix / 'bin/clang', producer['artifact']['sha256'])
         for name in ('llvm-ar', 'llvm-dwarfdump'):
@@ -372,6 +389,9 @@ def package_registration(clang: Path, llvm_source: Path, bootstrap_report: Path,
                 'host_requirements': _host_requirements(host), 'resource_dir': resource_dir,
                 'files': inventory(prefix), portable_services.KEY: portable_payload}
         if cxx := registration.get('cxx_toolchain'):
+            if (cxx['header_config_sha256'] != host['libcxx']['config_sha256'] or
+                    cxx['library_stub_sha256'] != host['libcxx']['stub_sha256']):
+                raise ValueError('Darwin package and compiler build selected different libc++ inputs')
             data['compiler_host_libcxx'] = {key: cxx[key] for key in
                                           ('header_config_sha256', 'library_stub_sha256', 'reported_version')}
         if sanitizer_payload is not None:
@@ -591,8 +611,12 @@ def qualify(archive: Path, expected_sha256: str, output: Path) -> dict:
         defaults = relocated_clang_arguments(prefix, Path(host['sdk_path']), resource)
         objc = [*defaults, '-fobjc-version=3', RUNTIME_FLAG, '-fno-objc-arc', '-fno-objc-exceptions', '-O2', '-gdwarf-4']
         link = [*defaults, '--ld-path=' + host['tools']['ld']['path']]
+        driver = prefix / DRIVER
+        if native(driver, '--version').split('\n', 1)[0] != manifest['compiler_version']:
+            raise ValueError('installed objc3c driver selected a different compiler')
         for name in ('provider', 'main', 'late'):
-            native(*objc, '-c', prefix / DEMO / (name + '.m'), '-o', name + '.o')
+            native(driver, '-fno-objc-arc', '-fno-objc-exceptions', '-O2', '-gdwarf-4',
+                   '-c', prefix / DEMO / (name + '.m'), '-o', name + '.o')
         native(*objc, '-fobjc-arc', '-fobjc-exceptions', '-c', prefix / DEMO / 'provider.m', '-o', 'arc.o',
                rejects=('experimental Darwin ARC', '-fobjc-exceptions'))
         native(*objc, '--target=x86_64-apple-macos15.0', '-c', prefix / DEMO / 'provider.m', '-o', 'x86.o',
