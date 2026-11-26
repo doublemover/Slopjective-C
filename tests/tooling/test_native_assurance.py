@@ -907,7 +907,7 @@ def test_orchestration_edits_select_every_affected_native_owner(path):
     assert {row['id'] for row in select([path], **REV)['suites']} == full
 
 
-def test_sharded_published_bundle_retains_exact_native_evidence(tmp_path):
+def test_sharded_published_bundle_retains_exact_native_evidence(tmp_path, monkeypatch):
     from scripts.objc3c_assurance.plan import foundation_receipts, selected_suites
     producer = tmp_path / 'producer';producer.mkdir()
     plan, receipt = passing_bundle(producer)
@@ -925,9 +925,14 @@ def test_sharded_published_bundle_retains_exact_native_evidence(tmp_path):
     assert not (destination / 'frontend/build').exists()
     assert not (destination / 'unselected').exists()
     assert (destination / 'result.json').read_bytes() == (producer / 'result.json').read_bytes()
+    sizes = [sum(row['bytes'] for row in suite['artifacts']) for suite in receipt['suites']]
+    sizes.append(receipt['operational_costs']['bytes'])
+    assert sum(sizes) > max(sizes)
+    monkeypatch.setattr(evidence, 'MAX_BYTES', max(sizes))
     result = evidence.aggregate_shards(plan, destination.parent,
         outcomes={'plan': 'success', 'native': 'success'}, tested=REV['tested'])
     assert result['status'] == 'PASS' and result['shards'] == ['core']
+    assert result['artifact_bytes'] == sum(sizes)
     assert set(result['suites']) == {row['id'] for row in plan['suites']}
     assert foundation_receipts(destination, selected_suites(plan, 'core')) == [
         destination / 'foundation/foundation.json']
@@ -1139,12 +1144,6 @@ def test_release_partial_staging_excludes_builds_and_linked_blob_aliases(tmp_pat
     assert sum(path.stat().st_size for path in destination.rglob('*.zst')) == len(b'exact replay bytes')
 
 
-def test_sanitizer_replay_has_a_separate_bounded_evidence_allowance():
-    assert evidence.evidence_budget(['frontend']) == 256 * 1024**2
-    assert evidence.evidence_budget(['source-coverage']) == 256 * 1024**2
-    assert evidence.evidence_budget(['sanitizer-products']) == 256 * 1024**2 + 3 * 1024**3
-
-
 def test_debugger_parser_header_matches_the_locked_production_patch_without_checkout(tmp_path):
     from scripts.objc3c_toolchain.debugger_test_header import HEADER, materialize
     repo = Path(__file__).resolve().parents[2]
@@ -1165,12 +1164,14 @@ def test_debugger_parser_header_matches_the_locked_production_patch_without_chec
 def test_replay_budget_does_not_expand_other_suite_limits():
     ordinary = {'id': 'frontend', 'artifacts': [{'bytes': evidence.MAX_BYTES + 1}]}
     replay = {'id': 'sanitizer-products', 'artifacts': [{'bytes': 2 * 1024**3}]}
-    evidence.validate_evidence_sizes([replay])
-    with pytest.raises(ValueError, match='suite artifact budget'):
+    assert evidence.validate_evidence_sizes([replay]) == 2 * 1024**3
+    with pytest.raises(ValueError, match='suite artifact budget for frontend'):
         evidence.validate_evidence_sizes([ordinary, replay])
     replay['artifacts'][0]['bytes'] = evidence.SANITIZER_PRODUCT_BYTES + 1
-    with pytest.raises(ValueError, match='suite artifact budget'):
+    with pytest.raises(ValueError, match='suite artifact budget for sanitizer-products'):
         evidence.validate_evidence_sizes([replay])
+    with pytest.raises(ValueError, match='operational evidence exceeds its artifact budget'):
+        evidence.validate_evidence_sizes([], evidence.MAX_BYTES + 1)
 
 
 @pytest.mark.parametrize('failure', [None, 'command', 'inventory', 'no-pass'])
