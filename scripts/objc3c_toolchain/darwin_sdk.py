@@ -627,6 +627,8 @@ def qualify(archive: Path, expected_sha256: str, output: Path) -> dict:
         objc = [*defaults, '-fobjc-version=3', RUNTIME_FLAG, '-fno-objc-arc', '-fno-objc-exceptions', '-O2', '-gdwarf-4']
         link = [*defaults, '--ld-path=' + host['tools']['ld']['path']]
         driver = prefix / DRIVER
+        if native(driver, '--version').split('\n', 1)[0] != manifest['compiler_version']:
+            raise ValueError('installed objc3c driver selected a different compiler')
         for name in ('provider', 'main', 'late', 'late_parent'):
             native(driver, '-fno-objc-arc', '-fno-objc-exceptions', '-O2', '-gdwarf-4',
                    '-c', prefix / DEMO / (name + '.m'), '-o', name + '.o')

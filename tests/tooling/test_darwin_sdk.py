@@ -145,6 +145,12 @@ def test_archive_replays_in_a_fresh_relocated_prefix(tmp_path, structural_host):
     assert receipt['seal_sha256'] == manifest['seal_sha256']
     assert (prefix / 'bin/clang').read_bytes() == macho(2)
     assert not (prefix / 'bin/clang').is_symlink()
+    driver = prefix / sdk.DRIVER
+    assert driver.stat().st_mode & 0o111
+    assert _file_hash(driver) == manifest['files'][sdk.DRIVER]['sha256']
+    args = sdk.installed_driver.driver_command(prefix, manifest, Path('/Apple SDK'), Path('/Xcode/bin/ld'),
+                                               ['unit.o', '-o', 'app'], 'dynamic')
+    assert args[-5:] == [str(prefix / 'lib/libobjc3darwin.dylib'), '-Xlinker', '-rpath', '-Xlinker', str(prefix / 'lib')]
     with pytest.raises(ValueError, match='fresh prefix'):
         sdk.install(archive, _file_hash(archive), prefix)
 
