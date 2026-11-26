@@ -98,6 +98,7 @@ jobs:
           tests/tooling/test_darwin_sdk_portable_services.py
           tests/tooling/test_darwin_sdk_sanitizers.py
           tests/tooling/test_linux_archive_debugger_gate.py
+          tests/tooling/test_linux_capability_queries.py
           tests/tooling/test_stage_linux_release.py
           tests/tooling/test_workspace_cleanup.py
           tests/tooling/test_linux_sdk_reuse.py
