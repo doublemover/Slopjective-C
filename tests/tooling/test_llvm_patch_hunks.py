@@ -3,6 +3,10 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import pytest
+
+from scripts.objc3c_toolchain.check_llvm_patch_application import check_diagnostic_references
+
 
 ROOT = Path(__file__).resolve().parents[2]
 HUNK = re.compile(
@@ -50,3 +54,18 @@ def test_locked_llvm_patch_hunk_counts_are_exact() -> None:
                 f"-{actual_old}/+{actual_new}"
             )
             index = cursor
+
+
+def test_clang_diagnostic_check_rejects_missing_ids_with_patch_location(tmp_path):
+    tables = tmp_path / 'Basic'
+    tables.mkdir()
+    (tables / 'DiagnosticParseKinds.td').write_text('def err_expected : Error<"expected %0">;\n')
+    patch = tmp_path / 'parser.patch'
+    patch.write_text('+++ b/clang/lib/Parse/ParseObjc.cpp\n'
+                     '+    Diag(Tok, diag::err_expected_ident);\n')
+    with pytest.raises(ValueError, match=r'parser\.patch:2: .*uses undefined clang::diag::err_expected_ident'):
+        check_diagnostic_references([patch], tables)
+
+    patch.write_text('+++ b/clang/lib/Parse/ParseObjc.cpp\n'
+                     '+    Diag(Tok, diag::err_expected) << tok::identifier;\n')
+    assert check_diagnostic_references([patch], tables) == 1

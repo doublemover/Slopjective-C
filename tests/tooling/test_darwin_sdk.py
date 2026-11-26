@@ -3,6 +3,7 @@ import io
 import json
 from pathlib import Path
 import platform
+import shutil
 import struct
 import subprocess
 import sys
@@ -45,6 +46,27 @@ def put(prefix, relative, data, executable=False):
 def thin_archive(name, data):
     extended = (name.encode() + b'\0').ljust(16, b'\0')
     return b'!<arch>\n' + ar_member('__.SYMDEF', b'') + ar_member(f'#1/{len(extended)}', extended + data)
+
+
+def test_relocated_compiler_finds_the_public_registration_header(tmp_path):
+    clang = shutil.which('clang')
+    if clang is None:
+        pytest.skip('requires stock Clang')
+    resource = Path(subprocess.check_output([clang, '-print-resource-dir'], text=True).strip())
+    prefix = tmp_path / 'Relocated Objective-C 3 SDK'
+    public_header = prefix / sdk.API_HEADER
+    public_header.parent.mkdir(parents=True)
+    shutil.copyfile(darwin_registration.RUNTIME_HEADER, public_header)
+    consumer = tmp_path / 'Fresh consumer'
+    consumer.mkdir()
+    source = consumer / 'main.m'
+    (consumer / 'api.h').write_bytes((darwin_registration.FIXTURES / 'api.h').read_bytes())
+    source.write_text('#include "api.h"\n'
+                      'const objc3_darwin_class *lookup(void) { return objc3_darwin_class_v1("Probe"); }\n')
+    _, *args = sdk.relocated_clang_arguments(prefix, tmp_path, resource)
+    result = subprocess.run([clang, *args, '-ffreestanding', '-nostdlibinc',
+                             '-fsyntax-only', '-Werror', source], cwd=consumer, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
 
 
 @pytest.fixture

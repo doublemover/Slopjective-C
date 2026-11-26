@@ -20,6 +20,16 @@ Include all changed native source, headers and tests in the export. Commit the
 maintained patches and manifest with the frontend/runtime integration and
 fixtures. Do not commit the nested LLVM checkout or add a parallel draft tree.
 
+Run these before building Clang. The diagnostic check downloads only the pinned
+diagnostic tables and validates references in the Linux and Darwin patches.
+The header checks use stock `clang` on `PATH` and a relocated SDK layout.
+
+```sh
+uv run python -m scripts.objc3c_toolchain.check_llvm_patch_application --diagnostics-only
+uv run pytest -q tests/tooling/test_darwin_registration.py tests/tooling/test_darwin_sdk.py \
+  -k 'declared or relocated_compiler'
+```
+
 Inspect the Linux build plan before a substantial compiler build:
 
 ```sh

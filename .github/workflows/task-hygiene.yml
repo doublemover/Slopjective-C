@@ -30,9 +30,10 @@ jobs:
           BASE_REVISION: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
           if git cat-file -e "$BASE_REVISION^{commit}" 2>/dev/null &&
-            git diff --quiet "$BASE_REVISION" HEAD -- toolchains/llvm/manifest.json toolchains/llvm/patches scripts/objc3c_toolchain/check_llvm_patch_application.py; then
+            git diff --quiet "$BASE_REVISION" HEAD -- toolchains/llvm/manifest.json toolchains/llvm/patches toolchains/llvm/experimental scripts/objc3c_toolchain/check_llvm_patch_application.py; then
             exit 0
           fi
+          uv run python -m scripts.objc3c_toolchain.check_llvm_patch_application --diagnostics-only
           uv run python -m scripts.objc3c_toolchain.check_llvm_patch_application
       - name: Python syntax and undefined names
         run: uv run ruff check --select F821 scripts tests/tooling
