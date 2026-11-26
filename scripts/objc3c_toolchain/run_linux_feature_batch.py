@@ -195,14 +195,15 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
     try:
         if policy:
             products = ProductCommands(output / 'product-evidence',
-                sources=(fixtures, headers, include_root, Path(__file__)))
+                sources=(fixtures, headers, include_root, Path(__file__)), checkpoint_commands=False)
         selected = [case for case in configurations(features, transports) if case.optimization in optimizations]
         if not selected:
             raise ValueError('feature execution selected no supported configurations')
+        if policy:
+            for optimization in dict.fromkeys(case.optimization for case in selected):
+                policy.ensure_controls(optimization)
+            report["sanitizer_policy"] = policy.receipt()
         for case in selected:
-            if policy:
-                policy.ensure_controls(case.optimization)
-                report["sanitizer_policy"] = policy.receipt()
             with tempfile.TemporaryDirectory(prefix="objc3-feature-") as temporary:
                 work = Path(temporary)
                 (work / "include/objc3c").mkdir(parents=True)
@@ -382,6 +383,8 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                         returns = compile_source(case, work / "return_failures.m", work)
                         execute(case, [returns], work, "-return-cleanup")
                 report["cases"].append({"name": case.name, "status": "pass"})
+            if products:
+                products.save()
             write_json(report_path, report, compact=True)
         if policy:
             report['product_evidence'] = products.finalize()

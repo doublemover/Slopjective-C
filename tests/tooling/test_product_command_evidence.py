@@ -5,6 +5,7 @@ import os
 import shutil
 import subprocess
 import sys
+from types import SimpleNamespace
 
 import pytest
 
@@ -58,6 +59,23 @@ def test_retained_input_budget_and_fresh_output_are_explicit(tmp_path):
         ProductCommands(tmp_path / 'bounded', sources=(source,), budget=10)
     with pytest.raises(FileExistsError):
         ProductCommands(tmp_path / 'bounded')
+
+
+def test_batched_checkpoints_preserve_completed_and_failed_commands(tmp_path, monkeypatch):
+    products = ProductCommands(tmp_path / 'evidence', checkpoint_commands=False)
+    monkeypatch.setattr(products, 'policy', lambda gate: 'fixture-policy')
+    gate = SimpleNamespace(environment={'PATH': os.defpath})
+    products.run(gate, 'first', [sys.executable, '-c', 'pass'], cwd=tmp_path, phase='inspect')
+    assert json.loads(products.receipt.read_text())['commands'] == []
+    products.save()
+    assert [row['status'] for row in json.loads(products.receipt.read_text())['commands']] == ['PASS']
+    products.run(gate, 'second', [sys.executable, '-c', 'pass'], cwd=tmp_path, phase='inspect')
+    with pytest.raises(ValueError, match='product command failed'):
+        products.run(gate, 'third', [sys.executable, '-c', 'raise SystemExit(1)'],
+                     cwd=tmp_path, phase='inspect')
+    failure = json.loads(products.receipt.read_text())
+    assert failure['status'] == 'FAIL'
+    assert [row['status'] for row in failure['commands']] == ['PASS', 'PASS', 'FAIL']
 
 
 @pytest.fixture

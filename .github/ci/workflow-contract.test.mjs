@@ -104,21 +104,25 @@ test("native PR gate verifies the exact merge and retains failure evidence", () 
       workflow.jobs["native-pr"]["continue-on-error"] = true;
     },
     (workflow) => {
-      workflow.jobs["native-pr-execution"].steps.find((step) => step.id === "run").if = "false";
+      workflow.jobs["native-pr"].steps.find((step) => step.id === "run").if = "false";
     },
     (workflow) => {
-      workflow.jobs["native-pr-execution"].steps.at(-1).with.name = "latest";
+      workflow.jobs["native-pr"].steps.find((step) => step.uses?.startsWith("actions/upload-artifact@"))
+        .with.name = "latest";
     },
     (workflow) => {
-      workflow.jobs["native-pr-execution"].steps.push({ uses: "actions/cache/save@" + "a".repeat(40) });
+      workflow.jobs["native-pr"].steps.push({ uses: "actions/cache/save@" + "a".repeat(40) });
     },
     (workflow) => {
-      workflow.jobs["native-pr-execution"].steps.find((step) => step.id === "preview-manifest").run =
+      workflow.jobs["native-pr"].steps.find((step) => step.id === "preview-manifest").run =
         "cp docs/releases/preview-manifest.json /tmp/manifest.json";
     },
-    (workflow) => { delete workflow.jobs["native-pr"].if; },
-    (workflow) => { delete workflow.jobs["native-pr"].needs; },
-    (workflow) => { workflow.jobs["native-pr"].steps.splice(2, 1); },
+    (workflow) => { workflow.jobs["native-pr"].if = "always()"; },
+    (workflow) => { workflow.jobs["native-pr"].needs = "another-runner"; },
+    (workflow) => {
+      const steps = workflow.jobs["native-pr"].steps;
+      steps.splice(steps.findIndex((step) => step.uses?.startsWith("actions/download-artifact@")), 1);
+    },
     (workflow) => { workflow.jobs["native-pr"].steps.at(-1).if = "false"; },
   ]) {
     const workflow = yaml.load(nativePR);
@@ -498,7 +502,7 @@ for (const [fault, alter] of [
 for (const [name, workflowBefore, workflowAfter, releaseBefore, releaseAfter] of [
   ["cancelled cold build", "  cancel-in-progress: false", "  cancel-in-progress: true"],
   ["missing aggregate", "  gate:", "  renamed:"],
-  ["conditional aggregate", "    if: always()\n    needs:", "    if: success()\n    needs:"],
+  ["conditional aggregate", "    if: \"!cancelled()\"\n    needs:", "    if: success()\n    needs:"],
   ["automatic expensive PR", "on:\n", "on:\n  pull_request:\n"],
   [
     "missing release source",
@@ -534,6 +538,13 @@ test("native containers admit TSan personality and debugger process controls", a
     }
   }
 });
+test("full native producers can start before the canonical plan artifact", () => {
+  for (const name of ["product-producer", "asan-foundation-producer", "independent-native", "coverage-producer"]) {
+    const owner = yaml.load(native);
+    owner.jobs[name].needs = "plan";
+    assert.throws(() => validateNativeGate(yaml.dump(owner)), /Independent Linux producers/);
+  }
+});
 test("native workflow rejects a missing terminal dependency", () => {
   const owner = yaml.load(native);
   owner.jobs.gate.needs = owner.jobs.gate.needs.filter((id) => id !== "product-producer");
@@ -554,7 +565,7 @@ for (const [name, before, after] of [
   ["missing aggregate", "  gate:", "  renamed:"],
   [
     "conditional aggregate",
-    "    if: always() && !inputs.diagnostic_core_only\n    needs:",
+    "    if: \"!cancelled() && !inputs.diagnostic_core_only\"\n    needs:",
     "    if: success()\n    needs:",
   ],
   ["automatic expensive PR", "on:\n", "on:\n  pull_request:\n"],
