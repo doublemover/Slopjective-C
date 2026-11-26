@@ -1,106 +1,90 @@
-name: Darwin arm64 bootstrap probe
+name: Native xsComic verification with retained SDKs
 on:
   workflow_dispatch:
-    inputs:
-      runtime_registration:
-        description: Build and exercise the experimental Objective-C 3 runtime
-        type: boolean
-        default: false
-      runtime_sanitizers:
-        description: Include native installed ASan and UBSan consumer witnesses
-        type: boolean
-        default: false
-      candidate:
-        description: Optional immutable package pin for managed SDK lifecycle replay
-        required: false
-        type: string
-      replacement:
-        description: Optional second package pin for the managed hard-cutover replay
-        required: false
-        type: string
-  pull_request:
-    paths:
-      - ".github/workflows/darwin-bootstrap.yml"
-      - ".github/workflows/darwin-native-qualification.yml"
-      - ".github/workflows/darwin-managed-replay.yml"
-      - "scripts/objc3c_toolchain/cli.py"
-      - "scripts/objc3c_toolchain/darwin_bootstrap.py"
-      - "scripts/objc3c_toolchain/darwin_evidence.py"
-      - "scripts/objc3c_toolchain/darwin_registration.py"
-      - "scripts/objc3c_toolchain/darwin_compiler_cache.py"
-      - "scripts/objc3c_toolchain/darwin_sdk*.py"
-      - "scripts/objc3c_toolchain_runtime/runtime-profile.json"
-      - "scripts/objc3c_toolchain_runtime/verify_runtime_profile.py"
-      - "native/objc3c/src/runtime/platform/darwin_registration.c"
-      - "native/objc3c/src/runtime/public/objc3_darwin.h"
-      - "native/objc3c/src/runtime/public/objc3_collections.h"
-      - "native/objc3c/src/runtime/public/objc3_stdlib_status.h"
-      - "native/objc3c/src/runtime/public/objc3_text.h"
-      - "native/objc3c/src/runtime/stdlib/collections_service.cpp"
-      - "native/objc3c/src/runtime/stdlib/opaque_service_storage.h"
-      - "native/objc3c/src/runtime/stdlib/stdlib_service_contract.h"
-      - "native/objc3c/src/runtime/stdlib/text_service.cpp"
-      - "native/objc3c/src/runtime/stdlib/text_utf8_decode.h"
-      - "native/objc3c/tests/stdlib_map_count_test.cpp"
-      - "native/objc3c/tests/text_scalar_boundary_test.cpp"
-      - "native/objc3c/tests/test_assertion_policy.h"
-      - "tests/clang_foundation/darwin_portable_services/**"
-      - "tests/clang_foundation/darwin_registration/**"
-      - "tests/clang_foundation/darwin_sanitizers/**"
-      - "tests/tooling/test_darwin_bootstrap.py"
-      - "tests/tooling/test_darwin_evidence.py"
-      - "tests/tooling/test_darwin_registration.py"
-      - "tests/tooling/test_darwin_sdk.py"
-      - "tests/tooling/test_darwin_sdk_portable_services.py"
-      - "tests/tooling/test_darwin_sdk_sanitizers.py"
-      - "native/objc3c/src/runtime/concurrency/**"
-      - "native/objc3c/src/runtime/services/error_service.cpp"
-      - "native/objc3c/src/runtime/services/value_storage.h"
-      - "native/objc3c/src/runtime/public/objc3_runtime_services.h"
-      - "native/objc3c/src/runtime/public/objc3_async_c.h"
-      - "tests/clang_foundation/darwin_task_services/**"
-      - "toolchains/llvm/manifest.json"
-      - "toolchains/llvm/patches/**"
-      - "toolchains/llvm/cmake/**"
-      - "toolchains/llvm/experimental/**"
 permissions:
+  actions: read
   contents: read
-concurrency:
-  group: darwin-bootstrap-${{ github.event.pull_request.number || github.ref }}${{ (inputs.candidate || inputs.replacement) && format('-managed-{0}', github.run_id) || inputs.runtime_sanitizers && '-sanitizers' || '' }}
-  cancel-in-progress: true
 jobs:
-  qualification:
-    if: ${{ !inputs.candidate && !inputs.replacement }}
-    name: Apple Silicon Xcode ${{ matrix.xcode }} and SDK ${{ matrix.sdk }}
+  replay:
+    name: xsComic on ${{ matrix.row }}
+    runs-on: macos-15
     strategy:
       fail-fast: false
       matrix:
         include:
-          - xcode: "16.4"
-            xcode_build: "16F6"
-            sdk: "15.5"
-            artifact_suffix: ""
-          - xcode: "26.3"
-            xcode_build: "17C529"
-            sdk: "26.2"
-            artifact_suffix: "-xcode-26.3"
-    uses: ./.github/workflows/darwin-native-qualification.yml
-    with:
-      xcode: ${{ matrix.xcode }}
-      xcode_build: ${{ matrix.xcode_build }}
-      sdk: ${{ matrix.sdk }}
-      artifact_suffix: ${{ matrix.artifact_suffix }}
-      runtime_registration: ${{ inputs.runtime_registration == true }}
-      runtime_sanitizers: ${{ inputs.runtime_sanitizers == true }}
-    permissions:
-      actions: read
-      contents: read
-  managed_replay:
-    if: ${{ inputs.candidate || inputs.replacement }}
-    uses: ./.github/workflows/darwin-managed-replay.yml
-    with:
-      candidate: ${{ inputs.candidate }}
-      replacement: ${{ inputs.replacement }}
-    permissions:
-      actions: read
-      contents: read
+          - row: Preview 2 Xcode 16.4
+            xcode: "16.4"
+            run: "45802855071"
+            artifact: darwin-arm64-bootstrap-45802855071-1
+            installer_revision: ee7cad55d26a9b0517216ff4ef814884ff685e1b
+            sdk_revision: dc603cf8b3dbbf5e4632a97adf2510b8980da601
+            archive_sha: 7c79797e26f4dee6fd1acdfdc37f7130a1fa2460c0a0358875de8293c6148861
+          - row: Development Xcode 16.4
+            xcode: "16.4"
+            run: "45802854445"
+            artifact: darwin-arm64-bootstrap-45802854445-1
+            installer_revision: 623c33dddfbc2bb02ed0d3d8eb16ad518de90e6c
+            sdk_revision: 8cddbf017444112a278be70d0e583133f8c60276
+            archive_sha: aa15e992c3b68564a3c40e9dbcf2681a93c500d19d14853ee707f0b4d3a1dbf3
+          - row: Development Xcode 26.3
+            xcode: "26.3"
+            run: "45802854445"
+            artifact: darwin-arm64-bootstrap-45802854445-1-xcode-26.3
+            installer_revision: 623c33dddfbc2bb02ed0d3d8eb16ad518de90e6c
+            sdk_revision: 8cddbf017444112a278be70d0e583133f8c60276
+            archive_sha: aefb51651647d566b002636c9b6a8a0174e9f571bf27b96a8d610048abc849cb
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      XSCOMIC_REVISION: 3beda61a9a74dfd6b6a58f20d790d511c99eb788
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ matrix.installer_revision }}
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: doublemover/xsComic
+          ref: ${{ env.XSCOMIC_REVISION }}
+          path: xscomic-consumer
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          name: ${{ matrix.artifact }}
+          run-id: ${{ matrix.run }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/producer
+      - name: Install the retained SDK
+        env:
+          SDK_REVISION: ${{ matrix.sdk_revision }}
+          ARCHIVE_SHA: ${{ matrix.archive_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = arm64
+          package="$RUNNER_TEMP/producer/runtime/sdk/package"
+          sdk="$RUNNER_TEMP/xsComic Objective-C 3 SDK"
+          python3 - "$package/package.json" <<'PY'
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          receipt = json.loads(Path(sys.argv[1]).read_text())
+          assert receipt['status'] == 'PASS'
+          assert receipt['revision'] == os.environ['SDK_REVISION']
+          assert receipt['archive_sha256'] == os.environ['ARCHIVE_SHA']
+          PY
+          python3 -B -m scripts.objc3c_toolchain darwin install \
+            --archive "$package/objc3-darwin-sdk.tar.gz" --archive-sha256 "$ARCHIVE_SHA" \
+            --prefix "$sdk"
+          printf 'XSCOMIC_OBJC3_SDK=%s\n' "$sdk" >> "$GITHUB_ENV"
+      - name: Install native codec dependencies
+        run: brew install pkg-config libarchive jpeg-turbo libpng webp libtiff libavif libheif giflib
+      - name: Run the native xsComic core suite
+        working-directory: xscomic-consumer
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$XSCOMIC_REVISION"
+          ./scripts/run-objc3-macos-tests.sh
