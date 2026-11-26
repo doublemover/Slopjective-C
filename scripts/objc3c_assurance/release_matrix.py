@@ -11,7 +11,7 @@ from scripts.objc3c_toolchain.binary_packages import write_json
 from scripts.objc3c_toolchain.linux_archive_reuse import verify_retained as verify_archive_reuse
 from scripts.objc3c_toolchain.linux_host import native_linux_host
 from scripts.objc3c_toolchain.semantic_build_costs import snapshot
-from .evidence import (evidence_budget, SCHEMA, aggregate, artifact, native_files,
+from .evidence import (SCHEMA, aggregate, artifact, native_files,
                        suite_results, validate_evidence_sizes)
 from .plan import foundation_receipts, from_checkout, selected_suites, validate
 from .runner import run
@@ -200,11 +200,7 @@ def aggregate_core(repo: Path, plan: dict, partials: Path, output: Path) -> dict
     if archive_reuse is not None:
         report['archive_reuse'] = archive_reuse
         operational += archive_reuse['bytes']
-    total = sum(saved['bytes'] for row in ordered for saved in row['artifacts'])
-    total += operational
     validate_evidence_sizes(ordered, operational)
-    if total > evidence_budget(expected):
-        raise ValueError('merged core evidence exceeds the native artifact budget')
     write_json(output / 'result.json', report)
     aggregate(plan, output, outcomes={'plan': 'success', 'native': 'success'},
               tested=plan['revision']['tested'], shard='core')

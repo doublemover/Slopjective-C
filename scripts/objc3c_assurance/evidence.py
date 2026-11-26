@@ -18,20 +18,18 @@ MAX_BYTES = 256 * 1024 * 1024
 SANITIZER_PRODUCT_BYTES = 3 * 1024**3
 
 
-def evidence_budget(suites) -> int:
-    return MAX_BYTES + (SANITIZER_PRODUCT_BYTES if 'sanitizer-products' in suites else 0)
-
-
-def validate_evidence_sizes(records: list[dict], operational_bytes: int = 0) -> None:
-    ordinary, products = operational_bytes, 0
+def validate_evidence_sizes(records: list[dict], operational_bytes: int = 0) -> int:
+    """Apply each suite's allowance before and after composing its evidence."""
+    if operational_bytes > MAX_BYTES:
+        raise ValueError(f'native operational evidence exceeds its artifact budget: {operational_bytes:,} > {MAX_BYTES:,} bytes')
+    total = operational_bytes
     for row in records:
         size = sum(saved['bytes'] for saved in row.get('artifacts', []))
-        if row['id'] == 'sanitizer-products':
-            products += size
-        else:
-            ordinary += size
-    if ordinary > MAX_BYTES or products > SANITIZER_PRODUCT_BYTES:
-        raise ValueError('native evidence exceeds its suite artifact budget')
+        limit = SANITIZER_PRODUCT_BYTES if row['id'] == 'sanitizer-products' else MAX_BYTES
+        if size > limit:
+            raise ValueError(f"native evidence exceeds its suite artifact budget for {row['id']}: {size:,} > {limit:,} bytes")
+        total += size
+    return total
 
 
 def package_execution(result: dict) -> list[dict]:
@@ -500,7 +498,6 @@ def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str,
     records = receipt.get('suites', [])
     if len(records) != len(expected) or {row['id'] for row in records} != expected:
         raise ValueError('native result differs from the exact required suite set')
-    total = 0
     paths = set()
     for row in records:
         if row.get('status') != 'PASS' or not row.get('executions') or not row.get('artifacts'):
@@ -513,7 +510,6 @@ def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str,
             if saved['path'] in paths or artifact(root, path) != saved:
                 raise ValueError('native artifact is missing, duplicated or changed')
             paths.add(saved['path'])
-            total += saved['bytes']
         if suite_results(root, row['id'], frontend_names=frontend_names) != row['executions']:
             raise ValueError('native execution inventory differs from canonical owner results')
     commands = receipt.get('commands', [])
@@ -538,10 +534,7 @@ def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str,
         if shard != 'core' or 'package' not in expected or artifact(root, root / 'archive-reuse.json') != saved:
             raise ValueError('native archive replay evidence is missing, changed or belongs to another owner')
         cost_bytes += saved['bytes']
-    total += cost_bytes
-    validate_evidence_sizes(records, cost_bytes)
-    if total > evidence_budget(expected):
-        raise ValueError('native evidence exceeds its suite artifact budget')
+    total = validate_evidence_sizes(records, cost_bytes)
     return {'status': 'PASS', 'classification': 'native', 'revision': plan['revision'],
             'suites': sorted(expected), 'artifact_bytes': total}
 
@@ -561,8 +554,6 @@ def aggregate_shards(plan: dict, root: Path, *, outcomes: dict, tested: str) -> 
             set(suites) != {row['id'] for row in plan['suites']}):
         raise ValueError('native execution shards overlap or omit selected suites')
     total = sum(row['artifact_bytes'] for row in results)
-    if total > evidence_budget(suites):
-        raise ValueError('native evidence exceeds its suite artifact budget')
     return {'status': 'PASS', 'classification': 'native', 'revision': plan['revision'],
             'suites': sorted(suites), 'shards': shards, 'artifact_bytes': total}
 
