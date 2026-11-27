@@ -175,7 +175,7 @@ jobs:
           if-no-files-found: error
           retention-days: 7
   xscomic:
-    name: Run xsComic core against the installed Apple Silicon SDK
+    name: Build and run xsComic against the installed Apple Silicon SDK
     needs: bootstrap
     if: needs.bootstrap.outputs.runtime_selected == 'true'
     runs-on: macos-15
@@ -212,8 +212,13 @@ jobs:
           ref: ${{ steps.app.outputs.revision }}
           path: xscomic-consumer
           persist-credentials: false
-      - name: Install native codec dependencies
-        run: brew install pkg-config libarchive jpeg-turbo libpng webp libtiff libavif libheif giflib
+      - name: Install codecs, the window libraries, and pixel test dependencies
+        shell: bash
+        run: |
+          brew install pkg-config libarchive jpeg-turbo libpng webp libtiff libavif libheif giflib sdl2 sdl2_ttf
+          python3 -m venv "$RUNNER_TEMP/xscomic-test-env"
+          "$RUNNER_TEMP/xscomic-test-env/bin/python3" -m pip install Pillow
+          echo "$RUNNER_TEMP/xscomic-test-env/bin" >> "$GITHUB_PATH"
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: darwin-arm64-bootstrap-${{ github.run_id }}-${{ github.run_attempt }}${{ inputs.artifact_suffix }}
@@ -242,7 +247,7 @@ jobs:
             --prefix "$sdk" | tee "$evidence/install.json"
           test -x "$sdk/bin/objc3c"
           printf 'XSCOMIC_OBJC3_SDK=%s\n' "$sdk" >> "$GITHUB_ENV"
-      - name: Compile and run the Objective-C 3 core suite
+      - name: Verify the core suite and the relocated app in parallel
         shell: bash
         working-directory: xscomic-consumer
         env:
@@ -250,9 +255,26 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$XSCOMIC_REVISION"
-          printf '%s\n' "$XSCOMIC_REVISION" > "$RUNNER_TEMP/xscomic-evidence/source-revision"
-          ./scripts/run-objc3-macos-tests.sh 2>&1 | tee "$RUNNER_TEMP/xscomic-evidence/suite.log"
-      - name: Retain xsComic SDK identity, logs, and native executable
+          evidence="$RUNNER_TEMP/xscomic-evidence"
+          app="$evidence/application"
+          mkdir -p "$app"
+          printf '%s\n' "$XSCOMIC_REVISION" > "$evidence/source-revision"
+          ./scripts/run-objc3-macos-tests.sh >"$evidence/suite.log" 2>&1 &
+          core_pid=$!
+          (
+            set -e
+            ./scripts/build-objc3-macos-app.sh
+            archive=build/objc3-macos/release/xsComic-objc3-macos-arm64.zip
+            ./scripts/verify-objc3-macos-app.sh "$archive" "$app"
+            cp "$archive" "$app/"
+          ) >"$app/qualification.log" 2>&1 &
+          app_pid=$!
+          status=0
+          wait "$core_pid" || status=1
+          wait "$app_pid" || status=1
+          cat "$evidence/suite.log" "$app/qualification.log"
+          exit "$status"
+      - name: Retain xsComic SDK identity, test logs, and native products
         if: always()
         shell: bash
         run: |
@@ -317,10 +339,12 @@ jobs:
           import json
           from pathlib import Path
 
-          from scripts.objc3c_toolchain.darwin_evidence import verify_xscomic
+          from scripts.objc3c_toolchain.darwin_evidence import verify_xscomic, verify_xscomic_application
 
           terminal = json.loads(Path('out/darwin-terminal.json').read_text())
-          receipt = verify_xscomic(Path('out/xscomic-darwin-evidence'), terminal)
+          native = Path('out/xscomic-darwin-evidence')
+          receipt = verify_xscomic(native, terminal)
+          receipt['application'] = verify_xscomic_application(native)
           Path('out/xscomic-terminal.json').write_text(json.dumps(receipt, indent=2) + '\n')
           PY
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
