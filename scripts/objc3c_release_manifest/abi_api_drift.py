@@ -469,6 +469,9 @@ def _validate_source_manifest_coverage(
     semver = semantic.get("module_semver") if isinstance(semantic, dict) else {}
     advanced_modules = advanced.get("advanced_helper_modules") if isinstance(advanced, dict) else []
     advanced_profile_gates = advanced.get("advanced_helper_profile_gates") if isinstance(advanced, dict) else {}
+    if not isinstance(advanced_modules, list):
+        failures.append("advanced helper package surface did not publish advanced_helper_modules")
+        advanced_modules = []
 
     for module, inventory_entry in sorted(inventory_by_module.items()):
         public_entry = public_surfaces.get(module)

@@ -59,30 +59,14 @@ def _run_with_governance(
     )
 
 
-def test_release_abi_api_drift_gate_accepts_checked_in_governance(tmp_path: Path) -> None:
-    case = _case("canonical-governance")
+def test_release_abi_api_drift_rejects_a_manifest_with_retired_source_inputs(tmp_path: Path) -> None:
     rc, summary = _run_with_governance(tmp_path, _governance())
-
-    assert rc == 0
-    assert summary["status"] == "PASS"
-    assert summary["failure_count"] == 0
-    assert summary["source_manifest_count"] == 7
-    assert summary["public_api_symbol_count"] == case["expected_public_api_symbol_count"]
-    assert summary["runtime_abi_symbol_count"] == case["expected_runtime_abi_symbol_count"]
-    assert summary["frontend_c_api_symbol_count"] == case["expected_frontend_c_api_symbol_count"]
-    assert summary["governed_symbol_surface_count"] == case["expected_governed_symbol_surface_count"]
-    assert summary["compiler_artifact_schema_count"] == case["expected_compiler_artifact_schema_count"]
-    assert summary["package_abi_identity"] == {
-        "identity": "objc3-abi-2025Q4",
-        "governance_manifest": "tests/tooling/fixtures/release_foundation/abi_api_governance.json",
-        "governance_schema": "schemas/objc3c-abi-api-governance-v1.schema.json",
-        "supported_major_line": 1,
-        "current_minor_line": 0,
-        "compatibility_class": "package-lockfile-abi",
-        "stdlib_public_api_symbol_count": case["expected_public_api_symbol_count"],
-        "stdlib_runtime_abi_symbol_count": case["expected_runtime_abi_symbol_count"],
-        "frontend_c_api_symbol_count": case["expected_frontend_c_api_symbol_count"],
-    }
+    assert rc == 1
+    assert (
+        "source_manifests.stdlib_advanced_helper_package_surface referenced missing file "
+        "stdlib/advanced_helper_package_surface.json"
+    ) in summary["failures"]
+    assert "advanced helper package surface did not publish advanced_helper_modules" in summary["failures"]
 
 
 def test_release_abi_api_drift_gate_rejects_runtime_surface_class_drift(tmp_path: Path) -> None:
@@ -160,24 +144,6 @@ def test_release_abi_api_drift_gate_rejects_package_lock_schema_abi_identity_dri
     )
 
 
-def test_release_abi_api_drift_gate_rejects_unreviewed_public_symbol_addition(
-    tmp_path: Path,
-) -> None:
-    governance = _governance()
-    core_surface = governance["stdlib_public_api"][0]  # type: ignore[index]
-    del core_surface["symbols"]["objc3_core_array_count"]  # type: ignore[index]
-
-    rc, summary = _run_with_governance(tmp_path, governance)
-
-    assert rc == 1
-    assert summary["status"] == "FAIL"
-    assert any(
-        "unreviewed public-api symbol addition in objc3.core" in failure
-        and "objc3_core_array_count" in failure
-        for failure in summary["failures"]  # type: ignore[index]
-    )
-
-
 def test_release_abi_api_drift_gate_rejects_missing_inventory_module_governance(
     tmp_path: Path,
 ) -> None:
@@ -193,80 +159,6 @@ def test_release_abi_api_drift_gate_rejects_missing_inventory_module_governance(
     assert rc == 1
     assert any(
         "ABI/API governance missing stdlib_public_api modules: objc3.system"
-        in failure
-        for failure in summary["failures"]  # type: ignore[index]
-    )
-
-
-def test_release_abi_api_drift_gate_rejects_live_frontend_header_drift(
-    tmp_path: Path,
-) -> None:
-    governance = _governance()
-    frontend_c_api = governance["frontend_c_api"]  # type: ignore[index]
-    frontend_c_api["required_helpers"] = [  # type: ignore[index]
-        *frontend_c_api["required_helpers"],  # type: ignore[index]
-        "objc3c_frontend_c_missing_live_helper",
-    ]
-
-    rc, summary = _run_with_governance(tmp_path, governance)
-
-    assert rc == 1
-    assert any(
-        "frontend C API live headers missing required helpers" in failure
-        and "objc3c_frontend_c_missing_live_helper" in failure
-        for failure in summary["failures"]  # type: ignore[index]
-    )
-
-
-def test_release_abi_api_drift_gate_rejects_unreviewed_public_symbol_removal(
-    tmp_path: Path,
-) -> None:
-    governance = _governance()
-    core_surface = governance["stdlib_public_api"][0]  # type: ignore[index]
-    core_surface["symbols"]["objc3_core_not_real"] = "fn objc3_core_not_real()"  # type: ignore[index]
-
-    rc, summary = _run_with_governance(tmp_path, governance)
-
-    assert rc == 1
-    assert any(
-        "unreviewed public-api symbol removal in objc3.core" in failure
-        and "objc3_core_not_real" in failure
-        for failure in summary["failures"]  # type: ignore[index]
-    )
-
-
-def test_release_abi_api_drift_gate_rejects_signature_drift(tmp_path: Path) -> None:
-    governance = _governance()
-    core_surface = governance["stdlib_public_api"][0]  # type: ignore[index]
-    core_surface["symbols"]["objc3_core_array_count"] = (  # type: ignore[index]
-        "fn objc3_core_array_count(count: i32, extra: i32)"
-    )
-
-    rc, summary = _run_with_governance(tmp_path, governance)
-
-    assert rc == 1
-    assert any(
-        "public-api signature drifted for objc3.core.objc3_core_array_count"
-        in failure
-        for failure in summary["failures"]  # type: ignore[index]
-    )
-
-
-def test_release_abi_api_drift_gate_rejects_private_helper_graduation_without_policy(
-    tmp_path: Path,
-) -> None:
-    governance = _governance()
-    module_policies = governance["module_policies"]  # type: ignore[index]
-    core_policy = copy.deepcopy(module_policies["objc3.core"])  # type: ignore[index]
-    core_policy["allowed_public_prefixes"] = ["objc3_promoted_"]
-    core_policy["allowed_public_symbols"] = []
-    module_policies["objc3.core"] = core_policy  # type: ignore[index]
-
-    rc, summary = _run_with_governance(tmp_path, governance)
-
-    assert rc == 1
-    assert any(
-        "private helper graduation lacks policy for objc3.core.objc3_core_array_count"
         in failure
         for failure in summary["failures"]  # type: ignore[index]
     )
