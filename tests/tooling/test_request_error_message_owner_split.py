@@ -18,7 +18,7 @@ def test_request_error_messages_are_owned_helpers() -> None:
     )
     contract = request_error_message_contract_fields()
     assert contract["canonical_command_template"] == "npm run objc3c -- <action>"
-    assert contract["retired_metadata_allowed"] is False
+    assert "retired_metadata_allowed" not in contract
     assert unknown_action_message("missing") == (
         "unknown action: missing; expected command shape: "
         "npm run objc3c -- <action>"

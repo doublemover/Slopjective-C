@@ -178,6 +178,7 @@ def validate_corpus_entries(
         if entry.get("family") != intake_entry.get("family"):
             fail(DIAG_CLAIM_BINDING, f"{fixture_id} family drifted from intake manifest")
 
+        require_reproducibility(entry, fixture_id)
         evidence_path = entry.get("evidence_path")
         expected_path = expected_evidence_path(intake_entry)
         checked_paths.append(repo_rel(require_path_hash(str(evidence_path), str(entry.get("evidence_sha256", "")), field_name=f"{fixture_id} evidence_path")))
@@ -189,7 +190,6 @@ def validate_corpus_entries(
         if replay_script != intake_entry.get("replay_script"):
             fail(DIAG_CLAIM_BINDING, f"{fixture_id} replay_script drifted from intake manifest")
 
-        require_reproducibility(entry, fixture_id)
         for claim_field in ("support_claims", "adoption_claims"):
             claims = entry.get(claim_field)
             if not isinstance(claims, list) or not claims:

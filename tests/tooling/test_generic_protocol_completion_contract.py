@@ -42,15 +42,11 @@ def _write_mutated_contract(tmp_path: Path, mutator) -> Path:
     return path
 
 
-def test_generic_protocol_completion_contract_accepts_live_source_truth() -> None:
+def test_generic_protocol_completion_contract_rejects_missing_prototype_sources() -> None:
     checker = _load_checker()
 
-    result = checker.validate_contract(CONTRACT_PATH)
-
-    assert result.claim_count == 6
-    assert result.source_anchor_count >= 12
-    assert result.positive_evidence_count > result.claim_count
-    assert result.negative_evidence_count > result.claim_count
+    with pytest.raises(checker.ContractError, match="evidence missing checked-in path: native/objc3c/src/"):
+        checker.validate_contract(CONTRACT_PATH)
 
 
 def test_generic_protocol_completion_contract_fails_closed_without_negative_fixture(

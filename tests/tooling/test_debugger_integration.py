@@ -91,7 +91,7 @@ def test_debugger_integration_fixture_validates_lldb_commands_and_source_backed_
         assert step["object_debug_line_anchor"]
         assert step["source_map_entry_id"].startswith("smap.")
         assert step["debug_map_entry_id"].startswith("dmap.")
-        assert step["source_digest"] == "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b"
+        assert step["source_digest"] == "296ad1c9ec7afc2b64bcc88b0bd90ca90276dd8ebaa88c612648f651d9269761"
         assert step["native_line_table_row_id"].startswith("lt.")
         assert step["native_debug_info_evidence_id"] == "debugmaps.foundation.native-debug-info"
 

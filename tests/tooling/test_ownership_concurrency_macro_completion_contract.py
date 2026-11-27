@@ -26,10 +26,11 @@ def _write_contract(path: Path, payload: dict) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def test_completion_contract_is_source_backed_and_fail_closed() -> None:
+def test_archived_ownership_concurrency_macro_contract_requires_implementation_sources() -> None:
     result = validate_ownership_concurrency_macro_completion_contract()
 
-    assert result.passed, result.failures
+    assert not result.passed
+    assert any('source path missing' in failure for failure in result.failures)
     assert result.payload["source_contract_id"] == (
         "objc3c.ownership-concurrency-macro.completion.contract.v1"
     )

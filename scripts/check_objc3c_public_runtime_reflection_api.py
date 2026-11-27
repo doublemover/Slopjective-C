@@ -96,6 +96,14 @@ def _require_absent(
 
 
 def validate_public_runtime_reflection_api() -> dict[str, Any]:
+    source_paths = (HEADER_PATH, UMBRELLA_PATH, IMPLEMENTATION_PATH, CMAKE_PATH, PROBE_PATH)
+    missing_sources = [repo_rel(path) for path in source_paths if not path.is_file()]
+    if missing_sources:
+        return {
+            "contract_id": "objc3c.runtime.public.reflection.api.validation.v1",
+            "status": "FAIL",
+            "failures": [f"public runtime reflection source unavailable: {path}" for path in missing_sources],
+        }
     failures: list[str] = []
     contract = require_json_object(CONTRACT_PATH)
     header = _read(HEADER_PATH)

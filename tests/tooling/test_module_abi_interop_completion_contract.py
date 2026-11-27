@@ -22,10 +22,11 @@ def _contract() -> dict[str, object]:
     return load_json_object(CONTRACT_PATH)
 
 
-def test_module_abi_interop_completion_contract_passes() -> None:
+def test_module_abi_interop_completion_requires_prototype_sources() -> None:
     summary = build_summary()
 
-    assert summary["status"] == "PASS"
+    assert summary["status"] == "FAIL"
+    assert any(failure.startswith("source anchor missing: ") for failure in summary["failures"])
     assert summary["issues"] == ["#8163", "#8165", "#8173"]
     assert summary["source_anchor_count"] == 11
     assert summary["module"]["module_name"] == "FoundationNext.VisibilityBridge"
@@ -42,22 +43,24 @@ def test_module_abi_interop_completion_contract_passes() -> None:
 def test_module_abi_interop_rejects_stale_source_anchor_digest() -> None:
     payload = deepcopy(_contract())
     anchor = payload["source_anchors"][0]  # type: ignore[index]
+    anchor["path"] = "README.md"
     anchor["sha256"] = "0" * 64
 
     failures, _ = validate_contract_payload(payload)
 
-    assert "source anchor digest drifted for native/objc3c/src/pipeline/objc3_module_interop_contract_surface.h" in failures
+    assert "source anchor digest drifted for README.md" in failures
 
 
 def test_module_abi_interop_rejects_missing_source_fragment() -> None:
     payload = deepcopy(_contract())
     anchor = payload["source_anchors"][1]  # type: ignore[index]
-    anchor["fragments"] = ["BuildObjc3ModuleInteropRebuildKey", "retired ABI accommodation"]
+    anchor["path"] = "README.md"
+    anchor["fragments"] = ["nonexistent source anchor fragment"]
 
     failures, _ = validate_contract_payload(payload)
 
     assert (
-        "source anchor fragments missing for native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp: retired ABI accommodation"
+        "source anchor fragments missing for README.md: nonexistent source anchor fragment"
         in failures
     )
 
@@ -126,7 +129,7 @@ def test_module_abi_interop_rejects_ungoverned_abi_transition() -> None:
     assert "ABI governance compatibility cases lost required transitions" in failures
 
 
-def test_module_abi_interop_completion_contract_cli_accepts_default_fixture() -> None:
+def test_module_abi_interop_cli_reports_missing_prototype_sources() -> None:
     result = subprocess.run(
         [
             sys.executable,
@@ -138,6 +141,7 @@ def test_module_abi_interop_completion_contract_cli_accepts_default_fixture() ->
         check=False,
     )
 
-    assert result.returncode == 0
-    assert "objc3c-module-abi-interop-completion-contract: PASS" in result.stdout
+    assert result.returncode == 1
+    assert "objc3c-module-abi-interop-completion-contract: FAIL" in result.stdout
+    assert "source anchor missing: " in result.stdout
     assert result.stderr == ""

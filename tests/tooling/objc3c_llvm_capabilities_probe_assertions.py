@@ -297,4 +297,4 @@ def assert_package_wires_llvm_capability_probe_script(
     scripts = payload["scripts"]
 
     assert list(scripts) == ["objc3c"]
-    assert scripts["objc3c"] == "python -m scripts.objc3c_workflow"
+    assert scripts["objc3c"] == "python -m scripts.objc3c_toolchain"

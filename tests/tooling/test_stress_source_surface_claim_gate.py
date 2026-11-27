@@ -58,7 +58,7 @@ def test_stress_claim_gate_rejects_tmp_source_of_truth() -> None:
     assert isinstance(first_claim, dict)
     first_claim["durable_inputs"] = ["tmp/reports/stress/source-surface-summary.json"]
 
-    with pytest.raises(RuntimeError, match="uses tmp as source of truth"):
+    with pytest.raises(RuntimeError, match="uses tmp as durable input"):
         validate_claim_gate(
             mutated,
             surface=surface,
@@ -76,7 +76,7 @@ def test_stress_claim_gate_rejects_non_workflow_evidence_report() -> None:
     assert isinstance(first_claim, dict)
     first_claim["evidence_reports"] = ["tmp/reports/stress/private-only-summary.json"]
 
-    with pytest.raises(RuntimeError, match="evidence report is not workflow-required"):
+    with pytest.raises(RuntimeError, match="generated report is not workflow-required"):
         validate_claim_gate(
             mutated,
             surface=surface,

@@ -48,7 +48,7 @@ def test_failed_compile_replaces_stale_success_and_keeps_command_log(tmp_path, m
 
     def fail(argv, **kwargs):
         kwargs['stdout'].write('native source binding compilation failed\n')
-        return SimpleNamespace(wait=lambda timeout: 1)
+        return SimpleNamespace(wait=lambda: 1)
 
     monkeypatch.setattr(qualification.subprocess, 'Popen', fail)
     with pytest.raises(ValueError, match='c17-mrc-compile'):

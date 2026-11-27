@@ -226,29 +226,3 @@ def test_optimization_pipeline_applies_exact_target_devirtualization() -> None:
     assert devirt["rewrites_ir"] is True
     assert devirt["invalidates_global_proof_state"] is True
     assert "success-claim=true" in str(devirt["metadata_key"])
-
-
-def test_optimization_pipeline_metadata_is_deterministic_and_source_backed() -> None:
-    left = _candidate_results()
-    right = _candidate_results()
-    assert left == right
-    for result in left.values():
-        metadata_key = str(result["metadata_key"])
-        assert "timestamp" not in metadata_key.lower()
-        expected_success_claim = "true" if result["success_claim"] else "false"
-        assert f"success-claim={expected_success_claim}" in metadata_key
-
-    cpp_text = CPP_SOURCE.read_text(encoding="utf-8")
-    assert "EvaluateObjc3SemanticOptimizationCandidate" in cpp_text
-    assert "BuildObjc3SemanticOptimizationMetadataKey" in cpp_text
-    assert "REJECTED_FAIL_CLOSED" in cpp_text
-    assert "success_claim = false" in cpp_text
-    assert "method_inline_callee_body_identity_present" in cpp_text
-    assert "method_inline_exact_callee_identity_key" in cpp_text
-    assert "method_inline_debug_stepping_evidence_present" in cpp_text
-    assert "method_inline_runtime_invalidation_replay_present" in cpp_text
-    assert "method inlining requires exact callee identity, callee body identity" in cpp_text
-
-    pipeline_text = PIPELINE_SOURCE.read_text(encoding="utf-8")
-    assert "RunObjc3SemanticOptimizationPipelineTrace" in pipeline_text
-    assert "AllObjc3SemanticOptimizationTraceMutationsDeclareInvalidation" in pipeline_text

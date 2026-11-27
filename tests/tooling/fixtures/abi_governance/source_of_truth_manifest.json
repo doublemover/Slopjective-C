@@ -78,19 +78,19 @@
       ],
       "release_blocker": true,
       "output_policy": "generated-output-only",
-      "expected_count": 199,
-      "expected_digest": "sha256:b4f5d1c93c11db699978813a38f29318ca8a8fb4aeb1fdaec5b784201cb67f43"
+      "expected_count": 290,
+      "expected_digest": "sha256:953c52159fc418995fba6a1903ed341425a8b0ab9a2bbbe92d3a037938946bb0"
     },
     {
-      "extractor_id": "stdlib-module-abi-signatures",
-      "kind": "stdlib-module-abi-signatures",
+      "extractor_id": "stdlib-module-headers",
+      "kind": "stdlib-module-headers",
       "source_globs": [
-        "stdlib/modules/*/module.json"
+        "stdlib/module_inventory.json"
       ],
       "release_blocker": true,
       "output_policy": "generated-output-only",
-      "expected_count": 153,
-      "expected_digest": "sha256:e7cfeee8b7730eb073a95ee87d0527cefd93825c8002071126e9df7db8d44adb"
+      "expected_count": 8,
+      "expected_digest": "sha256:f6f9d28a519c9c4e979a3df587495117026ffe42d8aa2307026177136bc45dbe"
     },
     {
       "extractor_id": "package-lock-abi-identity-schema",
@@ -100,8 +100,8 @@
       ],
       "release_blocker": true,
       "output_policy": "generated-output-only",
-      "expected_count": 3,
-      "expected_digest": "sha256:718262afc9cc3bd0faa270531f106eb3e300666ef20e86f0728deaf2402ccae4"
+      "expected_count": 4,
+      "expected_digest": "sha256:fa6307695d1b177dd2d79dd74ec411e079deead48ff6e6f9f0ebccccb3fd7e02"
     }
   ],
   "compatibility_evidence": {
@@ -110,7 +110,7 @@
     "cases": [
       {
         "case_id": "stable-public-api-removal-without-window",
-        "surface_id": "stdlib-module-abi-signatures",
+        "surface_id": "stdlib-module-headers",
         "compatibility_class": "stable-public-api",
         "transition": "public-symbol-removal-without-deprecation-window",
         "before": "objc3.collections exports Objc3CollectionsStatusInvalidRange with active deprecation state",
@@ -120,7 +120,7 @@
       },
       {
         "case_id": "stable-runtime-abi-signature-drift",
-        "surface_id": "stdlib-module-abi-signatures",
+        "surface_id": "stdlib-module-headers",
         "compatibility_class": "stable-runtime-abi",
         "transition": "signature-change-without-major-line",
         "before": "objc3_runtime_stdlib_collections_array_count_i32(handle: i32) -> i32",

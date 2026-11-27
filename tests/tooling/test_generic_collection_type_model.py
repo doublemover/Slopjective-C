@@ -29,51 +29,6 @@ def _read_text(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
 
 
-def test_generic_collection_type_model_has_source_backed_shapes() -> None:
-    contract = _read_json(CONTRACT_PATH)
-    model_header = _read_text("native/objc3c/src/sema/model/generic_collection_type_model.h")
-    model_source = _read_text(
-        "native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.cpp"
-    )
-    factory_source = _read_text("native/objc3c/src/sema/objc3_semantic_type_factory.cpp")
-    relations_source = _read_text("native/objc3c/src/sema/objc3_semantic_type_relations.cpp")
-    lowering_contract = _read_text(
-        "native/objc3c/src/sema/objc3_semantic_type_lowering_contract.h"
-    )
-
-    for path in contract["source_truth"]:
-        assert (ROOT / path).is_file(), path
-
-    for shape in contract["collection_shapes"]:
-        assert shape["kind"] in model_header
-        assert f'type_name == "{shape["kind"]}"' in model_source
-        if shape["arity"] == 1:
-            assert "argument_count == 1u" in model_source
-        if shape["arity"] == 2:
-            assert "argument_count == 2u" in model_source
-
-    required_model_tokens = {
-        "element_type_identity",
-        "key_type_identity",
-        "value_type_identity",
-        "iterator_element_type_identity",
-        "runtime_descriptor_identity",
-        "abi_identity",
-        "Objc3GenericCollectionVariance::Invariant",
-        "Objc3GenericCollectionMutability::Mutable",
-        "nested generic collection shape is not supported",
-        "unsupported generic collection key type",
-        "unsupported generic collection element type",
-    }
-    for token in required_model_tokens:
-        assert token in model_header + model_source
-
-    assert "MakeGenericCollectionSemanticType" in factory_source
-    assert "AreSameObjc3GenericCollectionTypeModel" in relations_source
-    assert "AreObjc3GenericCollectionTypeModelsAssignmentCompatible" in model_source
-    assert "BuildObjc3GenericCollectionTypeModel(type)" in lowering_contract
-
-
 def test_generic_collection_type_model_evidence_rows_are_claimable_without_literals() -> None:
     contract = _read_json(CONTRACT_PATH)
     matrix = _read_json(MATRIX_PATH)

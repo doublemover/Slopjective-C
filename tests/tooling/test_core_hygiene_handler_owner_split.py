@@ -46,6 +46,7 @@ def test_core_hygiene_handlers_preserve_public_order_and_owner_membership() -> N
     assert tuple(CORE_HYGIENE_ACTION_HANDLERS) == (
         "lint",
         "check-dependency-boundaries",
+        "materialize-ci-llvm",
         "check-llvm-capabilities",
         "check-hosted-llvm-capabilities",
         "check-release-evidence",

@@ -21,7 +21,7 @@ if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
 from objc3c_tooling.json_io import write_json_file
-from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.paths import display_path, repo_rel
 from objc3c_semantic_optimization_pipeline import validate_pipeline
 
 
@@ -326,13 +326,18 @@ def _validate_semantic_optimization(
         if row.get("rewrites_ir") is not False:
             failures.append(f"semantic optimization reserved pass rewrites IR: {pass_id}")
         for fixture in _as_list(row.get("fixtures")):
-            fixture_payload = _load_json(
-                _repo_path(
-                    str(fixture),
-                    failures,
-                    f"semantic optimization reserved fixture {pass_id}",
-                )
+            fixture_path = _repo_path(
+                str(fixture),
+                failures,
+                f"semantic optimization reserved fixture {pass_id}",
             )
+            if not fixture_path.is_file():
+                continue
+            try:
+                fixture_payload = _load_json(fixture_path)
+            except (OSError, ValueError) as exc:
+                failures.append(f"semantic optimization reserved fixture {pass_id} is invalid: {exc}")
+                continue
             if fixture_payload.get("status") != "SKIPPED_FAIL_CLOSED":
                 failures.append(f"semantic optimization reserved fixture does not skip: {pass_id}")
             if fixture_payload.get("success_claim") is not False:
@@ -706,7 +711,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
     result = validate_completion_contract(args.contract)
     write_json_file(args.summary_out, result.payload)
-    print(f"summary_path: {repo_rel(args.summary_out)}")
+    print(f"summary_path: {display_path(args.summary_out)}")
     print(f"reflection-optimization-performance-completion: {result.payload['status']}")
     for failure in result.failures:
         print(f"failure: {failure}")

@@ -57,6 +57,17 @@ def build_capability_demo_compatibility(
     *,
     parity_ready: bool,
 ) -> dict[str, object]:
+    if not PROGRAM_SURFACE_PATH.exists():
+        return {
+            "status": "retired",
+            "reason": "The pre-native program surface and its demo compatibility contract were retired.",
+            "program_surface": display_path(PROGRAM_SURFACE_PATH),
+            "showcase_portfolio": display_path(SHOWCASE_PORTFOLIO_PATH),
+            "drift_checks": {},
+            "examples": [],
+            "failures": [],
+            "ok": False,
+        }
     if not PROGRAM_SURFACE_PATH.is_file():
         return missing_contract_payload(
             program_surface_path=PROGRAM_SURFACE_PATH,

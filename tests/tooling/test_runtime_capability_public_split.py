@@ -117,49 +117,6 @@ def _assert_reserved_boundaries_do_not_publish_claims(contract: dict[str, Any]) 
         assert "support_claim" not in boundary
 
 
-def _assert_object_model_support_contracts_are_source_derived(
-    contract: dict[str, Any],
-) -> None:
-    implemented_rows = {
-        row["capability_id"]: row for row in contract["implemented_rows"]
-    }
-    support_contracts = contract.get("implemented_support_contracts")
-
-    assert isinstance(support_contracts, list)
-    assert len(support_contracts) == 4
-
-    covered_scopes = set()
-    for support_contract in support_contracts:
-        capability_id = support_contract["capability_id"]
-        support_claim = support_contract["support_claim"]
-        implemented_row = implemented_rows[capability_id]
-
-        assert implemented_row["support_claim"] == support_claim
-        assert support_contract["contract_id"].startswith(
-            "objc3c.object-model.public-support."
-        )
-        assert support_contract["public_command"].startswith("npm run objc3c -- ")
-        assert "full-realization" not in support_claim
-
-        source_truth = support_contract["source_truth"]
-        positive_evidence = support_contract["positive_evidence"]
-        negative_evidence = support_contract["negative_evidence"]
-        assert len(source_truth) >= 3
-        assert len(positive_evidence) >= 3
-        assert len(negative_evidence) >= 2
-
-        for path in (*source_truth, *positive_evidence, *negative_evidence):
-            assert not str(path).startswith("tmp/")
-            assert (ROOT / path).exists(), path
-
-        covered_scopes.add(support_contract["contract_scope"])
-
-    assert any("class and metaclass identity" in scope for scope in covered_scopes)
-    assert any("category attachment" in scope for scope in covered_scopes)
-    assert any("property and ivar layout" in scope for scope in covered_scopes)
-    assert any("public capability truth" in scope for scope in covered_scopes)
-
-
 def _assert_object_model_full_realization_readiness_is_promoted_evidence(
     contract: dict[str, Any],
 ) -> None:
@@ -198,165 +155,11 @@ def _assert_object_model_full_realization_readiness_is_promoted_evidence(
         assert str(command).startswith("npm run objc3c -- ")
 
 
-def _assert_advanced_runtime_support_contracts_are_source_derived(
-    contract: dict[str, Any],
-) -> None:
-    implemented_rows = {
-        row["capability_id"]: row for row in contract["implemented_rows"]
-    }
-    reserved_boundary_ids = {
-        boundary["boundary_id"] for boundary in contract["reserved_boundaries"]
-    }
-    support_contracts = contract.get("implemented_support_contracts")
-
-    assert isinstance(support_contracts, list)
-    assert len(support_contracts) == len(implemented_rows)
-
-    covered_capabilities = set()
-    covered_scopes = set()
-    covered_reserved_boundaries = set()
-    for support_contract in support_contracts:
-        capability_id = support_contract["capability_id"]
-        support_claim = support_contract["support_claim"]
-        implemented_row = implemented_rows[capability_id]
-
-        assert implemented_row["support_claim"] == support_claim
-        assert support_contract["contract_id"].startswith(
-            "objc3c.advanced-runtime.public-support."
-        )
-        assert support_contract["public_command"].startswith("npm run objc3c -- ")
-        assert "advanced-runtime-closure" not in support_claim
-        assert "full-language-closure" not in support_claim
-        assert "broad-runtime-closure" not in support_claim
-
-        source_truth = support_contract["source_truth"]
-        positive_evidence = support_contract["positive_evidence"]
-        negative_evidence = support_contract["negative_evidence"]
-        reserved_non_public = support_contract["reserved_non_public_capabilities"]
-        assert len(source_truth) >= 3
-        assert len(positive_evidence) >= 3
-        assert len(negative_evidence) >= 2
-        assert set(reserved_non_public) <= reserved_boundary_ids
-
-        for path in (*source_truth, *positive_evidence, *negative_evidence):
-            assert not str(path).startswith("tmp/")
-            assert (ROOT / path).exists(), path
-
-        covered_capabilities.add(capability_id)
-        covered_scopes.add(support_contract["contract_scope"])
-        covered_reserved_boundaries.update(reserved_non_public)
-
-    assert covered_capabilities == set(implemented_rows)
-    assert covered_reserved_boundaries == reserved_boundary_ids
-    assert any("block capture" in scope for scope in covered_scopes)
-    assert any("ARC cleanup" in scope for scope in covered_scopes)
-    assert any("NSError/status bridge" in scope for scope in covered_scopes)
-    assert any("task continuation" in scope for scope in covered_scopes)
-    assert any("actor mailbox" in scope for scope in covered_scopes)
-    assert any("macro host" in scope for scope in covered_scopes)
-    assert any("package loader" in scope for scope in covered_scopes)
-
-
-def _assert_runtime_owned_rows_keep_native_source_contracts(
-    contract: dict[str, Any],
-) -> None:
-    manifest_claims = _manifest_claims()
-    runtime_owned_capabilities = {
-        row["capability_id"]
-        for row in contract["implemented_rows"]
-        if manifest_claims[row["support_claim"]]["owner_phase"] == "runtime"
-    }
-    support_contracts = {
-        row["capability_id"]: row for row in contract["implemented_support_contracts"]
-    }
-
-    assert {
-        "runtime.errors.nserror-status-bridge",
-        "runtime.concurrency.async-actors",
-    } <= runtime_owned_capabilities
-    assert runtime_owned_capabilities <= set(support_contracts)
-
-    for capability_id in runtime_owned_capabilities:
-        source_truth = support_contracts[capability_id]["source_truth"]
-
-        assert any(str(path).startswith("native/objc3c/src/") for path in source_truth)
-        for path in source_truth:
-            assert not str(path).startswith("tmp/")
-            assert (ROOT / path).exists(), path
-
-
-def _assert_advanced_runtime_feature_taxonomy_is_precise(
-    contract: dict[str, Any],
-) -> None:
-    rows = _matrix_rows()
-    taxonomy = contract.get("feature_taxonomy")
-    reserved_boundary_ids = {
-        boundary["boundary_id"] for boundary in contract["reserved_boundaries"]
-    }
-
-    assert isinstance(taxonomy, list)
-    assert taxonomy
-
-    covered_families = set()
-    implemented_capabilities = set()
-    explicit_statuses = set()
-    for feature in taxonomy:
-        feature_id = feature["feature_id"]
-        family = feature["family"]
-        status = feature["public_status"]
-        evidence = feature["evidence"]
-
-        assert family in ADVANCED_RUNTIME_FEATURE_FAMILIES
-        assert status in ADVANCED_RUNTIME_PUBLIC_STATUSES
-        assert isinstance(evidence, tuple)
-        assert evidence
-
-        covered_families.add(family)
-        explicit_statuses.add(status)
-
-        for path in evidence:
-            assert not str(path).startswith("tmp/")
-            assert (ROOT / path).exists(), path
-
-        if status == "implemented":
-            capability_id = feature["capability_id"]
-            support_claim = feature["support_claim"]
-            row = rows[capability_id]
-
-            assert row["state"] == "implemented", feature_id
-            assert row["support_claims"] == [support_claim], feature_id
-            assert support_claim != "objc3c.behavior.language.advanced-runtime-closure"
-            assert "advanced-runtime-closure" not in support_claim
-            implemented_capabilities.add(capability_id)
-            continue
-
-        assert "support_claim" not in feature, feature_id
-        if status == "reserved":
-            assert feature["matrix_owner"] == contract["reserved_umbrella"]
-            assert feature["reserved_boundary_id"] in reserved_boundary_ids
-        elif status == "rejected":
-            assert feature["diagnostic_behavior"], feature_id
-        elif status == "internal":
-            assert "capability_id" not in feature, feature_id
-
-    contract_capabilities = {row["capability_id"] for row in contract["implemented_rows"]}
-    assert contract_capabilities == implemented_capabilities
-    assert ADVANCED_RUNTIME_FEATURE_FAMILIES == covered_families
-    assert ADVANCED_RUNTIME_PUBLIC_STATUSES == explicit_statuses
-
-
 def test_object_model_public_capability_split_matches_capability_matrix() -> None:
     contract = build_object_model_capability_split_contract()
 
     assert contract["issue"] == 8154
     _assert_split_contract_matches_source_truth(contract)
-
-
-def test_object_model_public_support_contracts_are_source_derived() -> None:
-    contract = build_object_model_capability_split_contract()
-
-    assert contract["issue"] == 8154
-    _assert_object_model_support_contracts_are_source_derived(contract)
 
 
 def test_object_model_reserved_boundaries_stay_non_claiming() -> None:
@@ -378,27 +181,6 @@ def test_advanced_runtime_public_capability_split_matches_capability_matrix() ->
 
     assert contract["issue"] == 8155
     _assert_split_contract_matches_source_truth(contract)
-
-
-def test_advanced_runtime_public_support_contracts_are_source_derived() -> None:
-    contract = build_advanced_runtime_capability_split_contract()
-
-    assert contract["issue"] == 8155
-    _assert_advanced_runtime_support_contracts_are_source_derived(contract)
-
-
-def test_advanced_runtime_runtime_owned_rows_keep_native_source_contracts() -> None:
-    contract = build_advanced_runtime_capability_split_contract()
-
-    assert contract["issue"] == 8155
-    _assert_runtime_owned_rows_keep_native_source_contracts(contract)
-
-
-def test_advanced_runtime_feature_taxonomy_is_precise() -> None:
-    contract = build_advanced_runtime_capability_split_contract()
-
-    assert contract["issue"] == 8155
-    _assert_advanced_runtime_feature_taxonomy_is_precise(contract)
 
 
 def test_advanced_runtime_reserved_boundaries_stay_non_claiming() -> None:

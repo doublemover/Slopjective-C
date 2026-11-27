@@ -208,8 +208,12 @@ def _validate_package_loader_policy(payload: dict[str, Any], failures: list[str]
     expect(policy.get("tamper_diagnostic") == PACKAGE_LOADER_INTEROP_TAMPER_CODE, "package loader tamper diagnostic drifted", failures)
 
     package_ids = {str(package_id) for package_id in _as_list(policy.get("required_package_ids"))}
-    metadata = load_package_loader_interop_metadata(ROOT)
-    metadata_by_package = package_loader_metadata_by_package(metadata, root=ROOT, package_ids=package_ids)
+    try:
+        metadata = load_package_loader_interop_metadata(ROOT)
+        metadata_by_package = package_loader_metadata_by_package(metadata, root=ROOT, package_ids=package_ids)
+    except (OSError, RuntimeError, ValueError) as exc:
+        failures.append(f"package loader evidence unavailable: {exc}")
+        return
     summary = package_loader_metadata_channel_summary(metadata, metadata_by_package)
 
     expect(set(summary["package_ids"]) == package_ids, "package loader metadata package ids drifted", failures)

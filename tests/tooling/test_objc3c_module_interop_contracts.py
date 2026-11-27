@@ -26,10 +26,11 @@ def _contract() -> dict[str, object]:
     return load_json_object(CONTRACT_PATH)
 
 
-def test_module_interop_contract_summary_passes() -> None:
+def test_module_interop_contract_requires_prototype_sources() -> None:
     summary = build_summary()
 
-    assert summary["status"] == "PASS"
+    assert summary["status"] == "FAIL"
+    assert any("contract references missing source path" in failure for failure in summary["failures"])
     assert summary["issues"] == [8163, 8165]
     assert summary["public_command"] == PUBLIC_COMMAND
     assert summary["foreign_languages"] == sorted(REQUIRED_LANGUAGES)
@@ -37,7 +38,7 @@ def test_module_interop_contract_summary_passes() -> None:
     assert summary["supported_bridge_surface_count"] == 2
     assert summary["reserved_bridge_surface_count"] == 2
     assert summary["checked_source_proof_count"] == len(REQUIRED_CHECKED_SOURCE_PROOFS)
-    assert all(summary["native_checks"].values())
+    assert not all(summary["native_checks"].values())
 
 
 def test_module_interop_requires_checked_source_proofs_for_all_fail_closed_cases() -> None:
@@ -58,13 +59,13 @@ def test_module_interop_rejects_checked_source_proof_digest_drift() -> None:
     payload = deepcopy(_contract())
     proofs = payload["checked_source_proofs"]
     assert isinstance(proofs, list)
+    proofs[0]["source_anchor"] = "README.md"
     proofs[0]["source_sha256"] = "0" * 64
 
     failures, _ = validate_contract_payload(payload)
 
     assert (
-        "checked source proof digest drifted for missing-module: "
-        "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp"
+        "checked source proof digest drifted for missing-module: README.md"
         in failures
     )
 
@@ -73,14 +74,14 @@ def test_module_interop_rejects_checked_source_proof_fragment_drift() -> None:
     payload = deepcopy(_contract())
     proofs = payload["checked_source_proofs"]
     assert isinstance(proofs, list)
-    proofs[0]["fragments"] = ["missing-module", "not-present-in-source"]
+    proofs[0]["source_anchor"] = "README.md"
+    proofs[0]["fragments"] = ["nonexistent source proof fragment"]
 
     failures, _ = validate_contract_payload(payload)
 
     assert (
-        "checked source proof fragments missing for missing-module: "
-        "native/objc3c/src/pipeline/objc3_module_interop_contract_surface.cpp: "
-        "not-present-in-source"
+        "checked source proof fragments missing for missing-module: README.md: "
+        "nonexistent source proof fragment"
         in failures
     )
 
@@ -333,7 +334,7 @@ def test_module_interop_rejects_objc2_source_compatibility_acceptance() -> None:
     assert "ObjC2 bridge must be metadata-only and reject retired syntax" in failures
 
 
-def test_module_interop_contract_cli_accepts_default_fixture() -> None:
+def test_module_interop_cli_reports_missing_prototype_sources() -> None:
     result = subprocess.run(
         [sys.executable, str(ROOT / "scripts" / "check_objc3c_module_interop_contracts.py")],
         cwd=ROOT,
@@ -342,6 +343,7 @@ def test_module_interop_contract_cli_accepts_default_fixture() -> None:
         check=False,
     )
 
-    assert result.returncode == 0
-    assert "objc3c-module-interop-contracts: PASS" in result.stdout
+    assert result.returncode == 1
+    assert "objc3c-module-interop-contracts: FAIL" in result.stdout
+    assert "contract references missing source path" in result.stdout
     assert result.stderr == ""

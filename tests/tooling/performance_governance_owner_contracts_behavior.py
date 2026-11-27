@@ -37,7 +37,7 @@ def assert_performance_owner_contracts_are_shape_valid() -> None:
             "wrapper-only-action-surface",
             "optimization-speedup-without-safety-proof",
             "generated-report-optimization-source-truth",
-            "optimization-fallback-success-path",
+            "optimization-runtime-miss-success-path",
         },
     )
     assert_same_values(

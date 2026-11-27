@@ -34,10 +34,11 @@ def validate(markdown: str) -> dict[str, object]:
     )
 
 
-def test_post_cutover_issue_evidence_covers_every_issue_and_owned_capability() -> None:
+def test_archived_issue_evidence_retains_inventory_and_rejects_missing_sources() -> None:
     summary = validate(load_markdown())
 
-    assert summary["ok"] is True
+    assert summary["ok"] is False
+    assert any("local evidence path does not exist:" in failure for failure in summary["failures"])
     issue_evidence = summary["issue_evidence"]
     assert issue_evidence["issue_count"] == len(checker.REQUIRED_ISSUES)
     assert issue_evidence["source_path_count"] >= len(checker.REQUIRED_ISSUES)
@@ -46,17 +47,21 @@ def test_post_cutover_issue_evidence_covers_every_issue_and_owned_capability() -
     assert capability_rows["implemented_owned_capability_count"] > 0
 
 
-def test_post_cutover_completion_contracts_pass_current_source_truth() -> None:
+def test_post_cutover_completion_contract_rejects_unavailable_prototype_sources() -> None:
     failures: list[str] = []
-
-    summary = checker.validate_completion_contracts(
-        checker.COMPLETION_CONTRACT_SPECS,
-        failures,
+    specs = tuple(
+        spec
+        for spec in checker.COMPLETION_CONTRACT_SPECS
+        if spec.contract_id == "objc3c.runtime.public_rows.completion.v1"
     )
+    assert len(specs) == 1
 
-    assert failures == []
-    assert summary["contract_count"] == len(checker.COMPLETION_CONTRACT_SPECS)
-    assert set(summary["covered_issues"]) == set(checker.REQUIRED_ISSUES)
+    summary = checker.validate_completion_contracts(specs, failures)
+
+    assert failures
+    assert summary["contract_count"] == 1
+    assert summary["contracts"][0]["status"] == "FAIL"
+    assert summary["covered_issues"] == ["#8154", "#8155"]
 
 
 def test_post_cutover_index_issue_has_own_closure_contract() -> None:

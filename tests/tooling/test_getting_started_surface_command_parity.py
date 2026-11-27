@@ -236,7 +236,7 @@ def test_first_run_workflow_contract_reports_missing_doc_commands(tmp_path: Path
         )
 
 
-def test_developer_experience_completion_contract_validates_examples_and_diagnostics() -> None:
+def test_developer_experience_completion_contract_reports_removed_template() -> None:
     contract = checker.load_json(checker.DEVELOPER_EXPERIENCE_CONTRACT_PATH)
     migration_commands = contract["migration_examples"]["required_fenced_doc_commands"]
     onboarding_stages = contract["onboarding_command_map"]["stages"]
@@ -260,27 +260,11 @@ def test_developer_experience_completion_contract_validates_examples_and_diagnos
         for index, stage in enumerate(onboarding_stages)
     ]
 
-    payload = checker.validate_developer_experience_completion_contract(
-        contract=contract,
-        public_command_records=records,
-    )
-
-    assert payload["status"] == "PASS"
-    assert payload["issue_ids"] == [8157]
-    assert payload["template_compile_contract"]["compile_action"] == "compile-objc3c"
-    assert payload["migration_examples"]["automatic_edit_count"] >= 6
-    assert payload["diagnostic_fixit_metadata"]["machine_applicable_fixit_count"] >= 2
-    assert payload["clean_room_project_usability"]["template_workspace_manifest"] == (
-        "tmp/artifacts/project-template/auroraBoard/workspace.json"
-    )
-    assert "showcase/auroraBoard/workspace.json" in payload["clean_room_project_usability"]["source_truth_paths"]
-    assert {
-        "materialize-project-template",
-        "compile-objc3c",
-        "inspect-compile-observability",
-    }.issubset(set(payload["clean_room_project_usability"]["actions"]))
-    assert payload["onboarding_command_map"]["stage_ids"] == contract["onboarding_command_map"]["required_stage_ids"]
-    assert "inspect-compile-observability" in payload["onboarding_command_map"]["actions"]
+    with pytest.raises(RuntimeError, match="template compile source_origin is missing: showcase/auroraBoard/"):
+        checker.validate_developer_experience_completion_contract(
+            contract=contract,
+            public_command_records=records,
+        )
 
 
 def test_onboarding_command_map_rejects_non_tmp_outputs(tmp_path: Path) -> None:

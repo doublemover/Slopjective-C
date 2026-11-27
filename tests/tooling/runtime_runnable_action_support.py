@@ -155,6 +155,8 @@ EXPECTED_CONFORMANCE_ACTIONS = [
     "validate-object-model-conformance",
     "validate-storage-reflection-conformance",
     "validate-error-conformance",
+    "validate-module-interop-contracts",
+    "validate-standalone-textual-interface-payload",
     "validate-interop-conformance",
     "validate-metaprogramming-conformance",
     "validate-release-candidate-conformance",

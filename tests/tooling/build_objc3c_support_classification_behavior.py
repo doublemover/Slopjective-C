@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from build_objc3c_support_classification_support import builder
+from scripts.support_classification.constants import SUMMARY_CONTRACT_ID
 
 
 def assert_positive_fixture_summary_payload(payload: dict[str, object]) -> None:
-    assert payload["contract_id"] == builder.SUMMARY_CONTRACT_ID
+    assert payload["contract_id"] == SUMMARY_CONTRACT_ID
     assert payload["status"] == "PASS"
     assert payload["support_class_count"] == 4
     assert payload["evidence_family_count"] == 1
@@ -32,7 +32,7 @@ def assert_default_contract_summary_payload(payload: dict[str, object]) -> None:
         "objc3c.full_envelope.claimability.support.matrix.claim.taxonomy.v1"
     )
     assert payload["summary_script"] == "scripts/build_objc3c_support_classification.py"
-    assert payload["legacy_support_matrix_summary_script"] == (
+    assert payload["source_summary_implementation_anchor"] == (
         "scripts/build_full_envelope_claimability_support_matrix_summary.py"
     )
     assert payload["checks"]["canonical_support_classes_defined"] is True

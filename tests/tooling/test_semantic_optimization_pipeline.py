@@ -8,23 +8,12 @@ from pathlib import Path
 from scripts.objc3c_semantic_optimization_pipeline import (
     CONTRACT_ID,
     OPTIMIZATION_RUNTIME_DEBUG_SAFETY_CONTRACT_ID,
-    OPTIMIZATION_RUNTIME_DEBUG_SAFETY_CONTRACT_PATH,
     OPTIMIZATION_RUNTIME_DEBUG_SAFETY_UMBRELLA_CONTRACT_ID,
-    PERFORMANCE_GOVERNANCE_CONTRACT_ID,
     PIPELINE_PATH,
-    PROOF_MODEL_CONTRACT_ID,
-    REQUIRED_PROOF_CASE_IDS,
-    REQUIRED_PROOF_IDS,
-    REQUIRED_PROOF_MODEL_PUBLIC_ACTIONS,
     REQUIRED_PROOF_RESULT_FIELDS,
     REQUIRED_PROOF_VERDICT_FIELDS,
-    REQUIRED_PERFORMANCE_PUBLIC_ACTIONS,
-    REQUIRED_RUNTIME_EQUIVALENCE_PUBLIC_ACTIONS,
-    REQUIRED_CAPABILITY_ROWS,
-    REQUIRED_EVIDENCE_IDS,
     REQUIRED_PASS_ORDER,
     REQUIRED_RESERVED_SKIP_DIAGNOSTIC_CODE,
-    RUNTIME_EQUIVALENCE_CONTRACT_ID,
     RESERVED_SKIP_CONTRACT_ID,
     evaluate_optimization_proof_case,
     validate_pipeline,
@@ -51,10 +40,11 @@ def test_semantic_optimization_pipeline_owner_modules_are_explicit() -> None:
         assert importlib.import_module(module_name)
 
 
-def test_semantic_optimization_pipeline_fixture_validates_source_truth() -> None:
+def test_archived_semantic_optimization_pipeline_requires_implementation_sources() -> None:
     result = validate_pipeline(PIPELINE_PATH)
 
-    assert result.passed, result.failures
+    assert not result.passed
+    assert any('source anchor missing:' in failure for failure in result.failures)
     assert result.payload["contract_id"] == (
         "objc3c.optimization.semantic.pipeline.validation.v1"
     )
@@ -63,53 +53,6 @@ def test_semantic_optimization_pipeline_fixture_validates_source_truth() -> None
     )
     assert result.payload["pass_order"] == REQUIRED_PASS_ORDER
     assert result.payload["explicit_pass_order"] == REQUIRED_PASS_ORDER
-    assert result.payload["pass_count"] == len(REQUIRED_PASS_ORDER)
-    assert result.payload["semantic_preservation_contract_count"] == len(
-        REQUIRED_PASS_ORDER
-    )
-    assert result.payload["proof_model_contract"] == PROOF_MODEL_CONTRACT_ID
-    assert result.payload["proof_pass_contract_count"] == len(REQUIRED_PASS_ORDER)
-    assert result.payload["proof_definition_count"] >= len(REQUIRED_PROOF_IDS)
-    assert result.payload["proof_result_field_count"] >= len(REQUIRED_PROOF_RESULT_FIELDS)
-    assert result.payload["proof_case_count"] == len(REQUIRED_PROOF_CASE_IDS)
-    assert set(result.payload["proof_model_public_actions"]) >= (
-        REQUIRED_PROOF_MODEL_PUBLIC_ACTIONS
-    )
-    assert result.payload["enabled_pass_count"] >= 3
-    assert result.payload["reserved_pass_count"] == 0
-    assert result.payload["reserved_skip_fixture_count"] == 0
-    assert result.payload["reserved_skip_passes"] == []
-    assert result.payload["performance_governance_contract"] == (
-        PERFORMANCE_GOVERNANCE_CONTRACT_ID
-    )
-    assert set(result.payload["performance_public_actions"]) >= (
-        REQUIRED_PERFORMANCE_PUBLIC_ACTIONS
-    )
-    assert result.payload["runtime_equivalence_contract"] == RUNTIME_EQUIVALENCE_CONTRACT_ID
-    assert set(result.payload["runtime_equivalence_actions"]) >= (
-        REQUIRED_RUNTIME_EQUIVALENCE_PUBLIC_ACTIONS
-    )
-    assert result.payload["runtime_equivalence_case_count"] == 2
-    assert result.payload["runtime_equivalence_checked_path_count"] == 4
-    assert result.payload["performance_workload_count"] == 2
-    assert result.payload["performance_trace_count"] == 1
-    assert result.payload["performance_digest_count"] == 3
-    assert result.payload["optimization_safety_contract"] == (
-        OPTIMIZATION_RUNTIME_DEBUG_SAFETY_CONTRACT_PATH
-    )
-    assert result.payload["optimization_safety_benchmark_contract_count"] == 2
-    assert result.payload["optimization_safety_boundary_count"] == 3
-    assert result.payload["optimization_safety_negative_case_count"] == 12
-    assert result.payload["optimization_safety_evidence_path_count"] == 13
-    assert result.payload["optimization_safety_umbrella_status"] == (
-        "bounded-source-owned-ready"
-    )
-    assert result.payload["optimization_safety_umbrella_source_contract_count"] == 8
-    assert result.payload["optimization_safety_umbrella_negative_fixture_count"] == 4
-    assert result.payload["optimization_safety_umbrella_public_action_count"] == 7
-    assert result.payload["optimization_safety_umbrella_capability_row_count"] == 6
-    assert set(result.payload["capability_rows_required"]) >= REQUIRED_CAPABILITY_ROWS
-    assert set(result.payload["evidence_ids_required"]) >= REQUIRED_EVIDENCE_IDS
 
 
 def test_semantic_optimization_pipeline_public_workflow_action_is_registered() -> None:

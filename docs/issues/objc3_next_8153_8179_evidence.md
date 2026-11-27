@@ -3,7 +3,10 @@
 This page records durable repo evidence for the post-cutover issue index and
 the late developer-workflow, package, platform, application-sample, and
 release-channel documentation rows.
-It is not a release publication log and does not replace GitHub issue state.
+These are historical records for the prototype compiler. Replay commands and
+source paths refer to that compiler's revisions. The
+[Linux release guide](../releases/linux.md) documents the current SDK
+and its validation.
 
 ## Source Rules
 

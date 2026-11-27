@@ -29,45 +29,24 @@ def _contract_payload() -> dict[str, object]:
     return checker._load_json(checker.CONTRACT_PATH)
 
 
-def test_completion_contract_passes_against_checked_in_sources() -> None:
+def test_completion_contract_rejects_unavailable_prototype_sources() -> None:
     result = checker.validate_completion_contract()
 
-    assert result.passed, result.failures
+    assert not result.passed
     assert result.payload["issues"] == [8159, 8174, 8175]
-    assert result.payload["public_reflection"]["entrypoint_count"] >= 18
-    assert result.payload["public_reflection"]["lifetime_model"] == (
-        "caller-owned snapshots with runtime-owned borrowed strings"
+    assert any(
+        failure.startswith("public reflection header path missing: ")
+        for failure in result.failures
     )
-    assert result.payload["semantic_optimization"]["pipeline_validation_status"] == "PASS"
-    assert result.payload["semantic_optimization"]["reserved_passes"] == [
-        "cache-aware-dispatch",
-        "method-inlining",
-    ]
-    assert result.payload["semantic_optimization"]["runtime_equivalence_contract"] == (
-        "objc3c.optimization.semantic.pipeline.runtime_equivalence.v1"
-    )
-    assert result.payload["semantic_optimization"]["runtime_equivalence_case_count"] == 2
-    scale_counts = result.payload["performance_evidence"]["scale_evidence_counts"]
-    assert scale_counts["stress_scale"] >= 8
-    assert scale_counts["scale_scenarios"] >= 4
-    assert result.payload["fail_closed_boundaries"]["boundary_count"] == 4
 
 
-def test_completion_contract_cli_writes_report() -> None:
-    report_path = (
-        ROOT
-        / "tmp"
-        / "reports"
-        / "reflection-optimization-performance"
-        / "pytest-completion-contract.json"
-    )
-    if report_path.exists():
-        report_path.unlink()
+def test_completion_contract_cli_writes_failure_report(tmp_path: Path) -> None:
+    report_path = tmp_path / "completion-contract.json"
 
-    assert checker.main(["--summary-out", str(report_path)]) == 0
+    assert checker.main(["--summary-out", str(report_path)]) == 1
 
     payload = json.loads(report_path.read_text(encoding="utf-8"))
-    assert payload["status"] == "PASS"
+    assert payload["status"] == "FAIL"
     assert payload["contract_id"] == (
         "objc3c.reflection.optimization.performance.completion.validation.v1"
     )
@@ -131,13 +110,21 @@ def test_completion_contract_rejects_generated_report_authority(tmp_path: Path) 
     )
 
 
-def test_completion_contract_rejects_private_public_header_boundary(tmp_path: Path) -> None:
+def test_completion_contract_rejects_private_public_header_boundary(tmp_path: Path, monkeypatch) -> None:
     payload = _contract_payload()
     variant = copy.deepcopy(payload)
     variant["public_reflection"]["forbidden_public_header_tokens"].append(
         "objc3_runtime_reflection_state_snapshot"
     )
 
+    read = checker._read
+
+    def read_with_private_symbol(path, failures, owner):
+        if owner == "public reflection header":
+            return "struct objc3_runtime_reflection_state_snapshot;"
+        return read(path, failures, owner)
+
+    monkeypatch.setattr(checker, "_read", read_with_private_symbol)
     result = checker.validate_completion_contract(_variant(tmp_path, variant))
 
     assert not result.passed

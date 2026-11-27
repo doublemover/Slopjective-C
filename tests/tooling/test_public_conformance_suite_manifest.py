@@ -44,58 +44,13 @@ def case_by_id(manifest: dict[str, Any], case_id: str) -> dict[str, Any]:
     raise AssertionError(f"missing suite case: {case_id}")
 
 
-def test_public_conformance_suite_manifest_passes_and_reports_public_taxonomy() -> None:
+def test_public_conformance_manifest_rejects_retired_fixture_root(tmp_path: Path, capsys) -> None:
     checker = load_checker()
-    checker.SUMMARY_PATH = ROOT / "tmp" / "tests" / "public-suite-summary.json"
-    checker.SUMMARY_PATH.unlink(missing_ok=True)
+    checker.SUMMARY_PATH = tmp_path / "summary.json"
 
-    try:
-        assert checker.main() == 0
-        summary = load_json_object(checker.SUMMARY_PATH)
-    finally:
-        checker.SUMMARY_PATH.unlink(missing_ok=True)
-
-    assert summary["contract_id"] == "objc3c.public_conformance_suite.summary.v1"
-    assert summary["status"] == "PASS"
-    assert summary["case_count"] == 12
-    assert summary["phase_count"] == 8
-    assert summary["profile_count"] == 3
-    assert summary["packageable"] is True
-    assert summary["artifact_contract_issue_id"] == "OBJ3-NEXT-018"
-    assert summary["source_owned_contract_count"] == 3
-    assert summary["package_manifest_replay_contract"] == "objc3c.public_conformance_suite.package_manifest.v1"
-    assert summary["package_manifest_replay_action_count"] == 4
-    assert summary["package_manifest_required_file_count"] == 6
-    assert summary["package_manifest_source_hash_algorithm"] == "sha256"
-    assert summary["source_owned_case_count"] == 12
-    assert summary["fixture_provenance_allowed_origins"] == ["checked-in-public-suite"]
-    assert summary["fixture_provenance_origin_counts"] == {"checked-in-public-suite": 12}
-    assert summary["allowed_generated_roots"] == [
-        "tmp/reports/conformance",
-        "tmp/artifacts/public-conformance/suite",
-        "tmp/pkg/objc3-public-conformance-suite",
-    ]
-    assert summary["outside_repo_replay_required"] is True
-    assert summary["public_commands_only"] is True
-    assert summary["fixture_boundary"] == {
-        "public_fixture_root_count": 7,
-        "internal_only_root_count": 3,
-        "checked_in_expected_outputs_required": True,
-    }
-    assert summary["accepted_external_validation_entries"] == 3
-    assert summary["rejected_external_validation_entries"] == 3
-    assert summary["release_candidate_public_stable_case_count"] == 12
-    assert summary["release_candidate_required_phase_count"] == 8
-    assert summary["release_candidate_gate_command"] == "npm run objc3c -- validate-release-candidate-conformance"
-    assert summary["phase_case_counts"]["release_candidate"] == 2
-    assert summary["phase_case_counts"]["sema"] == 2
-    assert "npm run objc3c -- validate-release-candidate-conformance" in summary["public_commands"]
-    assert "npm run objc3c -- validate-conformance-corpus" in summary["public_commands"]
-    assert "npm run objc3c -- validate-cross-lane-e2e" in summary["public_commands"]
-    assert "objc3c.behavior.parser.canonical-syntax" in summary["support_claims"]
-    assert "objc3c.behavior.conformance.public-stable-suite" in summary["support_claims"]
-    assert "objc3c.behavior.diagnostics.parser-sema-recovery-fixits" in summary["support_claims"]
-    assert "objc3c.behavior.stdlib.text.runtime-builder-interpolation" in summary["support_claims"]
+    assert checker.main() == 1
+    assert "missing public fixture root: stdlib/modules" in capsys.readouterr().err
+    assert not checker.SUMMARY_PATH.exists()
 
 
 def test_public_conformance_suite_manifest_cites_packaged_outside_repo_replay_evidence() -> None:

@@ -48,6 +48,25 @@ parallel_installs
     assert (tmp_path / "node-complete").exists()
 
 
+def test_activation_prefers_pinned_cmake_over_a_python_entry_point(tmp_path: Path) -> None:
+    for directory in (tmp_path / 'bin', tmp_path / 'venv315/bin'):
+        directory.mkdir(parents=True)
+        for tool in ('cmake', 'ctest', 'cpack'):
+            executable = directory / tool
+            executable.write_text('#!/bin/sh\nexit 0\n')
+            executable.chmod(0o755)
+    result = run_shell(tmp_path, '''
+host_asset() { printf '%s\\n' "$1"; }
+python3() { echo 4; }
+export PATH="$setup_root/venv315/bin:$PATH"
+write_activation
+source "$setup_root/activate.sh"
+for tool in cmake ctest cpack; do command -v "$tool"; done
+''')
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.splitlines() == [str(tmp_path / 'bin' / name) for name in ('cmake', 'ctest', 'cpack')]
+
+
 @pytest.mark.parametrize("free,tmp_size,expected", [(4096,8192,0), (4095,0,1), (8192,8193,1)])
 def test_disk_reserve_and_temp_limits(tmp_path: Path, free: int, tmp_size: int, expected: int) -> None:
     (tmp_path / "tmp").mkdir()

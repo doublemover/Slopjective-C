@@ -62,6 +62,7 @@ def test_core_hygiene_catalog_preserves_public_order() -> None:
     assert tuple(CORE_HYGIENE_ACTION_SPECS) == (
         "lint",
         "check-dependency-boundaries",
+        "materialize-ci-llvm",
         "check-llvm-capabilities",
         "check-hosted-llvm-capabilities",
         "check-release-evidence",

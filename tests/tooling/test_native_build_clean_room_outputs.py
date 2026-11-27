@@ -89,14 +89,16 @@ def test_native_binary_builds_are_serialized_per_build_directory() -> None:
 def test_cmake_reproducible_build_policy_is_fingerprinted() -> None:
     from scripts.objc3c_toolchain.facade import facade_identity
 
-    cmake_lists = (ROOT / "native/objc3c/CMakeLists.txt").read_text(encoding="utf-8")
-    assert '-ffile-prefix-map=${CMAKE_SOURCE_DIR}=.' in cmake_lists
-    assert '-fdebug-prefix-map=${CMAKE_SOURCE_DIR}=.' in cmake_lists
+    policy = ROOT / "native/objc3c/cmake/Objc3BuildWarnings.cmake"
+    flags = policy.read_text(encoding="utf-8")
+    assert '-ffile-prefix-map=${CMAKE_SOURCE_DIR}=.' in flags
+    assert '-fdebug-prefix-map=${CMAKE_SOURCE_DIR}=.' in flags
     # Reproducibility is unconditional in the native Linux cutover. The actual
     # frontend input identity binds this policy, including its CMake modules.
     inputs = facade_identity(ROOT)["inputs"]
     assert "native/objc3c/CMakeLists.txt" in inputs
     assert "native/objc3c/cmake/Objc3ClangFoundation.cmake" in inputs
+    assert policy.relative_to(ROOT).as_posix() in inputs
 
 
 def test_runnable_package_includes_native_cmake_support_modules() -> None:

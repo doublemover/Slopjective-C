@@ -174,24 +174,37 @@ def test_reuse_identity_rejects_compiler_runtime_source_and_tool_mutations(tmp_p
         path.write_text(original, encoding="utf-8")
 
 
-def test_current_fresh_runtime_acceptance_report_is_reusable_without_running_cases(monkeypatch) -> None:
+def test_runtime_acceptance_reuses_verified_report_without_running_cases(
+    tmp_path: Path, monkeypatch,
+) -> None:
+    paths = _fixture_root(tmp_path)
+    root = paths[0]
+    identity = _identity(paths)
+    assert identity["complete"] is True, identity["failures"]
+    monkeypatch.setattr(reuse, "ROOT", root)
     monkeypatch.setenv("OBJC3C_SKIP_RUNTIME_ACCEPTANCE_RERUN", "1")
-    report_path = reuse.ROOT / "tmp/reports/runtime/acceptance/summary.json"
-    if not report_path.is_file():
-        return
-    report = json.loads(report_path.read_text(encoding="utf-8"))
-    identity = report.get("runtime_reuse_identity", {})
-    if identity.get("options", {}).get("python_version") != list(__import__("sys").version_info[:3]):
-        return
-    expected = set(map(str, report.get("case_labels", [])))
-    options_digest = str(report.get("options_digest", ""))
-    assert expected
-    assert reuse._valid_runtime_report(report_path, expected, options_digest) == (True, "verified")
+    monkeypatch.setitem(reuse.RUNTIME_ACCEPTANCE_SUITE_CASES, "fast", ("label-a",))
+    report_path = root / "tmp/reports/runtime/acceptance/summary.json"
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(
+        json.dumps({
+            "status": "PASS",
+            "selected_suite": "fast",
+            "selected_cases": [],
+            "fixture_ids": ["fixture-a"],
+            "case_labels": ["label-a"],
+            "options_digest": identity["options_digest"],
+            "runtime_reuse_identity": identity,
+        }),
+        encoding="utf-8",
+    )
+
     step = reuse.runtime_acceptance_reuse_step(
         "test-runtime-acceptance-fast",
-        ["python", "runner.py", "--suite", str(identity.get("options", {}).get("suite", "fast"))],
+        ["python", "runner.py", "--suite", "fast"],
         0.0,
     )
+
     assert step is not None
     assert step["report_reused"] is True
 
