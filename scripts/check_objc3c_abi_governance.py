@@ -48,7 +48,7 @@ REQUIRED_COMPATIBILITY_CASE_TRANSITIONS = {
 }
 SUPPORTED_EXTRACTOR_KINDS = {
     "c-header-public-symbols",
-    "stdlib-module-abi-signatures",
+    "stdlib-module-headers",
     "package-abi-identity-schema",
 }
 COMMENT_RE = re.compile(r"/\*.*?\*/|//[^\n]*", re.DOTALL)
@@ -180,28 +180,34 @@ def _extract_c_header_public_symbols(paths: Sequence[Path]) -> list[str]:
     return sorted(set(entries))
 
 
-def _extract_stdlib_module_abi_signatures(paths: Sequence[Path], failures: list[str]) -> list[str]:
+def _extract_stdlib_module_headers(paths: Sequence[Path], failures: list[str]) -> list[str]:
     entries: list[str] = []
     for path in sorted(paths, key=_repo_rel):
-        payload = _load_payload(path, f"stdlib ABI module {_repo_rel(path)}", failures)
-        if not payload:
+        payload = _load_payload(path, f"stdlib module inventory {_repo_rel(path)}", failures)
+        modules = payload.get("canonical_modules")
+        if payload.get("contract_id") != "objc3c.stdlib.module_inventory.v2" or not isinstance(modules, list) or not modules:
+            failures.append(_failure(f"stdlib module inventory {_repo_rel(path)} lacks current module declarations"))
             continue
-        module = payload.get("canonical_module")
-        if not isinstance(module, str) or not module:
-            failures.append(_failure(f"stdlib ABI module {_repo_rel(path)} missing canonical_module"))
-            continue
-        for field_name in ("abi_signatures", "runtime_abi_signatures"):
-            signatures = payload.get(field_name)
-            if field_name == "runtime_abi_signatures" and not payload.get("runtime_abi"):
+        library = path.parent.resolve()
+        inputs = [("module-map", payload.get("module_map"))]
+        module_names = set()
+        for module in modules:
+            if not isinstance(module, dict) or not isinstance(module.get("module"), str) or not module["module"].startswith("objc3."):
+                failures.append(_failure(f"stdlib module inventory {_repo_rel(path)} contains a malformed module"))
                 continue
-            if not isinstance(signatures, dict) or not signatures:
-                failures.append(_failure(f"stdlib ABI module {module} missing {field_name}"))
+            name = module["module"]
+            if name in module_names:
+                failures.append(_failure(f"stdlib module inventory {_repo_rel(path)} duplicates {name}"))
                 continue
-            for symbol, signature in sorted(signatures.items()):
-                if not isinstance(symbol, str) or not isinstance(signature, str):
-                    failures.append(_failure(f"stdlib ABI module {module} has malformed {field_name} entry"))
-                    continue
-                entries.append(f"{module}::{field_name}::{symbol}::{signature}")
+            module_names.add(name)
+            semver = json.dumps(module.get("module_semver"), sort_keys=True, separators=(",", ":"))
+            inputs.append((f"{name}::{semver}", module.get("header")))
+        for label, relative in inputs:
+            file = (library / relative).resolve() if isinstance(relative, str) and relative else library
+            if not file.is_relative_to(library) or not file.is_file():
+                failures.append(_failure(f"stdlib module input {label} is missing or outside its source root"))
+                continue
+            entries.append(f"{label}::{file.relative_to(library).as_posix()}::{hashlib.sha256(file.read_bytes()).hexdigest()}")
     return sorted(entries)
 
 
@@ -245,8 +251,8 @@ def _extract_surface(target: dict[str, Any], failures: list[str]) -> list[str]:
         return []
     if kind == "c-header-public-symbols":
         return _extract_c_header_public_symbols(paths)
-    if kind == "stdlib-module-abi-signatures":
-        return _extract_stdlib_module_abi_signatures(paths, failures)
+    if kind == "stdlib-module-headers":
+        return _extract_stdlib_module_headers(paths, failures)
     if kind == "package-abi-identity-schema":
         return _extract_package_abi_identity_schema(paths, failures)
     failures.append(_failure(f"extractor {extractor_id} has unsupported kind {kind!r}"))

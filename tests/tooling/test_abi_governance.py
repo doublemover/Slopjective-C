@@ -49,9 +49,9 @@ def test_abi_governance_accepts_checked_in_manifest(tmp_path: Path) -> None:
     observed = {
         item["extractor_id"]: item for item in summary["surface_extractors"]  # type: ignore[index]
     }
-    assert observed["runtime-public-c-header-symbols"]["observed_count"] == 199
-    assert observed["stdlib-module-abi-signatures"]["observed_count"] == 153
-    assert observed["package-lock-abi-identity-schema"]["observed_count"] == 3
+    assert observed["runtime-public-c-header-symbols"]["observed_count"] == 290
+    assert observed["stdlib-module-headers"]["observed_count"] == 8
+    assert observed["package-lock-abi-identity-schema"]["observed_count"] == 4
     assert summary["release_blocker_issue_refs"] == ["#8173"]
 
 
@@ -173,7 +173,7 @@ def test_abi_governance_rejects_generated_extraction_sources(tmp_path: Path) -> 
 
     assert rc == 1
     assert any(
-        "extractor stdlib-module-abi-signatures.source_globs must not point at generated temp output"
+        "extractor stdlib-module-headers.source_globs must not point at generated temp output"
         in failure
         for failure in summary["failures"]  # type: ignore[index]
     )
