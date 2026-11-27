@@ -24,6 +24,6 @@ def test_powershell_file_command_uses_noninteractive_policy() -> None:
         "-ExecutionPolicy",
         "Bypass",
         "-File",
-        "scripts\\check.ps1",
+        str(Path("scripts/check.ps1")),
         "-Flag",
     ]

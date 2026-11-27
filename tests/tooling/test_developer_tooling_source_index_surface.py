@@ -52,7 +52,7 @@ def test_source_index_derives_declarations_references_diagnostics_and_artifacts(
     assert source_index["declaration_count"] == 4
     assert source_index["reference_count"] == 5
     assert source_index["diagnostic_anchor_count"] == 1
-    assert source_index["emitted_artifact_count"] == 5
+    assert source_index["emitted_artifact_count"] == 6
     assert len(source_index["source_index_digest"]) == 64
     assert [declaration["symbol"] for declaration in source_index["declarations"]] == [
         "globalCounter",

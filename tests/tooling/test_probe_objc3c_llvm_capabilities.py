@@ -36,6 +36,7 @@ from objc3c_llvm_capabilities_probe_subprocess import (
     fake_mixed_toolchain_root_run,
 )
 from objc3c_llvm_capabilities_probe_support import PACKAGE_JSON, probe
+from objc3c_llvm_capability_probe import cli
 
 
 def default_probe_args(summary_out: Path) -> list[str]:
@@ -71,7 +72,24 @@ def test_probe_passes_when_clang_and_llc_capabilities_are_detected(
     exit_code = probe.run(default_probe_args(summary_out))
 
     assert exit_code == 0
-    assert_success_payload(load_json(summary_out))
+    payload = load_json(summary_out)
+    assert_success_payload(payload)
+    assert payload["capability_demo_compatibility"]["status"] == "retired"
+    assert payload["capability_demo_compatibility"]["ok"] is False
+
+
+def test_probe_rejects_incomplete_demo_inventory(tmp_path: Path, monkeypatch) -> None:
+    program_surface_path = tmp_path / "program_surface.json"
+    program_surface_path.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(cli, "PROGRAM_SURFACE_PATH", program_surface_path)
+    monkeypatch.setattr(cli, "SHOWCASE_PORTFOLIO_PATH", tmp_path / "missing_portfolio.json")
+    monkeypatch.setattr(probe.subprocess, "run", fake_capabilities_detected_run)
+    summary_out = tmp_path / "summary.json"
+
+    assert probe.run(default_probe_args(summary_out)) == 1
+    payload = load_json(summary_out)
+    assert payload["toolchain_identity"]["claimable"] is True
+    assert any("missing showcase portfolio contract" in failure for failure in payload["failures"])
 
 
 def test_probe_fails_when_llc_is_missing(tmp_path: Path, monkeypatch) -> None:

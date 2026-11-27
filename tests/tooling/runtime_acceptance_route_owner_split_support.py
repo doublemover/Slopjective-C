@@ -19,6 +19,7 @@ PUBLIC_RUNTIME_ACCEPTANCE_ACTIONS = {
     "test-runtime-acceptance-block-arc",
     "test-runtime-acceptance-arc-cleanup-integration",
     "test-runtime-acceptance-concurrency",
+    "validate-cache-aware-dispatch",
 }
 
 

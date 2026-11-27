@@ -756,7 +756,7 @@ def test_package_channel_cli_reuses_validated_runnable_package_without_rebuild(
 ) -> None:
     from scripts.objc3c_package_channels import cli as package_cli
 
-    package_root = runnable_package_reuse_fixture(tmp_path)
+    package_root = runnable_package_reuse_fixture(tmp_path, target_platform_id="linux-x64")
     captured: dict[str, object] = {}
     inputs = sample_inputs()
     monkeypatch.setattr(package_cli, "package_channel_run_id", lambda: "unit-reuse-cli")
@@ -828,7 +828,10 @@ def test_package_channel_cli_reuses_validated_runnable_package_without_rebuild(
     )
     monkeypatch.setattr(package_cli, "print_package_channel_result", lambda paths: None)
 
-    assert package_cli.main(["--reuse-runnable-package-root", repo_rel(package_root)]) == 0
+    assert package_cli.main([
+        "--target-platform-id", "linux-x64",
+        "--reuse-runnable-package-root", repo_rel(package_root),
+    ]) == 0
     assert captured["reuse_existing"] is False
     assert captured["reuse_primary_package_root"] == package_root.resolve()
     assert captured["workspace_package_root"] == package_root.resolve()
@@ -842,7 +845,7 @@ def test_package_channel_cli_can_reuse_release_foundation_and_runnable_package(
 ) -> None:
     from scripts.objc3c_package_channels import cli as package_cli
 
-    package_root = runnable_package_reuse_fixture(tmp_path)
+    package_root = runnable_package_reuse_fixture(tmp_path, target_platform_id="linux-x64")
     captured: dict[str, object] = {}
     inputs = sample_inputs()
     monkeypatch.setattr(package_cli, "package_channel_run_id", lambda: "unit-reuse-both-cli")
@@ -918,6 +921,8 @@ def test_package_channel_cli_can_reuse_release_foundation_and_runnable_package(
         package_cli.main(
             [
                 "--reuse-release-foundation-artifacts",
+                "--target-platform-id",
+                "linux-x64",
                 "--reuse-runnable-package-root",
                 repo_rel(package_root),
             ]
