@@ -1,6 +1,6 @@
 # Linux SDK releases
 
-The [Linux SDK v0.1.0-preview.1 release](https://github.com/doublemover/Slopjective-C/releases/tag/v0.1.0-preview.1)
+The [Linux SDK v0.1.0-preview.2 release](https://github.com/doublemover/Slopjective-C/releases/tag/v0.1.0-preview.2)
 provides binary archives for x86-64 and AArch64. Check the
 [release support table](preview-support.md) for distributions and ABI minimums.
 The release manifest records the source commit, archive digests, SDK seals,
@@ -22,7 +22,7 @@ The installer supports a user-owned location and a system location.
     x86_64|aarch64) ;;
     *) printf 'Unsupported Linux architecture\n' >&2; exit 1 ;;
   esac
-  archive="objc3-sdk-v0.1.0-preview.1-linux-$arch.tar.zst"
+  archive="objc3-sdk-v0.1.0-preview.2-linux-$arch.tar.zst"
   for file in install-linux.sh install-sdk.py linux-release.json "$archive"; do
     awk -v file="$file" '$2 == file { print }' SHA256SUMS | sha256sum --check --strict
   done
@@ -36,16 +36,12 @@ root and use `--root /opt/objc3c` for a system installation. The installer uses
 the distribution's apt repositories to install its dependencies. An existing
 installation root keeps its administrator-set permissions.
 
-The current bootstrap checks its companion file and the archive checksum before
-invoking apt and skips package setup once all prerequisites are installed. The
-published preview bootstrap provisions packages first, so use the checksum
-checks above before invoking its `--provision` option.
-
-The current installer source checks the archive's glibc and system libstdc++
-requirements before it activates an SDK. If the check fails, use a qualified
-distribution or update its libstdc++ package. The published preview installer
-predates this check. The [ABI admission replay](../roadmap/linux_installer_abi_acceptance.md)
-uses the published x86-64 archive with the updated installer.
+Verify the downloads before running the bootstrap. It checks for the installer
+companion and verifies the archive checksum before invoking apt. It skips
+package setup when all prerequisites are already installed. The installer also
+checks glibc and system libstdc++ requirements before activation. If the host
+falls below those minimums, use a qualified distribution or update its
+libstdc++ package.
 
 After activating the SDK, follow [Getting started](../tutorials/getting_started.md)
 to compile your first program from a fresh working directory.

@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 import shutil
 
@@ -76,8 +77,10 @@ def test_rejects_preview_platform_or_abi_drift(reader_tree):
 
 
 def test_rejects_preview_install_tag_drift(reader_tree):
-    page = reader_tree / 'docs/releases/linux.md'
-    page.write_text(page.read_text().replace('objc3-sdk-v0.1.0-preview.1', 'objc3-sdk-v0.1.0-preview.2'))
+    releases = reader_tree / 'docs/releases'
+    tag = json.loads((releases / 'preview-manifest.json').read_bytes())['tag']
+    page = releases / 'linux.md'
+    page.write_text(page.read_text().replace(f'objc3-sdk-{tag}', 'objc3-sdk-v0.0.0-test'))
     with pytest.raises(ValueError, match='published manifest tag'):
         check(reader_tree)
 

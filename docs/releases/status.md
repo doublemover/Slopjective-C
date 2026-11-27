@@ -2,8 +2,8 @@
 
 | Item                 | Current state                                                                                                                                                         |
 | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Public download      | [Linux SDK v0.1.0-preview.1](https://github.com/doublemover/Slopjective-C/releases/tag/v0.1.0-preview.1)                                                              |
-| Released source      | Source 2.300 / System 2.223 at [`8fe5c2fd8`](https://github.com/doublemover/Slopjective-C/commit/8fe5c2fd89008d1c090a9355c11bdda01ceb9309)                            |
+| Public download      | [Linux SDK v0.1.0-preview.2](https://github.com/doublemover/Slopjective-C/releases/tag/v0.1.0-preview.2)                                                              |
+| Released source      | [`253fb2ac`](https://github.com/doublemover/Slopjective-C/commit/253fb2acbe807f8438ec555482696c6e6801fca0)                                                            |
 | Preview matrix       | Native x86-64 and AArch64, both qualified on Debian 13 and Ubuntu 26.04.                                                                                              |
 | Compiler ABI         | Extension ABI 24, with GNUstep 2.2 and pinned libobjc2. Rebuild Objective-C 3 objects, packages, and compiler-generated metadata with the preview SDK.                |
 | Earlier SDK evidence | SDK 2.62 / extension ABI 21 is recorded in the [development history](../roadmap/linux_development_history.md).                                                        |
@@ -13,7 +13,7 @@
 
 | Platform                 | Delivery                                                                                                                                                                                          | Evidence                                                                                                                                                                                                                                                                                        |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Linux x86-64 and AArch64 | Published native preview archives with the patched LLVM 23.1.5 compiler, ELF/DWARF output, and GNUstep 2.2 plus libobjc2.                                                                         | [Release assets](https://github.com/doublemover/Slopjective-C/releases/tag/v0.1.0-preview.1) · [Exact archive and clean-install identities](preview-manifest.json)                                                                                                                              |
+| Linux x86-64 and AArch64 | Published native preview archives with the patched LLVM 23.1.5 compiler, ELF/DWARF output, and GNUstep 2.2 plus libobjc2.                                                                         | [Release assets](https://github.com/doublemover/Slopjective-C/releases/tag/v0.1.0-preview.2) · [Exact archive and clean-install identities](preview-manifest.json)                                                                                                                              |
 | Apple Silicon macOS      | The opt-in `macos-arm64-registration-experimental` route passed the native compiler, runtime, package, relocation, installed ARC and portable service checks, including ASan and UBSan consumers. | [Native package qualification](https://github.com/doublemover/Slopjective-C/actions/runs/45299864475) · [Verified two-package update](https://github.com/doublemover/Slopjective-C/actions/runs/45312431420) · [Experimental replay instructions](../runbooks/objc3c_darwin_arm64_bootstrap.md) |
 | Production macOS arm64   | Unsupported. The experimental package records `support_truth: false`.                                                                                                                             | [Production capability matrix](../support/capability_matrix.md#macos-arm64-platform-support)                                                                                                                                                                                                    |
 
@@ -29,10 +29,10 @@ preview manifest defines the published Linux install scope. [Platform hardening 
 ## Release evidence
 
 - The ordinary SDK, instrumented, coverage, native analysis, and clean install
-  gates passed for [x86-64](https://github.com/doublemover/Slopjective-C/actions/runs/44865570421)
-  and [AArch64](https://github.com/doublemover/Slopjective-C/actions/runs/44865570382).
+  gates passed for [x86-64](https://github.com/doublemover/Slopjective-C/actions/runs/45901852042)
+  and [AArch64](https://github.com/doublemover/Slopjective-C/actions/runs/45901852382).
 - Both architectures passed fresh installs from the release downloads. All four
-  source archives passed checksum verification. [Release rehearsal](https://github.com/doublemover/Slopjective-C/actions/runs/44903086638/attempts/2)
+  source archives passed checksum verification. [Release rehearsal](https://github.com/doublemover/Slopjective-C/actions/runs/45997026270)
 - The [retained job receipts](preview-qualification.json) record exact-attempt
   outcomes and elapsed time for the qualification jobs. The
   [published manifest](preview-manifest.json) records the install scopes and
