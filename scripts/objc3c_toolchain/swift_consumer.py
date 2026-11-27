@@ -30,7 +30,8 @@ ASYNC_EXPECTED = {'value': 42, 'checked_error': True, 'cancellation': True,
                   'generated_scalars': True, 'generated_void': True, 'generated_enum': 42,
                   'generated_checked_value': 42, 'generated_checked_error': True,
                   'generated_async_record': 42, 'generated_checked_record': 42,
-                  'generated_async_vector': 42, 'generated_checked_vector': 42}
+                  'generated_async_vector': 42, 'generated_checked_vector': 42,
+                  'generated_owned_result': True}
 ASYNC_CASES = {(ownership, native, swift) for ownership in ('arc', 'mrc')
                for native in ('O0', 'O2') for swift in ('Onone', 'O')}
 QUALIFICATION_SCHEMA = 'objc3c.swift-consumer-qualification.v9'
@@ -176,9 +177,11 @@ def qualify_async_bridge(output, fixture, sdk, swift_root, target, loader, run, 
                 '--export-c-async', 'swift_bridge_scalars', '--export-c-async', 'swift_bridge_void',
                 '--export-c-async', 'swift_bridge_enum', '--export-c-async', 'swift_bridge_record',
                 '--export-c-async', 'swift_bridge_vector',
+                '--export-c-async', 'swift_bridge_owned_async',
                 '--export-c-async', 'SwiftBridgeCounter::add:', '--export-c-throws', 'swift_bridge_checked',
                 '--export-c-throws', 'swift_bridge_checked_void', '--export-c-throws', 'swift_bridge_checked_record',
-                '--export-c-throws', 'swift_bridge_checked_vector', '--emit-c-header',
+                '--export-c-throws', 'swift_bridge_checked_vector', '--export-c-throws', 'swift_bridge_owned_checked',
+                '--emit-c-header',
                 header, '--emit-swift-overlay', emitted_overlay, '--swift-c-module', 'ForeignAsync',
                 '--', '-std=c17', '-' + native_opt, '-fblocks', '-fobjc-runtime=gnustep-2.2',
                 '-fobjc-exceptions', *(['-fobjc-arc', '-fobjc-arc-exceptions'] if ownership == 'arc'
@@ -240,6 +243,16 @@ def qualify_async_bridge(output, fixture, sdk, swift_root, target, loader, run, 
         expected=1, contains=("'nil' is not compatible",))
     shutil.rmtree(cache)
     report['controls'].append({'name': 'async-null-actor-handle', 'status': 'PASS'})
+    unmanaged = output / 'UnmanagedSwiftResult.m'
+    unmanaged.write_text('@protocol Error @end\n'
+        '__attribute__((annotate("objc3.swift-owned-result:objc3_c_object_release")))\n'
+        'void * _Nonnull unmanaged(void * _Nonnull value) throws(id<Error>) { return value; }\n')
+    run('swift-unmanaged-owned-result-control', [sdk / 'bin/objc3c', unmanaged, '--objc3',
+        '--export-c-throws', 'unmanaged', '--emit-object', output / 'unmanaged.o',
+        '--emit-c-header', output / 'unmanaged.h', '--emit-swift-overlay', output / 'unmanaged.swift',
+        '--swift-c-module', 'ForeignAsync', '--', '-std=c17', '-fobjc-runtime=gnustep-2.2',
+        '-fobjc-arc', '-I' + str(sdk / 'include')], expected=1,
+        contains=('Swift owned results require a nonnull Objective-C object',))
 
 
 def qualify(repo, output, *, sdk, swift_root, symbolizer):

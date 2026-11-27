@@ -5,8 +5,12 @@
 #include <map>
 #include <new>
 #include <string>
+#if defined(__APPLE__) && defined(__MACH__)
+#include <pthread.h>
+#else
 #include <sys/syscall.h>
 #include <unistd.h>
+#endif
 #include <utility>
 
 namespace {
@@ -88,7 +92,11 @@ bool reserve_worker_slot() noexcept {
 }
 
 bool is_process_main_thread() noexcept {
+#if defined(__APPLE__) && defined(__MACH__)
+  return ::pthread_main_np() != 0;
+#else
   return ::syscall(SYS_gettid) == ::getpid();
+#endif
 }
 
 void run_callback(objc3_executor_t *executor,

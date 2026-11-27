@@ -10,19 +10,17 @@ from pathlib import Path
 
 from .core import ToolchainError, build_plan, prepare, seal_development, verify_development
 from .linux_host import HOSTS
+from .source_graph import add_build_arguments
 
 
 def _parser():
     parser = argparse.ArgumentParser(prog="python -m scripts.objc3c_toolchain")
     commands = parser.add_subparsers(dest="command", required=True)
-    binary = commands.add_parser("packages", help="publish, install or consume immutable offline packages")
+    binary = commands.add_parser("packages", help="manage content-addressed native packages")
     binary.add_argument("--sdk-root", type=Path)
     binary.add_argument("arguments", nargs=argparse.REMAINDER)
-    packages = commands.add_parser("build-packages", help="build a locked offline source-package workspace")
-    packages.add_argument("--workspace", type=Path, required=True)
-    packages.add_argument("--output-dir", type=Path, required=True)
-    packages.add_argument("--sdk-root", type=Path)
-    packages.add_argument("--optimization", choices=("O0", "O2"), default="O2")
+    packages = commands.add_parser("build-packages", help="plan or build a locked offline source-package workspace")
+    add_build_arguments(packages)
     sdk = commands.add_parser("build-sdk", help="build, qualify, package and install the native Linux SDK")
     sdk.add_argument("--repo", type=Path, default=Path.cwd())
     sdk.add_argument("--fetch", action="store_true")
@@ -90,12 +88,8 @@ def main(argv: list[str] | None = None) -> int:
             arguments = (["--sdk-root", str(args.sdk_root)] if args.sdk_root else []) + args.arguments
             return package_main(arguments) or 0
         elif args.command == "build-packages":
-            import os
-            from .source_graph import build_graph
-            sdk = args.sdk_root or Path(os.environ.get('OBJC3C_SDK_ROOT', str(Path.cwd() / 'out/toolchains/linux-sdk/current')))
-            report = build_graph(sdk, args.workspace, args.output_dir, args.optimization)
-            result = {'status': report['status'], 'report': str(args.output_dir / 'build-report.json'),
-                      'reused': [name for name, node in report['nodes'].items() if node['reused']]}
+            from .source_graph import run_workspace
+            result = run_workspace(args)
         elif args.command == "build-sdk":
             from .linux_sdk import build_sdk
             result = build_sdk(args.repo, fetch=args.fetch, install_root=args.install_root, foundation_sdk=args.foundation_sdk,

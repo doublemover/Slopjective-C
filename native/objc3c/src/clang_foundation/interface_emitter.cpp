@@ -949,7 +949,7 @@ bool ValidateOwnershipProjection(clang::ASTContext &context,
                                  llvm::StringRef producer_sidecar,
                                  InterfaceEmissionArtifact &result,
                                  const clang::Preprocessor *preprocessor,
-                                 unsigned native_asm_dialect);
+                                 unsigned native_asm_dialect, bool &cross_language);
 }
 
 InterfaceEmissionArtifact EmitSemanticInterface(
@@ -1073,9 +1073,11 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     return result;
   }
 
+  bool cross_language_projection = false;
   if (!ownership_projection.empty() &&
       (!resolved_dependencies.empty() ||
-       !ValidateOwnershipProjection(context, ownership_projection, result, preprocessor, native_asm_dialect))) {
+       !ValidateOwnershipProjection(context, ownership_projection, result, preprocessor, native_asm_dialect,
+                                    cross_language_projection))) {
     if (result.diagnostics.empty())
       AddDiagnostic(result, "O3IFC150",
                     "ownership projections cannot have dependencies");
@@ -1090,6 +1092,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   sidecar.ownership_projection = ownership_projection.str();
   if (!ownership_projection.empty())
     sidecar.required_semantics.push_back("objc3.ownership-projection.v1");
+  if (cross_language_projection)
+    sidecar.required_semantics.push_back("objc3.cxx-abi-projection.v1");
   sidecar.module = result.identity;
   sidecar.declarations = collector.Identities();
   sidecar.dependencies = resolved_dependencies;
@@ -1539,15 +1543,16 @@ InterfaceEmissionArtifact EmitSemanticInterface(
 namespace {
 const auto kProjectionSemantics = SupportedSemanticInterfaceCapabilities();
 
-bool ProjectionMode(const clang::ASTContext &context) {
+bool ProjectionMode(const clang::ASTContext &context, bool plain_cxx) {
   const auto &lang = context.getLangOpts();
   llvm::StringRef standard =
       clang::LangStandard::getLangStandardForKind(lang.LangStd).getName();
   const bool supported_standard =
       lang.CPlusPlus ? (standard == "c++20" || standard == "c++23")
                      : standard == "c17";
-  return supported_standard && lang.ObjC && lang.ObjC3 &&
-         lang.ObjCRuntime.getAsString() == "gnustep-2.2" &&
+  return supported_standard &&
+         (plain_cxx ? lang.CPlusPlus && !lang.ObjC :
+          lang.ObjC && lang.ObjC3 && lang.ObjCRuntime.getAsString() == "gnustep-2.2") &&
          static_cast<unsigned>(lang.ObjC3Profile) == 0 &&
          (context.getTargetInfo().getTriple().str() == "x86_64-unknown-linux-gnu" ||
           context.getTargetInfo().getTriple().str() == "aarch64-unknown-linux-gnu");
@@ -1578,8 +1583,8 @@ bool ProjectionType(clang::QualType type, bool result) {
 bool ProjectionAPI(clang::ASTContext &context,
                    InterfaceEmissionArtifact &result,
                    const std::vector<std::string> &exports = {},
-                   const std::string &source_root = {}) {
-  if (!ProjectionMode(context)) {
+                   const std::string &source_root = {}, bool plain_cxx = false) {
+  if (!ProjectionMode(context, plain_cxx)) {
     AddDiagnostic(result, "O3IFC150",
                   "ownership projections require the qualified ObjC3 Linux "
                   "GNUstep 2.2 compatibility mode");
@@ -1642,11 +1647,25 @@ std::vector<std::string> ProjectionArguments(const clang::ASTContext &context,
   return args;
 }
 
+std::vector<std::string> CrossLanguageArguments(const clang::ASTContext &context, bool to_objcxx,
+                                                bool arc, const clang::Preprocessor *preprocessor,
+                                                unsigned dialect) {
+  auto args = RoundTripArguments(context, preprocessor, dialect);
+  *std::next(std::find(args.begin(), args.end(), "-x")) = to_objcxx ? "objective-c++" : "c++";
+  std::erase_if(args, [](llvm::StringRef arg) {
+    return arg.starts_with("-fobjc") || arg.starts_with("-fno-objc");
+  });
+  if (to_objcxx)
+    args.insert(args.end(), {"-fobjc-version=3", "-fobjc-runtime=gnustep-2.2",
+                             arc ? "-fobjc-arc" : "-fno-objc-arc"});
+  return args;
+}
+
 bool ValidateOwnershipProjection(clang::ASTContext &context,
                                  llvm::StringRef producer_sidecar,
                                  InterfaceEmissionArtifact &result,
                                  const clang::Preprocessor *preprocessor,
-                                 unsigned native_asm_dialect) {
+                                 unsigned native_asm_dialect, bool &cross_language) {
   if (!ProjectionAPI(context, result))
     return false;
   auto original = DecodeSemanticInterfaceSidecar(
@@ -1667,8 +1686,14 @@ bool ValidateOwnershipProjection(clang::ASTContext &context,
                   "or nesting is invalid");
     return false;
   }
-  auto arguments =
-      ProjectionArguments(context, !context.getLangOpts().ObjCAutoRefCount, preprocessor, native_asm_dialect);
+  cross_language = llvm::StringRef(original->module.language_profile).contains(";language=c++;");
+  if (cross_language && !context.getLangOpts().CPlusPlus) {
+    AddDiagnostic(result, "O3IFC152", "C++ ABI projection requires an Objective-C++ consumer");
+    return false;
+  }
+  auto arguments = cross_language
+      ? CrossLanguageArguments(context, false, false, preprocessor, native_asm_dialect)
+      : ProjectionArguments(context, !context.getLangOpts().ObjCAutoRefCount, preprocessor, native_asm_dialect);
   clang::tooling::FileContentMappings files;
   AddRuntimeInterfaceFiles(files, arguments, result.source_bytes.find(
       "#include <objc3c/runtime/objc3_task.hpp>") != std::string::npos,
@@ -1676,12 +1701,12 @@ bool ValidateOwnershipProjection(clang::ASTContext &context,
       result.source_bytes.find(kRuntimeCompletionInclude) != std::string::npos);
   auto ast = clang::tooling::buildASTFromCodeWithArgs(
       result.source_bytes, arguments,
-      context.getLangOpts().CPlusPlus ? "ownership-producer.mm"
+      cross_language ? "ownership-producer.cpp" : context.getLangOpts().CPlusPlus ? "ownership-producer.mm"
                                       : "ownership-producer.m",
       "clang-tool", std::make_shared<clang::PCHContainerOperations>(),
       clang::tooling::getClangStripDependencyFileAdjuster(), files);
   if (!ast || ast->getDiagnostics().hasErrorOccurred() ||
-      !ProjectionAPI(ast->getASTContext(), result)) {
+      !ProjectionAPI(ast->getASTContext(), result, {}, {}, cross_language)) {
     if (result.diagnostics.empty())
       AddDiagnostic(result, "O3IFC153",
                     "ownership projection producer cannot be reconstructed");
@@ -1709,21 +1734,24 @@ InterfaceEmissionArtifact EmitOwnershipProjection(
     const clang::Preprocessor *preprocessor,
     unsigned native_asm_dialect) {
   InterfaceEmissionArtifact result;
-  if (producer.getLangOpts().ObjCAutoRefCount == consumer_arc ||
+  const bool cross_language = !producer.getLangOpts().ObjC;
+  if ((!cross_language && producer.getLangOpts().ObjCAutoRefCount == consumer_arc) ||
       !dependencies.empty()) {
     AddDiagnostic(result, "O3IFC150",
                   "ownership projection requires opposite ownership modes and "
                   "a closed provider API");
     return result;
   }
-  if (!ProjectionAPI(producer, result, exports, source_root))
+  if (!ProjectionAPI(producer, result, exports, source_root, cross_language))
     return result;
   auto original = EmitSemanticInterface(
       producer, canonical_module_name.str() + ".__ownership_producer",
       package_identity, {}, {}, {}, exports, source_root, preprocessor, native_asm_dialect);
   if (!original.success)
     return original;
-  auto arguments = ProjectionArguments(producer, consumer_arc, preprocessor, native_asm_dialect);
+  auto arguments = cross_language
+      ? CrossLanguageArguments(producer, true, consumer_arc, preprocessor, native_asm_dialect)
+      : ProjectionArguments(producer, consumer_arc, preprocessor, native_asm_dialect);
   clang::tooling::FileContentMappings files;
   auto original_contract=DecodeSemanticInterfaceSidecar(original.sidecar_json,original.source_bytes,kProjectionSemantics);
   if(!original_contract) {
@@ -1735,7 +1763,7 @@ InterfaceEmissionArtifact EmitOwnershipProjection(
       original.source_bytes.find(kRuntimeCompletionInclude) != std::string::npos);
   auto ast = clang::tooling::buildASTFromCodeWithArgs(
       original.source_bytes, arguments,
-      producer.getLangOpts().CPlusPlus ? "ownership-consumer.mm"
+      (cross_language || producer.getLangOpts().CPlusPlus) ? "ownership-consumer.mm"
                                        : "ownership-consumer.m",
       "clang-tool", std::make_shared<clang::PCHContainerOperations>(),
       clang::tooling::getClangStripDependencyFileAdjuster(), files);

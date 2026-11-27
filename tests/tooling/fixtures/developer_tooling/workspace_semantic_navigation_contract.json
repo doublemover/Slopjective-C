@@ -7,11 +7,11 @@
   "source_truth_inputs": [
     "stdlib/module_inventory.json",
     "showcase/portfolio.json",
-    "showcase/demo_packages.json",
-    "tests/tooling/fixtures/package_ecosystem/local_workspace_mirror_semantics.json",
-    "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
-    "tests/tooling/fixtures/package_ecosystem/registry_mirror_reproducibility_contract.json",
-    "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json"
+    "showcase/log-summary/workspace.json",
+    "showcase/log-summary/library/package.json",
+    "showcase/parcel-quotes/producer/workspace.json",
+    "tests/clang_foundation/source_graph/workspace.json",
+    "tests/clang_foundation/source_graph/leaf/package.json"
   ],
   "expected_package_ids": [
     "source:tests/tooling/fixtures/native/hello.objc3",
@@ -20,26 +20,26 @@
     "stdlib:objc3.concurrency",
     "stdlib:objc3.keypath",
     "stdlib:objc3.system",
-    "showcase:auroraBoard",
-    "showcase:signalMesh",
-    "showcase:patchKit"
+    "showcase:log-summary",
+    "showcase:collections-text",
+    "showcase:parcel-quotes",
+    "showcase:package-graph",
+    "workspace:log-summary:example.LogSummary",
+    "workspace:parcel-quotes:Parcel.Quotes",
+    "workspace:package-graph:fixture.Leaf",
+    "workspace:package-graph:fixture.Top"
   ],
   "expected_cross_package_edges": [
-    "showcase:auroraBoard->stdlib:objc3.core",
-    "showcase:auroraBoard->stdlib:objc3.errors",
-    "showcase:auroraBoard->stdlib:objc3.keypath",
-    "showcase:signalMesh->stdlib:objc3.concurrency",
-    "showcase:signalMesh->stdlib:objc3.system",
-    "showcase:patchKit->stdlib:objc3.keypath",
-    "showcase:patchKit->stdlib:objc3.system"
+    "showcase:log-summary->workspace:log-summary:example.LogSummary",
+    "showcase:parcel-quotes->workspace:parcel-quotes:Parcel.Quotes",
+    "showcase:package-graph->workspace:package-graph:fixture.Top",
+    "workspace:package-graph:fixture.Top->workspace:package-graph:fixture.Left",
+    "workspace:package-graph:fixture.Top->workspace:package-graph:fixture.Right",
+    "workspace:package-graph:fixture.Left->workspace:package-graph:fixture.Leaf",
+    "workspace:package-graph:fixture.Right->workspace:package-graph:fixture.Leaf"
   ],
   "required_guardrail_checks": [
-    "lockfile_deterministic",
-    "offline_mirror_lock_derived",
-    "offline_mirror_no_network",
-    "tamper_rejection_diagnostic_owned",
-    "mixed_version_policy_owned",
-    "tmp_not_source_authority"
+    "native_workspace_locks_valid"
   ],
   "unsupported_surfaces": [
     "network-backed workspace restore",

@@ -5,6 +5,7 @@
 int main(int argc, char **argv) {
   if (!objc3_darwin_class_v1("DarwinRegistrationRoot") ||
       !objc3_darwin_class_v1("DarwinRegistrationSibling") ||
+      objc3_darwin_class_v1("DarwinRegistrationLateParent") ||
       objc3_darwin_class_v1("DarwinRegistrationLate"))
     return 1;
   if ([DarwinRegistrationRoot answer] != 42)
@@ -22,17 +23,29 @@ int main(int argc, char **argv) {
   objc3_darwin_deallocate_v1(second);
 
   if (argc == 2) {
-    void *plugin = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE);
+    void *plugin = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
     if (!plugin) {
       fprintf(stderr, "%s\n", dlerror());
       return 5;
     }
     int (*answer)(void) = (int (*)(void))dlsym(plugin, "darwin_registration_late_answer");
     int (*instance_answer)(void) = (int (*)(void))dlsym(plugin, "darwin_registration_late_instance_answer");
-    if (!objc3_darwin_class_v1("DarwinRegistrationLate") || !answer || answer() != 7 ||
+    const struct class_record *late = objc3_darwin_class_v1("DarwinRegistrationLate");
+    const struct class_record *late_parent = objc3_darwin_class_v1("DarwinRegistrationLateParent");
+    void *live = objc3_darwin_allocate_v1(late);
+    if (!late || !late_parent || objc3_darwin_superclass_v1(late) != late_parent ||
+        !live || !answer || answer() != 7 ||
         !instance_answer || instance_answer() != 23)
       return 6;
-    dlclose(plugin);
+    if (dlclose(plugin) || objc3_darwin_object_class_v1(live) != late ||
+        objc3_darwin_class_v1("DarwinRegistrationLate") != late ||
+        objc3_darwin_superclass_v1(late) != late_parent ||
+        answer() != 7 || instance_answer() != 23)
+      return 7;
+    objc3_darwin_deallocate_v1(live);
+    plugin = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
+    if (!plugin || objc3_darwin_class_v1("DarwinRegistrationLate") != late || dlclose(plugin))
+      return 8;
   }
   puts("owned Objective-C 3 Darwin registration: PASS");
   puts("owned Objective-C 3 Darwin instances: PASS");

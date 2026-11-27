@@ -14,8 +14,9 @@ requires the runtime and SDK qualification below. [Hosted probe](https://github.
 
 The [Darwin arm64 bootstrap probe](../../.github/workflows/darwin-bootstrap.yml)
 runs on relevant pull request changes and supports manual dispatch. It selects
-the standard `macos-15` Apple Silicon runner, Xcode 16.4 build `16F6`, macOS SDK
-15.5, and native CPython 3.15.0. The job verifies the LLVM archive checksum and
+the standard `macos-15` Apple Silicon runner and native CPython 3.15.0. Its
+independent rows pair Xcode 16.4 build `16F6` with SDK 15.5 and Xcode 26.3
+build `17C529` with SDK 26.2. Each row verifies the LLVM archive checksum and
 calls the same probe used for a local replay. The `darwin-arm64-bootstrap-*`
 artifact retains the host, download, and probe diagnostics on failure and the
 receipt and fixture artifacts on success. The result records C toolchain
@@ -87,8 +88,10 @@ fixtures and outputs. The
 native fixtures cover a stateless root class with Objective-C 3 `defer`, two
 live instances, same-named class and instance methods, a nil send and nested
 `self` dispatch. The provider's sibling class registers from the same archive
-member. A late-loaded dylib adds a class to the same runtime, and the consumer
-checks both class and instance sends through it. Both executables run after
+member. A late-loaded dylib adds a class to the same runtime. The registry owns
+one dyld reference to each registered image for the process lifetime. The
+consumer exercises a live instance and saved method entry after closing and
+reopening its own reference. Both executables run after
 moving the install tree. The `stateless-super-v1` fixture covers inherited
 class and instance selectors, the most-derived override, and explicit
 `super` sends. Its static link places child metadata before base metadata.
@@ -131,8 +134,11 @@ at O0 and O2. It checks owned allocation, strong references, weak zeroing,
 ordinary autoreleased returns, and nested pools. A second thread holds a weak
 load across the original owner's release and drains its own pool while the
 main thread's pool holds a different live object. The static and dynamic routes
-verify the executable's imports and run after relocation. The controls reject
-exceptions, Objective-C++ ARC, and Apple runtime linkage. ARC weak
+verify the executable's imports and run after relocation. A C++20 ARC
+consumer also exercises native C++ unwinding across a separate dylib through
+the installed driver at O0 and O2. It checks precise object lifetime, a Block
+capture, weak zeroing, and the C++ destructor and catch. The controls reject
+Objective-C exception options and Apple runtime linkage. ARC weak
 slots require native pointer alignment. Autoreleasing a live instance requires
 an active pool on the calling thread.
 
@@ -199,10 +205,11 @@ preflight checks the matching Xcode headers and SDK runtime before configuration
 
 ### Install and replay the experimental SDK
 
-Use native arm64 Python on macOS 15 or later with Xcode 16.4 build `16F6`
-and the macOS 15.5 SDK. Keep the package archive and its producer receipt
+Use native arm64 Python on macOS 15 or later with the exact Xcode and SDK
+pair used to build the archive. Keep the package archive and its producer receipt
 together. The archive carries the patched compiler, runtime and resource
-files. Installation verifies the active Apple tool digests from the seal.
+files. Installation verifies the active Apple tools, SDK settings, and libc++
+headers and link stub against the seal.
 
 ```sh
 package_dir="$PWD/darwin-registration-result/sdk/package"
@@ -226,6 +233,18 @@ executables. Its receipt records rejection of a wrong archive digest and a
 different required Apple linker digest, and compares the destination hashes
 before and after attempts to reuse incomplete and damaged prefixes. Package
 and qualification receipts carry `support_truth: false`.
+
+The installed `bin/objc3c` selects the same target, linker, SDK, resources and
+owned runtime after moving the prefix. Use `--runtime-link=static` for a
+standalone executable and the default dynamic linkage to share the runtime
+with another image. The xsComic witness uses this entry point for compile and link.
+The separate `libobjc3darwin_tasks.a` ships value-only task and group services at
+service ABI 4. Its relocated C witness checks main-executor dispatch, cancellation,
+group quiescence and exactly-once frame cleanup.
+
+Use `--compiler-cache PATH` on `darwin build-sdk` to reuse patched Clang from
+the same source, patch, configuration, Xcode, libc++ and bootstrap inputs.
+Cache reuse still rebuilds the runtime and reruns the installed consumers.
 
 ### Instance lifetime and the next ABI boundary
 
@@ -257,8 +276,8 @@ finalization, and exception-aware cleanup across images and threads.
   access to the pinned LLVM source and bootstrap dependencies, and permission to
   run and retain a full native qualification. The hosted route needs repository
   Actions workflow dispatch and artifact upload access. Local qualification
-  needs no repository administration permission. The bootstrap runner starts
-  with Xcode 16.4 and macOS SDK 15.5 on the
+  needs no repository administration permission. The matrix uses the pinned
+  Xcode and SDK installations on the
   [Apple Silicon macOS 15 runner image](https://github.com/actions/runner-images/blob/main/images/macos/macos-15-arm64-Readme.md).
 - A single owned Objective-C 3 runtime ABI on Mach-O. The current GNUstep 2.2
   runtime and ARC, exceptions, async and carrier paths have Linux-specific

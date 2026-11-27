@@ -12,12 +12,14 @@ import sys
 
 if __package__:
     from . import binary_packages as packages
+    from .sdk_example import runtime_link_flags
     from .source_graph import build_graph
     from .qualify_native_async import configurations
     from .qualify_public_surfaces import prepare, case_workspace
 else:
     sys.dont_write_bytecode = True
     import binary_packages as packages
+    from sdk_example import runtime_link_flags
     from build import build_graph
     from qualify_native_async import configurations
     from qualify_public_surfaces import prepare, case_workspace
@@ -35,6 +37,33 @@ def has_checked_async(value):
                 and value.get('throws_kind') == 'typed') or any(
                     map(has_checked_async, value.values()))
     return isinstance(value, list) and any(map(has_checked_async, value))
+
+
+def qualify_owned_c17_pch(sdk, target, provider, output, ownership, optimization):
+    output.mkdir()
+    pch, obj, executable = (output / name for name in ('provider.pch', 'client.o', 'client'))
+    source = output / 'client.m'
+    source.write_text('int main(void) { return c_frame_owned_qualification() != 6; }\n')
+    target_flag = '--target=' + target
+    flags = [str(sdk / 'bin/clang'), '--no-default-config', target_flag, '-std=c17',
+             '-fobjc-version=3', '-fobjc-runtime=gnustep-2.2', '-fblocks',
+             '-fobjc-arc' if ownership == 'arc' else '-fno-objc-arc',
+             '-' + optimization, '-isystem', str(sdk / 'include')]
+    commands = [
+        [*flags, '-x', 'objective-c-header', str(provider), '-o', str(pch)],
+        [*flags, '-include-pch', str(pch), '-c', str(source), '-o', str(obj)],
+        [str(sdk / 'bin/clang++'), '--no-default-config', target_flag, '-fuse-ld=lld',
+         str(obj), '-L' + str(sdk / 'lib'), *runtime_link_flags(sdk),
+         '-Wl,-rpath,' + str(sdk / 'lib'), '-o', str(executable)],
+        [str(executable)],
+    ]
+    env = packages.environment(sdk)
+    for index, command in enumerate(commands):
+        with (output / f'{index}.log').open('w') as log:
+            subprocess.run(command, cwd=output, env=env, stdout=log,
+                           stderr=subprocess.STDOUT, check=True)
+    return {'status': 'PASS', 'pch_sha256': packages.digest(pch),
+            'executable_sha256': packages.digest(executable), 'commands': commands}
 
 
 def qualify(sdk: Path, output: Path) -> dict:
@@ -69,13 +98,15 @@ def qualify(sdk: Path, output: Path) -> dict:
                     sdk / 'include/objc3c/runtime/objc3_runtime_services.h')
                 if runtime_semantic not in metadata['required_semantics']:
                     raise ValueError('native async interface lost its exact SDK frame contract')
+                c17_ownership = {}
                 if language == 'objective-c++':
                     check_cpp_metadata(metadata)
                     if optimization_controls is None and standard == 'c++23' and ownership == 'arc' and optimization == 'O2':
                         optimization_controls = verify_metadata_modes(metadata_path)
                 else:
                     names = {row['qualified_name']: row for row in metadata['declarations']}
-                    if set(names) != {'c_frame_factory', 'c_frame_destroyed', 'c_frame_scoped'}:
+                    if set(names) != {'c_frame_factory', 'c_frame_destroyed', 'c_frame_scoped',
+                                      'c_frame_owned_qualification'}:
                         raise ValueError('C frame interface lost its exported factories/scopes')
                     scope = names['c_frame_scoped']
                     effects = scope.get('effects', {})
@@ -83,6 +114,9 @@ def qualify(sdk: Path, output: Path) -> dict:
                             'c-frame-v1' not in effects.get('async_abi_identity', '') or
                             'task-boundary:4' not in effects.get('actor_isolation_identity', '')):
                         raise ValueError('C frame scope lost its callable ABI or group contract')
+                    c17_ownership['owned_pch'] = qualify_owned_c17_pch(
+                        sdk, manifest['target'], workspace.parent / 'provider/module.m', root / 'owned-pch',
+                        ownership, optimization)
                 interface_sha = packages.digest(metadata_path)
                 publication = packages.publish(sdk, built, root / 'publication')
                 packages.install(Path(publication['package']), publication['content_sha256'],
@@ -128,12 +162,14 @@ def qualify(sdk: Path, output: Path) -> dict:
                     'provider_source_removed': True, 'provider_compilations': 0,
                     'specialization_lookup_rejected': specialization_rejected,
                     'runtime_semantic': runtime_semantic,
+                    **c17_ownership,
                     'interface_sha256': interface_sha, 'package_sha256': publication['content_sha256'],
                     'source_graph': first, 'reused_graph': repeated, 'consumer': consumed})
         if optimization_controls is None:
             raise ValueError('native package qualification omitted metadata optimization controls')
         report = {'schema': 'objc3c.native-async-packages.v1', 'status': 'PASS',
                   'sdk_seal': manifest['seal_sha256'], 'executions': 3 * len(cases),
+                  'owned_c17_pch_executions': sum('owned_pch' in case for case in cases),
                   'metadata_optimization_controls': optimization_controls, 'cases': cases}
     except Exception as error:
         packages.write_json(receipt, {'schema': 'objc3c.native-async-packages.v1',

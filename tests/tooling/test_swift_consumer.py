@@ -222,6 +222,8 @@ def test_complete_consumer_protocol_fails_closed_at_real_admission_boundaries(tm
             destination.write_bytes(source.read_bytes())
             destination.with_suffix(destination.suffix+'.json').write_text(json.dumps({'module': {
                 'semantic_fingerprint': tools.digest(source)}}))
+        elif name == 'swift-unmanaged-owned-result-control':
+            status, text = 1, 'Swift owned results require a nonnull Objective-C object'
         elif '--emit-c-header' in argv:
             Path(argv[argv.index('--emit-c-header')+1]).write_text('test-only C export')
             Path(argv[argv.index('--emit-object')+1]).write_bytes(b'test-only native provider')

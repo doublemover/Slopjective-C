@@ -36,3 +36,11 @@ The preceding structural comparator fails the new positive C23 unit control;
 all four new opaque/type-printing controls pass after the repair. Existing async
 AST dump expectations retain the explicit task spelling. Fresh maintained-patch
 reconstruction reproduces every changed compiler/control file.
+
+The installed C17 witness exercises an async Objective-C method with an owned
+receiver, a consumed argument, and an object result. It checks live suspension,
+cancellation both before entry and while suspended, result identity, and exact
+destruction. The MRC fixture releases the consumed argument from a native
+`defer` after activation. The ARC and MRC O0/O2 configurations run from source,
+PCH, and relocated source-free packages. This witness measures the installed
+C17 ownership contract within the development profile.

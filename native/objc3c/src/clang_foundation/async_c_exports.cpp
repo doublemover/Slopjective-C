@@ -5,6 +5,7 @@
 #include <optional>
 
 #include "clang/AST/ASTContext.h"
+#include "clang/AST/Attr.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/DeclObjC.h"
@@ -536,7 +537,7 @@ std::string SwiftValue(clang::ASTContext &context, clang::QualType type, llvm::S
   return "`" + module.str() + "`.`" + record->getName().str() + "`";
 }
 
-void WriteSwiftSupport(llvm::raw_ostream &out, llvm::StringRef module) {
+void WriteSwiftSupport(llvm::raw_ostream &out, llvm::StringRef module, bool owns_result) {
   out << "import `" << module << "`\nimport Synchronization\n\n";
   out << "public final class " << module << "NativeError: Error, @unchecked Sendable {\n";
   out << R"swift(    private let pointer: UnsafeMutableRawPointer
@@ -614,14 +615,33 @@ private final class ObjC3Pending<Value: Sendable>: Sendable {
 }
 
 )swift";
+  if (owns_result) {
+    out << "public final class " << module << "NativeObject: @unchecked Sendable {\n";
+    out << R"swift(    private let pointer: UnsafeMutableRawPointer
+
+    fileprivate init?(_ object: UnsafeMutableRawPointer?) {
+        guard let pointer = objc3_c_object_retain(object) else { return nil }
+        self.pointer = pointer
+    }
+
+    deinit { objc3_c_object_release(pointer) }
+
+    public func withBorrowedNativeObject<T>(_ body: (UnsafeMutableRawPointer) throws -> T) rethrows -> T {
+        try withExtendedLifetime(self) { try body(pointer) }
+    }
+}
+
+)swift";
+  }
   out << "public enum " << module << "Native {\n";
 }
 
 bool WriteSwiftEntry(clang::ASTContext &context, llvm::raw_ostream &out, llvm::StringRef module,
                      llvm::StringRef name, llvm::StringRef symbol, llvm::StringRef type_prefix,
                      clang::QualType result, llvm::ArrayRef<clang::ParmVarDecl *> parameters,
-                     bool is_async, bool actor, std::string &failure) {
-  const auto result_type = SwiftValue(context, result, module, (type_prefix + "result_t").str());
+                     bool is_async, bool actor, bool owned_result, std::string &failure) {
+  const auto result_type = owned_result ? module.str() + "NativeObject" :
+      SwiftValue(context, result, module, (type_prefix + "result_t").str());
   if (result_type.empty()) {
     failure = "Swift overlay requires a portable scalar, SIMD vector, pointer-free struct or void result";
     return false;
@@ -655,8 +675,11 @@ bool WriteSwiftEntry(clang::ASTContext &context, llvm::raw_ostream &out, llvm::S
 )swift";
     out << "        " << (is_void ? "" : "let value = ") << '`' << module << "`." << symbol << '('
         << arguments << "&error)\n"
-        << "        if let error { throw " << module << "NativeError(error) }\n"
-        << "        return " << (is_void ? "()" : "value") << "\n    }\n\n";
+        << "        if let error { throw " << module << "NativeError(error) }\n";
+    if (owned_result)
+      out << "        guard let value = " << result_type
+          << "(value) else { throw ObjC3CompletionContractError.invalidCompletion }\n";
+    out << "        return " << (is_void ? "()" : "value") << "\n    }\n\n";
     return true;
   }
   out << R"swift(        let cancellation = ObjC3Cancellation()
@@ -674,6 +697,10 @@ bool WriteSwiftEntry(clang::ASTContext &context, llvm::raw_ostream &out, llvm::S
                     switch status {
                     case OBJC_ASYNC_COMPLETION_SUCCESS where error == nil:
 )swift";
+  if (owned_result)
+    out << "                        guard let value = " << result_type << "(value) else {\n"
+        << "                            pending.continuation.resume(throwing: ObjC3CompletionContractError.invalidCompletion)\n"
+        << "                            return\n                        }\n";
   out << "                        pending.continuation.resume(returning: " << (is_void ? "()" : "value") << ")\n";
   out << R"swift(                    case OBJC_ASYNC_COMPLETION_CANCELLED where objc3_async_c_error_is_cancellation(error) != 0:
                         pending.continuation.resume(throwing: CancellationError())
@@ -717,27 +744,42 @@ CExportSource GenerateCExports(clang::ASTContext &context,
   std::string entries;
   llvm::raw_string_ostream header(entries), definitions(output.definitions);
   const llvm::StringRef swift_module(swift_module_name);
-  llvm::raw_string_ostream swift(output.swift_overlay);
+  std::string swift_entries;
+  llvm::raw_string_ostream swift(swift_entries);
+  bool owns_swift_result = false;
   if (!swift_module.empty()) {
     if ((async_symbols.empty() && throws_symbols.empty()) || !IsSourceIdentifier(swift_module)) {
       failure = "Swift overlay requires selected native entries and a C module identifier";
       return {};
     }
-    WriteSwiftSupport(swift, swift_module);
   }
   definitions << "\n\n#include <stdbool.h>\n";
   llvm::StringSet<> selected, swift_names;
   auto export_swift = [&](llvm::StringRef selection, llvm::StringRef name, llvm::StringRef symbol,
                           llvm::StringRef type_prefix,
                           clang::QualType result, llvm::ArrayRef<clang::ParmVarDecl *> parameters,
-                          bool is_async, bool actor) {
+                          bool is_async, bool actor, const clang::Decl *source) {
     if (swift_module.empty()) return true;
     if (!swift_names.insert(name).second) {
       failure = "Duplicate Swift overlay entry " + name.str();
       return false;
     }
+    bool owned_result = false;
+    for (const auto *attribute : source->specific_attrs<clang::AnnotateAttr>()) {
+      if (!attribute->getAnnotation().starts_with("objc3.swift-owned-result:"))
+        continue;
+      if (owned_result || attribute->args_size() ||
+          attribute->getAnnotation() != "objc3.swift-owned-result:objc3_c_object_release" ||
+          !result->isObjCObjectPointerType() ||
+          result->getNullability() != clang::NullabilityKind::NonNull) {
+        failure = "Swift owned results require a nonnull Objective-C object and one objc3_c_object_release contract";
+        return false;
+      }
+      owned_result = true;
+    }
+    owns_swift_result |= owned_result;
     if (WriteSwiftEntry(context, swift, swift_module, name, symbol, type_prefix, result, parameters,
-                        is_async, actor, failure))
+                        is_async, actor, owned_result, failure))
       return true;
     failure = "Cannot generate Swift overlay for " + selection.str() + ": " + failure;
     return false;
@@ -823,7 +865,8 @@ CExportSource GenerateCExports(clang::ASTContext &context,
     if (!prototype->getReturnType()->isVoidType()) definitions << "return ";
     definitions << "__objc3_try(" << FreeFunctionCallee(context, *selected_function, selection)
                 << '(' << inputs << ")); }\n";
-    if (!export_swift(selection, name, thunk, prefix, prototype->getReturnType(), function->parameters(), false, false))
+    if (!export_swift(selection, name, thunk, prefix, prototype->getReturnType(), function->parameters(),
+                      false, false, function))
       return {};
   }
   for (const auto &selection : async_symbols) {
@@ -1005,10 +1048,14 @@ CExportSource GenerateCExports(clang::ASTContext &context,
                 << task_entry << " { objc3_task_t *__objc3_task = 0; " << submit
                 << "(&__objc3_task, " << forwarded << "); return __objc3_task; }\n";
     if (!export_swift(selection, name, cancellable, type_prefix, result_type, source_parameters,
-                      true, actor_method.has_value()))
+                      true, actor_method.has_value(), source))
       return {};
   }
-  if (!swift_module.empty()) swift << "}\n";
+  if (!swift_module.empty()) {
+    llvm::raw_string_ostream complete(output.swift_overlay);
+    WriteSwiftSupport(complete, swift_module, owns_swift_result);
+    complete << swift_entries << "}\n";
+  }
   output.header = "#pragma once\n#include <stdbool.h>\n"
                   "#include <objc3c/runtime/objc3_async_c.h>\n\n";
   if (!values.declarations().empty()) {

@@ -47,9 +47,20 @@ Every dependency contains `name`, `package`, and `visibility` (`public` or
 the same language, standard and ownership mode. Cross-language imports require explicit adaptation. A closed C ABI provider can
 select a different `provider_ownership` through the explicit
 [ownership projection contract](linux_ownership_projections.md).
+A plain C++ provider can specify `"provider_language": "c++"` and
+`"provider_ownership": "none"` to export a checked C ABI to Objective-C++.
+Its dependency-free provider source uses the same C++ standard as the application.
 Unknown fields, duplicate modules/edges, unresolved locks and cycles are errors.
 Unused declarations are validated, but only the application's dependency closure
 is built.
+
+Use `objc3c-build --workspace ./packages/workspace.json --plan` or
+`npm run objc3c -- build-packages --workspace ./packages/workspace.json --plan`
+to validate the same locks without invoking the compiler. The JSON includes
+mode and visibility for every package, the selected dependency-first order,
+unused packages, and the application and package readiness stages. Paths are
+relative to the workspace and the report includes the manifest hashes.
+Planning needs no SDK or output directory.
 
 The v4 manifests require every mode field and reject earlier versions. Supported modes are:
 
@@ -63,6 +74,15 @@ Regenerate manifests with explicit modes and rebuild package outputs. The compil
 interface identity must reproduce the requested language, standard, ownership and
 runtime. Objective-C modes use source-directed imports; plain C++ uses the locked
 imports supplied by its manifest.
+
+An Objective-C or Objective-C++ provider may declare its owning module with
+`@module fixture.Leaf;` in its primary source file. The compiler checks the
+dotted name against the package selected by the workspace. A different name,
+a second declaration, or a declaration in an included header is an error at
+the source location. Source `@import` uses the same direct dependency locks
+and visibility rules as the workspace. A standalone Clang invocation with a
+source module declaration supplies the expected identity with
+`-fmodule-name=fixture.Leaf`.
 
 Native semantic imports enforce visibility. A public edge re-exports its module;
 a private edge remains available to its declaring module. Physical availability
@@ -80,6 +100,14 @@ flowchart TD
 ```
 
 ## Reuse and retained records
+
+Use `objc3c-build --jobs N` or `npm run objc3c -- build-packages --jobs N`
+with the workspace and output options to compile independent packages in
+parallel. The default is one worker. A provider starts once its direct
+dependencies have produced their interfaces. Shared providers build once, and
+the report and linker use the same dependency order at every worker count.
+A failing provider prevents dependent compilation and linking. Running workers
+finish before the builder releases the output directory lock.
 
 Compilation reuse checks SDK seal, recipe, command, source contents and directory
 membership, dependency locks, native interface contents, Clang depfiles and every
@@ -102,10 +130,10 @@ visibility locks and relative object/interface/sidecar paths with content hashes
 Its content identity is reproduced by unchanged builds. The record describes the
 build output. The [immutable package workflow](linux_immutable_packages.md)
 publishes and installs that inventory for consumers without provider sources.
-Remote registries and public module-language syntax remain separate milestones.
+The [hosted registry](linux_immutable_packages.md) uses the same admitted package identities.
 
 Installed qualification covers all eight supported mode combinations at O0/O2,
-with 112 builds and 32 rejected package/visibility cases. It verifies cold/warm
+with 112 builds and 44 rejected package, declaration, and visibility cases. It verifies cold/warm
 builds, a shared diamond leaf,
 provider body edits with preserved timestamps, private implementation edits,
 damaged objects/interfaces, transitive API changes, wrong package locks and

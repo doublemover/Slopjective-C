@@ -21,17 +21,14 @@ on:
   pull_request:
     paths:
       - ".github/workflows/darwin-bootstrap.yml"
+      - ".github/workflows/darwin-native-qualification.yml"
       - ".github/workflows/darwin-managed-replay.yml"
       - "scripts/objc3c_toolchain/cli.py"
       - "scripts/objc3c_toolchain/darwin_bootstrap.py"
       - "scripts/objc3c_toolchain/darwin_evidence.py"
       - "scripts/objc3c_toolchain/darwin_registration.py"
-      - "scripts/objc3c_toolchain/darwin_sdk.py"
-      - "scripts/objc3c_toolchain/darwin_sdk_arc.py"
-      - "scripts/objc3c_toolchain/darwin_sdk_driver.py"
-      - "scripts/objc3c_toolchain/darwin_sdk_portable_services.py"
-      - "scripts/objc3c_toolchain/darwin_sdk_replay.py"
-      - "scripts/objc3c_toolchain/darwin_sdk_sanitizers.py"
+      - "scripts/objc3c_toolchain/darwin_compiler_cache.py"
+      - "scripts/objc3c_toolchain/darwin_sdk*.py"
       - "scripts/objc3c_toolchain_runtime/runtime-profile.json"
       - "scripts/objc3c_toolchain_runtime/verify_runtime_profile.py"
       - "native/objc3c/src/runtime/platform/darwin_registration.c"
@@ -56,7 +53,15 @@ on:
       - "tests/tooling/test_darwin_sdk.py"
       - "tests/tooling/test_darwin_sdk_portable_services.py"
       - "tests/tooling/test_darwin_sdk_sanitizers.py"
+      - "native/objc3c/src/runtime/concurrency/**"
+      - "native/objc3c/src/runtime/services/error_service.cpp"
+      - "native/objc3c/src/runtime/services/value_storage.h"
+      - "native/objc3c/src/runtime/public/objc3_runtime_services.h"
+      - "native/objc3c/src/runtime/public/objc3_async_c.h"
+      - "tests/clang_foundation/darwin_task_services/**"
       - "toolchains/llvm/manifest.json"
+      - "toolchains/llvm/patches/**"
+      - "toolchains/llvm/cmake/**"
       - "toolchains/llvm/experimental/**"
 permissions:
   contents: read
@@ -64,313 +69,32 @@ concurrency:
   group: darwin-bootstrap-${{ github.event.pull_request.number || github.ref }}${{ (inputs.candidate || inputs.replacement) && format('-managed-{0}', github.run_id) || inputs.runtime_sanitizers && '-sanitizers' || '' }}
   cancel-in-progress: true
 jobs:
-  bootstrap:
-    name: Probe Apple Silicon toolchain and Mach-O prerequisites
+  qualification:
     if: ${{ !inputs.candidate && !inputs.replacement }}
-    runs-on: macos-15
-    timeout-minutes: 360
-    outputs:
-      runtime_selected: ${{ steps.runtime.outputs.selected }}
-      sanitizers_selected: ${{ steps.runtime.outputs.sanitizers }}
-    env:
-      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
-      LLVM_ARCHIVE: LLVM-23.1.5-macOS-ARM64.tar.zst
-      LLVM_ARCHIVE_SHA256: 503de30ef90311e0b143623801b19af2250adac6d69faed65ad0051170202e3b
-    steps:
-      - name: Record and check the native host
-        shell: bash
-        run: |
-          evidence="$RUNNER_TEMP/darwin-bootstrap-evidence"
-          mkdir -p "$evidence"
-          {
-            printf 'revision=%s\nrunner_image=%s\n' "$GITHUB_SHA" "${ImageVersion:-unknown}"
-            uname -m
-            sw_vers
-            xcodebuild -version
-            xcrun --sdk macosx --show-sdk-version
-            test "$(uname -m)" = arm64
-            test "$(xcodebuild -version)" = $'Xcode 16.4\nBuild version 16F6'
-            test "$(xcrun --sdk macosx --show-sdk-version)" = 15.5
-          } 2>&1 | tee "$evidence/host.log"
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 2
-      - name: Select the experimental runtime check
-        id: runtime
-        shell: bash
-        env:
-          RUN_RUNTIME: ${{ inputs.runtime_registration }}
-          RUN_SANITIZERS: ${{ inputs.runtime_sanitizers }}
-        run: |
-          if [[ "$RUN_RUNTIME" != true ]]; then
-            RUN_RUNTIME=false
-          fi
-          if [[ "$RUN_SANITIZERS" == true ]]; then
-            RUN_RUNTIME=true
-          else
-            RUN_SANITIZERS=false
-          fi
-          if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
-            changes=$(git diff --name-only HEAD^1 HEAD -- toolchains/llvm/experimental \
-              .github/workflows/darwin-bootstrap.yml \
-              scripts/objc3c_toolchain/cli.py \
-              scripts/objc3c_toolchain/darwin_registration.py \
-              scripts/objc3c_toolchain/darwin_sdk.py scripts/objc3c_toolchain/darwin_sdk_arc.py \
-              scripts/objc3c_toolchain/darwin_sdk_portable_services.py \
-              tests/tooling/test_darwin_sdk.py tests/tooling/test_darwin_sdk_portable_services.py \
-              tests/clang_foundation/darwin_portable_services \
-              native/objc3c/src/runtime/platform/darwin_registration.c \
-              native/objc3c/src/runtime/public/objc3_darwin.h \
-              native/objc3c/src/runtime/public/objc3_collections.h \
-              native/objc3c/src/runtime/public/objc3_stdlib_status.h \
-              native/objc3c/src/runtime/public/objc3_text.h \
-              native/objc3c/src/runtime/stdlib/collections_service.cpp \
-              native/objc3c/src/runtime/stdlib/opaque_service_storage.h \
-              native/objc3c/src/runtime/stdlib/stdlib_service_contract.h \
-              native/objc3c/src/runtime/stdlib/text_service.cpp \
-              native/objc3c/src/runtime/stdlib/text_utf8_decode.h \
-              native/objc3c/tests/stdlib_map_count_test.cpp \
-              native/objc3c/tests/text_scalar_boundary_test.cpp \
-              native/objc3c/tests/test_assertion_policy.h \
-              tests/clang_foundation/darwin_registration tests/tooling/test_darwin_registration.py)
-            if [[ -n "$changes" ]]; then
-              RUN_RUNTIME=true
-            fi
-          fi
-          printf 'selected=%s\n' "$RUN_RUNTIME" >> "$GITHUB_OUTPUT"
-          printf 'sanitizers=%s\n' "$RUN_SANITIZERS" >> "$GITHUB_OUTPUT"
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: "3.15.0"
-          architecture: arm64
-      - name: Restore the pinned Apple Silicon LLVM archive
-        id: llvm-cache
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ${{ runner.temp }}/${{ env.LLVM_ARCHIVE }}
-          key: darwin-arm64-llvm-archive-${{ env.LLVM_ARCHIVE_SHA256 }}
-      - name: Verify and unpack the pinned LLVM bootstrap
-        shell: bash
-        run: |
-          evidence="$RUNNER_TEMP/darwin-bootstrap-evidence"
-          archive="$RUNNER_TEMP/$LLVM_ARCHIVE"
-          toolchain="$RUNNER_TEMP/darwin-llvm"
-          url="https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.5/$LLVM_ARCHIVE"
-          {
-            printf 'archive=%s\nsha256=%s\n' "$url" "$LLVM_ARCHIVE_SHA256"
-            if [[ -f "$archive" ]]; then
-              echo 'source=cache'
-            else
-              echo 'source=download'
-              curl --fail --location --silent --show-error --retry 3 \
-                --connect-timeout 20 --speed-limit 1 --speed-time 120 --output "$archive" "$url"
-            fi
-            printf '%s  %s\n' "$LLVM_ARCHIVE_SHA256" "$archive" | shasum -a 256 -c
-            mkdir "$toolchain"
-            # The official archive's Zstandard frame uses a 1 GiB window.
-            zstd --long=30 -dc "$archive" | tar -xf - -C "$toolchain" --strip-components=1
-          } 2>&1 | tee "$evidence/bootstrap.log"
-      - name: Save the verified Apple Silicon LLVM archive
-        if: github.event_name == 'workflow_dispatch' && steps.llvm-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ${{ runner.temp }}/${{ env.LLVM_ARCHIVE }}
-          key: darwin-arm64-llvm-archive-${{ env.LLVM_ARCHIVE_SHA256 }}
-      - name: Run the native bootstrap probe
-        shell: bash
-        run: |
-          evidence="$RUNNER_TEMP/darwin-bootstrap-evidence"
-          unlink "$RUNNER_TEMP/$LLVM_ARCHIVE"
-          python -B -m scripts.objc3c_toolchain darwin bootstrap \
-            --llvm-root "$RUNNER_TEMP/darwin-llvm" \
-            --output-dir "$evidence/result" 2>&1 | tee "$evidence/probe.log"
-      - name: Build and qualify experimental Objective-C 3 registration
-        if: steps.runtime.outputs.selected == 'true'
-        shell: bash
-        env:
-          RUN_SANITIZERS: ${{ steps.runtime.outputs.sanitizers }}
-        run: |
-          evidence="$RUNNER_TEMP/darwin-bootstrap-evidence"
-          options=()
-          if [[ "$RUN_SANITIZERS" == true ]]; then
-            options+=(--sdk-sanitizers)
-          fi
-          python -B -m scripts.objc3c_toolchain darwin build-sdk --fetch "${options[@]}" \
-            --bootstrap-report "$evidence/result/report.json" \
-            --output-dir "$evidence/runtime" 2>&1 | tee "$evidence/runtime.log"
-      - name: Preserve the probe result and diagnostics
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: darwin-arm64-bootstrap-${{ github.run_id }}-${{ github.run_attempt }}
-          path: |
-            ${{ runner.temp }}/darwin-bootstrap-evidence
-            !${{ runner.temp }}/darwin-bootstrap-evidence/runtime/sdk/qualification/Relocated Objective-C 3 SDK/**
-          if-no-files-found: error
-          retention-days: 7
-  xscomic:
-    name: Run xsComic core against the installed Apple Silicon SDK
-    needs: bootstrap
-    if: needs.bootstrap.outputs.runtime_selected == 'true'
-    runs-on: macos-15
+    name: Apple Silicon Xcode ${{ matrix.xcode }} and SDK ${{ matrix.sdk }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - xcode: "16.4"
+            xcode_build: "16F6"
+            sdk: "15.5"
+            artifact_suffix: ""
+          - xcode: "26.3"
+            xcode_build: "17C529"
+            sdk: "26.2"
+            artifact_suffix: "-xcode-26.3"
+    uses: ./.github/workflows/darwin-native-qualification.yml
+    with:
+      xcode: ${{ matrix.xcode }}
+      xcode_build: ${{ matrix.xcode_build }}
+      sdk: ${{ matrix.sdk }}
+      artifact_suffix: ${{ matrix.artifact_suffix }}
+      runtime_registration: ${{ inputs.runtime_registration == true }}
+      runtime_sanitizers: ${{ inputs.runtime_sanitizers == true }}
     permissions:
       actions: read
       contents: read
-    env:
-      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
-      HOMEBREW_NO_AUTO_UPDATE: "1"
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Read the exact xsComic source pin
-        id: app
-        shell: bash
-        run: |
-          test "$(uname -m)" = arm64
-          python3 - <<'PY'
-          import json
-          import os
-          import re
-          from pathlib import Path
-
-          pin = json.loads(Path('toolchains/llvm/experimental/darwin-xscomic.json').read_text())
-          if pin['repository'] != 'doublemover/xsComic' or not re.fullmatch('[0-9a-f]{40}', pin['revision']):
-              raise SystemExit('xsComic qualification requires an exact source revision')
-          with Path(os.environ['GITHUB_OUTPUT']).open('a') as output:
-              print(f"revision={pin['revision']}", file=output)
-          PY
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: doublemover/xsComic
-          ref: ${{ steps.app.outputs.revision }}
-          path: xscomic-consumer
-          persist-credentials: false
-      - name: Install native codec dependencies
-        run: brew install pkg-config libarchive jpeg-turbo libpng webp libtiff libavif libheif giflib
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: darwin-arm64-bootstrap-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/darwin-sdk-producer
-      - name: Install the SDK archive produced by this revision
-        shell: bash
-        run: |
-          set -euo pipefail
-          package="$RUNNER_TEMP/darwin-sdk-producer/runtime/sdk/package"
-          evidence="$RUNNER_TEMP/xscomic-evidence"
-          sdk="$RUNNER_TEMP/xsComic Objective-C 3 SDK"
-          mkdir -p "$evidence"
-          archive_sha=$(python3 - "$package/package.json" "$GITHUB_SHA" <<'PY'
-          import json
-          import sys
-          from pathlib import Path
-
-          receipt = json.loads(Path(sys.argv[1]).read_text())
-          if receipt['revision'] != sys.argv[2] or receipt['status'] != 'PASS':
-              raise SystemExit('The SDK producer receipt does not match the checked-out compiler revision')
-          print(receipt['archive_sha256'])
-          PY
-          )
-          python3 -B -m scripts.objc3c_toolchain darwin install \
-            --archive "$package/objc3-darwin-sdk.tar.gz" --archive-sha256 "$archive_sha" \
-            --prefix "$sdk" | tee "$evidence/install.json"
-          test -x "$sdk/bin/objc3c"
-          printf 'XSCOMIC_OBJC3_SDK=%s\n' "$sdk" >> "$GITHUB_ENV"
-      - name: Compile and run the Objective-C 3 core suite
-        shell: bash
-        working-directory: xscomic-consumer
-        env:
-          XSCOMIC_REVISION: ${{ steps.app.outputs.revision }}
-        run: |
-          set -euo pipefail
-          test "$(git rev-parse HEAD)" = "$XSCOMIC_REVISION"
-          printf '%s\n' "$XSCOMIC_REVISION" > "$RUNNER_TEMP/xscomic-evidence/source-revision"
-          ./scripts/run-objc3-macos-tests.sh 2>&1 | tee "$RUNNER_TEMP/xscomic-evidence/suite.log"
-      - name: Retain xsComic SDK identity, logs, and native executable
-        if: always()
-        shell: bash
-        run: |
-          destination="$RUNNER_TEMP/xscomic-evidence/core"
-          mkdir -p "$destination"
-          source="xscomic-consumer/build/objc3-macos-tests"
-          for path in "$source"/*.log "$source"/*.txt "$source/sdk.json" "$source/xsComicObjC3Tests"; do
-            if [[ -f "$path" ]]; then cp "$path" "$destination/"; fi
-          done
-      - name: Upload the xsComic qualification evidence
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: xscomic-darwin-core-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/xscomic-evidence
-          if-no-files-found: warn
-          retention-days: 7
-  verify:
-    name: Verify retained Apple Silicon evidence
-    if: ${{ !cancelled() && !inputs.candidate && !inputs.replacement }}
-    needs: [bootstrap, xscomic]
-    runs-on: ubuntu-26.04
-    env:
-      NATIVE_OUTCOME: ${{ needs.bootstrap.result }}
-      XSCOMIC_OUTCOME: ${{ needs.xscomic.result }}
-      RUNTIME_SELECTED: ${{ needs.bootstrap.outputs.runtime_selected }}
-      SANITIZERS_SELECTED: ${{ needs.bootstrap.outputs.sanitizers_selected }}
-    steps:
-      - name: Require successful native execution
-        shell: bash
-        run: |
-          test "$NATIVE_OUTCOME" = success
-          case "$RUNTIME_SELECTED:$SANITIZERS_SELECTED" in
-            false:false) echo 'DARWIN_EVIDENCE_MODE=bootstrap' >> "$GITHUB_ENV" ;;
-            true:false) test "$XSCOMIC_OUTCOME" = success && echo 'DARWIN_EVIDENCE_MODE=package' >> "$GITHUB_ENV" ;;
-            true:true) test "$XSCOMIC_OUTCOME" = success && echo 'DARWIN_EVIDENCE_MODE=package-sanitizers' >> "$GITHUB_ENV" ;;
-            *) echo 'Missing Apple Silicon execution selection' >&2; exit 1 ;;
-          esac
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: darwin-arm64-bootstrap-${{ github.run_id }}-${{ github.run_attempt }}
-          path: out/native-darwin-evidence
-      - name: Check exact revision and native artifacts
-        shell: bash
-        run: |
-          python3 -B -m scripts.objc3c_toolchain.darwin_evidence \
-            --evidence out/native-darwin-evidence --revision "$GITHUB_SHA" \
-            --outcome "$NATIVE_OUTCOME" --mode "$DARWIN_EVIDENCE_MODE" | tee out/darwin-terminal.json
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        if: env.RUNTIME_SELECTED == 'true'
-        with:
-          name: xscomic-darwin-core-${{ github.run_id }}-${{ github.run_attempt }}
-          path: out/xscomic-darwin-evidence
-      - name: Admit the native xsComic run from the same SDK
-        if: env.RUNTIME_SELECTED == 'true'
-        shell: bash
-        run: |
-          python3 -B - <<'PY'
-          import json
-          from pathlib import Path
-
-          from scripts.objc3c_toolchain.darwin_evidence import verify_xscomic
-
-          terminal = json.loads(Path('out/darwin-terminal.json').read_text())
-          receipt = verify_xscomic(Path('out/xscomic-darwin-evidence'), terminal)
-          Path('out/xscomic-terminal.json').write_text(json.dumps(receipt, indent=2) + '\n')
-          PY
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: env.RUNTIME_SELECTED == 'true'
-        with:
-          name: xscomic-terminal-${{ github.run_id }}-${{ github.run_attempt }}
-          path: out/xscomic-terminal.json
-          if-no-files-found: error
-          retention-days: 7
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: darwin-terminal-${{ github.run_id }}-${{ github.run_attempt }}
-          path: out/darwin-terminal.json
-          if-no-files-found: error
-          retention-days: 7
   managed_replay:
     if: ${{ inputs.candidate || inputs.replacement }}
     uses: ./.github/workflows/darwin-managed-replay.yml

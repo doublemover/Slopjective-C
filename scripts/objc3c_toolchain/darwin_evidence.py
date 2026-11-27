@@ -23,10 +23,12 @@ from .darwin_registration import (
     file_digest, load_profile, verify_fixed_layout_dwarf, verify_int_method_ir,
 )
 from .darwin_sdk import (
-    API_HEADER, ARCHIVE_NAME, ARCHIVE_ROOT, DEMO, DRIVER, LIBRARY, PAYLOAD_SCHEMA, PROFILE, RECEIPT_SCHEMA, SDK_VERSION,
+    API_HEADER, ARCHIVE_NAME, ARCHIVE_ROOT, DEMO, DRIVER, HOST_PAIRS, LIBRARY, PAYLOAD_SCHEMA, PROFILE, RECEIPT_SCHEMA,
+    SDK_VERSION,
     SYSTEM, WITNESS, XCODE,
 )
 from .package import MANIFEST, _digest
+from . import darwin_sdk_task_services as task_services
 
 RECEIPT_BYTES = 16 * 1024**2
 PRODUCT_BYTES = 1024**3
@@ -252,8 +254,7 @@ def bootstrap(root: Path, revision: str) -> dict:
             report['checkout_revision'] != revision or 'revision=' + revision not in host_log or
             report['probe_sha256'] != file_digest(Path(__file__).with_name('darwin_bootstrap.py')) or
             host['os'] != 'macOS' or host['arch'] != 'arm64' or 'arm64' not in host_log or
-            host['sdk_version'] != SDK_VERSION or
-            report['apple_toolchain']['developer_tools_version'] != XCODE or
+            (report['apple_toolchain']['developer_tools_version'], host['sdk_version']) not in HOST_PAIRS or
             report['deployment_target'] != DEPLOYMENT_TARGET or
             report['llvm_identity']['revision'] != pin['commit'] or
             report['llvm_identity']['version'] != pin['tag'].removeprefix('llvmorg-')):
@@ -457,7 +458,8 @@ def installed_arc(path: Path, manifest: dict, qualified: dict) -> None:
     installed = qualified['installation']
     prefix, resource = Path(installed['prefix']), manifest['resource_dir']
     runtime = f'lib/{LIBRARY}.dylib'
-    inputs = [*(f'{DEMO}/{name}' for name in sdk_arc.SOURCES), 'bin/clang', 'bin/llvm-dwarfdump',
+    inputs = [*(f'{DEMO}/{name}' for name in sdk_arc.SOURCES), 'bin/objc3c', 'include/objc3_darwin.h',
+              'bin/clang', 'bin/llvm-dwarfdump',
               f'{resource}/include/stddef.h', f'{resource}/lib/darwin/libclang_rt.osx.a', runtime]
     loaded = {'path': str(prefix / runtime), 'sha256': manifest['files'][runtime]['sha256']}
     if (arc['schema'] != sdk_arc.SCHEMA or arc['status'] != 'PASS' or arc['support_truth'] is not False or
@@ -482,6 +484,30 @@ def installed_arc(path: Path, manifest: dict, qualified: dict) -> None:
                         for candidate in reported_paths)
                     for row in qualified['commands'])):
         raise ValueError('Darwin archived ARC consumer did not execute with the installed runtime')
+    cpp = arc['objcxx']
+    helper = sdk_arc.ARCXX_BOUNDARY
+    if (cpp['status'] != 'PASS' or cpp['standard'] != 'c++20' or
+            set(cpp['configurations']) != {'O0', 'O2'} or
+            set(cpp['helper']['load_paths']) != {'@rpath/' + helper, SYSTEM, sdk_arc.LIBCXX}):
+        raise ValueError('Darwin Objective-C++ evidence does not cover both optimization modes')
+    require_macho(path, directory + helper, cpp['helper'], 'dynamic_library')
+    for optimization, row in cpp['configurations'].items():
+        binary = 'arc-unwind-' + optimization
+        require_macho(path, directory + binary + '.o', row['object'], 'object')
+        require_macho(path, directory + binary, row['executable'], 'executable')
+        source = str(prefix / DEMO / 'arc_unwind.mm')
+        if (set(row['load_paths']) != {*loaded_paths, sdk_arc.LIBCXX, '@rpath/' + helper} or
+                row['loaded_runtime'] != loaded['path'] or
+                not any(command['argv'][-4:] == ['-c', source, '-o', row['object']['path']] and
+                        {'-std=c++20', '-fobjc-arc', '-fobjc-arc-exceptions', '-fexceptions', '-'+optimization} <= set(command['argv']) and
+                        command['exit_status'] == 0 for command in qualified['commands']) or
+                not any(command['argv'] == [row['executable']['path']] and command['exit_status'] == 0 and
+                        command.get('dyld_print_libraries') is True and
+                        command['stdout'].strip() == sdk_arc.ARCXX_WITNESS and
+                        any(line.endswith(' ' + candidate) for line in command['stderr'].splitlines()
+                            for candidate in reported_paths)
+                        for command in qualified['commands'])):
+            raise ValueError(f'Darwin Objective-C++ {optimization} unwind evidence is incomplete')
 
 
 def installed_services(path: Path, manifest: dict, runtime: dict, packed: dict, qualified: dict) -> None:
@@ -554,11 +580,28 @@ def package(root: Path, runtime: dict, revision: str, *, require_sanitizers: boo
         raise ValueError('Darwin SDK omitted execution of its installed objc3c driver')
     installed_arc(path, manifest, qualified)
     installed_services(path, manifest, runtime, packed, qualified)
+    tasks, executed = manifest[task_services.KEY], qualified[task_services.KEY]
+    task_services.manifest_files(manifest)
+    if (tasks != installed[task_services.KEY] or tasks != packed[task_services.KEY] or
+            tasks['files'] != executed['inputs'] or executed['abi'] != task_services.ABI or
+            executed['schema'] != task_services.SCHEMA or executed['status'] != 'PASS' or
+            set(executed['load_paths']) != {SYSTEM, '/usr/lib/libc++.1.dylib'} or
+            any(not Path(name).is_relative_to('native/objc3c/src') and
+                name != task_services.SOURCE.relative_to(ROOT).as_posix() for name in tasks['inputs']) or
+            any(file_digest(ROOT / name) != signature for name, signature in tasks['inputs'].items())):
+        raise ValueError('Darwin task service evidence differs from the installed C runtime')
+    task_directory = 'qualification/' + task_services.DIRECTORY + '/'
+    require_macho(path, task_directory + 'example.o', executed['object'], 'object')
+    require_macho(path, task_directory + 'example', executed['executable'], 'executable')
+    if not any(row['argv'] == [executed['executable']['path']] and row['exit_status'] == 0 and
+               row['stdout'].strip() == task_services.WITNESS for row in qualified['commands']):
+        raise ValueError('Darwin task services omitted the installed C execution')
     sanitizer_consumers(path, manifest, packed, qualified, selected=require_sanitizers)
     consumer = 'qualification/Fresh native consumer/'
     for name, relative, kind in (
         ('provider.o', 'provider.o', 'object'), ('static', 'static', 'executable'),
         ('dynamic', 'dynamic', 'executable'), ('liblate.dylib', 'liblate.dylib', 'dynamic_library'),
+        ('liblate-parent.dylib', 'liblate-parent.dylib', 'dynamic_library'),
         ('debug', 'static.dSYM/Contents/Resources/DWARF/static', 'debug_info'),
     ):
         require_macho(path, consumer + relative, qualified['artifacts'][name], kind)

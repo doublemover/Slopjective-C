@@ -73,7 +73,8 @@ def test_native_template_names_and_local_guards_keep_their_exact_owner():
              f'_ZZ16private_templateB139{TAG}IiET_S0_E10local_bias',
              f'_ZGVZ16private_templateB139{TAG}IiET_S0_E10local_bias',
              f'_Z16private_variableB139{TAG}ILi0EE',
-             f'_ZGV16private_variableB139{TAG}ILi0EE']
+             f'_ZGV16private_variableB139{TAG}ILi0EE',
+             *(f'{prefix}14PrivateAbiTwinB139{TAG}' for prefix in ('_ZTV', '_ZTI', '_ZTS'))]
     qualification.validate_private_cpp_symbols(
         '\n'.join('  Name: ' + name + ' (42)' for name in names), MODULE)
 

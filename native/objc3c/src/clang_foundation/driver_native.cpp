@@ -28,7 +28,7 @@ bool UsesInterfaceCompiler(int argc, char **argv) {
     std::string_view arg(argv[i]);
     if (arg == "--") break;
     if (arg == "--diagnostics-json" || arg == "--emit-object" || arg == "--emit-llvm" ||
-        arg == "--emit-interface" || arg == "--project-ownership" ||
+        arg == "--emit-interface" || arg == "--project-ownership" || arg == "--project-objcxx" ||
         arg == "--export-declaration" || arg == "--module-source-root" ||
         arg == "--export-c-async" || arg == "--emit-c-async-header" ||
         arg == "--export-c-throws" || arg == "--emit-c-header" ||

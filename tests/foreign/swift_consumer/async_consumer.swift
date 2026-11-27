@@ -163,6 +163,33 @@ private func checkGeneratedSynchronousError() throws {
     }
 }
 
+private func checkGeneratedOwnedResults() async throws {
+    let before = objc3_swift_resources_retired()
+    var checked: ForeignAsyncNativeObject? = try ForeignAsyncNative.swift_bridge_owned_checked(42)
+    precondition(checked!.withBorrowedNativeObject { objc3_swift_resource_is_live($0) } == 1)
+    precondition(objc3_swift_resources_retired() == before)
+    checked = nil
+    precondition(objc3_swift_resources_retired() == before + 1)
+
+    do {
+        _ = try ForeignAsyncNative.swift_bridge_owned_checked(-1)
+        preconditionFailure("failed native entry returned an owner")
+    } catch let error as ForeignAsyncNativeError {
+        precondition(error.withBorrowedNativeError { objc3_swift_error_code($0) } == 3)
+    }
+    let asynchronous = try await ForeignAsyncNative.swift_bridge_owned_async(41)
+    precondition(asynchronous.withBorrowedNativeObject { objc3_swift_resource_is_live($0) } == 1)
+
+    let cancelled = Task {
+        withUnsafeCurrentTask { $0?.cancel() }
+        return try await ForeignAsyncNative.swift_bridge_owned_async(-2)
+    }
+    do {
+        _ = try await cancelled.value
+        preconditionFailure("cancelled native entry returned an owner")
+    } catch is CancellationError {}
+}
+
 @main
 private struct Consumer {
     static func main() async throws {
@@ -240,6 +267,7 @@ private struct Consumer {
         try ForeignAsyncNative.swift_bridge_checked_void(true)
         try checkGeneratedSynchronousError()
         precondition(objc3_swift_sync_errors_retired() == 1)
+        try await checkGeneratedOwnedResults()
         print(#"""
             {
                 "value": \#(value), "checked_error": true, "cancellation": true,
@@ -252,7 +280,7 @@ private struct Consumer {
                 "generated_async_record": \#(asyncRecord.values.0),
                 "generated_checked_record": \#(checkedRecord.values.2),
                 "generated_async_vector": \#(Int(vector[0])),
-                "generated_checked_vector": \#(checkedVector[0])
+                "generated_checked_vector": \#(checkedVector[0]), "generated_owned_result": true
             }
             """#)
     }

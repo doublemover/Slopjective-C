@@ -26,6 +26,7 @@ SOURCE_BUILD_HELPERS = (
     ('diagnostic_termination.py', 'diagnostic_termination.py'),
     ('qualify_source_graph.py', 'qualify.py'),
     ('binary_packages.py', 'binary_packages.py'),
+    ('package_registry.py', 'package_registry.py'),
     ('sanitizer_policy.py', 'sanitizer_policy.py'),
     ('linux_host.py', 'linux_host.py'),
     ('llvm_ir_execution.py', 'llvm_ir_execution.py'),

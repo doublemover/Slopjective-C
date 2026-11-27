@@ -1,16 +1,23 @@
 from __future__ import annotations
 
 import copy
+from functools import partial
+from hashlib import sha256
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 from pathlib import Path
 import shutil
+import stat
 import subprocess
 import sys
+from threading import Thread
+import zipfile
 
 import pytest
 
 from scripts.objc3c_toolchain import binary_packages as packages
+from scripts.objc3c_toolchain import package_registry as registry
 
 
 def test_installed_shared_library_accepts_one_versioned_soname_without_a_development_link(tmp_path):
@@ -156,6 +163,147 @@ def test_install_is_relocatable_idempotent_and_content_addressed(bundle, tmp_pat
     assert packages.verify_package(moved / expected, expected) == manifest
     assert packages.closure(packages.package_rows(manifest), ['fixture.Top']) == ['fixture.Leaf', 'fixture.Top']
     assert packages.closure(packages.package_rows(manifest), ['fixture.Leaf']) == ['fixture.Leaf']
+
+
+def test_archive_and_inspection_are_reproducible_and_need_no_sdk(bundle, tmp_path):
+    source, manifest, identity = bundle
+    directory = tmp_path / 'relocated source'
+    shutil.copytree(source, directory)
+    for path in directory.rglob('*'):
+        if path.is_file():
+            path.chmod(0o600)
+            os.utime(path, (0, 0))
+    (directory / 'package.json').write_bytes(packages.canonical_json(manifest))
+
+    archive, replay = tmp_path / 'published.zip', tmp_path / 'replayed.zip'
+    result, _ = package_cli(tmp_path, 'default', [
+        'export', '--package', source, '--content-sha256', identity, '--output', archive])
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout)['archive_sha256'] == packages.digest(archive)
+    packages.export_archive(directory, identity, replay)
+    assert archive.read_bytes() == replay.read_bytes()
+    with zipfile.ZipFile(archive) as package:
+        assert package.namelist() == ['package.json', *sorted(packages.artifacts(manifest))]
+        assert all(member.date_time == (1980, 1, 1, 0, 0, 0) and
+                   member.external_attr >> 16 == stat.S_IFREG | 0o644
+                   for member in package.infolist())
+
+    outputs = []
+    for path in (source, archive):
+        result, _ = package_cli(tmp_path, 'default', [
+            'inspect', '--package', path, '--content-sha256', identity, '--module', 'fixture.Top', 'top-v1'])
+        assert result.returncode == 0, result.stderr
+        outputs.append(result.stdout)
+    assert outputs[0] == outputs[1]
+    inspected = json.loads(outputs[0])
+    assert inspected['roots'] == ['fixture.Top']
+    assert inspected['modules'] == manifest['packages']
+    with pytest.raises(ValueError, match='identity lock'):
+        packages.inspect(archive, identity, [('fixture.Top', 'wrong-v1')])
+
+    store = tmp_path / 'installed'
+    result, _ = package_cli(tmp_path, 'default', [
+        'install', '--package', archive, '--content-sha256', identity, '--store', store])
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout) == packages.install(archive, identity, store)
+    assert packages.verify_package(store / identity, identity) == manifest
+    assert all(stat.S_IMODE(path.stat().st_mode) == 0o444
+               for path in (store / identity).rglob('*') if path.is_file())
+
+
+@pytest.mark.parametrize('defect,diagnostic', [
+    ('missing', 'missing or unlisted'), ('extra', 'missing or unlisted'),
+    ('duplicate', 'duplicate'), ('link', 'regular-file'), ('changed', 'artifact hash'),
+    ('sidecar', 'sidecar differs'), ('lock', 'content identity'),
+])
+def test_archive_admission_rejects_invalid_members_without_publishing(bundle, tmp_path, defect, diagnostic):
+    source, manifest, identity = bundle
+    contents = {name: (source / name).read_bytes() for name in packages.artifacts(manifest)}
+    object_name = 'modules/fixture.Top/module.o'
+    sidecar_name = 'modules/fixture.Top/fixture.Top.objc3i.json'
+    if defect == 'missing':
+        contents.pop(object_name)
+    elif defect == 'extra':
+        contents['../unexpected.o'] = b'unlisted'
+    elif defect == 'changed':
+        contents[object_name] += b'changed bytes'
+    elif defect == 'sidecar':
+        sidecar = json.loads(contents[sidecar_name])
+        sidecar['module']['package_identity'] = 'other-v1'
+        contents[sidecar_name] = json.dumps(sidecar).encode()
+        manifest['packages'][1]['artifacts'][sidecar_name] = sha256(contents[sidecar_name]).hexdigest()
+        identity = packages.content_hash(manifest)
+    elif defect == 'lock':
+        identity = '0' * 64
+    archive = tmp_path / 'rejected.zip'
+    with zipfile.ZipFile(archive, 'w') as package:
+        package.writestr('package.json', packages.canonical_json(manifest))
+        for name, content in contents.items():
+            member = zipfile.ZipInfo(name)
+            if name == object_name and defect == 'link':
+                member.external_attr = (stat.S_IFLNK | 0o777) << 16
+            package.writestr(member, content)
+        if defect == 'duplicate':
+            with pytest.warns(UserWarning, match='Duplicate name'):
+                package.writestr(object_name, contents[object_name])
+    store = tmp_path / 'installed'
+    with pytest.raises(ValueError, match=diagnostic):
+        packages.install(archive, identity, store)
+    assert sorted(path.name for path in store.iterdir()) == ['.package.lock']
+    assert not (tmp_path / 'unexpected.o').exists()
+    with pytest.raises(ValueError, match=diagnostic):
+        packages.inspect(archive, identity, [])
+
+
+def test_truncated_archive_is_rejected_by_cli(bundle, tmp_path):
+    source, _, identity = bundle
+    archive = tmp_path / 'truncated.zip'
+    packages.export_archive(source, identity, archive)
+    archive.write_bytes(archive.read_bytes()[:-22])
+    result, _ = package_cli(tmp_path, 'default', [
+        'install', '--package', archive, '--content-sha256', identity, '--store', tmp_path / 'installed'])
+    assert result.returncode == 1
+    assert 'binary package install failed:' in result.stderr and 'Traceback' not in result.stderr
+    assert not (tmp_path / 'installed' / identity).exists()
+
+
+def test_hosted_registry_resolves_pinned_media_and_replays_offline(bundle, tmp_path, monkeypatch):
+    source, manifest, identity = bundle
+    hosted = tmp_path / 'hosted'
+    publication = registry.publish(source, identity, hosted)
+    assert registry.publish(source, identity, hosted) == publication
+    sdk = tmp_path / 'sdk'
+    sdk.mkdir()
+    monkeypatch.setattr(packages, 'sdk_identity',
+                        lambda _: {'seal_sha256': manifest['sdk_seal'], 'target': manifest['target']})
+    store = tmp_path / 'installed'
+    modules = [('fixture.Top', 'top-v1')]
+    handler = partial(SimpleHTTPRequestHandler, directory=hosted)
+    with ThreadingHTTPServer(('127.0.0.1', 0), handler) as server:
+        worker = Thread(target=server.serve_forever)
+        worker.start()
+        try:
+            url = f'http://127.0.0.1:{server.server_port}/index.json'
+            pin = publication['index_sha256']
+            with pytest.raises(ValueError, match='index SHA-256'):
+                registry.fetch(sdk, url, '0' * 64, identity, modules, store)
+            with pytest.raises(ValueError, match='module identity locks'):
+                registry.fetch(sdk, url, pin, identity, [('fixture.Top', 'wrong')], store)
+            archive = Path(publication['archive'])
+            contents = archive.read_bytes()
+            archive.write_bytes(contents[:-1])
+            with pytest.raises(ValueError, match='size or SHA-256'):
+                registry.fetch(sdk, url, pin, identity, modules, store)
+            assert not (store / identity).exists()
+            archive.write_bytes(contents)
+            first = registry.fetch(sdk, url, pin, identity, modules, store)
+        finally:
+            server.shutdown()
+            worker.join()
+    assert not first['cache_hit']
+    assert registry.fetch(sdk, url, pin, identity, modules, store, offline=True) == {**first, 'cache_hit': True}
+    with pytest.raises(ValueError, match='pinned index in the cache'):
+        registry.fetch(sdk, url, pin, identity, modules, tmp_path / 'empty', offline=True)
 
 
 @pytest.mark.parametrize('damage', ['object', 'interface', 'sidecar', 'extra-file', 'symbolic-file', 'symbolic-directory', 'symbolic-root', 'wrong-lock'])
@@ -336,6 +484,50 @@ def test_consumer_invalid_dependency_rejects_before_compilation(bundle, tmp_path
     output = tmp_path / 'consumer'
     with pytest.raises(ValueError, match='identity or mode lock'):
         packages.consume(sdk, root, expected, application, output)
+    assert not output.exists()
+
+
+@pytest.mark.parametrize('damage,diagnostic', [
+    ('object', 'conflicting immutable providers for module: fixture.Leaf'),
+    ('visibility', 'conflicting immutable providers for module: fixture.Top'),
+    ('optimization', 'same optimization'), ('sdk', 'exact producing SDK'),
+])
+def test_consumer_rejects_incompatible_package_sets_before_compilation(bundle, tmp_path, monkeypatch,
+                                                                      damage, diagnostic):
+    root, original, identity = bundle
+    extra = tmp_path / 'extra'
+    shutil.copytree(root, extra)
+    manifest = copy.deepcopy(original)
+    if damage == 'object':
+        path = 'modules/fixture.Leaf/module.o'
+        (extra / path).write_bytes(b'different provider definition')
+        manifest['packages'][0]['artifacts'][path] = packages.digest(extra / path)
+    elif damage == 'visibility':
+        row = manifest['packages'][1]
+        row['dependencies'][0]['visibility'] = 'private'
+        path = 'modules/fixture.Top/fixture.Top.objc3i.json'
+        sidecar = json.loads((extra / path).read_text())
+        sidecar['dependencies'][0].update(public_import=False, reexported=False)
+        (extra / path).write_text(json.dumps(sidecar))
+        row['artifacts'][path] = packages.digest(extra / path)
+    elif damage == 'optimization':
+        manifest['optimization'] = 'O0'
+    else:
+        manifest['sdk_seal'] = 'c' * 64
+    (extra / 'package.json').write_text(json.dumps(manifest))
+    extra_identity = packages.content_hash(manifest)
+    assert packages.verify_package(extra, extra_identity) == manifest
+
+    sdk, client = tmp_path / 'sdk', tmp_path / 'client'
+    sdk.mkdir()
+    client.mkdir()
+    app = client / 'application.json'
+    app.write_text('{}')
+    output = tmp_path / 'consumer'
+    monkeypatch.setattr(packages, 'sdk_identity',
+                        lambda _: {'seal_sha256': original['sdk_seal'], 'target': original['target']})
+    with pytest.raises(ValueError, match=diagnostic):
+        packages.consume(sdk, root, identity, app, output, additional=((extra, extra_identity),))
     assert not output.exists()
 
 

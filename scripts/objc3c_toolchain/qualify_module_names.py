@@ -40,7 +40,9 @@ def validate_private_cpp_symbols(symbols: str, module: dict) -> None:
         field(module['canonical_name']) + field(module['package_identity'])).hexdigest() + '_'
     templates = ('private_template', 'private_variable')
     concrete = ('private_namespace_helper', 'private_namespace_global',
-                'private_initializer', 'private_tls', 'private_reference')
+                'private_initializer', 'private_tls', 'private_reference',
+                'private_abi_dispatch', 'private_abi_catch')
+    type_entries = {'_ZTV', '_ZTI', '_ZTS'}
     for name in re.findall(r'^\s*Name: (\S+)', symbols, re.MULTILINE):
         if any(old in name for old in concrete):
             raise ValueError('private namespace declaration retained its shared C++ symbol')
@@ -50,6 +52,12 @@ def validate_private_cpp_symbols(symbols: str, module: dict) -> None:
             # supplies isolation; an unrelated owned symbol is insufficient.
             if not any(tag.startswith(owner) for tag in NATIVE_NAME.findall(name)):
                 raise ValueError('private template symbol lacks its module/package ABI owner: ' + name)
+        if 'PrivateAbiTwin' in name and name[:4] in ('_ZTV', '_ZTI', '_ZTS'):
+            if not any(tag.startswith(owner) for tag in NATIVE_NAME.findall(name)):
+                raise ValueError('private vtable or RTTI lacks its package owner: ' + name)
+            type_entries.discard(name[:4])
+    if type_entries:
+        raise ValueError('private polymorphic class omitted vtable or RTTI evidence: ' + ', '.join(sorted(type_entries)))
 
 
 def qualify_case(sdk: Path, output: Path, language: str, standard: str,

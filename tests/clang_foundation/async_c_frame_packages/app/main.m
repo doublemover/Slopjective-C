@@ -13,6 +13,7 @@ static objc3_service_status move_int(void *destination, void *source) {
 }
 
 int main(void) {
+  assert(@fixture.CFrame.c_frame_owned_qualification() == 6);
   const objc3_async_result_type expected = {
       sizeof(objc3_async_result_type),
       OBJC3_ASYNC_ABI_VERSION,

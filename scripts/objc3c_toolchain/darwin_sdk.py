@@ -28,6 +28,7 @@ from . import darwin_sdk_arc as arc_consumer
 from . import darwin_sdk_driver as installed_driver
 from . import darwin_sdk_portable_services as portable_services
 from . import darwin_sdk_sanitizers as sanitizers
+from . import darwin_sdk_task_services as task_services
 from .package import MANIFEST, SCHEMA, _digest, _file_hash, inventory, normalize_permissions, verify_sdk
 
 PROFILE = 'macos-arm64-registration-experimental'
@@ -40,11 +41,15 @@ ARCHIVE_ROOT = 'objc3-darwin-sdk'
 ARCHIVE_NAME = ARCHIVE_ROOT + '.tar.gz'
 XCODE = 'Xcode 16.4\nBuild version 16F6'
 SDK_VERSION = '15.5'
+HOST_PAIRS = {
+    (XCODE, SDK_VERSION): 'xcode-16.4-sdk-15.5',
+    ('Xcode 26.3\nBuild version 17C529', '26.2'): 'xcode-26.3-sdk-26.2',
+}
 DRIVER = 'bin/objc3c'
 LIBRARY = 'libobjc3darwin'
 SYSTEM = '/usr/lib/libSystem.B.dylib'
 DEMO = 'share/objc3c/examples/registration'
-DEMO_FILES = ('api.h', 'provider.m', 'main.m', 'late.m', *arc_consumer.SOURCES,
+DEMO_FILES = ('api.h', 'provider.m', 'main.m', 'late.m', 'late_api.h', 'late_parent.m', *arc_consumer.SOURCES,
               *TYPED_METHOD_SOURCES, *MANAGED_LAYOUT_SOURCES, *BLOCK_SOURCES,
               *TYPED_ERROR_SOURCES, *CARRIER_DISPATCH_SOURCES)
 API_HEADER = 'include/objc3_darwin.h'
@@ -90,8 +95,9 @@ def _host(commands=None):
         raise ValueError('the experimental package requires native macOS arm64 15.0 or later')
     xcode = apple('/usr/bin/xcodebuild', '-version')
     sdk_version = apple('/usr/bin/xcrun', '--sdk', 'macosx', '--show-sdk-version')
-    if xcode != XCODE or sdk_version != SDK_VERSION:
-        raise ValueError('the experimental package requires Xcode 16.4 (16F6) and the macOS 15.5 SDK')
+    row = HOST_PAIRS.get((xcode, sdk_version))
+    if row is None:
+        raise ValueError('the experimental package requires a pinned Xcode and macOS SDK pair')
     developer = Path(apple('/usr/bin/xcode-select', '-p')).resolve(strict=True)
     sdk = Path(apple('/usr/bin/xcrun', '--sdk', 'macosx', '--show-sdk-path')).resolve(strict=True)
     if not sdk.is_dir() or not sdk.is_relative_to(developer):
@@ -112,7 +118,7 @@ def _host(commands=None):
     search = _run(clang, '--target=' + TARGET, '-isysroot', sdk, '-stdlib=libc++', '-E', '-v',
                   '-x', 'c++', '/dev/null', '-o', '/dev/null', commands=commands, includes_stderr=True)
     config = xcode_cxx_headers(search, developer) / '__config'
-    return {'os': 'macOS', 'arch': 'arm64', 'version': macos, 'xcode': xcode,
+    return {'os': 'macOS', 'arch': 'arm64', 'version': macos, 'xcode': xcode, 'row': row,
             'sdk_version': sdk_version, 'sdk_path': str(sdk), 'developer_dir': str(developer), 'tools': tools,
             'sdk_settings_sha256': _file_hash(sdk / 'SDKSettings.json'),
             'libcxx': {'config_relative': config.relative_to(developer).as_posix(),
@@ -121,7 +127,9 @@ def _host(commands=None):
 
 def _host_requirements(host):
     return {'xcode': host['xcode'], 'sdk_version': host['sdk_version'], 'deployment_target': DEPLOYMENT_TARGET,
-            'row': 'xcode-16.4-sdk-15.5', 'sdk_settings_sha256': host['sdk_settings_sha256'], 'libcxx': host['libcxx'],
+            'row': HOST_PAIRS[(host['xcode'], host['sdk_version'])],
+            'sdk_settings_sha256': host['sdk_settings_sha256'],
+            'libcxx': host['libcxx'],
             'tools': {name: tool['sha256'] for name, tool in host['tools'].items()}}
 
 
@@ -152,14 +160,14 @@ def _rpaths(otool, artifact, expected, commands):
     return paths
 
 
-def _deployment(otool, artifact, commands):
+def _deployment(otool, artifact, commands, *, sdk_version):
     lines = [line.strip() for line in _run(otool, '-l', artifact, commands=commands).splitlines()]
     versions = [dict(item.split(maxsplit=1) for item in lines[index + 1:index + 8]
                      if item.startswith(('platform ', 'minos ', 'sdk ')))
                 for index, line in enumerate(lines) if line == 'cmd LC_BUILD_VERSION']
     if (len(versions) != 1 or versions[0].get('platform') not in ('macos', 'MACOS', '1') or
             versions[0].get('minos') not in (DEPLOYMENT_TARGET, DEPLOYMENT_TARGET + '.0') or
-            versions[0].get('sdk') not in (SDK_VERSION, SDK_VERSION + '.0')):
+            versions[0].get('sdk') not in (sdk_version, sdk_version + '.0')):
         raise ValueError(f'unexpected Mach-O platform or deployment target at {artifact}: {versions}')
     return versions[0]
 
@@ -247,6 +255,8 @@ def _validate_manifest(data, host):
                 *(f'share/licenses/{name}/LICENSE.TXT' for name in ('llvm', 'clang', 'compiler-rt'))}
     required.update(sanitizers.manifest_files(data, resource))
     required.update(portable_services.manifest_files(data))
+    if task_services.KEY in data:
+        required.update(task_services.manifest_files(data))
     files = {name for name, row in data['files'].items() if row['kind'] == 'file'}
     if not required <= files or any(not name.startswith(resource + '/include/') for name in files - required):
         raise ValueError('the Darwin SDK payload inventory differs from the experimental profile')
@@ -271,11 +281,13 @@ def _validate_product(prefix, data, host, commands=None):
     _archive_objects(prefix / resource / 'lib/darwin/libclang_rt.osx.a')
     _load_paths(otool, dylib, [SYSTEM, '@rpath/' + dylib.name], commands)
     _rpaths(otool, dylib, [], commands)
-    _deployment(otool, dylib, commands)
+    _deployment(otool, dylib, commands, sdk_version=host['sdk_version'])
     if sanitizers.KEY in data:
         sanitizers.validate_runtimes(prefix, data, host, commands)
     if portable_services.KEY in data:
         portable_services.validate_payload(prefix, data, commands)
+    if task_services.KEY in data:
+        task_services.validate_archive(prefix, data, commands)
 
 
 def _write_archive(prefix, destination):
@@ -376,6 +388,7 @@ def package_registration(clang: Path, llvm_source: Path, bootstrap_report: Path,
             _copied_file(llvm_source / project / 'LICENSE.TXT', prefix / 'share/licenses' / project / 'LICENSE.TXT')
         _copied_file(ROOT / 'LICENSE', prefix / 'share/licenses/slopjective-c/LICENSE')
         portable_payload = portable_services.stage_payload(prefix, registration, commands)
+        task_payload = task_services.stage_payload(prefix, host, commands)
         sanitizer_payload = sanitizers.stage_payload(prefix, resource, resource_dir) if sdk_sanitizers else None
         normalize_permissions(prefix)
         data = {'schema': SCHEMA, 'payload_schema': PAYLOAD_SCHEMA, 'profile': PROFILE, 'target': TARGET,
@@ -387,7 +400,7 @@ def package_registration(clang: Path, llvm_source: Path, bootstrap_report: Path,
                 'bootstrap_builtins_sha256': registration['compiler_builtins']['sha256'],
                 'compiler_build': {key: producer[key] for key in ('base_build_id', 'patch_digest', 'configuration_sha256')},
                 'host_requirements': _host_requirements(host), 'resource_dir': resource_dir,
-                'files': inventory(prefix), portable_services.KEY: portable_payload}
+                'files': inventory(prefix), portable_services.KEY: portable_payload, task_services.KEY: task_payload}
         if cxx := registration.get('cxx_toolchain'):
             if (cxx['header_config_sha256'] != host['libcxx']['config_sha256'] or
                     cxx['library_stub_sha256'] != host['libcxx']['stub_sha256']):
@@ -408,7 +421,7 @@ def package_registration(clang: Path, llvm_source: Path, bootstrap_report: Path,
     receipt = {'schema': RECEIPT_SCHEMA, 'status': 'PASS', 'support_truth': False, 'profile': PROFILE,
                'revision': revision, 'archive': archive.name, 'archive_sha256': _file_hash(archive),
                'archive_bytes': archive.stat().st_size, 'seal_sha256': seal, 'host': host, 'commands': commands,
-               portable_services.KEY: portable_payload}
+               portable_services.KEY: portable_payload, task_services.KEY: task_payload}
     if sanitizer_payload is not None:
         receipt[sanitizers.KEY] = sanitizer_payload
     (output / 'package.json').write_text(json.dumps(receipt, indent=2) + '\n')
@@ -516,6 +529,8 @@ def install(archive: Path, expected_sha256: str, prefix: Path, *, commands=None)
         receipt[sanitizers.KEY] = product[sanitizers.KEY]
     if portable_services.KEY in product:
         receipt[portable_services.KEY] = product[portable_services.KEY]
+    if task_services.KEY in product:
+        receipt[task_services.KEY] = product[task_services.KEY]
     return receipt
 
 
@@ -614,9 +629,11 @@ def qualify(archive: Path, expected_sha256: str, output: Path) -> dict:
         driver = prefix / DRIVER
         if native(driver, '--version').split('\n', 1)[0] != manifest['compiler_version']:
             raise ValueError('installed objc3c driver selected a different compiler')
-        for name in ('provider', 'main', 'late'):
+        for name in ('provider', 'main', 'late', 'late_parent'):
             native(driver, '-fno-objc-arc', '-fno-objc-exceptions', '-O2', '-gdwarf-4',
                    '-c', prefix / DEMO / (name + '.m'), '-o', name + '.o')
+        native(driver, '-fobjc-runtime=macosx-15.0', '-c', prefix / DEMO / 'provider.m', '-o', 'apple.o',
+               rejects=('overrides the installed Objective-C 3 SDK or runtime',))
         native(*objc, '-fobjc-arc', '-fobjc-exceptions', '-c', prefix / DEMO / 'provider.m', '-o', 'arc.o',
                rejects=('experimental Darwin ARC', '-fobjc-exceptions'))
         native(*objc, '--target=x86_64-apple-macos15.0', '-c', prefix / DEMO / 'provider.m', '-o', 'x86.o',
@@ -625,12 +642,15 @@ def qualify(archive: Path, expected_sha256: str, output: Path) -> dict:
         _archive_objects(project / 'libprovider.a', ['provider.o'])
         native(*link, 'main.o', 'libprovider.a', '-o', 'no-runtime',
                rejects=('objc3_darwin_lookup_v1', 'objc3_darwin_register_v1'))
-        native(*link, 'main.o', 'libprovider.a', prefix / 'lib' / (LIBRARY + '.a'), '-o', 'static')
+        native(driver, '--runtime-link=static', 'main.o', 'libprovider.a', '-o', 'static')
         runtime = prefix / 'lib' / (LIBRARY + '.dylib')
         rpath = '@loader_path/../' + prefix.name + '/lib'
-        native(*link, '-dynamiclib', 'late.o', runtime, '-Wl,-install_name,@rpath/liblate.dylib',
-               '-Wl,-rpath,' + rpath, '-o', 'liblate.dylib')
-        native(*link, 'main.o', 'libprovider.a', runtime, '-Wl,-rpath,' + rpath, '-o', 'dynamic')
+        parent_id = '@rpath/liblate-parent.dylib'
+        native(*link, '-dynamiclib', 'late_parent.o', runtime, '-Wl,-install_name,' + parent_id,
+               '-Wl,-rpath,' + rpath, '-o', 'liblate-parent.dylib')
+        native(*link, '-dynamiclib', 'late.o', 'liblate-parent.dylib', runtime, '-Wl,-install_name,@rpath/liblate.dylib',
+               '-Wl,-rpath,@loader_path', '-Wl,-rpath,' + rpath, '-o', 'liblate.dylib')
+        native(driver, 'main.o', 'libprovider.a', '-o', 'dynamic')
         debug = project / 'static.dSYM'
         native(host['tools']['dsymutil']['path'], 'static', '-o', debug)
         debug_file = debug / 'Contents/Resources/DWARF/static'
@@ -641,14 +661,17 @@ def qualify(archive: Path, expected_sha256: str, output: Path) -> dict:
         for name, kind, dependencies in (
                 ('provider.o', 'object', None), ('static', 'executable', [SYSTEM]),
                 ('dynamic', 'executable', [SYSTEM, '@rpath/' + runtime.name]),
-                ('liblate.dylib', 'dynamic_library', [SYSTEM, '@rpath/liblate.dylib', '@rpath/' + runtime.name])):
+                ('liblate-parent.dylib', 'dynamic_library', [SYSTEM, parent_id, '@rpath/' + runtime.name]),
+                ('liblate.dylib', 'dynamic_library', [SYSTEM, '@rpath/liblate.dylib', parent_id, '@rpath/' + runtime.name])):
             artifact = project / name
             reports[name] = verify_macho(artifact, kind)
             if dependencies is not None:
                 reports[name]['load_paths'] = _load_paths(host['tools']['otool']['path'], artifact, dependencies, commands)
-                reports[name]['rpaths'] = _rpaths(host['tools']['otool']['path'], artifact,
-                                                [] if name == 'static' else [rpath], commands)
-                reports[name]['deployment'] = _deployment(host['tools']['otool']['path'], artifact, commands)
+                expected_rpaths = {'static': [], 'dynamic': [str(prefix / 'lib')],
+                                   'liblate-parent.dylib': [rpath], 'liblate.dylib': ['@loader_path', rpath]}
+                reports[name]['rpaths'] = _rpaths(host['tools']['otool']['path'], artifact, expected_rpaths[name], commands)
+                reports[name]['deployment'] = _deployment(host['tools']['otool']['path'], artifact, commands,
+                                                           sdk_version=host['sdk_version'])
         reports['debug'] = verify_macho(debug_file, 'debug_info')
         if native(project / 'static') != WITNESS or native(project / 'dynamic', project / 'liblate.dylib') != WITNESS:
             raise ValueError('cold relocated compiler/runtime witness failed')
@@ -670,7 +693,7 @@ def qualify(archive: Path, expected_sha256: str, output: Path) -> dict:
             otool = host['tools']['otool']['path']
             reports[family].update(load_paths=_load_paths(otool, binary, [SYSTEM, '@rpath/' + runtime.name], commands),
                                    rpaths=_rpaths(otool, binary, [rpath], commands),
-                                   deployment=_deployment(otool, binary, commands))
+                                   deployment=_deployment(otool, binary, commands, sdk_version=host['sdk_version']))
             if native(binary, trace_libraries=True) != witness:
                 raise ValueError(f'installed Darwin {family} witness failed')
             reports[family]['loaded_runtime'] = arc_consumer.loaded_runtime(commands[-1]['stderr'], runtime)
@@ -678,6 +701,9 @@ def qualify(archive: Path, expected_sha256: str, output: Path) -> dict:
         if portable_services.KEY in manifest:
             report[portable_services.KEY] = portable_services.qualify_consumer(
                 prefix, manifest, host, output / portable_services.DIRECTORY, commands)
+        if task_services.KEY in manifest:
+            report[task_services.KEY] = task_services.qualify_consumer(
+                prefix, manifest, host, output / task_services.DIRECTORY, commands)
         if sanitizers.KEY in manifest:
             report[sanitizers.KEY] = sanitizers.qualify_consumers(
                 prefix, manifest, host, output / sanitizers.WITNESS_DIRECTORY, commands)

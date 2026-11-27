@@ -61,6 +61,47 @@ static void swift_bridge_checked_void(bool succeed) throws(id<Error>) {
 
 static int increment(int value) async { return value + 1; }
 
+static _Atomic(int) retired_resources;
+@interface SwiftBridgeResource : SwiftBridgeRoot
+@end
+@implementation SwiftBridgeResource
+- (void)dealloc {
+  __c11_atomic_fetch_add(&retired_resources, 1, __ATOMIC_RELEASE);
+#if !__has_feature(objc_arc)
+  [super dealloc];
+#endif
+}
+@end
+
+int objc3_swift_resource_is_live(void *resource) {
+  return object_getClass((__bridge id)resource) == objc_getClass("SwiftBridgeResource");
+}
+
+int objc3_swift_resources_retired(void) {
+  return __c11_atomic_load(&retired_resources, __ATOMIC_ACQUIRE);
+}
+
+__attribute__((annotate("objc3.swift-owned-result:objc3_c_object_release")))
+static SwiftBridgeResource * _Nonnull swift_bridge_owned_checked(int value) throws(id<Error>) {
+  (void)__objc3_try(swift_bridge_checked(value));
+  SwiftBridgeResource *result = [SwiftBridgeResource new];
+#if !__has_feature(objc_arc)
+  result = objc_autorelease(result);
+#endif
+  return result;
+}
+
+__attribute__((annotate("objc3.swift-owned-result:objc3_c_object_release")))
+static SwiftBridgeResource * _Nonnull swift_bridge_owned_async(int value) async throws(id<Error>) {
+  if (value == -2) {
+    for (;;) {
+      try objc3_task_check_cancellation();
+      (void)await increment(0);
+    }
+  }
+  return __objc3_try(swift_bridge_owned_checked(await increment(value)));
+}
+
 static bool swift_bridge_scalars(bool enabled, char plain, signed char byte, unsigned char narrow,
                                  short small, unsigned short count, int integer, unsigned int flags,
                                  long offset, unsigned long length, long long minimum,

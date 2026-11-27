@@ -43,11 +43,14 @@ def test_optimization_cannot_change_projected_semantic_identity(tmp_path, monkey
         return row
 
     monkeypatch.setattr(qualification, 'qualify_case', unstable)
+    monkeypatch.setattr(qualification, 'qualify_cxx_projection',
+                        lambda sdk, output, standard, ownership: {'status': 'PASS'})
     with pytest.raises(ValueError, match='qualification failed'):
         qualification.qualify(sdk, tmp_path / 'output', jobs=2)
     report = json.loads((tmp_path / 'output/qualification.json').read_text())
     assert report['status'] == 'FAIL' and len(report['failures']) == 6
     assert len(report['cases']) == 12
+    assert len(report['cxx_projections']) == 4
 
 
 @pytest.mark.parametrize('jobs', [0, 5, -1])

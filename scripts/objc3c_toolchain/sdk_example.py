@@ -187,8 +187,9 @@ def discover_lookup(sdk: Path, config: dict, flags: list[str], target: str,
     or an earlier search directory which now shadows an existing include.
     Bind both the fresh token stream and fresh transitive header contents.
     """
-    mode = ['-x', config['language'], '--target=' + target]
-    if config['language'] != 'c++':
+    language = config.get('provider_language', config['language'])
+    mode = ['-x', language, '--target=' + target]
+    if language != 'c++':
         mode += ['-fobjc-version=3', '-fobjc-runtime=gnustep-2.2']
         if config.get('provider_ownership', config['ownership']) == 'arc':
             mode.append('-fobjc-arc')
