@@ -707,6 +707,23 @@ def verify_xscomic(root: Path, sdk: dict) -> dict:
             'tests_passed': int(summary[0]), 'results_sha256': file_digest(results)}
 
 
+def verify_xscomic_application(root: Path) -> dict:
+    root = root.resolve(strict=True)
+    archive = retained(root, 'application/xsComic-objc3-macos-arm64.zip', limit=PRODUCT_BYTES)
+    recorded = retained(root, 'application/archive.sha256').read_text().split()
+    results = retained(root, 'application/results.txt')
+    loads = retained(root, 'application/load-paths.txt').read_text().splitlines()[1:]
+    libraries = [line.strip().split(' (', 1)[0] for line in loads]
+    checksum = file_digest(archive)
+    if (not recorded or recorded[0] != checksum or
+            'Objective-C 3 CLI and pixel checks passed' not in results.read_text().splitlines() or
+            not any(name.startswith('@loader_path/../Frameworks/') for name in libraries) or
+            any(re.fullmatch(r'libobjc(?:3darwin)?(?:\.[A-Za-z0-9]+)?\.dylib', Path(name).name)
+                for name in libraries)):
+        raise ValueError('xsComic app archive differs from its native qualification')
+    return {'archive_sha256': checksum, 'results_sha256': file_digest(results), 'load_paths': libraries}
+
+
 def admit_terminal(replayed: dict, terminal: Path, expected_sha256: str) -> dict:
     """Bind a replay of native package evidence to the retained terminal receipt."""
     if (replayed.get('status') != 'PASS' or replayed.get('mode') not in ('package', 'package-sanitizers') or
