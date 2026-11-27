@@ -29,7 +29,7 @@ RUNBOOK = ROOT / "docs" / "runbooks" / "objc3c_full_envelope_claimability.md"
 RELEASE_BLOCKER_SCRIPT = (
     ROOT / "scripts" / "build_full_envelope_claimability_release_blocker_summary.py"
 )
-DASHBOARD_SCRIPT = ROOT / "scripts" / "build_full_envelope_claimability_dashboard.py"
+DASHBOARD_SCRIPT = ROOT / "scripts" / "build_full_envelope_claimability_dashboard_payloads.py"
 SUMMARY_CONTRACT_ID = "objc3c.claimability.dashboard.release_blocker.contract.summary.v1"
 
 

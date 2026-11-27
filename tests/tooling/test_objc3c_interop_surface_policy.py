@@ -34,12 +34,12 @@ def _lane(payload: dict[str, object], lane_id: str) -> dict[str, object]:
     raise AssertionError(f"missing lane {lane_id}")
 
 
-def test_interop_surface_policy_accepts_truthful_slice() -> None:
+def test_archived_interop_surface_policy_requires_package_replay_sources() -> None:
     payload = _policy()
 
     failures = validate_policy_payload(payload)
 
-    assert failures == []
+    assert any("package loader evidence unavailable" in failure for failure in failures)
     states = {
         lane["lane_id"]: lane["public_state"]
         for lane in payload["lanes"]
@@ -104,7 +104,7 @@ def test_interop_surface_policy_rejects_tamper_fixture_drift() -> None:
     )
 
 
-def test_interop_surface_policy_cli_accepts_default_fixture() -> None:
+def test_interop_surface_policy_cli_reports_unavailable_replay() -> None:
     result = subprocess.run(
         [sys.executable, str(ROOT / "scripts" / "check_objc3c_interop_surface_policy.py")],
         cwd=ROOT,
@@ -113,6 +113,6 @@ def test_interop_surface_policy_cli_accepts_default_fixture() -> None:
         check=False,
     )
 
-    assert result.returncode == 0
-    assert "objc3c-interop-surface-policy: PASS" in result.stdout
+    assert result.returncode == 1
+    assert "objc3c-interop-surface-policy: FAIL" in result.stdout
     assert result.stderr == ""

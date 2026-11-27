@@ -42,20 +42,19 @@ def diagnostic_codes(summary: dict[str, object]) -> set[str]:
     }
 
 
-def test_incremental_module_cache_consistency_summary_passes() -> None:
+def test_incremental_module_cache_consistency_summary_rejects_removed_prototype_sources() -> None:
     summary = build_summary()
 
-    assert summary["status"] == "PASS"
+    assert summary["status"] == "FAIL"
     assert summary["issues"] == ["#8081", "#8082"]
-    assert summary["missing_source_paths"] == []
-    assert all(summary["native_checks"].values())
+    assert "native/objc3c/src/lower/contracts/cross_module_lowering_contracts.cpp" in summary["missing_source_paths"]
+    assert not all(summary["native_checks"].values())
     assert len(set(summary["positive_replay_keys"])) == 1
-    assert summary["diagnostics"] == []
-    assert len(summary["source_sha256"]) == 4
+    assert "O3INC8163-MISSING-INPUT" in diagnostic_codes(summary)
     assert all(not path.startswith("tmp/") for path in summary["source_paths"])
 
 
-def test_incremental_module_cache_checker_runs_from_nothing(
+def test_incremental_module_cache_checker_writes_failure_report_from_nothing(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -63,12 +62,12 @@ def test_incremental_module_cache_checker_runs_from_nothing(
     assert not summary_path.parent.exists()
     monkeypatch.setattr(checker, "SUMMARY_PATH", summary_path)
 
-    assert checker.main() == 0
+    assert checker.main() == 1
 
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
-    assert summary["status"] == "PASS"
-    assert summary["diagnostics"] == []
-    assert summary["missing_source_paths"] == []
+    assert summary["status"] == "FAIL"
+    assert "O3INC8163-MISSING-INPUT" in diagnostic_codes(summary)
+    assert "native/objc3c/src/lower/contracts/cross_module_lowering_contracts.cpp" in summary["missing_source_paths"]
 
 
 def test_incremental_module_cache_rejects_missing_checked_in_cache_input(tmp_path: Path) -> None:
