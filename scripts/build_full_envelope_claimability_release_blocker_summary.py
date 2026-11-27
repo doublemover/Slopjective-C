@@ -102,11 +102,12 @@ def main() -> int:
 
     reports: dict[str, dict[str, Any]] = {}
     for report in contract["required_reports"]:
-        path = resolve_repo_path(report["path"])
-        expect(path.is_file(), f"missing required report: {repo_rel(path)}")
+        path = resolve_repo_path(report["path"], root=ROOT)
+        report_path = repo_rel(path, root=ROOT)
+        expect(path.is_file(), f"missing required report: {report_path}")
         payload = read_json(path)
         reports[report["name"]] = {
-            "path": repo_rel(path),
+            "path": report_path,
             "payload": payload,
             "contract_matches": payload.get("contract_id") == report["required_contract_id"],
             "passes": payload.get("status") == "PASS",
@@ -143,7 +144,7 @@ def main() -> int:
         triggered_blockers.append(dashboard_blocker)
 
     checks = {
-        "summary_script_link_matches": contract["summary_script"] == "scripts/build_full_envelope_claimability_release_blocker_summary.py",
+        "summary_script_link_matches": contract["summary_implementation_anchor"] == "scripts/build_full_envelope_claimability_release_blocker_summary.py",
         "runbook_mentions_release_blocker_criteria": "## Release-Blocker And Rollout Criteria" in runbook_text,
         "runbook_mentions_current_envelope_can_remain_blocked": "current envelope remains\nrelease-blocked" in runbook_text,
         "all_required_reports_match_expected_contracts": all(
@@ -193,7 +194,7 @@ def main() -> int:
         "source_contract_id": contract["contract_id"],
         "status": "PASS" if all(checks.values()) else "FAIL",
         "runner_path": "scripts/build_full_envelope_claimability_release_blocker_summary.py",
-        "runbook": repo_rel(RUNBOOK_PATH),
+        "runbook": repo_rel(RUNBOOK_PATH, root=ROOT),
         "required_report_count": len(contract["required_reports"]),
         "release_blocker_count": len(contract["release_blockers"]),
         "policy_triggered_blocker_count": len(triggered_policy_blockers),

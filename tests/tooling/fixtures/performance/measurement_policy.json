@@ -41,7 +41,7 @@
       "wrapper-only-action-surface",
       "optimization-speedup-without-safety-proof",
       "generated-report-optimization-source-truth",
-      "optimization-fallback-success-path",
+      "optimization-runtime-miss-success-path",
       "cross-machine-universal",
       "screenshot-derived",
       "hand-normalized-without-raw-samples"
