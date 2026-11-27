@@ -215,7 +215,7 @@ jobs:
       - name: Install codecs, the window libraries, and pixel test dependencies
         shell: bash
         run: |
-          brew install pkg-config libarchive jpeg-turbo libpng webp libtiff libavif libheif giflib sdl2 sdl2_ttf
+          brew install pkg-config libarchive jpeg-turbo libpng webp libtiff libavif libheif giflib sdl2-compat sdl2_ttf
           python3 -m venv "$RUNNER_TEMP/xscomic-test-env"
           "$RUNNER_TEMP/xscomic-test-env/bin/python3" -m pip install Pillow
           echo "$RUNNER_TEMP/xscomic-test-env/bin" >> "$GITHUB_PATH"
