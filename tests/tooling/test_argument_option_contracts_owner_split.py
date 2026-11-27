@@ -28,7 +28,7 @@ def test_argument_options_publish_owned_parser_contract() -> None:
         "scripts/objc3c_workflow/argument_option_contracts.py"
     )
     assert payload["execute_action_passthrough"] is True
-    assert payload["retired_option_metadata_allowed"] is False
+    assert "retired_option_metadata_allowed" not in payload
     assert [option["token"] for option in payload["options"]] == [
         LIST_ACTIONS_OPTION,
         DESCRIBE_ACTION_OPTION,
@@ -37,7 +37,7 @@ def test_argument_options_publish_owned_parser_contract() -> None:
     assert workflow_argument_option(LIST_ACTIONS_OPTION).required_argument_count == 0
     assert workflow_argument_option(DESCRIBE_ACTION_OPTION).required_argument_count == 1
     assert workflow_argument_option_usage(DESCRIBE_PACKAGE_SCRIPT_OPTION) == (
-        "usage: npm run objc3c -- <action> --describe-script <package-script>"
+        "usage: npm run objc3c -- --describe-script <package-script>"
     )
 
 
@@ -53,7 +53,7 @@ def test_argument_parser_uses_owned_option_contracts() -> None:
     try:
         parse_workflow_args([LIST_ACTIONS_OPTION, "extra"])
     except WorkflowUsageError as exc:
-        assert exc.message == "usage: npm run objc3c -- <action> --list-json"
+        assert exc.message == "usage: npm run objc3c -- --list-json"
     else:
         raise AssertionError("list option arity must fail closed")
 
@@ -63,10 +63,10 @@ def test_argument_usage_text_is_owned_by_option_contracts() -> None:
 
     assert payload["contract_id"] == "objc3c-workflow-argument-usage-v1"
     assert payload["option_contract_id"] == ARGUMENT_OPTION_CONTRACT_ID
-    assert payload["retired_option_metadata_allowed"] is False
+    assert "retired_option_metadata_allowed" not in payload
     assert usage_text() == (
-        "usage: npm run objc3c -- <action> <action> [args...]\n"
-        "       npm run objc3c -- <action> --list-json\n"
-        "       npm run objc3c -- <action> --describe <action>\n"
-        "       npm run objc3c -- <action> --describe-script <package-script>"
+        "usage: npm run objc3c -- <action> [args...]\n"
+        "       npm run objc3c -- --list-json\n"
+        "       npm run objc3c -- --describe <action>\n"
+        "       npm run objc3c -- --describe-script <package-script>"
     )

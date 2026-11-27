@@ -94,6 +94,6 @@ def test_sdk_rejects_mismatched_manifest_and_any_mismatched_elf_member(tmp_path,
     data = {'target': linux_host.native_target(), 'files': {'compiler': {'kind': 'file'}, 'README': {'kind': 'file'}}}
     install_sdk.admit_native_sdk(tmp_path, data)
     other = copy.deepcopy(data);other['target'] = 'aarch64-unknown-linux-gnu' if code == 62 else 'x86_64-unknown-linux-gnu'
-    with pytest.raises(ValueError, match='target differs'): install_sdk.admit_native_sdk(tmp_path, other)
+    with pytest.raises(ValueError, match='differs from the native Linux target'): install_sdk.admit_native_sdk(tmp_path, other)
     binary.write_bytes(elf(183 if code == 62 else 62))
     with pytest.raises(ValueError, match='ELF member differs'): install_sdk.admit_native_sdk(tmp_path, data)

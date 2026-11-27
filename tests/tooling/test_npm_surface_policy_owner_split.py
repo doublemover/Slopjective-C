@@ -29,4 +29,4 @@ def test_npm_surface_policy_owns_package_script_lookup_and_payload_name() -> Non
     assert payload["package_script_lookup"]["contract_id"] == (
         "objc3c-workflow-package-script-lookup-v1"
     )
-    assert payload["package_script_lookup"]["retired_metadata_allowed"] is False
+    assert "retired_metadata_allowed" not in payload["package_script_lookup"]

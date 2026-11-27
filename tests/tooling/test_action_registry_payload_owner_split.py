@@ -35,7 +35,7 @@ def test_registry_bridge_fields_keep_single_public_bridge_contract() -> None:
         "objc3c-workflow-public-bridge-integrity-v1"
     )
     assert fields["public_bridge_integrity"]["validation_errors"] == ()
-    assert fields["public_bridge_integrity"]["retired_metadata_allowed"] is False
+    assert "retired_metadata_allowed" not in fields["public_bridge_integrity"]
     assert fields["public_bridge_capability_truth"]["owned_fields"] == [
         "package_bridge_count",
         "package_bridges",
