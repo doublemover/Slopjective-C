@@ -11,6 +11,7 @@ from objc3c_tooling.paths import ROOT, display_path
 
 from .contracts import DEFAULT_TRACE_SOURCE, RUNTIME_DEBUG_TRACE_SUMMARY_PATH
 from .orchestration import build_runtime_debug_trace_from_live_actions
+from .source_contracts import RUNTIME_TRACE_SOURCE_CONTRACT_HEADER
 
 
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
@@ -26,6 +27,13 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
+    if not RUNTIME_TRACE_SOURCE_CONTRACT_HEADER.is_file():
+        print(
+            "runtime-debug-trace: retired with the prototype runtime. "
+            "See docs/releases/linux.md for Linux SDK debugger support.",
+            file=sys.stderr,
+        )
+        return 1
     rc, payload = build_runtime_debug_trace_from_live_actions(
         source_path=str(args.source).replace("\\", "/"),
         trace_out=args.trace_out,
