@@ -45,9 +45,9 @@ def build_support_classification_summary(
         key="runbook",
         path_exists=path_exists,
     )
-    legacy_summary_script = require_existing_contract_path(
+    source_summary_anchor = require_existing_contract_path(
         contract,
-        key="summary_script",
+        key="summary_implementation_anchor",
         path_exists=path_exists,
     )
 
@@ -57,7 +57,7 @@ def build_support_classification_summary(
             source.contract_path,
             runbook,
             SUMMARY_SCRIPT_PATH,
-            legacy_summary_script,
+            source_summary_anchor,
             *public_claim_surfaces,
             *(
                 surface
@@ -105,7 +105,7 @@ def build_support_classification_summary(
         "source_contract_sha256": source.contract_sha256,
         "runbook": runbook,
         "summary_script": SUMMARY_SCRIPT_PATH,
-        "legacy_support_matrix_summary_script": legacy_summary_script,
+        "source_summary_implementation_anchor": source_summary_anchor,
         "support_classes": sorted(support_classes),
         "support_class_count": len(support_classes),
         "evidence_families": sorted(evidence_families),
