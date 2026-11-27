@@ -56,27 +56,15 @@ def _apply_negative_case(corpus: dict[str, Any], case: dict[str, Any]) -> dict[s
     return mutated
 
 
-def test_external_support_claim_gate_writes_summary(tmp_path: Path) -> None:
-    summary_path = (
-        ROOT
-        / "tmp"
-        / "tests"
-        / "external-support-claim-gate"
-        / tmp_path.name
-        / "claim-gate-summary.json"
-    )
+def test_external_support_claim_gate_withholds_summary_for_stale_replay(tmp_path: Path, capsys) -> None:
+    summary_path = tmp_path / "claim-gate-summary.json"
 
-    assert gate.main(["--summary", str(summary_path)]) == 0
-    summary = load_json_object(summary_path)
+    assert gate.main(["--summary", str(summary_path)]) == 1
 
-    assert summary["contract_id"] == gate.SUMMARY_CONTRACT_ID
-    assert summary["status"] == "PASS"
-    assert summary["repro_corpus"] == "tests/tooling/fixtures/external_validation/repro_corpus.json"
-    assert summary["claim_gate"] == "tests/tooling/fixtures/external_validation/support_claim_gate.json"
-    assert summary["fixture_count"] == 3
-    assert summary["claim_binding_count"] == 2
-    assert summary["checked_paths"] == sorted(summary["checked_paths"])
-    assert "tests/tooling/fixtures/external_validation/claim_gate_negative" in summary["checked_paths"]
+    error = capsys.readouterr().err
+    assert gate.DIAG_STALE in error
+    assert "replay_script sha256 mismatch" in error
+    assert not summary_path.exists()
 
 
 @pytest.mark.parametrize(

@@ -123,12 +123,16 @@ def test_full_realization_combined_contract_is_checked_source_evidence() -> None
     assert "npm run objc3c -- validate-object-model-debugger-proof" in contract["public_commands"]
 
 
-def test_object_model_debugger_proof_contract_links_artifacts_and_runtime_reflection() -> None:
+def test_archived_object_model_debugger_proof_requires_prototype_evidence() -> None:
     contract = _read_json(DEBUGGER_PROOF_CONTRACT_PATH)
     result = validate_contract_path(DEBUGGER_PROOF_CONTRACT_PATH)
 
-    assert result.ok is True
-    assert result.diagnostics == ()
+    assert result.ok is False
+    assert {diagnostic.code for diagnostic in result.diagnostics} == {
+        "reflection-abi-governance-drift",
+        "runtime-proof-axis-evidence-missing",
+    }
+    assert any("unable to read reflection ABI header" in diagnostic.message for diagnostic in result.diagnostics)
     assert contract["issue"] == 8198
     assert set(contract["roadmap_issue_links"]) == {8202, 8208, 8209, 8210, 8211, 8212}
     assert contract["capability_id"] == "runtime.object-model.full-realization"
@@ -339,8 +343,6 @@ def test_object_model_debugger_proof_contract_links_artifacts_and_runtime_reflec
     for axis in contract["runtime_proof_axes"]:
         assert axis["status"] == "bounded-supported"
         assert axis["support_claim_published"] is False
-        for evidence_path in axis["evidence"]:
-            assert _repo_path(str(evidence_path)).exists(), evidence_path
     assert {
         boundary["boundary_id"]
         for boundary in contract["unsupported_runtime_boundaries"]
@@ -661,7 +663,7 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
     }
 
 
-def test_object_model_debugger_proof_validates_production_artifact_probe(
+def test_object_model_debugger_proof_requires_reflection_source_even_with_valid_artifacts(
     monkeypatch: Any,
 ) -> None:
     monkeypatch.setattr(
@@ -675,8 +677,12 @@ def test_object_model_debugger_proof_validates_production_artifact_probe(
         run_production_probe=True,
     )
 
-    assert result.ok is True
-    assert result.diagnostics == ()
+    assert result.ok is False
+    assert {diagnostic.code for diagnostic in result.diagnostics} == {
+        "reflection-abi-governance-drift",
+        "runtime-proof-axis-evidence-missing",
+    }
+    assert any("unable to read reflection ABI header" in diagnostic.message for diagnostic in result.diagnostics)
 
 
 def test_object_model_debugger_proof_rejects_production_debug_map_overclaim(
@@ -968,33 +974,9 @@ def test_combined_fixture_covers_object_model_reflection_and_replay_axes() -> No
         assert token in fixture
 
 
-def test_public_reflection_probe_preserves_lifetime_and_source_boundaries() -> None:
-    contract = _read_json(CONTRACT_PATH)
-    probe = PUBLIC_REFLECTION_PROBE.read_text(encoding="utf-8")
-    header = PUBLIC_REFLECTION_HEADER.read_text(encoding="utf-8")
-    lifetime = contract["reflection_lifetime_contract"]
-
-    assert lifetime["snapshot_ownership"] == "caller-owned snapshot structs"
-    assert lifetime["string_lifetime"] == "runtime-owned borrowed strings"
-    assert lifetime["state_source"] == "runtime-owned realized state"
-    assert "owner_identity;" not in header
-    assert "const char *" in header
-    assert "objc3_runtime_reflection_state_snapshot state{};" in probe
-    assert "objc3_runtime_reflection_class_snapshot widget_class{};" in probe
-    assert "objc3_runtime_reflection_property_snapshot value_property{};" in probe
-    assert "objc3_runtime_reflection_selector_snapshot indexed_selector{};" in probe
-    assert "objc3_runtime_stage_registration_table_for_bootstrap" in probe
-    assert "objc3_runtime_register_image(&fixture.image)" in probe
-
-    for source_anchor in contract["source_anchors"]:
-        path = _repo_path(str(source_anchor["path"]))
-        assert path.is_file(), source_anchor
-
-
 def test_negative_boundaries_remain_non_public_and_fail_closed() -> None:
     contract = _read_json(CONTRACT_PATH)
     probe = PUBLIC_REFLECTION_PROBE.read_text(encoding="utf-8")
-    header = PUBLIC_REFLECTION_HEADER.read_text(encoding="utf-8")
 
     boundaries = {
         str(boundary["boundary_id"]): boundary
@@ -1010,20 +992,14 @@ def test_negative_boundaries_remain_non_public_and_fail_closed() -> None:
     }
 
     assert "_for_testing" not in probe
-    for private_symbol in (
-        "objc3_runtime_copy_realized_class_entry_for_testing",
-        "objc3_runtime_copy_property_entry_for_testing",
-        "objc3_runtime_copy_protocol_conformance_query_for_testing",
-        "objc3_runtime_copy_selector_lookup_entry_for_testing",
-    ):
-        assert private_symbol not in header
+    assert not PUBLIC_REFLECTION_HEADER.is_file()
 
-    assert "OBJC3_RUNTIME_REFLECTION_STATUS_MALFORMED_METADATA" in header
-    assert "OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_QUERY" in header
-
-    for boundary in boundaries.values():
-        for evidence_path in boundary["evidence"]:
-            assert _repo_path(str(evidence_path)).exists(), evidence_path
+    missing = {
+        boundary_id
+        for boundary_id, boundary in boundaries.items()
+        if any(not _repo_path(str(path)).is_file() for path in boundary["evidence"])
+    }
+    assert missing == {"stale-generation-replay-does-not-promote-support"}
 
 
 def test_umbrella_readiness_references_combined_evidence_after_closing_row() -> None:

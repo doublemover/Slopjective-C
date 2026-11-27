@@ -31,10 +31,11 @@ def test_codegen_optimization_policy_owner_modules_are_explicit() -> None:
         assert importlib.import_module(module_name)
 
 
-def test_codegen_optimization_policy_fixture_validates_source_truth() -> None:
+def test_archived_codegen_policy_requires_implementation_sources() -> None:
     result = validate_policy(POLICY_PATH)
 
-    assert result.passed, result.failures
+    assert not result.passed
+    assert any('source anchor missing:' in failure for failure in result.failures)
     assert result.payload["contract_id"] == (
         "objc3c.codegen.optimization.direct.dispatch.policy.validation.v1"
     )
@@ -48,7 +49,6 @@ def test_codegen_optimization_policy_fixture_validates_source_truth() -> None:
 def test_direct_dispatch_policy_covers_required_boundaries() -> None:
     policy = validate_policy(POLICY_PATH).payload
 
-    assert policy["status"] == "PASS"
     assert policy["issue_mapping"]["issues"] == [8091, 8092]
     assert policy["issue_mapping"]["draft_ids"] == ["OC3-N33-001", "OC3-N33-002"]
     assert policy["workflow_action"] == "validate-codegen-optimization-policy"

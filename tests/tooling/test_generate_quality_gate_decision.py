@@ -15,7 +15,11 @@ generate_quality_gate_decision = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = generate_quality_gate_decision
 SPEC.loader.exec_module(generate_quality_gate_decision)
 
-from scripts.quality_gate_contracts import decision_builder, decision_logic
+from scripts.quality_gate_contracts import decision_logic
+
+decision_builder = sys.modules[
+    generate_quality_gate_decision.build_quality_gate_decision_artifacts.__module__
+]
 
 FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures" / "quality_gate_decision"
 

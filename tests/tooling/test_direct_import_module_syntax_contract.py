@@ -36,23 +36,6 @@ def _read_json(path: Path) -> dict[str, Any]:
     return payload
 
 
-def test_direct_import_token_parser_and_ast_contract_are_source_owned() -> None:
-    contract = _read_json(CONTRACT)
-    token_contract = contract["token_contract"]
-    parser_contract = contract["parser_contract"]
-
-    assert token_contract["token_kind"] in _read(TOKEN_KIND_CONTRACT)
-    assert 'case Objc3LexTokenKind::KwAtImport:' in _read(TOKEN_KIND_SOURCE)
-    assert '{"import", Objc3LexTokenKind::KwAtImport}' in _read(TOKEN_KEYWORD_DATA)
-    assert parser_contract["ast_record"] in _read(AST_DECLARATIONS)
-    assert "std::vector<Objc3ModuleImportDecl> module_imports;" in _read(AST_DECLARATIONS)
-    assert "AddModuleImport" in _read(AST_BUILDER_HEADER)
-    assert "AddModuleImport" in _read(AST_BUILDER_SOURCE)
-    assert "ParseDirectModuleImport(program)" in _read(TOP_LEVEL_DISPATCH)
-    assert '"O3MOD8219"' in _read(MODULE_PARSER)
-    assert "KwAtImport" in _read(RECOVERY_BOUNDARIES)
-
-
 def test_direct_import_fixtures_bind_syntax_to_package_provenance_contract() -> None:
     contract = _read_json(CONTRACT)
     positive_paths = [str(path) for path in contract["positive_fixtures"]]

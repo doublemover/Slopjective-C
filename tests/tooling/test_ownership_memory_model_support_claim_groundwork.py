@@ -128,7 +128,7 @@ def test_ownership_memory_model_support_claim_is_durable_groundwork() -> None:
         _assert_repo_path_exists(path)
 
 
-def test_ownership_memory_model_formal_slice_is_source_derived() -> None:
+def test_ownership_memory_model_formal_slice_requires_prototype_sources() -> None:
     support_contract = _read_json(CONTRACT_PATH)
     contract = _read_json(FORMAL_CONTRACT_PATH)
 
@@ -152,19 +152,20 @@ def test_ownership_memory_model_formal_slice_is_source_derived() -> None:
     assert "summary-only" not in flows["arc_boundary_lowering"]["rule"]
     assert "public ARC runtime ABI" in flows["arc_boundary_lowering"]["non_goal"]
 
-    assert _formal_contract_failures(contract) == []
+    failures = _formal_contract_failures(contract)
+    assert any(failure.endswith(": source record missing") for failure in failures)
 
 
 def test_ownership_memory_model_formal_slice_fails_closed_on_source_drift() -> None:
     contract = _read_json(FORMAL_CONTRACT_PATH)
     drifted = json.loads(json.dumps(contract))
-    drifted["source_records"][0]["required_tokens"].append(
-        "missing-objc3-ownership-memory-model-token"
-    )
+    drifted["source_records"] = [{
+        "path": "README.md",
+        "required_tokens": ["missing-objc3-ownership-memory-model-token"],
+    }]
 
     failures = _formal_contract_failures(drifted)
 
     assert failures == [
-        "native/objc3c/src/sema/objc3_sema_contract_ownership_memory_model.h: "
-        "required token missing: missing-objc3-ownership-memory-model-token"
+        "README.md: required token missing: missing-objc3-ownership-memory-model-token"
     ]

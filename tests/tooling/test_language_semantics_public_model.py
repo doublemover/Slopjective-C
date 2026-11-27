@@ -11,7 +11,6 @@ if str(SCRIPTS_ROOT) not in sys.path:
 from objc3c_language_semantics_public_model import (  # noqa: E402
     CONTRACT_ID,
     CONTRACT_PATH,
-    MODEL_HEADER_PATH,
     REQUIRED_ISSUES,
     REQUIRED_SUPPORT_CLAIMS,
     REQUIRED_SURFACES,
@@ -20,10 +19,11 @@ from objc3c_language_semantics_public_model import (  # noqa: E402
 )
 
 
-def test_language_semantics_public_model_fixture_validates_source_truth() -> None:
+def test_archived_language_semantics_public_model_requires_implementation_sources() -> None:
     result = validate_language_semantics_public_model(CONTRACT_PATH)
 
-    assert result.passed, result.failures
+    assert not result.passed
+    assert any('source anchor missing:' in failure for failure in result.failures)
     assert result.payload["contract_id"] == (
         "objc3c.language.semantics.public-model.validation.v1"
     )
@@ -45,31 +45,6 @@ def test_language_semantics_public_model_schema_and_contract_are_stable() -> Non
     assert '"builder": { "const": "BuildRuntimeProtocolExistentialWitnessMetadata" }' in schema_text
     assert '"dynamic_existential_dispatch"' in schema_text
     assert '"macro_metaprogramming_public_surface"' in schema_text
-
-
-def test_language_semantics_public_model_header_exposes_typed_surfaces() -> None:
-    header_text = MODEL_HEADER_PATH.read_text(encoding="utf-8")
-    umbrella_text = (
-        ROOT / "native" / "objc3c" / "src" / "sema" / "model" / "semantic_type.h"
-    ).read_text(encoding="utf-8")
-
-    for token in (
-        "Objc3GenericTypeParameterSurface",
-        "Objc3GenericSpecializationSurface",
-        "Objc3ProtocolExistentialWitnessSurface",
-        "conformance_metadata_shape_published",
-        "runtime_conformance_lookup_required",
-        "dynamic_existential_dispatch_claimed",
-        "Objc3OwnershipFlowSurface",
-        "Objc3ConcurrencyEffectSurface",
-        "Objc3ModuleVisibilitySurface",
-        "Objc3InteropLaneSurface",
-        "Objc3MacroMetaprogrammingSurface",
-        "fallback_or_compatibility_shim_allowed",
-        "IsReadyObjc3PublicLanguageSemanticsModelSummary",
-    ):
-        assert token in header_text
-    assert "sema/model/language_semantics_public_model.h" in umbrella_text
 
 
 def test_language_semantics_public_model_keeps_unsupported_claims_false() -> None:

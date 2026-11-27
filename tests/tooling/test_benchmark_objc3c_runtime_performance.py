@@ -143,16 +143,11 @@ def _write_temp_runtime_contracts(root: Path) -> None:
     )
 
 
-def test_runtime_performance_fixture_manifest_validates_checked_in_cases() -> None:
+def test_runtime_performance_fixture_manifest_rejects_removed_stdlib_source() -> None:
     manifest = benchmark.load_json(benchmark.FIXTURE_MANIFEST)
 
-    summary = benchmark.validate_fixture_manifest(manifest)
-
-    assert summary == {
-        "contract_id": "objc3c.runtime.performance.executable.fixture.manifest.v1",
-        "positive_case_count": 9,
-        "negative_case_count": 2,
-    }
+    with pytest.raises(RuntimeError, match="missing source_path: stdlib/modules/"):
+        benchmark.validate_fixture_manifest(manifest)
 
 
 def test_runtime_performance_fixture_manifest_rejects_missing_negative_source() -> None:

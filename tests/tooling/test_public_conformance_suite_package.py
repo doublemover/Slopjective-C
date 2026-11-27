@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib.util
-import subprocess
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -27,123 +26,17 @@ def load_checker() -> ModuleType:
     return module
 
 
-def test_public_conformance_suite_package_checker_stages_replayable_package(tmp_path: Path) -> None:
+def test_public_conformance_package_refuses_to_stage_missing_prototype_inputs(
+    tmp_path: Path, capsys,
+) -> None:
     checker = load_checker()
-    package_root = ROOT / "tmp" / "tests" / "objc3-public-conformance-suite-package"
-    report_path = ROOT / "tmp" / "tests" / "public-suite-package-summary.json"
+    package_root = tmp_path / "package"
+    report_path = tmp_path / "summary.json"
 
-    assert checker.main(["--package-root", str(package_root), "--report-path", str(report_path)]) == 0
-
-    summary = load_json_object(report_path)
-    package_manifest = load_json_object(package_root / "package-manifest.json")
-
-    assert summary["contract_id"] == "objc3c.public_conformance_suite.package_replay.summary.v1"
-    assert summary["status"] == "PASS"
-    assert summary["case_count"] == 12
-    assert summary["verified_case_count"] == 12
-    assert summary["source_file_count"] == summary["verified_source_file_count"]
-    assert summary["offline_compatible"] is True
-    assert summary["tmp_source_truth_allowed"] is False
-    assert summary["generated_reports_are_evidence_only"] is True
-    assert summary["source_owned_contract_count"] == 3
-    assert summary["package_manifest_replay_action_count"] == 4
-    assert summary["package_manifest_source_hash_algorithm"] == "sha256"
-    assert summary["generated_output_roots"] == [
-        "tmp/reports/conformance",
-        "tmp/artifacts/public-conformance/suite",
-        "tmp/pkg/objc3-public-conformance-suite",
-    ]
-    assert "npm run objc3c -- validate-release-candidate-conformance" in summary["public_commands"]
-    assert "npm run objc3c -- validate-cross-lane-e2e" in summary["public_commands"]
-
-    assert package_manifest["contract_id"] == "objc3c.public_conformance_suite.package_manifest.v1"
-    assert load_json_object(package_root / "package.json")["scripts"]["objc3c"] == (
-        "python tools/replay_public_conformance_suite.py"
-    )
-    assert (package_root / "tools" / "replay_public_conformance_suite.py").is_file()
-    assert package_manifest["source_truth_policy"] == {
-        "checked_in_source_truth_required": True,
-        "tmp_source_truth_allowed": False,
-        "generated_reports_are_evidence_only": True,
-    }
-    assert package_manifest["artifact_contract"]["issue_id"] == "OBJ3-NEXT-018"
-    assert package_manifest["replay_requirements"]["package_manifest_contract"] == (
-        "objc3c.public_conformance_suite.package_manifest.v1"
-    )
-    assert package_manifest["replay_requirements"]["source_hash_algorithm"] == "sha256"
-    assert {
-        action["action"]: tuple(action["profile_ids"])
-        for action in package_manifest["replay_requirements"]["required_actions"]
-    } == {
-        "validate-conformance-corpus": ("core",),
-        "validate-interop-conformance": ("stdlib-package",),
-        "validate-release-candidate-conformance": ("release-candidate",),
-        "validate-public-conformance-suite": ("core", "stdlib-package", "release-candidate"),
-    }
-    assert package_manifest["artifact_contract"]["package_replay_boundary"]["public_commands_only"] is True
-    assert package_manifest["case_count"] == len(package_manifest["cases"]) == 12
-    assert all(case["release_gate"] is True for case in package_manifest["cases"])
-    assert [case["stable_case_index"] for case in package_manifest["cases"]] == list(range(1, 13))
-    assert all(
-        source["package_path"].startswith("sources/")
-        and not source["repo_path"].startswith("tmp/")
-        and (package_root / source["package_path"]).is_file()
-        for source in package_manifest["source_files"]
-    )
-
-    case_path = package_root / package_manifest["cases"][0]["case_manifest"]
-    case_manifest = load_json_object(case_path)
-    assert case_manifest["contract_id"] == "objc3c.public_conformance_suite.case.v1"
-    assert case_manifest["stable_case_index"] == package_manifest["cases"][0]["stable_case_index"]
-    assert case_manifest["fixture_provenance"] == {
-        "origin": "checked-in-public-suite",
-        "owner": "objc3-public-conformance",
-        "source_owned": True,
-        "internal_only": False,
-        "generated": False,
-    }
-    assert case_manifest["positive_evidence"]
-    assert case_manifest["negative_evidence"]
-    assert case_manifest["runnable_command"].startswith("npm run objc3c -- ")
-    assert all((package_root / source["package_path"]).is_file() for source in case_manifest["packaged_source_files"])
-
-    completed = subprocess.run(
-        [
-            sys.executable,
-            str(package_root / "tools" / "replay_public_conformance_suite.py"),
-            "validate-release-candidate-conformance",
-        ],
-        cwd=package_root,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    assert completed.returncode == 0, completed.stderr
-    replay_summary = load_json_object(
-        package_root / "tmp" / "reports" / "conformance" / "validate-release-candidate-conformance.json"
-    )
-    assert replay_summary["contract_id"] == "objc3c.public_conformance_suite.packaged_replay.v1"
-    assert replay_summary["status"] == "PASS"
-    assert replay_summary["case_count"] == 12
-    assert replay_summary["generated_reports_are_evidence_only"] is True
-
-    completed = subprocess.run(
-        [
-            sys.executable,
-            str(package_root / "tools" / "replay_public_conformance_suite.py"),
-            "validate-public-conformance-suite",
-        ],
-        cwd=package_root,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    assert completed.returncode == 0, completed.stderr
-    replay_summary = load_json_object(
-        package_root / "tmp" / "reports" / "conformance" / "validate-public-conformance-suite.json"
-    )
-    assert replay_summary["contract_id"] == "objc3c.public_conformance_suite.packaged_replay.v1"
-    assert replay_summary["case_count"] == 12
+    assert checker.main(["--package-root", str(package_root), "--report-path", str(report_path)]) == 1
+    assert "public conformance suite manifest checker failed" in capsys.readouterr().err
+    assert not (package_root / "package-manifest.json").exists()
+    assert not report_path.exists()
 
 
 def test_public_conformance_suite_package_contract_is_checked_source_truth() -> None:

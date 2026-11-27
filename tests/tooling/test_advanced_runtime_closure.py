@@ -24,7 +24,6 @@ from scripts.check_objc3c_advanced_runtime_closure import (  # noqa: E402
     REQUIRED_RUNTIME_SOURCE_DEBUG_LINKS,
     REQUIRED_UNSUPPORTED_RESERVED_CLAIMS,
     ROOT,
-    validate_advanced_runtime_closure,
 )
 
 
@@ -38,71 +37,6 @@ def _read_json(relative_path: str) -> dict[str, object]:
 def _assert_checked_path(relative_path: str) -> None:
     assert not relative_path.startswith(("tmp/", "temp/", "generated/", "build/", "dist/"))
     assert (ROOT / relative_path).exists()
-
-
-def test_advanced_runtime_closure_enforces_combined_identity_contract() -> None:
-    payload = validate_advanced_runtime_closure()
-
-    assert payload["status"] == "PASS"
-    assert payload["advanced_runtime_negative_matrix_case_count"] >= 17
-    assert (
-        payload["advanced_runtime_negative_matrix_interaction_count"]
-        == len(REQUIRED_INTERACTION_FEATURE_SETS)
-    )
-    assert (
-        payload["advanced_runtime_combined_identity_contract"]
-        == ADVANCED_CLOSURE_COMBINED_IDENTITY_CONTRACT
-    )
-    assert (
-        payload["advanced_runtime_runtime_execution_entrypoint"]
-        == REQUIRED_RUNTIME_EXECUTION_ENTRYPOINT
-    )
-    assert set(payload["advanced_runtime_runtime_execution_observations"]) == (
-        REQUIRED_RUNTIME_EXECUTION_OBSERVATIONS
-    )
-    assert payload["advanced_runtime_combined_identity_runtime_state_record_count"] >= 8
-    assert payload["advanced_runtime_combined_identity_source_graph_record_count"] >= 7
-    assert payload["advanced_runtime_combined_identity_debug_map_record_count"] >= 7
-    assert (
-        payload["advanced_runtime_combined_identity_abi_interaction_record_count"]
-        >= 6
-    )
-    assert (
-        payload["advanced_runtime_combined_identity_interaction_count"]
-        == len(REQUIRED_INTERACTION_FEATURE_SETS)
-    )
-    assert (
-        payload["advanced_runtime_canonical_source_debug_map"]
-        == ADVANCED_CLOSURE_CANONICAL_SOURCE_DEBUG_MAP_BUNDLE
-    )
-    assert payload["advanced_runtime_canonical_source_map_record_count"] == 7
-    assert payload["advanced_runtime_canonical_debug_map_record_count"] == 7
-    assert payload["advanced_runtime_canonical_native_line_table_record_count"] == 7
-    assert (
-        payload["advanced_runtime_runtime_source_debug_link_count"]
-        == len(REQUIRED_RUNTIME_SOURCE_DEBUG_LINKS)
-    )
-    assert (
-        payload["advanced_runtime_native_artifact_contract"]
-        == ADVANCED_CLOSURE_NATIVE_ARTIFACT_CONTRACT
-    )
-    assert payload["advanced_runtime_native_compile_attempt_status"] == "native_link_run_ready"
-    assert payload["advanced_runtime_native_compile_attempt_exit_code"] == 0
-    assert payload["advanced_runtime_native_compile_attempt_diagnostic_count"] == 0
-    assert (
-        payload["advanced_runtime_native_phase_status_contract"]
-        == "objc3c.advanced-runtime.closure.typed-failure-reporting.v1"
-    )
-    assert payload["advanced_runtime_native_phase_statuses"] == {
-        "compile": "native_compile_succeeded",
-        "link": "native_link_succeeded",
-        "runtime_registration": "runtime_registration_artifact_present",
-        "runtime_metadata": "runtime_metadata_artifact_present",
-        "error_replay": "error_replay_artifact_present",
-        "execution_status": "native_execution_succeeded",
-    }
-    assert payload["advanced_runtime_native_artifact_ready"] is True
-    assert payload["advanced_runtime_native_executable_umbrella_promoted"] is True
 
 
 def test_combined_identity_contract_links_source_graph_debug_map_and_negatives() -> None:

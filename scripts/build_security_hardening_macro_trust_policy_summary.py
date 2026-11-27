@@ -322,9 +322,16 @@ def main() -> int:
     trust_registry_path = ROOT / str(contract["macro_supply_chain_trust_registry"])
     registry = read_json(trust_registry_path)
     runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
-    sema_text = "\n".join(path.read_text(encoding="utf-8") for path in SEMA_PATHS)
-    process_text = "\n".join(path.read_text(encoding="utf-8") for path in PROCESS_PATHS)
-    runtime_acceptance_text = "\n".join(path.read_text(encoding="utf-8") for path in RUNTIME_ACCEPTANCE_PATHS)
+    source_text = {}
+    missing_sources = []
+    for path in (*SEMA_PATHS, *PROCESS_PATHS, *RUNTIME_ACCEPTANCE_PATHS):
+        if not path.is_file():
+            missing_sources.append(f"authoritative macro trust source unavailable: {repo_rel(path)}")
+            continue
+        source_text[path] = path.read_text(encoding="utf-8")
+    sema_text = "\n".join(source_text.get(path, "") for path in SEMA_PATHS)
+    process_text = "\n".join(source_text.get(path, "") for path in PROCESS_PATHS)
+    runtime_acceptance_text = "\n".join(source_text.get(path, "") for path in RUNTIME_ACCEPTANCE_PATHS)
 
     trust_checks, trust_details, trust_failures = evaluate_trust_registry(contract, registry)
     checks = {
@@ -344,6 +351,7 @@ def main() -> int:
         **trust_checks,
     }
     failures = [name for name, passed in checks.items() if not passed]
+    failures.extend(missing_sources)
     failures.extend(trust_failures)
 
     payload = {

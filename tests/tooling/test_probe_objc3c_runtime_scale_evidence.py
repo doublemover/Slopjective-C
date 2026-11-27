@@ -6,7 +6,6 @@ import json
 import sys
 from pathlib import Path
 
-import pytest
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -40,7 +39,8 @@ def test_runtime_scale_evidence_summary_is_deterministic_for_checked_in_contract
     second = _checked_in_summary()
 
     assert first == second
-    assert first["status"] == "PASS"
+    assert first["status"] == "FAIL"
+    assert any("fixture path missing: stdlib/modules/" in failure for failure in first["failures"])
     assert first["support_authority"] is False
     assert first["summary_counts"] == {
         "stress_scale": 8,
@@ -164,15 +164,15 @@ def test_runtime_scale_evidence_rejects_generated_report_authority() -> None:
     assert any("must not promote generated reports" in failure for failure in summary["failures"])
 
 
-def test_runtime_scale_evidence_cli_writes_tmp_report(tmp_path: Path) -> None:
+def test_runtime_scale_evidence_cli_writes_failure_report_for_removed_stdlib(tmp_path: Path) -> None:
     summary_out = ROOT / "tmp" / "reports" / "runtime-performance" / "pytest-scale-summary.json"
     if summary_out.exists():
         summary_out.unlink()
 
-    assert probe.main(["--summary-out", str(summary_out)]) == 0
+    assert probe.main(["--summary-out", str(summary_out)]) == 1
 
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["contract_id"] == "objc3c.runtime.performance.scale.evidence.summary.v1"
-    assert payload["status"] == "PASS"
+    assert payload["status"] == "FAIL"
     assert payload["summary_counts"]["stress_scale"] == 8
     assert payload["summary_counts"]["scale_scenarios"] == 4

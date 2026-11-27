@@ -72,14 +72,15 @@ def _write_tmp_contract(
     return contract_path
 
 
-def test_macro_trust_policy_summary_enforces_supply_chain_registry(tmp_path: Path) -> None:
+def test_macro_trust_policy_summary_checks_trust_registry_without_publishable_prototype_sources(tmp_path: Path) -> None:
     checker = _load_checker()
     _redirect_outputs(checker, tmp_path)
 
-    assert checker.main() == 0
+    assert checker.main() == 1
 
     summary = load_json_object(checker.JSON_OUT)
-    assert summary["status"] == "PASS"
+    assert summary["status"] == "FAIL"
+    assert any("authoritative macro trust source unavailable:" in failure for failure in summary["failures"])
     assert summary["trust_registry_path"] == (
         "tests/tooling/fixtures/security_hardening/macro_supply_chain_trust_registry.json"
     )

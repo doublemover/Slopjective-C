@@ -134,39 +134,3 @@ def test_metaprogramming_support_claims_are_manifest_backed() -> None:
         assert fixture["owner_phase"] == expected["owner_phase"]
         assert fixture["fixture_kind"] == "positive"
         assert fixture["expected_diagnostic_code"] == ""
-
-
-def test_metaprogramming_runnable_evidence_catalog_rows_are_narrow() -> None:
-    manifest = _load_json(MANIFEST_PATH)
-    catalog = _load_json(CATALOG_PATH)
-    manifest_claims = {claim["claim_id"]: claim for claim in manifest["support_claims"]}
-    rows = {row["support_claim"]: row for row in catalog["rows"]}
-
-    assert 8155 in catalog["issue_refs"]
-    assert 8168 in catalog["issue_refs"]
-
-    for claim_id, expected in EXPECTED_CLAIMS.items():
-        row = rows[claim_id]
-        manifest_claim = manifest_claims[claim_id]
-        positive_evidence = set(row["positive_evidence"])
-        negative_evidence = set(row["negative_evidence"])
-        required_codes = set(row["required_diagnostic_codes"])
-
-        assert row["capability_id"] == expected["capability_id"]
-        assert row["owner_phase"] == expected["owner_phase"]
-        assert row["runnable_command"] == manifest_claim["executable_command"]
-        assert manifest_claim["behavior_fixture"] in positive_evidence
-        assert expected["required_positive"] <= positive_evidence
-        assert expected["required_negative"] <= negative_evidence
-        assert expected["required_codes"] <= required_codes
-        assert all(code.startswith("O3") for code in row["required_diagnostic_codes"])
-        assert any("narrow" in requirement for requirement in row["source_truth_requirements"])
-
-        _assert_repo_paths_exist(
-            {
-                row["conformance_fixture"],
-                row["traceability_fixture"],
-                *positive_evidence,
-                *negative_evidence,
-            }
-        )

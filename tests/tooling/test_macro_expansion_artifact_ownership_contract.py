@@ -16,10 +16,11 @@ from objc3c_macro_expansion_artifact_ownership import (
 from objc3c_shared.json_io import load_json_object, write_json_file
 
 
-def test_macro_expansion_artifact_ownership_contract_passes() -> None:
+def test_archived_macro_expansion_artifact_contract_requires_implementation_sources() -> None:
     result = validate_macro_expansion_artifact_ownership()
 
-    assert result.passed, result.failures
+    assert not result.passed
+    assert any('source anchor missing:' in failure for failure in result.failures)
     assert result.payload["source_contract_id"] == (
         "objc3c.metaprogramming.macro.expansion.artifact.ownership.v1"
     )

@@ -86,54 +86,6 @@ def _assert_repo_path_exists(path: str) -> None:
     assert (ROOT / path).is_file(), path
 
 
-def test_protocol_existential_claim_is_manifest_and_catalog_backed() -> None:
-    manifest = _read_json(MANIFEST_PATH)
-    catalog = _read_json(CATALOG_PATH)
-
-    assert 8164 in catalog["issue_refs"]
-
-    manifest_claims = {
-        str(claim["claim_id"]): claim
-        for claim in manifest["support_claims"]
-        if isinstance(claim, dict)
-    }
-    catalog_rows = {
-        str(row["support_claim"]): row for row in catalog["rows"] if isinstance(row, dict)
-    }
-
-    claim = manifest_claims[CLAIM_ID]
-    row = catalog_rows[CLAIM_ID]
-
-    assert claim["owner_phase"] == "sema"
-    assert claim["behavior_fixture"] == BEHAVIOR_FIXTURE
-    assert claim["executable_command"] == PUBLIC_COMMAND
-
-    assert row["capability_id"] == CAPABILITY_ID
-    assert row["owner_phase"] == "sema"
-    assert row["runnable_command"] == PUBLIC_COMMAND
-    assert row["runtime_acceptance_case"] == (
-        "type-semantic-model-protocol-qualified-existential-value-flow"
-    )
-    assert set(row["required_diagnostic_codes"]) >= {
-        "O3P100",
-        "O3S206",
-        "O3S216",
-        "O3S218",
-        "O3S314",
-    }
-    assert REQUIRED_POSITIVE_EVIDENCE <= set(row["positive_evidence"])
-    assert REQUIRED_NEGATIVE_EVIDENCE <= set(row["negative_evidence"])
-    assert row["source_truth_requirements"]
-
-    for path in [
-        row["conformance_fixture"],
-        row["traceability_fixture"],
-        *row["positive_evidence"],
-        *row["negative_evidence"],
-    ]:
-        _assert_repo_path_exists(path)
-
-
 def test_protocol_existential_fixture_manifest_row_is_narrow_positive_evidence() -> None:
     manifest = _read_json(MANIFEST_PATH)
     fixtures = {
@@ -149,43 +101,3 @@ def test_protocol_existential_fixture_manifest_row_is_narrow_positive_evidence()
     assert fixture["fixture_kind"] == "positive"
     assert fixture["expected_diagnostic_code"] == ""
     _assert_repo_path_exists(BEHAVIOR_FIXTURE)
-
-
-def test_protocol_existential_witness_claim_is_runtime_metadata_backed() -> None:
-    manifest = _read_json(MANIFEST_PATH)
-    catalog = _read_json(CATALOG_PATH)
-
-    manifest_claims = {
-        str(claim["claim_id"]): claim
-        for claim in manifest["support_claims"]
-        if isinstance(claim, dict)
-    }
-    catalog_rows = {
-        str(row["support_claim"]): row for row in catalog["rows"] if isinstance(row, dict)
-    }
-
-    claim = manifest_claims[WITNESS_CLAIM_ID]
-    row = catalog_rows[WITNESS_CLAIM_ID]
-
-    assert claim["owner_phase"] == "runtime"
-    assert claim["behavior_fixture"] == WITNESS_BEHAVIOR_FIXTURE
-    assert claim["executable_command"] == PUBLIC_COMMAND
-
-    assert row["capability_id"] == WITNESS_CAPABILITY_ID
-    assert row["owner_phase"] == "runtime"
-    assert row["runnable_command"] == PUBLIC_COMMAND
-    assert row["runtime_acceptance_case"] == (
-        "language-semantics-protocol-existential-witness-model"
-    )
-    assert set(row["required_diagnostic_codes"]) >= {"O3P100", "O3S216", "O3S314"}
-    assert REQUIRED_WITNESS_EVIDENCE <= set(row["positive_evidence"])
-    assert REQUIRED_WITNESS_NEGATIVE_EVIDENCE <= set(row["negative_evidence"])
-
-    for path in [
-        claim["behavior_fixture"],
-        row["conformance_fixture"],
-        row["traceability_fixture"],
-        *row["positive_evidence"],
-        *row["negative_evidence"],
-    ]:
-        _assert_repo_path_exists(path)

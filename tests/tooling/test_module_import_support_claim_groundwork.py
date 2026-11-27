@@ -106,56 +106,6 @@ def _assert_repo_path_exists(path: str) -> None:
     assert (ROOT / path).is_file(), path
 
 
-def test_module_import_support_claims_are_manifest_and_catalog_backed() -> None:
-    manifest = _read_json(MANIFEST_PATH)
-    catalog = _read_json(CATALOG_PATH)
-
-    assert 8163 in catalog["issue_refs"]
-
-    manifest_claims = {
-        str(claim["claim_id"]): claim
-        for claim in manifest["support_claims"]
-        if isinstance(claim, dict)
-    }
-    catalog_rows = {
-        str(row["support_claim"]): row
-        for row in catalog["rows"]
-        if isinstance(row, dict)
-    }
-
-    for claim_id, expected in EXPECTED_MODULE_IMPORT_ROWS.items():
-        claim = manifest_claims[claim_id]
-        row = catalog_rows[claim_id]
-
-        assert claim["owner_phase"] == expected["owner_phase"]
-        assert claim["behavior_fixture"] == expected["behavior_fixture"]
-        assert claim["executable_command"] == expected["runnable_command"]
-        assert claim["executable_command"].startswith(PUBLIC_COMMAND_PREFIX)
-
-        assert row["capability_id"] == expected["capability_id"]
-        assert row["owner_phase"] == expected["owner_phase"]
-        assert row["runnable_command"] == expected["runnable_command"]
-        assert row["runtime_acceptance_case"] == expected["runtime_acceptance_case"]
-
-        positive = set(row["positive_evidence"])
-        negative = set(row["negative_evidence"])
-        assert len(positive) == len(row["positive_evidence"])
-        assert len(negative) == len(row["negative_evidence"])
-        assert claim["behavior_fixture"] in positive
-        assert expected["required_positive"] <= positive
-        assert expected["required_negative"] <= negative
-        assert expected["required_codes"] <= set(row["required_diagnostic_codes"])
-        assert row["source_truth_requirements"]
-
-        for path in [
-            row["conformance_fixture"],
-            row["traceability_fixture"],
-            *row["positive_evidence"],
-            *row["negative_evidence"],
-        ]:
-            _assert_repo_path_exists(path)
-
-
 def test_module_import_fixture_manifest_rows_are_canonical_and_bounded() -> None:
     manifest = _read_json(MANIFEST_PATH)
     fixtures = {

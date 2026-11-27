@@ -29,12 +29,13 @@ def package_stage(contract: dict[str, object]) -> dict[str, object]:
     raise AssertionError("package-install-receipts stage missing")
 
 
-def test_product_workflow_source_truth_validates_normal_developer_journey() -> None:
+def test_product_workflow_source_truth_reports_removed_showcase_replay() -> None:
     summary = checker.validate_contract(load_contract())
 
-    assert summary["ok"] is True
+    assert summary["ok"] is False
+    assert any("missing source path showcase/applicationFrameworkSamples/" in failure for failure in summary["failures"])
     journey = summary["normal_developer_from_nothing"]
-    assert journey["status"] == "PASS"
+    assert journey["status"] == "FAIL"
     assert journey["covered_issues"] == sorted(checker.OWNED_ISSUES)
     stage_by_id = {stage["stage_id"]: stage for stage in journey["stages"]}
     package = stage_by_id["package-install-receipts"]

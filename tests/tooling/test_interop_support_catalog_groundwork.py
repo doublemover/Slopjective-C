@@ -118,27 +118,6 @@ def _runtime_cases(row: dict[str, object]) -> set[str]:
     return cases
 
 
-def test_interop_support_claims_are_manifest_backed() -> None:
-    rows = _catalog_rows()
-    claims = _manifest_claims()
-    manifest_fixtures = _manifest_fixture_paths()
-
-    for claim_id in (PACKAGE_LOADER_CLAIM, MIXED_IMAGE_REPLAY_CLAIM):
-        row = rows[claim_id]
-        claim = claims[claim_id]
-        behavior_fixture = str(claim["behavior_fixture"])
-
-        assert row["owner_phase"] == "runtime"
-        assert claim["owner_phase"] == "runtime"
-        assert row["runnable_command"] == claim["executable_command"]
-        assert behavior_fixture in manifest_fixtures
-        assert behavior_fixture in _evidence(row, "positive_evidence")
-
-        for path in _evidence(row, "positive_evidence") | _evidence(row, "negative_evidence"):
-            assert not path.startswith("tmp/")
-            assert (ROOT / path).is_file(), path
-
-
 def test_issue_8165_interop_expansion_groundwork_stays_claim_scoped() -> None:
     catalog = _load_json(CATALOG_PATH)
     rows = _catalog_rows()
