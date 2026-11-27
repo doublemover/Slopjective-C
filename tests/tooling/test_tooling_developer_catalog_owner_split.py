@@ -53,6 +53,7 @@ def test_tooling_developer_catalog_preserves_owner_order() -> None:
         **SPEC_LINT_ACTION_SPECS,
     }
     assert tuple(TOOLING_DEVELOPER_ACTION_SPECS) == (
+        "inspect-debug-map",
         "inspect-bonus-tool-integration",
         "inspect-validation-timing",
         "trace-runtime-debug",
@@ -61,6 +62,9 @@ def test_tooling_developer_catalog_preserves_owner_order() -> None:
         "test-capability-routed-source-parity",
         "validate-developer-tooling",
         "validate-language-service",
+        "validate-debug-source-maps",
+        "validate-debugger-integration",
+        "validate-object-model-debugger-proof",
         "validate-bonus-experiences",
         "validate-runnable-bonus-experiences",
         "lint-spec",

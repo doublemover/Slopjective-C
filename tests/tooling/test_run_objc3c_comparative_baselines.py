@@ -1,18 +1,10 @@
 from __future__ import annotations
 
-import importlib.util
 import json
-import sys
+from functools import partial
 from pathlib import Path
 
-
-ROOT = Path(__file__).resolve().parents[2]
-SCRIPT_PATH = ROOT / "scripts" / "run_objc3c_comparative_baselines.py"
-SPEC = importlib.util.spec_from_file_location("run_objc3c_comparative_baselines", SCRIPT_PATH)
-assert SPEC is not None and SPEC.loader is not None
-runner = importlib.util.module_from_spec(SPEC)
-sys.modules[SPEC.name] = runner
-SPEC.loader.exec_module(runner)
+from scripts.objc3c_comparative_baselines import catalog, cli, reporting, runner
 
 
 def test_runner_writes_compile_and_runtime_packets(tmp_path: Path, monkeypatch) -> None:
@@ -50,10 +42,17 @@ def test_runner_writes_compile_and_runtime_packets(tmp_path: Path, monkeypatch) 
     )
 
     monkeypatch.setattr(runner, "ROOT", root)
-    monkeypatch.setattr(runner, "MANIFEST_PATH", manifest_path)
-    monkeypatch.setattr(runner, "MEASUREMENT_POLICY_PATH", policy_path)
-    monkeypatch.setattr(runner, "BENCHMARK_PARAMETERS_PATH", parameters_path)
-    monkeypatch.setattr(runner, "SUMMARY_OUT", summary_out)
+    monkeypatch.setattr(runner, "repo_rel", partial(runner.repo_rel, root=root))
+    monkeypatch.setattr(reporting, "repo_rel", partial(reporting.repo_rel, root=root))
+    monkeypatch.setattr(
+        cli, "load_run_config",
+        partial(
+            catalog.load_run_config,
+            manifest_path=manifest_path,
+            measurement_policy_path=policy_path,
+            benchmark_parameters_path=parameters_path,
+        ),
+    )
     monkeypatch.setattr(
         runner,
         "machine_profile",
@@ -79,9 +78,7 @@ def test_runner_writes_compile_and_runtime_packets(tmp_path: Path, monkeypatch) 
         }
 
     monkeypatch.setattr(runner, "run_timed_step", fake_run_timed_step)
-    monkeypatch.setattr(sys, "argv", ["run_objc3c_comparative_baselines.py", "--warmup-runs", "1", "--measured-runs", "2"])
-
-    exit_code = runner.main()
+    exit_code = cli.main(["--summary-out", str(summary_out), "--warmup-runs", "1", "--measured-runs", "2"])
 
     assert exit_code == 0
     payload = json.loads(summary_out.read_text(encoding="utf-8"))

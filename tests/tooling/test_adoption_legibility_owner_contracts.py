@@ -63,4 +63,4 @@ def test_adoption_replay_bounds_replay_fields_to_risk_inventory() -> None:
     assert truthfulness["wrapper_only_publication_allowed"] is False
     assert "risk inventory" in str(truthfulness["upgrade_support_report_boundary"])
     assert "not a retired source acceptance guarantee" in str(truthfulness["upgrade_support_report_boundary"])
-    assert "not alternate support" in str(truthfulness["rollback_target_boundary"])
+    assert "rollback_target_boundary" not in truthfulness

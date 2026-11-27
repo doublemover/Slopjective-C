@@ -24,8 +24,16 @@ def runtime_runnable_catalogs_and_handlers_derive_from_action_groups() -> None:
         assert spec.backend.startswith("python:scripts/check_objc3c_runnable_")
         assert RUNTIME_RUNNABLE_E2E_ACTION_HANDLERS[action]
 
+    targeted_backends = {
+        "validate-module-interop-contracts": "python:scripts/check_objc3c_module_interop_contracts.py",
+        "validate-standalone-textual-interface-payload": "python:scripts/check_objc3c_standalone_textual_interface_payload.py",
+    }
     for action, spec in RUNTIME_RUNNABLE_CONFORMANCE_ACTION_SPECS.items():
         assert spec.action == action
-        assert spec.validation_tier == "full"
-        assert spec.backend.startswith("python:scripts/check_objc3c_runnable_")
+        if action in targeted_backends:
+            assert spec.validation_tier == "targeted"
+            assert spec.backend == targeted_backends[action]
+        else:
+            assert spec.validation_tier == "full"
+            assert spec.backend.startswith("python:scripts/check_objc3c_runnable_")
         assert RUNTIME_RUNNABLE_CONFORMANCE_ACTION_HANDLERS[action]

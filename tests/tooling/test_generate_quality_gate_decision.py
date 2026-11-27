@@ -15,6 +15,8 @@ generate_quality_gate_decision = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = generate_quality_gate_decision
 SPEC.loader.exec_module(generate_quality_gate_decision)
 
+from scripts.quality_gate_contracts import decision_builder, decision_logic
+
 FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures" / "quality_gate_decision"
 
 
@@ -71,10 +73,10 @@ def test_happy_path_matches_fixtures_and_keeps_hold_semantics(tmp_path: Path) ->
 
 
 def test_hold_approve_semantics_are_explicit() -> None:
-    assert generate_quality_gate_decision.determine_decision("pass") == "approve"
-    assert generate_quality_gate_decision.determine_decision("conditional-pass") == "hold"
-    assert generate_quality_gate_decision.determine_decision("fail") == "hold"
-    assert generate_quality_gate_decision.determine_decision("blocked") == "hold"
+    assert decision_logic.determine_decision("pass") == "approve"
+    assert decision_logic.determine_decision("conditional-pass") == "hold"
+    assert decision_logic.determine_decision("fail") == "hold"
+    assert decision_logic.determine_decision("blocked") == "hold"
 
 
 def test_contract_drift_returns_exit_1_and_writes_nothing(
@@ -85,7 +87,7 @@ def test_contract_drift_returns_exit_1_and_writes_nothing(
     drifted_handoffs = json.loads(
         (FIXTURE_DIR / "drift_handoffs_required_inputs.json").read_text(encoding="utf-8")
     )
-    monkeypatch.setattr(generate_quality_gate_decision, "DOWNSTREAM_HANDOFFS", drifted_handoffs)
+    monkeypatch.setattr(decision_builder, "DOWNSTREAM_HANDOFFS", drifted_handoffs)
 
     code, stdout, stderr = run_main(
         [
@@ -114,7 +116,7 @@ def test_contract_hard_fail_returns_exit_2_and_writes_nothing(
     malformed_evidence = json.loads(
         (FIXTURE_DIR / "hard_fail_evidence_missing_summary.json").read_text(encoding="utf-8")
     )
-    monkeypatch.setattr(generate_quality_gate_decision, "EVIDENCE_ITEMS", malformed_evidence)
+    monkeypatch.setattr(decision_builder, "EVIDENCE_ITEMS", malformed_evidence)
 
     code, stdout, stderr = run_main(
         [
@@ -158,7 +160,7 @@ def test_contract_drift_gate_status_returns_exit_1_and_writes_nothing(
             "rationale": "Reproducibility rerun digest indicates stable replay outcomes for the locked snapshot.",
         },
     ]
-    monkeypatch.setattr(generate_quality_gate_decision, "BASE_GATE_RESULTS", drifted_gates)
+    monkeypatch.setattr(decision_builder, "BASE_GATE_RESULTS", drifted_gates)
 
     code, stdout, stderr = run_main(
         [
@@ -205,7 +207,7 @@ def test_contract_hard_fail_rejects_unexpected_evidence_keys(
             "blocking_refs": ["BLK-189-01", "BLK-189-02", "BLK-189-03"],
         },
     ]
-    monkeypatch.setattr(generate_quality_gate_decision, "EVIDENCE_ITEMS", malformed_evidence)
+    monkeypatch.setattr(decision_builder, "EVIDENCE_ITEMS", malformed_evidence)
 
     code, stdout, stderr = run_main(
         [

@@ -18,36 +18,7 @@ _Generated on 2026-02-23 by scripts/seed_remaining_spec_tasks.py._
 
 ## Task Reviews
 
-### SPT-0001 - [SPT-0001][Lane D] Capture strict-system evidence bundle artifact and validation command output
-
-- Source: `spec/conformance/profile_release_evidence_checklist.md:3`
-- Bucket: `release-evidence`
-- Lane: `Lane D - Program Control & Release`
-- Milestone: `Conformance: Strict System (E)`
-- Shard: `release-evidence-checklist`
-- Original checkbox: `Capture strict-system evidence bundle artifact and validation command output.`
-- Review quality: `medium`
-- Gaps identified:
-  - Missing explicit dependency/order constraints.
-  - Outcome is activity-oriented; add measurable completion criteria.
-- Improved objective: Capture strict-system evidence bundle artifact and validation command output
-- Improved deliverables:
-  - Produce the required evidence bundle fields/artifacts for the referenced profile gate.
-  - Attach validation outputs proving schema/command-level correctness.
-  - Record artifact digests and evidence pointers needed for release sign-off.
-- Improved acceptance criteria:
-  - All required release evidence keys/metrics for the row are present and conform to schema/contract.
-  - Validation commands run successfully and outputs are attached in issue comments.
-  - Source checklist row is updated to checked state with commit SHA + evidence reference.
-- Dependencies:
-  - No explicit hard dependency in the source row; treat as lane-parallel unless blocked by shared files.
-  - Lane-level dependency: execute under Lane D governance (Program Control & Release).
-- Validation commands:
-  - `npm run objc3c -- lint-spec`
-  - `npm run objc3c -- check-task-hygiene`
-  - `npm run objc3c -- check-release-evidence`
-
-### SPT-0002 - [SPT-0002][Lane B] [CORE] Validate parser accepts let bindings in strict mode
+### SPT-0001 - [SPT-0001][Lane B] [CORE] Validate parser accepts let bindings in strict mode
 
 - Source: `docs/reference/legacy_spec_anchor_index.md#conformance-profile-checklist:3`
 - Bucket: `conformance-checklist`
@@ -77,7 +48,7 @@ _Generated on 2026-02-23 by scripts/seed_remaining_spec_tasks.py._
   - `npm run objc3c -- lint-spec`
   - `npm run objc3c -- check-task-hygiene`
 
-### SPT-0003 - [SPT-0003][Lane B] [OPT-CXX] Confirm interop marker appears in emitted metadata
+### SPT-0002 - [SPT-0002][Lane B] [OPT-CXX] Confirm interop marker appears in emitted metadata
 
 - Source: `docs/reference/legacy_spec_anchor_index.md#conformance-profile-checklist:4`
 - Bucket: `conformance-checklist`
@@ -106,6 +77,35 @@ _Generated on 2026-02-23 by scripts/seed_remaining_spec_tasks.py._
 - Validation commands:
   - `npm run objc3c -- lint-spec`
   - `npm run objc3c -- check-task-hygiene`
+
+### SPT-0003 - [SPT-0003][Lane D] Capture strict-system evidence bundle artifact and validation command output
+
+- Source: `spec/conformance/profile_release_evidence_checklist.md:3`
+- Bucket: `release-evidence`
+- Lane: `Lane D - Program Control & Release`
+- Milestone: `Conformance: Strict System (E)`
+- Shard: `release-evidence-checklist`
+- Original checkbox: `Capture strict-system evidence bundle artifact and validation command output.`
+- Review quality: `medium`
+- Gaps identified:
+  - Missing explicit dependency/order constraints.
+  - Outcome is activity-oriented; add measurable completion criteria.
+- Improved objective: Capture strict-system evidence bundle artifact and validation command output
+- Improved deliverables:
+  - Produce the required evidence bundle fields/artifacts for the referenced profile gate.
+  - Attach validation outputs proving schema/command-level correctness.
+  - Record artifact digests and evidence pointers needed for release sign-off.
+- Improved acceptance criteria:
+  - All required release evidence keys/metrics for the row are present and conform to schema/contract.
+  - Validation commands run successfully and outputs are attached in issue comments.
+  - Source checklist row is updated to checked state with commit SHA + evidence reference.
+- Dependencies:
+  - No explicit hard dependency in the source row; treat as lane-parallel unless blocked by shared files.
+  - Lane-level dependency: execute under Lane D governance (Program Control & Release).
+- Validation commands:
+  - `npm run objc3c -- lint-spec`
+  - `npm run objc3c -- check-task-hygiene`
+  - `npm run objc3c -- check-release-evidence`
 
 ### SPT-0004 - [SPT-0004][Lane B] Document kickoff decision record for lane batching in artifact tracker
 
